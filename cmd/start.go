@@ -17,11 +17,17 @@ package cmd
 
 import (
 	"fmt"
-	"os/exec"
-	"bufio"
 	"io"
+	"os"
+	"os/exec"
+	"context"
 	"runtime"
 	"github.com/spf13/cobra"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/client"
+	"github.com/docker/docker/api/types/container"
+
+
 )
 
 //default values
@@ -58,32 +64,37 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
+
 		fmt.Println("SmartIDE启动中......")
-		dockerRunCommand := fmt.Sprintf(`docker run -i --user root --name=%s --init -p %d:3000 --expose 3001 -p 3001:3001 -v "$(pwd):/home/project" %s --inspect=0.0.0.0:3001`, SmartIDEName, SmartIDEPort,SmartIDEImage)
-		command := exec.Command("/bin/sh","-c",dockerRunCommand)
-		stdout, err := command.StdoutPipe()
+		url := fmt.Sprintf(`http://localhost:%d`, SmartIDEPort)
+		openbrowser(url);
 
+		//dockerRunCommand := fmt.Sprintf(`docker run -i --user root --name=%s --init -p %d:3000 --expose 3001 -p 3001:3001 -v "$(pwd):/home/project" %s --inspect=0.0.0.0:3001`, SmartIDEName, SmartIDEPort,SmartIDEImage)
+		ctx := context.Background()
+		cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 		if err != nil {
-			fmt.Println(err)
+			panic(err)
 		}
-		
-		command.Start()
-
-		reader := bufio.NewReader(stdout)
-
-		//实时循环读取输出流中的一行内容
-		for {
-			line, err2 := reader.ReadString('\n')
-			if err2 != nil || io.EOF == err2 {
-				break
-			}
-			fmt.Println(line)
+		imageName := SmartIDEImage
+		out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
+		if err != nil {
+			panic(err)
 		}
+		io.Copy(os.Stdout, out)
+		resp, err := cli.ContainerCreate(ctx, &container.Config{
+			Image: imageName,
+		}, nil, nil, nil, "")
+		if err != nil {
+			panic(err)
+		}
+	
+		if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+			panic(err)
+		}
+	
+		fmt.Println(resp.ID)
 
-		command.Wait()
-		fmt.Println("SmartIDE启动完毕......")
 
-		openbrowser("http://baidu.com");
 
 
 	},
