@@ -17,9 +17,16 @@ package cmd
 
 import (
 	"fmt"
-"os/exec"
+	"os/exec"
+	"bufio"
+	"io"
 	"github.com/spf13/cobra"
 )
+
+//default values
+var SmartIDEPort=3000;
+var SmartIDEImage="smartide-registry.cn-beijing.cr.aliyuncs.com/library/smartide-node:latest";
+var SmartIDEName="smartide"
 
 // startCmd represents the start command
 var startCmd = &cobra.Command{
@@ -32,14 +39,31 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("start called")
-		command := exec.Command("ls", "-l", "/var/log/")
-		out, err := command.CombinedOutput()
+		fmt.Println("SmartIDE启动中......")
+		dockerRunCommand := fmt.Sprintf(`docker run -i --user root --name=%s --init -p %d:3000 --expose 3001 -p 3001:3001 -v "$(pwd):/home/project" %s --inspect=0.0.0.0:3001`, SmartIDEName, SmartIDEPort,SmartIDEImage)
+		command := exec.Command("/bin/sh","-c",dockerRunCommand)
+		stdout, err := command.StdoutPipe()
+
 		if err != nil {
-			fmt.Printf("combined out:\n%s\n", string(out))
+			fmt.Println(err)
 		}
-		fmt.Printf("combined out:\n%s\n", string(out))
-	
+		
+		command.Start()
+
+		reader := bufio.NewReader(stdout)
+
+		//实时循环读取输出流中的一行内容
+		for {
+			line, err2 := reader.ReadString('\n')
+			if err2 != nil || io.EOF == err2 {
+				break
+			}
+			fmt.Println(line)
+		}
+
+		command.Wait()
+		fmt.Println("SmartIDE启动完毕......")
+
 
 	},
 }
