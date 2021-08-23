@@ -16,18 +16,17 @@ limitations under the License.
 package cmd
 
 import (
+	"context"
 	"fmt"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/client"
+	"github.com/docker/go-connections/nat"
+	"github.com/spf13/cobra"
 	"io"
 	"os"
 	"os/exec"
-	"context"
 	"runtime"
-	"github.com/spf13/cobra"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/client"
-	"github.com/docker/docker/api/types/container"
-
-
 )
 
 //default values
@@ -67,7 +66,26 @@ to quickly create a Cobra application.`,
 
 		fmt.Println("SmartIDE启动中......")
 		url := fmt.Sprintf(`http://localhost:%d`, SmartIDEPort)
-		openbrowser(url);
+		openbrowser(url)
+
+		hostBinding := nat.PortBinding{
+			HostIP:   "127.0.0.1",
+			HostPort: "3000",
+		}
+		containerPort, portErr := nat.NewPort("tcp", "3000")
+		if portErr != nil {
+			panic(portErr)
+		}
+		portBinding := nat.PortMap{
+			containerPort: []nat.PortBinding{hostBinding},
+		}
+		hostCfg := &container.HostConfig{
+			PortBindings: portBinding,
+			RestartPolicy: container.RestartPolicy{
+				Name: "always",
+			},
+			// AutoRemove: true,
+		}
 
 		//dockerRunCommand := fmt.Sprintf(`docker run -i --user root --name=%s --init -p %d:3000 --expose 3001 -p 3001:3001 -v "$(pwd):/home/project" %s --inspect=0.0.0.0:3001`, SmartIDEName, SmartIDEPort,SmartIDEImage)
 		ctx := context.Background()
@@ -82,8 +100,10 @@ to quickly create a Cobra application.`,
 		}
 		io.Copy(os.Stdout, out)
 		resp, err := cli.ContainerCreate(ctx, &container.Config{
+			User: "root",
 			Image: imageName,
-		}, nil, nil, nil, "")
+			
+		}, hostCfg, nil, nil, "")
 		if err != nil {
 			panic(err)
 		}
@@ -91,11 +111,7 @@ to quickly create a Cobra application.`,
 		if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
 			panic(err)
 		}
-	
 		fmt.Println(resp.ID)
-
-
-
 
 	},
 }
