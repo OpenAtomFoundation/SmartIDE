@@ -20,6 +20,7 @@ import (
 	"os/exec"
 	"bufio"
 	"io"
+	"runtime"
 	"github.com/spf13/cobra"
 )
 
@@ -27,6 +28,24 @@ import (
 var SmartIDEPort=3000;
 var SmartIDEImage="smartide-registry.cn-beijing.cr.aliyuncs.com/library/smartide-node:latest";
 var SmartIDEName="smartide"
+
+func openbrowser(url string) {
+	var err error
+
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", url).Start()
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	case "darwin":
+		err = exec.Command("open", url).Start()
+	default:
+		err = fmt.Errorf("unsupported platform")
+	}
+	if err != nil {
+	}
+
+}
 
 // startCmd represents the start command
 var startCmd = &cobra.Command{
@@ -63,6 +82,8 @@ to quickly create a Cobra application.`,
 
 		command.Wait()
 		fmt.Println("SmartIDE启动完毕......")
+
+		openbrowser("http://baidu.com");
 
 
 	},
