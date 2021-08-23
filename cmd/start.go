@@ -17,7 +17,7 @@ package cmd
 
 import (
 	"fmt"
-
+"os/exec"
 	"github.com/spf13/cobra"
 )
 
@@ -33,6 +33,14 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("start called")
+		command := exec.Command("ls", "-l", "/var/log/")
+		out, err := command.CombinedOutput()
+		if err != nil {
+			fmt.Printf("combined out:\n%s\n", string(out))
+		}
+		fmt.Printf("combined out:\n%s\n", string(out))
+	
+
 	},
 }
 
