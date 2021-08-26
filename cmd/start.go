@@ -20,10 +20,12 @@ import (
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/spf13/cobra"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 	"runtime"
@@ -65,6 +67,12 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		fmt.Println("SmartIDE启动中......")
+
+		currentDir, err := os.Getwd()
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		url := fmt.Sprintf(`http://localhost:%d`, SmartIDEPort)
 		openbrowser(url)
 
@@ -80,10 +88,17 @@ to quickly create a Cobra application.`,
 			containerPort: []nat.PortBinding{hostBinding},
 		}
 		hostCfg := &container.HostConfig{
+			Mounts: []mount.Mount{
+			{
+				Type:   mount.TypeBind,
+				Source: currentDir,
+				Target: "/home/project",
+			}},
 			PortBindings: portBinding,
 			RestartPolicy: container.RestartPolicy{
 				Name: "always",
 			},
+
 			// AutoRemove: true,
 		}
 
@@ -102,7 +117,6 @@ to quickly create a Cobra application.`,
 		resp, err := cli.ContainerCreate(ctx, &container.Config{
 			User: "root",
 			Image: imageName,
-			
 		}, hostCfg, nil, nil, "")
 		if err != nil {
 			panic(err)
