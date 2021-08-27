@@ -31,10 +31,7 @@ import (
 	"runtime"
 )
 
-//default values
-var SmartIDEPort=3000;
-var SmartIDEImage="smartide-registry.cn-beijing.cr.aliyuncs.com/library/smartide-node:latest";
-var SmartIDEName="smartide"
+
 
 func openbrowser(url string) {
 	var err error
@@ -65,6 +62,9 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		var SmartIDEPort=3000;
+		var SmartIDEImage="smartide-registry.cn-beijing.cr.aliyuncs.com/library/smartide-node:latest";
+		var SmartIDEName="smartide"
 
 		fmt.Println("SmartIDE启动中......")
 

@@ -16,10 +16,14 @@ limitations under the License.
 package cmd
 
 import (
+	"context"
 	"fmt"
-
+	"github.com/docker/docker/client"
 	"github.com/spf13/cobra"
+	"time"
 )
+
+
 
 // stopCmd represents the stop command
 var stopCmd = &cobra.Command{
@@ -32,7 +36,19 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("stop called")
+		var SmartIDEName="smartide"
+
+		fmt.Println("SmartIDE停止中......")
+		ctx := context.Background()
+		cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+		if err != nil {
+			panic(err)
+		}
+		timeout := time.Second * 10
+
+		cli.ContainerStop(ctx,SmartIDEName,&timeout)
+		fmt.Println("SmartIDE已停止......")
+
 	},
 }
 
