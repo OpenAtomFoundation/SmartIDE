@@ -68,10 +68,12 @@ to quickly create a Cobra application.`,
 
 		fmt.Println("SmartIDE启动中......")
 
+		//get current path
 		currentDir, err := os.Getwd()
 		if err != nil {
 			log.Fatal(err)
 		}
+
 
 		url := fmt.Sprintf(`http://localhost:%d`, SmartIDEPort)
 		openbrowser(url)
@@ -117,7 +119,7 @@ to quickly create a Cobra application.`,
 		resp, err := cli.ContainerCreate(ctx, &container.Config{
 			User: "root",
 			Image: imageName,
-		}, hostCfg, nil, nil, "")
+		}, hostCfg, nil, nil,SmartIDEName)
 		if err != nil {
 			panic(err)
 		}
