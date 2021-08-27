@@ -110,24 +110,33 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			panic(err)
 		}
-		imageName := SmartIDEImage
-		out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
-		if err != nil {
-			panic(err)
+
+		startErr := cli.ContainerStart(ctx, SmartIDEName, types.ContainerStartOptions{})
+		if startErr != nil {
+			fmt.Println("SmartIDE容器创建中......")
+			imageName := SmartIDEImage
+			out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
+			if err != nil {
+				panic(err)
+			}
+			io.Copy(os.Stdout, out)
+			resp, err := cli.ContainerCreate(ctx, &container.Config{
+				User: "root",
+				Image: imageName,
+			}, hostCfg, nil, nil,SmartIDEName)
+			if err != nil {
+				panic(err)
+			}
+
+			if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+				panic(err)
+			}
+			fmt.Println(resp.ID)
 		}
-		io.Copy(os.Stdout, out)
-		resp, err := cli.ContainerCreate(ctx, &container.Config{
-			User: "root",
-			Image: imageName,
-		}, hostCfg, nil, nil,SmartIDEName)
-		if err != nil {
-			panic(err)
-		}
-	
-		if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
-			panic(err)
-		}
-		fmt.Println(resp.ID)
+
+		fmt.Println("SmartIDE启动完毕......")
+
+
 
 	},
 }
