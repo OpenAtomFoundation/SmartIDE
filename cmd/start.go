@@ -18,20 +18,19 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"io"
+	"log"
+	"os"
+	"os/exec"
+	"runtime"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/spf13/cobra"
-	"io"
-	"log"
-	"os"
-	"os/exec"
-	"runtime"
 )
-
-
 
 func openbrowser(url string) {
 	var err error
@@ -62,9 +61,9 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		var SmartIDEPort=3000;
-		var SmartIDEImage="smartide-registry.cn-beijing.cr.aliyuncs.com/library/smartide-node:latest";
-		var SmartIDEName="smartide"
+		var smartIDEPort = 3000
+		var smartIDEImage = "registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node:latest"
+		var smartIDEName = "smartide"
 
 		fmt.Println("SmartIDE启动中......")
 
@@ -72,11 +71,8 @@ to quickly create a Cobra application.`,
 		currentDir, err := os.Getwd()
 		if err != nil {
 			log.Fatal(err)
+			return
 		}
-
-
-		url := fmt.Sprintf(`http://localhost:%d`, SmartIDEPort)
-		openbrowser(url)
 
 		hostBinding := nat.PortBinding{
 			HostIP:   "127.0.0.1",
@@ -91,11 +87,11 @@ to quickly create a Cobra application.`,
 		}
 		hostCfg := &container.HostConfig{
 			Mounts: []mount.Mount{
-			{
-				Type:   mount.TypeBind,
-				Source: currentDir,
-				Target: "/home/project",
-			}},
+				{
+					Type:   mount.TypeBind,
+					Source: currentDir,
+					Target: "/home/project",
+				}},
 			PortBindings: portBinding,
 			RestartPolicy: container.RestartPolicy{
 				Name: "always",
@@ -111,19 +107,19 @@ to quickly create a Cobra application.`,
 			panic(err)
 		}
 
-		startErr := cli.ContainerStart(ctx, SmartIDEName, types.ContainerStartOptions{})
+		startErr := cli.ContainerStart(ctx, smartIDEName, types.ContainerStartOptions{})
 		if startErr != nil {
 			fmt.Println("SmartIDE容器创建中......")
-			imageName := SmartIDEImage
+			imageName := smartIDEImage
 			out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
 			if err != nil {
 				panic(err)
 			}
 			io.Copy(os.Stdout, out)
 			resp, err := cli.ContainerCreate(ctx, &container.Config{
-				User: "root",
+				User:  "root",
 				Image: imageName,
-			}, hostCfg, nil, nil,SmartIDEName)
+			}, hostCfg, nil, nil, smartIDEName)
 			if err != nil {
 				panic(err)
 			}
@@ -134,9 +130,11 @@ to quickly create a Cobra application.`,
 			fmt.Println(resp.ID)
 		}
 
+		// 使用浏览器打开web ide
+		url := fmt.Sprintf(`http://localhost:%d`, smartIDEPort)
+		openbrowser(url)
+
 		fmt.Println("SmartIDE启动完毕......")
-
-
 
 	},
 }
