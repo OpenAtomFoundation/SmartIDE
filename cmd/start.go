@@ -23,6 +23,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -131,6 +132,10 @@ to quickly create a Cobra application.`,
 		}
 
 		// 使用浏览器打开web ide
+		fmt.Println("打开浏览器......")
+		/* outStatus, err := cli.ContainerStats(ctx, smartIDEName, false)
+		fmt.Println(outStatus) */
+		time.Sleep(10 * 1000) //TODO: 检测docker container的运行状态是否为running
 		url := fmt.Sprintf(`http://localhost:%d`, smartIDEPort)
 		openbrowser(url)
 
