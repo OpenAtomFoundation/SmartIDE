@@ -101,7 +101,7 @@ to quickly create a Cobra application.`,
 			appDebugPort:  []nat.PortBinding{hostBinding},
 		} */
 		portBinding := nat.PortMap{
-			nat.Port(smartIDEPort + "/tcp"):                        []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: smartIDEPort}},
+			nat.Port("3000/tcp"): []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: smartIDEPort}},
 			nat.Port(yamlFileCongfig.Config.AppDebugPort + "/tcp"): []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: yamlFileCongfig.Config.AppHostPort}},
 		}
 		hostCfg := &container.HostConfig{
@@ -154,7 +154,7 @@ to quickly create a Cobra application.`,
 		/* outStatus, err := cli.ContainerStats(ctx, smartIDEName, false)
 		fmt.Println(outStatus) */
 		time.Sleep(10 * 1000) //TODO: 检测docker container的运行状态是否为running
-		url := fmt.Sprintf(`http://localhost:%d`, smartIDEPort)
+		url := fmt.Sprintf(`http://localhost:%v`, smartIDEPort)
 		openbrowser(url)
 
 		fmt.Println("SmartIDE启动完毕......")
