@@ -101,8 +101,8 @@ to quickly create a Cobra application.`,
 			appDebugPort:  []nat.PortBinding{hostBinding},
 		} */
 		portBinding := nat.PortMap{
-			nat.Port("3000/tcp"): []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: smartIDEPort}},
-			nat.Port(yamlFileCongfig.Config.AppDebugPort + "/tcp"): []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: yamlFileCongfig.Config.AppHostPort}},
+			nat.Port(yamlFileCongfig.Config.AppDebugPort): []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: yamlFileCongfig.Config.AppHostPort}},
+			nat.Port("3000/tcp"):                          []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: smartIDEPort}},
 		}
 		hostCfg := &container.HostConfig{
 			Mounts: []mount.Mount{
@@ -138,6 +138,10 @@ to quickly create a Cobra application.`,
 			resp, err := cli.ContainerCreate(ctx, &container.Config{
 				User:  "root",
 				Image: imageName,
+				ExposedPorts: nat.PortSet{
+					nat.Port(yamlFileCongfig.Config.AppHostPort): struct{}{},
+					nat.Port(smartIDEPort):                       struct{}{},
+				},
 			}, hostCfg, nil, nil, smartIDEName)
 			if err != nil {
 				panic(err)
