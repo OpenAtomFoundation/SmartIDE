@@ -68,9 +68,10 @@ to quickly create a Cobra application.`,
 		var yamlFileCongfig YamlFileConfig
 		yamlFileCongfig.GetConfig()
 
-		var smartIDEPort = yamlFileCongfig.idePort
+		var smartIDEPort = yamlFileCongfig.Config.IdePort
 		var smartIDEImage = "registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node:latest"
-		var smartIDEName = yamlFileCongfig.appName
+		var smartIDEName = yamlFileCongfig.Config.AppName
+		//var smartIDEAppPort = yamlFileCongfig.Config.AppName
 
 		fmt.Println("SmartIDE启动中......")
 
@@ -81,16 +82,27 @@ to quickly create a Cobra application.`,
 			return
 		}
 
-		hostBinding := nat.PortBinding{
-			HostIP:   yamlFileCongfig.ideIP,
-			HostPort: yamlFileCongfig.idePort, // strconv.Itoa(yamlFileCongfig.idePort),
+		/* hostBinding := nat.PortBinding{
+			HostIP:   yamlFileCongfig.Config.IdeIP,
+			HostPort: yamlFileCongfig.Config.IdePort, // strconv.Itoa(yamlFileCongfig.idePort),
 		}
-		containerPort, portErr := nat.NewPort("tcp", "3000")
+		containerPort, portErr := nat.NewPort("tcp", yamlFileCongfig.Config.IdePort)
+		appDebugPort, portErr2 := nat.NewPort("tcp", yamlFileCongfig.Config.AppDebugPort)
+
 		if portErr != nil {
 			panic(portErr)
 		}
-		portBinding := nat.PortMap{
+		if portErr2 != nil {
+			panic(portErr2)
+		} */
+
+		/* portBinding := nat.PortMap{
 			containerPort: []nat.PortBinding{hostBinding},
+			appDebugPort:  []nat.PortBinding{hostBinding},
+		} */
+		portBinding := nat.PortMap{
+			nat.Port(smartIDEPort + "/tcp"):                        []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: smartIDEPort}},
+			nat.Port(yamlFileCongfig.Config.AppDebugPort + "/tcp"): []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: yamlFileCongfig.Config.AppHostPort}},
 		}
 		hostCfg := &container.HostConfig{
 			Mounts: []mount.Mount{
