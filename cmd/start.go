@@ -23,7 +23,6 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"strconv"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -64,12 +63,12 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		var yamlFileCongfig YamlFileConfig
-		yamlFileCongfig.GetConfig()
+		/* var yamlFileCongfig YamlFileConfig
+		yamlFileCongfig.GetConfig() */
 
-		var smartIDEPort = yamlFileCongfig.Config.idePort
+		var smartIDEPort = 3000
 		var smartIDEImage = "registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node:latest"
-		var smartIDEName = yamlFileCongfig.Config.appName
+		var smartIDEName = "smart-ide"
 
 		fmt.Println("SmartIDE启动中......")
 
@@ -81,8 +80,8 @@ to quickly create a Cobra application.`,
 		}
 
 		hostBinding := nat.PortBinding{
-			HostIP:   yamlFileCongfig.Config.ideIP,
-			HostPort: strconv.Itoa(yamlFileCongfig.Config.idePort),
+			HostIP:   "127.0.0.1",
+			HostPort: "3000",
 		}
 		containerPort, portErr := nat.NewPort("tcp", "3000")
 		if portErr != nil {
