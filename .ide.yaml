@@ -4,3 +4,11 @@ config:
   appName: smart-ide
   appDebugPort: 8080
   appHostPort: 8080
+
+  containers:
+    - name: smartide-env
+      image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node:latest
+      resoruces:
+        cpu: 1 #core
+        memory: 4 #G
+        disk: 10 #G

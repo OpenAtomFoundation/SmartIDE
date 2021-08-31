@@ -69,7 +69,7 @@ to quickly create a Cobra application.`,
 		yamlFileCongfig.GetConfig()
 
 		var smartIDEPort = yamlFileCongfig.Config.IdePort
-		var smartIDEImage = "registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node:latest"
+		var smartIDEImage = yamlFileCongfig.Config.Containers[0].Image
 		var smartIDEName = yamlFileCongfig.Config.AppName
 		//var smartIDEAppPort = yamlFileCongfig.Config.AppName
 
