@@ -62,9 +62,13 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		var smartIDEPort = 3000
+
+		var yamlFileCongfig YamlFileConfig
+		yamlFileCongfig.GetConfig()
+
+		var smartIDEPort = yamlFileCongfig.Config.idePort
 		var smartIDEImage = "registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node:latest"
-		var smartIDEName = "smartide"
+		var smartIDEName = yamlFileCongfig.Config.appName
 
 		fmt.Println("SmartIDE启动中......")
 
@@ -76,8 +80,8 @@ to quickly create a Cobra application.`,
 		}
 
 		hostBinding := nat.PortBinding{
-			HostIP:   "127.0.0.1",
-			HostPort: "3000",
+			HostIP:   yamlFileCongfig.Config.ideIP,
+			HostPort: string(yamlFileCongfig.Config.idePort),
 		}
 		containerPort, portErr := nat.NewPort("tcp", "3000")
 		if portErr != nil {
