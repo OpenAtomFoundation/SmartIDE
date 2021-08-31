@@ -23,6 +23,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strconv"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -81,7 +82,7 @@ to quickly create a Cobra application.`,
 
 		hostBinding := nat.PortBinding{
 			HostIP:   yamlFileCongfig.Config.ideIP,
-			HostPort: string(yamlFileCongfig.Config.idePort),
+			HostPort: strconv.Itoa(yamlFileCongfig.Config.idePort),
 		}
 		containerPort, portErr := nat.NewPort("tcp", "3000")
 		if portErr != nil {
