@@ -1,6 +1,5 @@
 
-Config:
-  ideIP: "0.0.0.0"
-  idePort: 3030
-  appName: "smart-ide"
-  appDebugPort: 8080
+ideIP: 0.0.0.0
+idePort: 3030
+appName: smart-ide
+appDebugPort: 8080

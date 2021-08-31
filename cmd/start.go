@@ -23,7 +23,8 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"strconv"
+
+	//"strconv"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -67,9 +68,9 @@ to quickly create a Cobra application.`,
 		var yamlFileCongfig YamlFileConfig
 		yamlFileCongfig.GetConfig()
 
-		var smartIDEPort = yamlFileCongfig.Config.idePort
+		var smartIDEPort = yamlFileCongfig.idePort
 		var smartIDEImage = "registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node:latest"
-		var smartIDEName = yamlFileCongfig.Config.appName
+		var smartIDEName = yamlFileCongfig.appName
 
 		fmt.Println("SmartIDE启动中......")
 
@@ -81,8 +82,8 @@ to quickly create a Cobra application.`,
 		}
 
 		hostBinding := nat.PortBinding{
-			HostIP:   yamlFileCongfig.Config.ideIP,
-			HostPort: strconv.Itoa(yamlFileCongfig.Config.idePort),
+			HostIP:   yamlFileCongfig.ideIP,
+			HostPort: yamlFileCongfig.idePort, // strconv.Itoa(yamlFileCongfig.idePort),
 		}
 		containerPort, portErr := nat.NewPort("tcp", "3000")
 		if portErr != nil {
