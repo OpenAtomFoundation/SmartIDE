@@ -85,6 +85,7 @@ to quickly create a Cobra application.`,
 		/* hostBinding := nat.PortBinding{
 			HostIP:   yamlFileCongfig.Config.IdeIP,
 			HostPort: yamlFileCongfig.Config.IdePort, // strconv.Itoa(yamlFileCongfig.idePort),
+
 		}
 		containerPort, portErr := nat.NewPort("tcp", yamlFileCongfig.Config.IdePort)
 		appDebugPort, portErr2 := nat.NewPort("tcp", yamlFileCongfig.Config.AppDebugPort)
