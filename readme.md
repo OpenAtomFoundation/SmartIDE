@@ -23,7 +23,7 @@ Please create [issues](https://github.com/leansoftX/smartide-cli/issues) to leav
 
  * Download and Install: https://github.com/leansoftX/smartide-cli/releases
  * Mac && Linux： `mv smartide /usr/local/bin/smartide`
- * Windows：Add SmartIDE.exe Location to the PATH Environment Variable
+ * Windows：Add smartide.exe Location to the PATH Environment Variable
 
 ## Use Guide
 
