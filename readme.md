@@ -12,7 +12,7 @@ To get started with SmartIDE CLI, all you need is:
 
 ### 01. Install Docker
 
-* macOS, Windows, or Windows WSL2: The current release of
+* macOS, Windows: The current release of
   [Docker Desktop](https://www.docker.com/products/docker-desktop)
 * Linux:
   [Install Guide](https://docs.docker.com/engine/install/)
