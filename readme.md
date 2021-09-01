@@ -1,9 +1,35 @@
-#快速开始
+# SmartIDE CLI
 
-#开发调试
-在VS Code中选中对应的测试，比如“Launch Package - Start”
+[![Go](https://github.com/leansoftX/smartide-cli/actions/workflows/go.yml/badge.svg)](https://github.com/leansoftX/smartide-cli/actions/workflows/go.yml)
 
-#部署
-##1.  
+This SmartIDE CLI tool makes it easy to run Your Development Environment:
+* locally as a command in the SmartIDE CLI, using `smartide ...` comands.
 
-##2.
+
+## Getting started
+
+To get started with SmartIDE CLI, all you need is:
+
+### 01. Install Docker
+
+* macOS, Windows, or Windows WSL2: The current release of
+  [Docker Desktop](https://www.docker.com/products/docker-desktop)
+* Linux:
+  [Install Guide](https://docs.docker.com/engine/install/)
+
+Please create [issues](https://github.com/leansoftX/smartide-cli/issues) to leave feedback.
+
+### 02. Install SmartIDE
+
+ * Download and Install: https://github.com/leansoftX/smartide-cli/releases
+
+## Use Guide
+
+## Run Your Development Environment
+smartide start
+
+## Stop Your Development Environment
+smartide stop
+
+## Remove Your Development Environment
+smartide remove
