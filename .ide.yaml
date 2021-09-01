@@ -1,14 +1,7 @@
-config:
-  ideIP: 0.0.0.0
+version: smartide/v0.1
+workspace:
+  image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node:latest
+  name: smartide
   idePort: 3030
-  appName: smart-ide
   appDebugPort: 8080
   appHostPort: 8080
-
-  containers:
-    - name: smartide-env
-      image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node:latest
-      resoruces:
-        cpu: 1 #core
-        memory: 4 #G
-        disk: 10 #G
