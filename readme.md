@@ -25,11 +25,9 @@ Please create [issues](https://github.com/leansoftX/smartide-cli/issues) to leav
 
 ## Use Guide
 
-## Run Your Development Environment
-smartide start
+Command | Description |
+---------|---------|
+`smartide start` | Run Your Development Environment
+`smartide stop` | Stop Your Development Environment
+`smartide remove` | Remove Your Development Environment
 
-## Stop Your Development Environment
-smartide stop
-
-## Remove Your Development Environment
-smartide remove
