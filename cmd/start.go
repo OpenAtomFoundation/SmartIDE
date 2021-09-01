@@ -71,6 +71,7 @@ to quickly create a Cobra application.`,
 		var smartIDEPort = yamlFileCongfig.Workspace.IdePort
 		var smartIDEImage = yamlFileCongfig.Workspace.Image
 		var smartIDEName = yamlFileCongfig.Workspace.AppName
+		smartIDEImageDefaultPort := "3000"
 		//var smartIDEAppPort = yamlFileCongfig.Config.AppName
 
 		fmt.Println("SmartIDE启动中......")
@@ -101,10 +102,12 @@ to quickly create a Cobra application.`,
 			containerPort: []nat.PortBinding{hostBinding},
 			appDebugPort:  []nat.PortBinding{hostBinding},
 		} */
+
 		portBinding := nat.PortMap{
 			nat.Port(yamlFileCongfig.Workspace.AppDebugPort): []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: yamlFileCongfig.Workspace.AppHostPort}},
-			nat.Port("3000/tcp"):                             []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: smartIDEPort}},
+			nat.Port(smartIDEImageDefaultPort + "/tcp"):      []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: smartIDEPort}},
 		}
+
 		hostCfg := &container.HostConfig{
 			Mounts: []mount.Mount{
 				{
@@ -140,8 +143,8 @@ to quickly create a Cobra application.`,
 				User:  "root",
 				Image: imageName,
 				ExposedPorts: nat.PortSet{
-					nat.Port(yamlFileCongfig.Workspace.AppHostPort): struct{}{},
-					nat.Port(smartIDEPort):                          struct{}{},
+					nat.Port(yamlFileCongfig.Workspace.AppDebugPort): {},
+					nat.Port(smartIDEImageDefaultPort):               {},
 				},
 			}, hostCfg, nil, nil, smartIDEName)
 			if err != nil {
