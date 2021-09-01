@@ -23,6 +23,8 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+
+	//"strconv"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -63,12 +65,13 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		/* var yamlFileCongfig YamlFileConfig
-		yamlFileCongfig.GetConfig() */
+		var yamlFileCongfig YamlFileConfig
+		yamlFileCongfig.GetConfig()
 
-		var smartIDEPort = 3000
-		var smartIDEImage = "registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node:latest"
-		var smartIDEName = "smart-ide"
+		var smartIDEPort = yamlFileCongfig.Workspace.IdePort
+		var smartIDEImage = yamlFileCongfig.Workspace.Image
+		var smartIDEName = yamlFileCongfig.Workspace.AppName
+		//var smartIDEAppPort = yamlFileCongfig.Config.AppName
 
 		fmt.Println("SmartIDE启动中......")
 
@@ -79,16 +82,28 @@ to quickly create a Cobra application.`,
 			return
 		}
 
-		hostBinding := nat.PortBinding{
-			HostIP:   "127.0.0.1",
-			HostPort: "3000",
+		/* hostBinding := nat.PortBinding{
+			HostIP:   yamlFileCongfig.Config.IdeIP,
+			HostPort: yamlFileCongfig.Config.IdePort, // strconv.Itoa(yamlFileCongfig.idePort),
+
 		}
-		containerPort, portErr := nat.NewPort("tcp", "3000")
+		containerPort, portErr := nat.NewPort("tcp", yamlFileCongfig.Config.IdePort)
+		appDebugPort, portErr2 := nat.NewPort("tcp", yamlFileCongfig.Config.AppDebugPort)
+
 		if portErr != nil {
 			panic(portErr)
 		}
-		portBinding := nat.PortMap{
+		if portErr2 != nil {
+			panic(portErr2)
+		} */
+
+		/* portBinding := nat.PortMap{
 			containerPort: []nat.PortBinding{hostBinding},
+			appDebugPort:  []nat.PortBinding{hostBinding},
+		} */
+		portBinding := nat.PortMap{
+			nat.Port(yamlFileCongfig.Workspace.AppDebugPort): []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: yamlFileCongfig.Workspace.AppHostPort}},
+			nat.Port("3000/tcp"):                             []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: smartIDEPort}},
 		}
 		hostCfg := &container.HostConfig{
 			Mounts: []mount.Mount{
@@ -124,6 +139,10 @@ to quickly create a Cobra application.`,
 			resp, err := cli.ContainerCreate(ctx, &container.Config{
 				User:  "root",
 				Image: imageName,
+				ExposedPorts: nat.PortSet{
+					nat.Port(yamlFileCongfig.Workspace.AppHostPort): struct{}{},
+					nat.Port(smartIDEPort):                          struct{}{},
+				},
 			}, hostCfg, nil, nil, smartIDEName)
 			if err != nil {
 				panic(err)
@@ -140,7 +159,7 @@ to quickly create a Cobra application.`,
 		/* outStatus, err := cli.ContainerStats(ctx, smartIDEName, false)
 		fmt.Println(outStatus) */
 		time.Sleep(10 * 1000) //TODO: 检测docker container的运行状态是否为running
-		url := fmt.Sprintf(`http://localhost:%d`, smartIDEPort)
+		url := fmt.Sprintf(`http://localhost:%v`, smartIDEPort)
 		openbrowser(url)
 
 		fmt.Println("SmartIDE启动完毕......")
