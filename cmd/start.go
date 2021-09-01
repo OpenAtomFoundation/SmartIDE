@@ -145,7 +145,7 @@ to quickly create a Cobra application.`,
 				ExposedPorts: nat.PortSet{
 					nat.Port(yamlFileCongfig.Workspace.AppDebugPort): {},
 					nat.Port(smartIDEImageDefaultPort):               {},
-				},
+				}, // 容器对外暴露的端口，注意不是宿主机的端口
 			}, hostCfg, nil, nil, smartIDEName)
 			if err != nil {
 				panic(err)
