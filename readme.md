@@ -22,7 +22,7 @@ Please create [issues](https://github.com/leansoftX/smartide-cli/issues) to leav
 ### 02. Install SmartIDE
 
  * Download and Install: https://github.com/leansoftX/smartide-cli/releases
- * Mac && Linux： `mv smartide /usr/local/bin/smartide`
+ * Mac： `brew tap leansoftx/tap && brew install smartide-cli`
  * Windows：Add smartide.exe Location to the PATH Environment Variable
 
 ## Use Guide
