@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/leansoftX/smartide-cli/lib/i18n"
 	"github.com/spf13/cobra"
 
 	"github.com/spf13/viper"
@@ -26,13 +27,13 @@ import (
 
 var cfgFile string
 
+var instanceI18n = i18n.GetInstance().Main
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "smartide-cli",
-	Short: "SmatIDE 开发从未如此简单！",
-	Long: `SmatIDE 开发从未如此简单！
-
-SmatIDE CLI可以帮助开发人员快速搭建开发环境，包括本地以及云端环境。`,
+	Short: instanceI18n.Info.Help_short,
+	Long:  instanceI18n.Info.Help_long,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },

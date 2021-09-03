@@ -1,0 +1,49 @@
+{
+    "start":{
+        "info":{
+            "help_short":"快速创建并启动SmartIDE开发环境",
+            "help_long":"快速创建并启动SmartIDE开发环境",
+            "info_start":"SmartIDE启动中......",
+            "info_running_container":"SmartIDE容器创建中......",
+            "info_running_openbrower":"打开浏览器......",
+            "info_end":"SmartIDE启动完毕"
+        },
+        "error":{}
+    },
+    "stop":{
+        "info":{
+            "help_short":"停止SmartIDE开发环境",
+            "help_long":"停止SmartIDE开发环境",
+            "info_start":"SmartIDE停止中......",
+            "info_end":"SmartIDE已停止"
+
+        },
+        "error":{}
+    },
+    "remove":{
+        "info":{
+            "help_short":"彻底删除SmartIDE开发环境",
+            "help_long":"彻底删除SmartIDE开发环境",
+            "info_start":"SmartIDE删除中......",
+            "info_end":"SmartIDE删除完毕"
+        },
+        "error":{}
+    },
+    "main":{
+        "info":{
+            "help_short":"SmatIDE 开发从未如此简单！",
+            "help_long":"- SmatIDE 开发从未如此简单！\n\n- SmatIDE CLI可以帮助开发人员快速搭建开发环境，包括本地以及云端环境。"         
+
+        },
+        "error":{}
+    },
+    "init":{
+        "info":{
+            "help_short":"快速初始化SmartIDE配置文件",
+            "help_long":"",
+            "info_start":"SmartIDE 初始化中......",
+            "info_end":"SmartIDE 初始化结束"
+        },
+        "error":{}
+    }
+}
