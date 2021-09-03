@@ -18,32 +18,32 @@ package cmd
 import (
 	"context"
 	"fmt"
+
+	"github.com/leansoftX/smartide-cli/lib/i18n"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/spf13/cobra"
 )
 
+var instanceI18nRemove = i18n.GetInstance().Remove
+
 // removeCmd represents the remove command
 var removeCmd = &cobra.Command{
 	Use:   "remove",
-	Short: "彻底删除SmartIDE开发环境",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: instanceI18nRemove.Info.Help_short,
+	Long:  instanceI18nRemove.Info.Help_long,
 	Run: func(cmd *cobra.Command, args []string) {
-		var SmartIDEName="smartide"
+		var SmartIDEName = "smartide"
 
-		fmt.Println("SmartIDE删除中......")
+		fmt.Println(instanceI18nRemove.Info.Info_start)
 		ctx := context.Background()
 		cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 		if err != nil {
 			panic(err)
 		}
-		cli.ContainerRemove(ctx,SmartIDEName,types.ContainerRemoveOptions{})
-		fmt.Println("SmartIDE已删除......")
+		cli.ContainerRemove(ctx, SmartIDEName, types.ContainerRemoveOptions{})
+		fmt.Println(instanceI18nRemove.Info.Info_end)
 	},
 }
 

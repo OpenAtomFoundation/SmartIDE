@@ -24,6 +24,8 @@ import (
 	"os/exec"
 	"runtime"
 
+	"github.com/leansoftX/smartide-cli/lib/i18n"
+
 	//"strconv"
 	"time"
 
@@ -53,16 +55,13 @@ func openbrowser(url string) {
 
 }
 
+var instanceI18nStart = i18n.GetInstance().Start
+
 // startCmd represents the start command
 var startCmd = &cobra.Command{
 	Use:   "start",
-	Short: "快速创建并启动SmartIDE开发环境",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: instanceI18nStart.Info.Help_short, //"快速创建并启动SmartIDE开发环境",
+	Long:  instanceI18nStart.Info.Help_long,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		var yamlFileCongfig YamlFileConfig
@@ -72,9 +71,8 @@ to quickly create a Cobra application.`,
 		var smartIDEImage = yamlFileCongfig.Workspace.Image
 		var smartIDEName = yamlFileCongfig.Workspace.AppName
 		smartIDEImageDefaultPort := "3000"
-		//var smartIDEAppPort = yamlFileCongfig.Config.AppName
 
-		fmt.Println("SmartIDE启动中......")
+		fmt.Println(i18n.GetInstance().Start.Info.Info_start)
 
 		//get current path
 		currentDir, err := os.Getwd()
@@ -83,31 +81,14 @@ to quickly create a Cobra application.`,
 			return
 		}
 
-		/* hostBinding := nat.PortBinding{
-			HostIP:   yamlFileCongfig.Config.IdeIP,
-			HostPort: yamlFileCongfig.Config.IdePort, // strconv.Itoa(yamlFileCongfig.idePort),
-
-		}
-		containerPort, portErr := nat.NewPort("tcp", yamlFileCongfig.Config.IdePort)
-		appDebugPort, portErr2 := nat.NewPort("tcp", yamlFileCongfig.Config.AppDebugPort)
-
-		if portErr != nil {
-			panic(portErr)
-		}
-		if portErr2 != nil {
-			panic(portErr2)
-		} */
-
-		/* portBinding := nat.PortMap{
-			containerPort: []nat.PortBinding{hostBinding},
-			appDebugPort:  []nat.PortBinding{hostBinding},
-		} */
-
+		// 端口绑定
 		portBinding := nat.PortMap{
 			nat.Port(yamlFileCongfig.Workspace.AppDebugPort): []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: yamlFileCongfig.Workspace.AppHostPort}},
 			nat.Port(smartIDEImageDefaultPort + "/tcp"):      []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: smartIDEPort}},
 		}
 
+		// docker run 后的一些参数
+		// e.g. docker run -i --user root --name=%s --init -p %d:3000 --expose 3001 -p 3001:3001 -v "$(pwd):/home/project" %s --inspect=0.0.0.0:3001
 		hostCfg := &container.HostConfig{
 			Mounts: []mount.Mount{
 				{
@@ -123,16 +104,16 @@ to quickly create a Cobra application.`,
 			// AutoRemove: true,
 		}
 
-		//dockerRunCommand := fmt.Sprintf(`docker run -i --user root --name=%s --init -p %d:3000 --expose 3001 -p 3001:3001 -v "$(pwd):/home/project" %s --inspect=0.0.0.0:3001`, SmartIDEName, SmartIDEPort,SmartIDEImage)
 		ctx := context.Background()
 		cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 		if err != nil {
 			panic(err)
 		}
 
+		//
 		startErr := cli.ContainerStart(ctx, smartIDEName, types.ContainerStartOptions{})
 		if startErr != nil {
-			fmt.Println("SmartIDE容器创建中......")
+			fmt.Println(instanceI18nStart.Info.Info_running_container)
 			imageName := smartIDEImage
 			out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
 			if err != nil {
@@ -158,14 +139,14 @@ to quickly create a Cobra application.`,
 		}
 
 		// 使用浏览器打开web ide
-		fmt.Println("打开浏览器......")
+		fmt.Println(instanceI18nStart.Info.Info_running_openbrower)
 		/* outStatus, err := cli.ContainerStats(ctx, smartIDEName, false)
 		fmt.Println(outStatus) */
 		time.Sleep(10 * 1000) //TODO: 检测docker container的运行状态是否为running
 		url := fmt.Sprintf(`http://localhost:%v`, smartIDEPort)
 		openbrowser(url)
 
-		fmt.Println("SmartIDE启动完毕......")
+		fmt.Println(instanceI18nStart.Info.Info_end)
 
 	},
 }

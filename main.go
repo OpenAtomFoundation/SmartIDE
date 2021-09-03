@@ -17,7 +17,8 @@ package main
 
 import (
 	"fmt"
-	"smartide-cli/cmd"
+
+	"github.com/leansoftX/smartide-cli/cmd"
 )
 
 func main() {

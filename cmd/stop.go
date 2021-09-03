@@ -18,27 +18,24 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"time"
+
+	"github.com/leansoftX/smartide-cli/lib/i18n"
+
 	"github.com/docker/docker/client"
 	"github.com/spf13/cobra"
-	"time"
-)
+) // stopCmd represents the stop command
 
+var instanceI18nStop = i18n.GetInstance().Stop
 
-
-// stopCmd represents the stop command
 var stopCmd = &cobra.Command{
 	Use:   "stop",
-	Short: "停止SmartIDE开发环境",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: instanceI18nStop.Info.Help_short,
+	Long:  instanceI18nStop.Info.Help_long,
 	Run: func(cmd *cobra.Command, args []string) {
-		var SmartIDEName="smartide"
+		var SmartIDEName = "smartide"
 
-		fmt.Println("SmartIDE停止中......")
+		fmt.Println(instanceI18nStop.Info.Info_start)
 		ctx := context.Background()
 		cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 		if err != nil {
@@ -46,8 +43,8 @@ to quickly create a Cobra application.`,
 		}
 		timeout := time.Second * 10
 
-		cli.ContainerStop(ctx,SmartIDEName,&timeout)
-		fmt.Println("SmartIDE已停止......")
+		cli.ContainerStop(ctx, SmartIDEName, &timeout)
+		fmt.Println(instanceI18nStop.Info.Info_end)
 
 	},
 }

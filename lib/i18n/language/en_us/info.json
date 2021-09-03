@@ -1,0 +1,47 @@
+{
+    "start": {
+        "info": {
+            "help_short": "Quickly create and start SmartIDE development environment ",
+            "help_long": "A longer description that spans multiple lines and likely contains examples and usage of using your command. For example: Cobra is a CLI library for Go that empowers applications. This application is a tool to generate the needed files to quickly create a Cobra application.",
+            "info_start": "SmartIDE startup......",
+            "info_running_container": "SmartIDE container being created......",
+            "info_running_openbrower": "Open brower......",
+            "info_end": "SmartIDE started......"
+        },
+        "error": {}
+    },
+    "stop": {
+        "info": {
+            "help_short": "",
+            "help_long": "",
+            "info_start": "",
+            "info_end": "SmartIDE closed......"
+        },
+        "error": {}
+    },
+    "remove": {
+        "info": {
+            "help_short": "",
+            "help_long": "",
+            "info_start": "",
+            "info_end": "SmartIDE deleted......"
+        },
+        "error": {}
+    },
+    "main": {
+        "info": {
+            "help_short": "SmatIDE Development has never been easier",
+            "help_long": "- SmatIDE Development has never been easier！ \n\n- The SmatIDE CLI helps developers quickly set up development environments, including local and cloud environments."
+        },
+        "error": {}
+    },
+    "init": {
+        "info": {
+            "help_short ": " Quickly initialize SmartIDE configuration file ",
+            "help_long": "",
+            "info_start": "SmartIDE initialization......",
+            "info_end": "SmartIDE initialization completed"
+        },
+        "error": {}
+    }
+}
