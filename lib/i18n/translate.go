@@ -2,9 +2,11 @@ package i18n
 
 import (
 	"encoding/json"
-	"log"
-	"os"
-	"path"
+	"path/filepath"
+
+	//"log"
+	//"os"
+
 	"strings"
 
 	"github.com/jeandeaual/go-locale"
@@ -72,14 +74,14 @@ var instance *Language
 
 func GetInstance() *Language {
 	if instance == nil {
-		exePath, err := os.Getwd()
+		/* exePath, err := os.Getwd()
 		if err != nil {
 			log.Println(err)
 			panic(err)
-		}
+		} */
 
 		// https://github.com/leansoftX/i18n
-		languageDir := path.Join(exePath, "/lib/i18n/language")
+		languageDir, _ := filepath.Abs("lib/i18n/language")
 		currentLang, _ := locale.GetLocale()
 		if strings.Index(currentLang, "zh_") == 0 { // 如果不是简体中文，就是英文
 			currentLang = "zh_cn"
