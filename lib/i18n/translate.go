@@ -81,7 +81,7 @@ func GetInstance() *Language {
 		} */
 
 		// https://github.com/leansoftX/i18n
-		languageDir, _ := filepath.Abs("lib/i18n/language")
+		languageDir := filepath.ToSlash("lib/i18n/language")
 		currentLang, _ := locale.GetLocale()
 		if strings.Index(currentLang, "zh-") == 0 { // 如果不是简体中文，就是英文
 			currentLang = "zh_cn"

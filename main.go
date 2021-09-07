@@ -17,11 +17,15 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
 
 	"github.com/leansoftX/smartide-cli/cmd"
 )
 
 func main() {
+	Init()
+
 	fmt.Println(`
 	 _____                      _     ___________ _____ 
 	/  ___|                    | |   |_   _|  _  \  ___|
@@ -30,4 +34,14 @@ func main() {
 	/\__/ / | | | | | (_| | |  | |_   _| |_| |/ /| |___
 	\____/|_| |_| |_|\__,_|_|   \__|  \___/|___/ \____/ `)
 	cmd.Execute()
+}
+
+func Init() {
+	logFile, err := os.OpenFile("./smartide.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		fmt.Println("open log file failed, err:", err)
+		return
+	}
+	log.SetOutput(logFile)
+	log.SetFlags(log.Llongfile | log.Lmicroseconds | log.Ldate)
 }

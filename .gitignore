@@ -2,3 +2,6 @@ smartide
 smartide-cli
 **/.DS_Store
 /main
+*.exe
+/build
+*.log
