@@ -1,0 +1,35 @@
+pool:
+  name: Azure Pipelines
+#Your build pipeline references an undefined variable named ‘clinamet’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab. See https://go.microsoft.com/fwlink/?linkid=865972
+variables:
+  cliname: 'smartide-cli'
+
+steps:
+- task: GoTool@0
+  displayName: 'Use Go 1.17'
+  inputs:
+    version: 1.17
+
+- task: Go@0
+  displayName: 'go get'
+  inputs:
+    arguments: '-d'
+
+- bash: |
+   CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o $(clinamet)-linux-x64
+   
+   CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o $(cliname)-win-x64.exe
+   
+   CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o  $(cliname)-macos-x64
+  displayName: 'go build'
+
+- task: CopyFiles@2
+  displayName: 'Copy Files'
+  inputs:
+    SourceFolder: '$(Build.SourcesDirectory)'
+    Contents: '**/*smartide-cli-**'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish artifact'
+  condition: succeededOrFailed()
