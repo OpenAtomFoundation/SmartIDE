@@ -1,4 +1,9 @@
-**编译windows可执行程序（exe）**
+
+## 资源文件
+
+1. 
+
+## **编译windows可执行程序（exe）**
 
 1. mac
 CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o /build/smartide.exe main.go

@@ -81,14 +81,15 @@ var startCmd = &cobra.Command{
 			return
 		}
 
-		// 端口绑定
+		// e.g. docker run -i --user root --name=smartide --init -p 3030:3000 --expose 3001 -p 3001:3001 -v "$(pwd):/home/project" registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node:latest --inspect=0.0.0.0:3001
+
+		// port binding
 		portBinding := nat.PortMap{
 			nat.Port(yamlFileCongfig.Workspace.AppDebugPort): []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: yamlFileCongfig.Workspace.AppHostPort}},
 			nat.Port(smartIDEImageDefaultPort + "/tcp"):      []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: smartIDEPort}},
 		}
 
-		// docker run 后的一些参数
-		// e.g. docker run -i --user root --name=%s --init -p %d:3000 --expose 3001 -p 3001:3001 -v "$(pwd):/home/project" %s --inspect=0.0.0.0:3001
+		// docker run parameters
 		hostCfg := &container.HostConfig{
 			Mounts: []mount.Mount{
 				{
@@ -100,7 +101,6 @@ var startCmd = &cobra.Command{
 			RestartPolicy: container.RestartPolicy{
 				Name: "always",
 			},
-
 			// AutoRemove: true,
 		}
 

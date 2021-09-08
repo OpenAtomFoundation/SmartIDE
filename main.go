@@ -24,7 +24,6 @@ import (
 )
 
 func main() {
-	Init()
 
 	fmt.Println(`
 	 _____                      _     ___________ _____ 
@@ -36,7 +35,8 @@ func main() {
 	cmd.Execute()
 }
 
-func Init() {
+// running before main
+func init() {
 	logFile, err := os.OpenFile("./smartide.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		fmt.Println("open log file failed, err:", err)
