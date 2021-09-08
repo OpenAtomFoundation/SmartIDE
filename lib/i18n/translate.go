@@ -1,8 +1,8 @@
 package i18n
 
 import (
+	"embed"
 	"encoding/json"
-	"path/filepath"
 
 	//"log"
 	//"os"
@@ -10,14 +10,13 @@ import (
 	"strings"
 
 	"github.com/jeandeaual/go-locale"
-	"github.com/leansoftX/i18n"
 
 	// 这里不要忘记引入驱动,如引入默认的json驱动
 	_ "github.com/leansoftX/i18n/parser_json"
 )
 
 //
-type Language struct {
+type I18nSource struct {
 	Main struct {
 		Info struct {
 			Help_short string `json:"help_short"`
@@ -70,9 +69,15 @@ type Language struct {
 	} `json:"Remove"`
 }
 
-var instance *Language
+var instance *I18nSource
 
-func GetInstance() *Language {
+var I18nSource_EN string
+var I18nSource_ZH string
+
+//go:embed language/*
+var f embed.FS
+
+func GetInstance() *I18nSource {
 	if instance == nil {
 		/* exePath, err := os.Getwd()
 		if err != nil {
@@ -81,14 +86,14 @@ func GetInstance() *Language {
 		} */
 
 		// https://github.com/leansoftX/i18n
-		languageDir, _ := filepath.Abs("lib/i18n/language")
+		/* languageDir := filepath.ToSlash("lib/i18n/language") */
 		currentLang, _ := locale.GetLocale()
-		if strings.Index(currentLang, "zh_") == 0 { // 如果不是简体中文，就是英文
+		if strings.Index(currentLang, "zh-") == 0 { // 如果不是简体中文，就是英文
 			currentLang = "zh_cn"
 		} else {
 			currentLang = "en_us"
 		}
-		lang := i18n.NewI18n(
+		/* lang := i18n.NewI18n(
 			// 这里指定语言文件路径
 			i18n.LangDirectory(languageDir),
 
@@ -103,8 +108,10 @@ func GetInstance() *Language {
 
 		l := lang.LoadWithDefault("")
 		bodyBytes, _ := json.Marshal(l)
-		json.Unmarshal(bodyBytes, &instance)
+		json.Unmarshal(bodyBytes, &instance) */
 
+		data, _ := f.ReadFile("language/" + currentLang + "/info.json")
+		json.Unmarshal(data, &instance)
 	}
 	return instance
 }
