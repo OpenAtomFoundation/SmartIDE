@@ -1,44 +1,55 @@
-# Variable 'cliname' was defined in the Variables tab
 name: $(date:yyyyMMdd)$(rev:.r)
+
 resources:
   repositories:
   - repository: self
     type: git
     ref: refs/heads/main
-jobs:
-- job: Job_1
-  displayName: Agent job 1
-  pool:
-    vmImage: ubuntu-18.04
-  steps:
-  - checkout: self
-  - task: GoTool@0
-    displayName: Use Go 1.17
-    inputs:
-      version: 1.17
-  - task: Go@0
-    displayName: go get
-    inputs:
-      arguments: -d
-  - task: Bash@3
-    displayName: go build
-    inputs:
-      targetType: inline
-      script: >-
-        CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o $(cliname)-linux-x64
+
+trigger:
+  - main
+
+variables:
+  cliname: 'smartide-cli'
+
+stages:
+
+- stage: build
+  
+  jobs:
+  - job: Job_1
+    displayName: Agent job 1
+    pool:
+      vmImage: ubuntu-18.04
+    steps:
+    - checkout: self
+    - task: GoTool@0
+      displayName: Use Go 1.17
+      inputs:
+        version: 1.17
+    - task: Go@0
+      displayName: go get
+      inputs:
+        arguments: -d
+    - task: Bash@3
+      displayName: go build
+      inputs:
+        targetType: inline
+        script: >-
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o $(cliname)-linux-x64
 
 
-        CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o $(cliname)-win-x64.exe
+          CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o $(cliname)-win-x64.exe
 
 
-        CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o  $(cliname)-macos-x64
-  - task: CopyFiles@2
-    displayName: Copy Files
-    inputs:
-      SourceFolder: $(Build.SourcesDirectory)
-      Contents: '**/*smartide-cli-**'
-      TargetFolder: $(Build.ArtifactStagingDirectory)
-  - task: PublishBuildArtifacts@1
-    displayName: Publish artifact
-    condition: succeededOrFailed()
+          CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o  $(cliname)-macos-x64
+    - task: CopyFiles@2
+      displayName: Copy Files
+      inputs:
+        SourceFolder: $(Build.SourcesDirectory)
+        Contents: '**/*smartide-cli-**'
+        TargetFolder: $(Build.ArtifactStagingDirectory)
+    - task: PublishBuildArtifacts@1
+      displayName: Publish artifact
+      condition: succeededOrFailed()
 ...
