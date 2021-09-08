@@ -12,7 +12,7 @@ To get started with SmartIDE CLI, all you need is:
 
 ### 01. Install Docker
 
-* macOS, Windows, or Windows WSL2: The current release of
+* macOS, Windows: The current release of
   [Docker Desktop](https://www.docker.com/products/docker-desktop)
 * Linux:
   [Install Guide](https://docs.docker.com/engine/install/)
@@ -22,6 +22,8 @@ Please create [issues](https://github.com/leansoftX/smartide-cli/issues) to leav
 ### 02. Install SmartIDE
 
  * Download and Install: https://github.com/leansoftX/smartide-cli/releases
+ * Mac： `brew tap leansoftx/tap && brew install smartide-cli`
+ * Windows：download && install MSI
 
 ## Use Guide
 

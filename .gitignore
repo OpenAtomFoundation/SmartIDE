@@ -5,3 +5,4 @@ smartide-cli
 *.exe
 /build
 *.log
+
