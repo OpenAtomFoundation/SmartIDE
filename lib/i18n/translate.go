@@ -4,9 +4,6 @@ import (
 	"embed"
 	"encoding/json"
 
-	//"log"
-	//"os"
-
 	"strings"
 
 	"github.com/jeandeaual/go-locale"
