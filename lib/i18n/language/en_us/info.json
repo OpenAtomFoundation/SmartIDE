@@ -43,5 +43,12 @@
             "info_end": "SmartIDE initialization completed"
         },
         "error": {}
+    },
+    "help":{
+        "info":{
+            "help_short":"help for SmartIDE",
+            "help_long":""
+        },
+        "error":{}
     }
 }

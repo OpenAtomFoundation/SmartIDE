@@ -45,5 +45,12 @@
             "info_end":"SmartIDE 初始化结束"
         },
         "error":{}
+    },
+    "help":{
+        "info":{
+            "help_short":"为 SmartIDE 提供帮助",
+            "help_long":"具体的命令不会使用时，可以使用 例如：SmartIDE start --help"
+        },
+        "error":{}
     }
 }

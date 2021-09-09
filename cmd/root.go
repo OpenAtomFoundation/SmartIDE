@@ -18,6 +18,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/leansoftX/smartide-cli/lib/i18n"
 	"github.com/spf13/cobra"
@@ -42,7 +43,15 @@ var rootCmd = &cobra.Command{
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
+
 	cobra.CheckErr(rootCmd.Execute())
+
+	for _, command := range rootCmd.Commands() {
+		if strings.ToLower(command.Name()) == "help" {
+			command.Long = "点都德 short"
+			command.Short = "点都德 long"
+		}
+	}
 }
 
 func init() {
@@ -51,12 +60,24 @@ func init() {
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
-
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.smartide-cli.yaml)")
+	//rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.smartide-cli.yaml)")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+
+	rootCmd.Flags().BoolP("help", "h", false, i18n.GetInstance().Help.Info.Help_short)
+
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
+
+	rootCmd.SetHelpCommand(helpCmd)
+
+	// custom command
+	rootCmd.AddCommand(initCmd)
+	rootCmd.AddCommand(startCmd)
+	rootCmd.AddCommand(stopCmd)
+	rootCmd.AddCommand(removeCmd)
+
 }
 
 // initConfig reads in config file and ENV variables if set.

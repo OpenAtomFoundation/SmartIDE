@@ -21,6 +21,13 @@ type I18nSource struct {
 		} `json:"info"`
 	} `json:"main"`
 
+	Help struct {
+		Info struct {
+			Help_short string `json:"help_short"`
+			Help_long  string `json:"help_long"`
+		} `json:"info"`
+	} `json:"help"`
+
 	Init struct {
 		Info struct {
 			Help_short string `json:"help_short"`
