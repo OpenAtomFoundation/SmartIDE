@@ -17,3 +17,5 @@ SET GOARCH=amd64
 go build -o ./build/smartide.exe main.go
 ```
 
+**发布静态文件**
+golang 在1.16后，引入了embed，可以灵活的导入静态文件，不需要把静态文件改为go后缀名这种麻烦的办法。
