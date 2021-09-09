@@ -79,20 +79,13 @@ var f embed.FS
 
 // get internationalization source
 // 获取当前系统的语言，动态加载对应的json文件并解析成结构体，方便在代码中调用
-// 1. 新增，首先在“lib/i18n/language”的对应节点下新增，并同步在“lib/i18n/language/translate.go”中的I18nSource增加相应的属性；
+// 1. 新增，首先在 “lib/i18n/language” 的对应节点下新增，并同步在 “lib/i18n/language/translate.go” 中的 “I18nSource” 增加相应的属性；
 // 2. 在代码中使用
 //    var instanceI18nStart = i18n.GetInstance().Start
 //    fmt.println(instanceI18nStart.Help_short)
 func GetInstance() *I18nSource {
 	if instance == nil {
-		/* exePath, err := os.Getwd()
-		if err != nil {
-			log.Println(err)
-			panic(err)
-		} */
-
-		// https://github.com/leansoftX/i18n
-		/* languageDir := filepath.ToSlash("lib/i18n/language") */
+		// locale
 		currentLang, _ := locale.GetLocale()
 		if strings.Index(currentLang, "zh-") == 0 { // 如果不是简体中文，就是英文
 			currentLang = "zh_cn"
@@ -100,6 +93,7 @@ func GetInstance() *I18nSource {
 			currentLang = "en_us"
 		}
 
+		// loading and parse json
 		data, _ := f.ReadFile("language/" + currentLang + "/info.json")
 		json.Unmarshal(data, &instance)
 	}
