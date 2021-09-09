@@ -16,8 +16,9 @@ import (
 type I18nSource struct {
 	Main struct {
 		Info struct {
-			Help_short string `json:"help_short"`
-			Help_long  string `json:"help_long"`
+			Help_short     string `json:"help_short"`
+			Help_long      string `json:"help_long"`
+			Usage_template string `json:"usage_template"`
 		} `json:"info"`
 	} `json:"main"`
 

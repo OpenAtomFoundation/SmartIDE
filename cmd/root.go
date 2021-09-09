@@ -46,12 +46,6 @@ func Execute() {
 
 	cobra.CheckErr(rootCmd.Execute())
 
-	for _, command := range rootCmd.Commands() {
-		if strings.ToLower(command.Name()) == "help" {
-			command.Long = "点都德 short"
-			command.Short = "点都德 long"
-		}
-	}
 }
 
 func init() {
@@ -66,11 +60,18 @@ func init() {
 	// when this action is called directly.
 	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
+	// help command short
 	rootCmd.Flags().BoolP("help", "h", false, i18n.GetInstance().Help.Info.Help_short)
 
+	// disable completion command
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
+	// override help command
 	rootCmd.SetHelpCommand(helpCmd)
+
+	//
+	usage_tempalte := strings.ReplaceAll(i18n.GetInstance().Main.Info.Usage_template, "\\n", "\n")
+	rootCmd.SetUsageTemplate(usage_tempalte)
 
 	// custom command
 	rootCmd.AddCommand(initCmd)
