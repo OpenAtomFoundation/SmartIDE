@@ -30,11 +30,21 @@ var cfgFile string
 
 var instanceI18n = i18n.GetInstance().Main
 
+var preMainLongDescription = `
+ _____                      _     ___________ _____ 
+/  ___|                    | |   |_   _|  _  \  ___|
+\ ` + "`" + `--. _ __ ___   __ _ _ __| |_    | | | | | | |__
+ ` + "`" + `--. \ '_ ` + "`" + ` _ \ / _` + "`" + ` | '__| __|   | | | | | |  __|
+/\__/ / | | | | | (_| | |  | |_   _| |_| |/ /| |___
+\____/|_| |_| |_|\__,_|_|   \__|  \___/|___/ \____/ 
+
+`
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "smartide-cli",
 	Short: instanceI18n.Info.Help_short,
-	Long:  instanceI18n.Info.Help_long,
+	Long:  preMainLongDescription + instanceI18n.Info.Help_long,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
