@@ -77,6 +77,12 @@ var I18nSource_ZH string
 //go:embed language/*
 var f embed.FS
 
+// get internationalization source
+// 获取当前系统的语言，动态加载对应的json文件并解析成结构体，方便在代码中调用
+// 1. 新增，首先在“lib/i18n/language”的对应节点下新增，并同步在“lib/i18n/language/translate.go”中的I18nSource增加相应的属性；
+// 2. 在代码中使用
+//    var instanceI18nStart = i18n.GetInstance().Start
+//    fmt.println(instanceI18nStart.Help_short)
 func GetInstance() *I18nSource {
 	if instance == nil {
 		/* exePath, err := os.Getwd()
@@ -93,47 +99,9 @@ func GetInstance() *I18nSource {
 		} else {
 			currentLang = "en_us"
 		}
-		/* lang := i18n.NewI18n(
-			// 这里指定语言文件路径
-			i18n.LangDirectory(languageDir),
-
-			// 这里如果不i设置, 则默认使用zh_cn
-			i18n.DefaultLang(strings.ToLower(currentLang)),
-
-			// 这里如果不i设置, 则默认使用 json,可以自定义解析器和配置文件格式
-			//i18n.DefaultParser("json"),
-		)
-
-		//instance := Language{}
-
-		l := lang.LoadWithDefault("")
-		bodyBytes, _ := json.Marshal(l)
-		json.Unmarshal(bodyBytes, &instance) */
 
 		data, _ := f.ReadFile("language/" + currentLang + "/info.json")
 		json.Unmarshal(data, &instance)
 	}
 	return instance
 }
-
-/*
-func main() {
-	lang := i18n.NewI18n(
-		// 这里指定语言文件路径
-		i18n.LangDirectory("/language"),
-
-		// 这里如果不i设置, 则默认使用zh_cn
-		//i18n.DefaultLang("zh_cn"),
-
-		// 这里如果不i设置, 则默认使用 json,可以自定义解析器和配置文件格式
-		//i18n.DefaultParser("json"),
-	)
-
-	// 加载error.json文件内的具体配置项, 多级加载, 使用.连接
-	test := lang.Load("test")
-	test2 := lang.Load("err2.bb.cc")
-
-	fmt.Println(test)
-	fmt.Println(test2)
-}
-*/
