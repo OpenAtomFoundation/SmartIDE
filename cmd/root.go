@@ -44,7 +44,7 @@ var preMainLongDescription = `
 var rootCmd = &cobra.Command{
 	Use:   "smartide-cli",
 	Short: instanceI18n.Info.Help_short,
-	Long:  preMainLongDescription + instanceI18n.Info.Help_long,
+	Long:  preMainLongDescription + instanceI18n.Info.Help_long, // logo only show in init
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
@@ -79,7 +79,7 @@ func init() {
 	// override help command
 	rootCmd.SetHelpCommand(helpCmd)
 
-	//
+	// usage template
 	usage_tempalte := strings.ReplaceAll(i18n.GetInstance().Main.Info.Usage_template, "\\n", "\n")
 	rootCmd.SetUsageTemplate(usage_tempalte)
 
