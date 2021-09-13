@@ -6,6 +6,7 @@ smartide-cli
 *.dmg
 /build
 *.log
+*.zip
 
 smartide-cli-linux-x64
 .gitignore
