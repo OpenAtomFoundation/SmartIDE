@@ -1,1 +1,1 @@
-$(version)/$(Build.BuildNumber)
+#{version}/#{Build.BuildNumber}
