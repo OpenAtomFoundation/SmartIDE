@@ -43,4 +43,4 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./docs/public/
-          server-dir: site/wwwroot
+          server-dir: site/wwwroot/
