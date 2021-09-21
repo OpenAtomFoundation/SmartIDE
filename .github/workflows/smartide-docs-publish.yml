@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main  # Set a branch to deploy
+    paths:
+      - docs/**
+      - .github/workflows/smartide-docs-publish.yml
   pull_request:
 
 jobs:
@@ -34,7 +37,7 @@ jobs:
       - name: Build
         run: | 
           npm install
-          hugo --minify
+          hugo --minify --verbose
 
       - name: 📂 Sync files
         uses: SamKirkland/FTP-Deploy-Action@4.1.0
