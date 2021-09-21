@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main  # Set a branch to deploy
-    paths:
-      - docs/**
   pull_request:
 
 jobs:
@@ -41,7 +39,8 @@ jobs:
       - name: 📂 Sync files
         uses: SamKirkland/FTP-Deploy-Action@4.1.0
         with:
-          server: ${{ secrets.PUBLISH_URL }}
+          server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./docs/public/
+          server-dir: site/wwwroot
