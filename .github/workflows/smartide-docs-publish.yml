@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main  # Set a branch to deploy
+    paths:
+      - docs/**
   pull_request:
 
 jobs:
@@ -42,4 +44,4 @@ jobs:
           server: ${{ secrets.PUBLISH_URL }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: public/
+          local-dir: ./docs/public/
