@@ -19,8 +19,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/leansoftX/smartide-cli/cmd"
+	"github.com/leansoftX/smartide-cli/lib/common"
 )
 
 func main() {
@@ -31,7 +33,14 @@ func main() {
 // running before main
 func init() {
 	//TODO 日志存储在当前用户的目录下
-	logFile, err := os.OpenFile("./smartide.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	wd, _ := os.Getwd()
+	logFilePath := filepath.Join(wd, "smartide.log")
+
+	if !common.FileIsExit(logFilePath) {
+		os.MkdirAll(logFilePath, os.ModeAppend)
+	}
+
+	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		fmt.Println("open log file failed, err:", err)
 		return
