@@ -21,8 +21,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"os/exec"
-	"runtime"
 
 	"github.com/leansoftX/smartide-cli/lib/i18n"
 
@@ -36,24 +34,6 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/spf13/cobra"
 )
-
-func openbrowser(url string) {
-	var err error
-
-	switch runtime.GOOS {
-	case "linux":
-		err = exec.Command("xdg-open", url).Start()
-	case "windows":
-		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
-	case "darwin":
-		err = exec.Command("open", url).Start()
-	default:
-		err = fmt.Errorf("unsupported platform")
-	}
-	if err != nil {
-	}
-
-}
 
 var instanceI18nStart = i18n.GetInstance().Start
 
@@ -144,7 +124,7 @@ var startCmd = &cobra.Command{
 		fmt.Println(outStatus) */
 		time.Sleep(10 * 1000) //TODO: 检测docker container的运行状态是否为running
 		url := fmt.Sprintf(`http://localhost:%v`, smartIDEPort)
-		openbrowser(url)
+		OpenBrowser(url)
 
 		fmt.Println(instanceI18nStart.Info.Info_end)
 
