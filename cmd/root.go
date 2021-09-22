@@ -84,7 +84,7 @@ func init() {
 	rootCmd.SetUsageTemplate(usage_tempalte)
 
 	// custom command
-	rootCmd.AddCommand(initCmd)
+	//rootCmd.AddCommand(initCmd) //屏蔽
 	rootCmd.AddCommand(startCmd)
 	rootCmd.AddCommand(stopCmd)
 	rootCmd.AddCommand(removeCmd)
