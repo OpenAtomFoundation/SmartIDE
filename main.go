@@ -32,12 +32,15 @@ func main() {
 
 // running before main
 func init() {
-	//TODO 日志存储在当前用户的目录下
-	wd, _ := os.Getwd()
-	logFilePath := filepath.Join(wd, "smartide.log")
+	dirname, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+	logFilePath := filepath.Join(dirname, ".smartide/smartide.log") // current user dir + ...
 
 	if !common.FileIsExit(logFilePath) {
-		os.MkdirAll(logFilePath, os.ModeAppend)
+		os.MkdirAll(filepath.Join(dirname, ".smartide"), os.ModePerm) // create dir
+		os.Create(logFilePath)                                        // create file
 	}
 
 	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)

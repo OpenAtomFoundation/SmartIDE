@@ -20,6 +20,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/leansoftX/smartide-cli/lib/common"
 	"github.com/leansoftX/smartide-cli/lib/i18n"
 	"github.com/spf13/cobra"
 
@@ -54,7 +55,7 @@ var rootCmd = &cobra.Command{
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 
-	cobra.CheckErr(rootCmd.Execute())
+	common.SmartIDELog.Error(rootCmd.Execute())
 
 }
 
