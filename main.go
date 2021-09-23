@@ -36,11 +36,11 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	logFilePath := filepath.Join(dirname, ".smartide/smartide.log") // current user dir + ...
+	logFilePath := filepath.Join(dirname, ".ide/smartide.log") // current user dir + ...
 
 	if !common.FileIsExit(logFilePath) {
-		os.MkdirAll(filepath.Join(dirname, ".smartide"), os.ModePerm) // create dir
-		os.Create(logFilePath)                                        // create file
+		os.MkdirAll(filepath.Join(dirname, ".ide"), os.ModePerm) // create dir
+		os.Create(logFilePath)                                   // create file
 	}
 
 	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
