@@ -20,8 +20,10 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"os"
 
+	"github.com/leansoftX/smartide-cli/lib/common"
 	"github.com/leansoftX/smartide-cli/lib/i18n"
 
 	//"strconv"
@@ -50,9 +52,13 @@ var startCmd = &cobra.Command{
 		var smartIDEPort = yamlFileCongfig.Workspace.IdePort
 		var smartIDEImage = yamlFileCongfig.Workspace.Image
 		var smartIDEName = yamlFileCongfig.Workspace.AppName
-		smartIDEImageDefaultPort := "3000"
+		smartIDEImageDefaultPort := "3000" // 容器中web ide的默认端口
 
+		// 提示文本
 		fmt.Println(i18n.GetInstance().Start.Info.Info_start)
+
+		// check tunnel
+		isTunnel := common.Contains(args, "-tunnel") //TODO: 不区分大小写
 
 		//get current path
 		currentDir, err := os.Getwd()
@@ -67,6 +73,9 @@ var startCmd = &cobra.Command{
 		portBinding := nat.PortMap{
 			nat.Port(yamlFileCongfig.Workspace.AppDebugPort): []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: yamlFileCongfig.Workspace.AppHostPort}},
 			nat.Port(smartIDEImageDefaultPort + "/tcp"):      []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: smartIDEPort}},
+		}
+		if isTunnel {
+			portBinding[nat.Port("22/tcp")] = []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: "6022"}}
 		}
 
 		// docker run parameters
@@ -120,13 +129,21 @@ var startCmd = &cobra.Command{
 
 		// 使用浏览器打开web ide
 		fmt.Println(instanceI18nStart.Info.Info_running_openbrower)
-		/* outStatus, err := cli.ContainerStats(ctx, smartIDEName, false)
-		fmt.Println(outStatus) */
 		time.Sleep(10 * 1000) //TODO: 检测docker container的运行状态是否为running
 		url := fmt.Sprintf(`http://localhost:%v`, smartIDEPort)
-		OpenBrowser(url)
+		isUrlReady := false
+		for !isUrlReady {
+			resp, err := http.Get(url)
+			if (err == nil) && (resp.StatusCode == 200) {
+				isUrlReady = true
+				common.OpenBrowser(url)
+			}
+
+		}
 
 		fmt.Println(instanceI18nStart.Info.Info_end)
+
+		//TODO tunnel
 
 	},
 }
