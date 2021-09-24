@@ -3,7 +3,7 @@ title: "示例：安装手册"
 linkTitle: "示例：安装手册"
 date: 2021-09-24
 description: >
-  A short lead description about this content page. It can be **bold** or _italic_ and can be split over multiple paragraphs.
+  目前smartIDE支持Windows和macOS两种环境安装，如下文档分别介绍如何在这两种环境中安装.
 ---
 
 ## 先决条件
