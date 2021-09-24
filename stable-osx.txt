@@ -1,1 +1,0 @@
-$(version)/smartide-osx-$(Build.BuildNumber)-x64.zip
