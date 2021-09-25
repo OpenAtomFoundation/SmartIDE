@@ -42,6 +42,7 @@ require (
 )
 
 require (
+	github.com/docker/cli v20.10.8+incompatible
 	github.com/jeandeaual/go-locale v0.0.0-20210323163322-5cf4ff553a8d
 	github.com/leansoftX/i18n v0.0.0-20210903074237-61e743e338d1 // indirect
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
