@@ -7,7 +7,6 @@ on:
     paths:
       - docs/**
       - .github/workflows/smartide-docs-publish.yml
-  pull_request:
 
 jobs:
   deploy:
