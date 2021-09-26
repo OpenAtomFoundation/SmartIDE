@@ -1,20 +1,28 @@
 ---
-title: "示例：安装手册"
-linkTitle: "示例：安装手册"
+title: "安装手册"
+linkTitle: "安装手册"
 date: 2021-09-24
+weight: 1
 description: >
   目前smartIDE支持Windows和macOS两种环境安装，如下文档分别介绍如何在这两种环境中安装.
 ---
 
 ## 先决条件
 
-smartIDE 运行环境依赖docker ，推荐安装最新版docker，安装docker参考[文档](https://yeasy.gitbooks.io/docker_practice/install/)
+使用SmartIDE需要首先安装 Docker Desktop 工具，请从以下网盘地址下载最新版的 Docker Desktop 安装包 
 
-## 安装
+> 链接: https://pan.baidu.com/s/1xQcif-oeVNNzonawywK7Lw 提取码: vu8c 
 
-## Mac
+下载完成后请参考以下文档完成 Docker Desktop 的安装：
 
-### 使用curl下载
+- [在 Windows 上安装 Docker Desktop](docker-install-windows)
+- [在 Linux 上安装 Docker Desktop](docker-install-osx)
+
+## SmartIDE 安装手册
+
+### Mac
+
+**使用curl下载并安装**
 
 > 您可以运行如下命令下载安装最新版
 
@@ -24,9 +32,9 @@ curl -sSL  https://smartidedl.blob.core.chinacloudapi.cn/releases/$(curl -L -s h
 chmod +x /usr/local/bin/smartide
 ```
 
-## windows
+### windows
 
-### 使用powershell 下载: Invoke-WebReques
+**使用powershell 下载并安装**
 
 > 您可以运行如下命令下载安装最新版
 
