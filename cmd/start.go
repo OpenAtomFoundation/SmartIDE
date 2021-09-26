@@ -16,14 +16,19 @@ limitations under the License.
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"os/exec"
 
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/client"
 	"github.com/leansoftX/smartide-cli/lib/common"
 	"github.com/leansoftX/smartide-cli/lib/i18n"
+	"github.com/leansoftX/smartide-cli/lib/tunnel"
 
 	//"strconv"
-	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -37,20 +42,49 @@ var startCmd = &cobra.Command{
 	Long:  instanceI18nStart.Info.Help_long,
 	Run: func(cmd *cobra.Command, args []string) {
 
+		//0. 提示文本
+		fmt.Println(i18n.GetInstance().Start.Info.Info_start)
+
 		//1. 获取docker compose的文件内容
 		var yamlFileCongfig YamlFileConfig
 		yamlFileCongfig.GetConfig()
 		dockerCompose := yamlFileCongfig.ConvertToDockerCompose()
-		fmt.Print(dockerCompose)
+		dockerCompose.ConvertToStr()
+		yamlFilePath, _ := dockerCompose.SaveFile(yamlFileCongfig.Workspace.DevContainer.ServiceName)
 
-		// 提示文本
-		fmt.Println(i18n.GetInstance().Start.Info.Info_start)
+		//2. 创建容器
+		//2.1. 创建网络
+		ctx := context.Background()
+		cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+		if err != nil {
+			panic(err)
+		}
+		for network := range dockerCompose.Networks {
+			networkList, _ := cli.NetworkList(ctx, types.NetworkListOptions{})
+			isContain := false
+			for _, item := range networkList {
+				if item.Name == network {
+					isContain = true
+					break
+				}
+			}
+			if !isContain {
+				cli.NetworkCreate(ctx, network, types.NetworkCreate{})
+			}
+		}
 
-		//2. 运行docker-compose命令
+		//2.2. 运行docker-compose命令
+		// docker-compose -f docker-compose-hub.yml up -d
+		// e.g. exec.Command("docker-compose", "-f "+yamlFilePath+" up -d")
+		composeCmd := exec.Command("docker-compose", "-f", yamlFilePath, "up", "-d") // "--project-directory", envPath,
+		composeCmd.Stdout = os.Stdout
+		composeCmd.Stderr = os.Stderr
+		if composeCmdErr := composeCmd.Run(); composeCmdErr != nil {
+			common.SmartIDELog.Fatal(composeCmdErr)
+		}
 
 		//3. 使用浏览器打开web ide
-		fmt.Println(instanceI18nStart.Info.Info_running_openbrower)
-		time.Sleep(10 * 1000) //TODO: 检测docker container的运行状态是否为running
+		fmt.Println(instanceI18nStart.Info.Info_running_openbrower) //TODO: 增加等待某某网址的提示
 		url := fmt.Sprintf(`http://localhost:%v`, yamlFileCongfig.Workspace.DevContainer.WebidePort)
 		isUrlReady := false
 		for !isUrlReady {
@@ -62,9 +96,11 @@ var startCmd = &cobra.Command{
 
 		}
 
+		//99. 结束
 		fmt.Println(instanceI18nStart.Info.Info_end)
 
 		//TODO tunnel
+		//tunnel.AutoTunnelMultiple()
 
 	},
 }

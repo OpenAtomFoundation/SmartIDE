@@ -47,3 +47,7 @@ type Service struct {
 	// TODO userns_mode
 	Volumes []string `yaml:"volumes,omitempty"` // 挂载卷
 }
+
+func (service *Service) AppendPort(port string) {
+	service.Ports = append(service.Ports, port)
+}
