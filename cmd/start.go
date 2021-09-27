@@ -52,7 +52,7 @@ var startCmd = &cobra.Command{
 		dockerCompose, sshBindingPort := yamlFileCongfig.ConvertToDockerCompose()
 		dockerCompose.ConvertToStr()
 		yamlFilePath, _ := dockerCompose.SaveFile(yamlFileCongfig.Workspace.DevContainer.ServiceName)
-		fmt.Printf("SSH转发端口：%v \n", sshBindingPort) //TODO: 国际化	// 提示用户ssh端口绑定到了本地的某个端口
+		fmt.Printf("SSH转发端口：%v ", sshBindingPort) //TODO: 国际化	// 提示用户ssh端口绑定到了本地的某个端口
 
 		pwd, _ := os.Getwd()
 		//fmt.Printf("current dir : %s \n", pwd)

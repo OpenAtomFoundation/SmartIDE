@@ -33,7 +33,7 @@ func IsPortAvailable(port int) bool {
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
 
-		log.Print("port %s is taken: %s", address, err)
+		log.Printf("port %s is taken: %s", address, err)
 		return false
 	}
 
