@@ -52,8 +52,7 @@ var startCmd = &cobra.Command{
 		dockerCompose, sshBindingPort := yamlFileCongfig.ConvertToDockerCompose()
 		dockerCompose.ConvertToStr()
 		yamlFilePath, _ := dockerCompose.SaveFile(yamlFileCongfig.Workspace.DevContainer.ServiceName)
-		fmt.Printf("SSH转发端口：%v", sshBindingPort) //TODO: 国际化	// 提示用户ssh端口绑定到了本地的某个端口
-		//tunnel.AutoTunnelMultiple("6822", "root", "root123")
+		fmt.Printf("SSH转发端口：%v \n", sshBindingPort) //TODO: 国际化	// 提示用户ssh端口绑定到了本地的某个端口
 
 		//2. 创建容器
 		//2.1. 创建网络
