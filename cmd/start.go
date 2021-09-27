@@ -55,7 +55,7 @@ var startCmd = &cobra.Command{
 		fmt.Printf("SSH转发端口：%v \n", sshBindingPort) //TODO: 国际化	// 提示用户ssh端口绑定到了本地的某个端口
 
 		pwd, _ := os.Getwd()
-		fmt.Printf("current dir : %s \n", pwd)
+		//fmt.Printf("current dir : %s \n", pwd)
 
 		//2. 创建容器
 		//2.1. 创建网络
