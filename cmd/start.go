@@ -39,7 +39,7 @@ var instanceI18nStart = i18n.GetInstance().Start
 // startCmd represents the start command
 var startCmd = &cobra.Command{
 	Use:   "start",
-	Short: instanceI18nStart.Info.Help_short, //"快速创建并启动SmartIDE开发环境",
+	Short: instanceI18nStart.Info.Help_short,
 	Long:  instanceI18nStart.Info.Help_long,
 	Run: func(cmd *cobra.Command, args []string) {
 
@@ -51,10 +51,8 @@ var startCmd = &cobra.Command{
 		yamlFileCongfig.GetConfig()
 		dockerCompose, sshBindingPort := yamlFileCongfig.ConvertToDockerCompose()
 		yamlFilePath, _ := dockerCompose.SaveFile(yamlFileCongfig.Workspace.DevContainer.ServiceName)
-		fmt.Printf("docker-compose: %v \\n", yamlFilePath)
-		fmt.Printf("SSH转发端口：%v \\n", sshBindingPort) //TODO: 国际化	// 提示用户ssh端口绑定到了本地的某个端口
-
-		//fmt.Printf("current dir : %s \n", pwd)
+		fmt.Printf("docker-compose: %v \n", yamlFilePath)
+		fmt.Printf("SSH转发端口：%v \n", sshBindingPort) //TODO: 国际化	// 提示用户ssh端口绑定到了本地的某个端口
 
 		//2. 创建容器
 		//2.1. 创建网络
