@@ -54,7 +54,7 @@ var startCmd = &cobra.Command{
 		fmt.Print(localSSHAddr)
 		dockerCompose.ConvertToStr()
 		yamlFilePath, _ := dockerCompose.SaveFile(yamlFileCongfig.Workspace.DevContainer.ServiceName)
-
+		//TODO: 提示用户ssh端口绑定到了本地的某个端口
 		//tunnel.AutoTunnelMultiple("6822", "root", "root123")
 
 		//2. 创建容器
