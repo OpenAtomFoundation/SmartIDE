@@ -109,7 +109,7 @@ var startCmd = &cobra.Command{
 		for {
 			//TODO: 端口冲突
 			tunnel.AutoTunnelMultiple(fmt.Sprintf("localhost:%v", sshBindingPort), "root", "root123") //TODO: 登录的用户名，密码要能够从配置文件中读取出来
-			time.Sleep(time.Second * 30)
+			time.Sleep(time.Second * 10)
 		}
 
 	},
