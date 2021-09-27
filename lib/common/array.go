@@ -10,3 +10,13 @@ func Contains(slice []string, item string) bool {
 	_, ok := set[item]
 	return ok
 }
+
+// 数组中是否包含某个元素
+func Contains4Int(s []int, e int) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}

@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -48,9 +49,13 @@ var startCmd = &cobra.Command{
 		//1. 获取docker compose的文件内容
 		var yamlFileCongfig YamlFileConfig
 		yamlFileCongfig.GetConfig()
-		dockerCompose := yamlFileCongfig.ConvertToDockerCompose()
+		dockerCompose, sshBindingPort := yamlFileCongfig.ConvertToDockerCompose()
+		localSSHAddr := fmt.Sprintf("http://localhost:%v", sshBindingPort) // 本地ssh remote的地址
+		fmt.Print(localSSHAddr)
 		dockerCompose.ConvertToStr()
 		yamlFilePath, _ := dockerCompose.SaveFile(yamlFileCongfig.Workspace.DevContainer.ServiceName)
+
+		//tunnel.AutoTunnelMultiple("6822", "root", "root123")
 
 		//2. 创建容器
 		//2.1. 创建网络
@@ -99,8 +104,11 @@ var startCmd = &cobra.Command{
 		//99. 结束
 		fmt.Println(instanceI18nStart.Info.Info_end)
 
-		//TODO tunnel
-		//tunnel.AutoTunnelMultiple()
+		// tunnel
+		for {
+			tunnel.AutoTunnelMultiple(fmt.Sprintf("localhost:%v", sshBindingPort), "root", "root123") //TODO: 登录的用户名，密码要能够从配置文件中读取出来
+			time.Sleep(time.Second * 30)
+		}
 
 	},
 }
