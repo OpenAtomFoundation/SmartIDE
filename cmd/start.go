@@ -50,11 +50,11 @@ var startCmd = &cobra.Command{
 		var yamlFileCongfig YamlFileConfig
 		yamlFileCongfig.GetConfig()
 		dockerCompose, sshBindingPort := yamlFileCongfig.ConvertToDockerCompose()
-		dockerCompose.ConvertToStr()
+		//dockerCompose.ConvertToStr()
 		yamlFilePath, _ := dockerCompose.SaveFile(yamlFileCongfig.Workspace.DevContainer.ServiceName)
-		fmt.Printf("SSH转发端口：%v ", sshBindingPort) //TODO: 国际化	// 提示用户ssh端口绑定到了本地的某个端口
+		fmt.Printf("docker-compose: %v \\n", yamlFilePath)
+		fmt.Printf("SSH转发端口：%v \\n", sshBindingPort) //TODO: 国际化	// 提示用户ssh端口绑定到了本地的某个端口
 
-		pwd, _ := os.Getwd()
 		//fmt.Printf("current dir : %s \n", pwd)
 
 		//2. 创建容器
@@ -80,9 +80,9 @@ var startCmd = &cobra.Command{
 		}
 
 		//2.2. 运行docker-compose命令
-		// docker-compose -f /Users/jasonchen/.ide/docker-compose-product-service-dev.yaml --project-directory /Users/jasonchen/Project/boat-house/boat-house-backend/src/product-service/api up -d
-		// e.g. exec.Command("docker-compose", "-f "+yamlFilePath+" up -d")
-		composeCmd := exec.Command("docker-compose", "-f", yamlFilePath, "--project-directory", pwd, "up", "-d") // "--project-directory", envPath,
+		// e.g. docker-compose -f /Users/jasonchen/.ide/docker-compose-product-service-dev.yaml --project-directory /Users/jasonchen/Project/boat-house/boat-house-backend/src/product-service/api up -d
+		pwd, _ := os.Getwd()
+		composeCmd := exec.Command("docker-compose", "-f", yamlFilePath, "--project-directory", pwd, "up", "-d")
 		composeCmd.Stdout = os.Stdout
 		composeCmd.Stderr = os.Stderr
 		if composeCmdErr := composeCmd.Run(); composeCmdErr != nil {
@@ -107,7 +107,6 @@ var startCmd = &cobra.Command{
 
 		// tunnel
 		for {
-			//TODO: 端口冲突
 			tunnel.AutoTunnelMultiple(fmt.Sprintf("localhost:%v", sshBindingPort), "root", "root123") //TODO: 登录的用户名，密码要能够从配置文件中读取出来
 			time.Sleep(time.Second * 10)
 		}
