@@ -50,7 +50,6 @@ var startCmd = &cobra.Command{
 		var yamlFileCongfig YamlFileConfig
 		yamlFileCongfig.GetConfig()
 		dockerCompose, sshBindingPort := yamlFileCongfig.ConvertToDockerCompose()
-		//dockerCompose.ConvertToStr()
 		yamlFilePath, _ := dockerCompose.SaveFile(yamlFileCongfig.Workspace.DevContainer.ServiceName)
 		fmt.Printf("docker-compose: %v \\n", yamlFilePath)
 		fmt.Printf("SSH转发端口：%v \\n", sshBindingPort) //TODO: 国际化	// 提示用户ssh端口绑定到了本地的某个端口
@@ -105,7 +104,7 @@ var startCmd = &cobra.Command{
 		//99. 结束
 		fmt.Println(instanceI18nStart.Info.Info_end)
 
-		// tunnel
+		// tunnel， 死循环，不结束
 		for {
 			tunnel.AutoTunnelMultiple(fmt.Sprintf("localhost:%v", sshBindingPort), "root", "root123") //TODO: 登录的用户名，密码要能够从配置文件中读取出来
 			time.Sleep(time.Second * 10)
