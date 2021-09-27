@@ -24,3 +24,14 @@ go build -o ./build/smartide.exe main.go
 
 **发布静态文件**
 golang 在1.16后，引入了embed，可以灵活的导入静态文件，不需要把静态文件改为go后缀名这种麻烦的办法。
+
+
+## 设置当前开发目录下的文件为环境变量
+go build -o ./build/mac/smartide
+touch ~/.bash_profile
+open ~/.bash_profile
+export PATH="$HOME/Project/smartide/smartide-cli/build/mac/smartide:$PATH"
+source ~/.bash_profile
+
+cd ~
+smartide 
