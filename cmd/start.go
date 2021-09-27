@@ -95,6 +95,7 @@ var startCmd = &cobra.Command{
 			if (err == nil) && (resp.StatusCode == 200) {
 				isUrlReady = true
 				common.OpenBrowser(url)
+				fmt.Printf("打开 %v \n", url)
 			}
 
 		}
