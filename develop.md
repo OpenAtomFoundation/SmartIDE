@@ -27,11 +27,9 @@ golang 在1.16后，引入了embed，可以灵活的导入静态文件，不需�
 
 
 ## 设置当前开发目录下的文件为环境变量
-go build -o ./build/mac/smartide
-touch ~/.bash_profile
-open ~/.bash_profile
-export PATH="$HOME/Project/smartide/smartide-cli/build/mac/smartide:$PATH"
-source ~/.bash_profile
+go build -o ./usr/local/bin/smartide
+chmod +x /usr/local/bin/smartide
 
-cd ~
-smartide 
+***删除容器***
+docker rm -f ide_product-service-db_1
+docker rm -f ide_product-service-dev_1

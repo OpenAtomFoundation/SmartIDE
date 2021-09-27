@@ -54,6 +54,9 @@ var startCmd = &cobra.Command{
 		yamlFilePath, _ := dockerCompose.SaveFile(yamlFileCongfig.Workspace.DevContainer.ServiceName)
 		fmt.Printf("SSH转发端口：%v \n", sshBindingPort) //TODO: 国际化	// 提示用户ssh端口绑定到了本地的某个端口
 
+		pwd, _ := os.Getwd()
+		fmt.Printf("current dir : %s \n", pwd)
+
 		//2. 创建容器
 		//2.1. 创建网络
 		ctx := context.Background()
@@ -77,9 +80,9 @@ var startCmd = &cobra.Command{
 		}
 
 		//2.2. 运行docker-compose命令
-		// docker-compose -f docker-compose-hub.yml up -d
+		// docker-compose -f /Users/jasonchen/.ide/docker-compose-product-service-dev.yaml --project-directory /Users/jasonchen/Project/boat-house/boat-house-backend/src/product-service/api up -d
 		// e.g. exec.Command("docker-compose", "-f "+yamlFilePath+" up -d")
-		composeCmd := exec.Command("docker-compose", "-f", yamlFilePath, "up", "-d") // "--project-directory", envPath,
+		composeCmd := exec.Command("docker-compose", "-f", yamlFilePath, "--project-directory", pwd, "up", "-d") // "--project-directory", envPath,
 		composeCmd.Stdout = os.Stdout
 		composeCmd.Stderr = os.Stderr
 		if composeCmdErr := composeCmd.Run(); composeCmdErr != nil {
