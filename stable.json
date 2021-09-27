@@ -1,0 +1,4 @@
+{
+  "tag_name": "$(version)",
+  "build_number":"$(Build.BuildNumber)"
+}
