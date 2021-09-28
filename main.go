@@ -20,14 +20,17 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/leansoftX/smartide-cli/cmd"
 	"github.com/leansoftX/smartide-cli/lib/common"
+
+	_ "embed"
 )
 
 func main() {
 
-	cmd.Execute()
+	cmd.Execute(formatVerion())
 }
 
 // running before main
@@ -50,4 +53,18 @@ func init() {
 	}
 	log.SetOutput(logFile)
 	log.SetFlags(log.Llongfile | log.Lmicroseconds | log.Ldate)
+
+}
+
+//go:embed stable.txt
+var version string
+
+func formatVerion() string {
+
+	if strings.ToLower(version[0:1]) != "v" {
+		return "" + version + "\n"
+	}
+
+	return version + "\n"
+
 }

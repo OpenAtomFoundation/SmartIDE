@@ -24,7 +24,7 @@ func (sLog *smartIDELogStruct) Error(err interface{}) (reErr error) {
 }
 
 func (sLog *smartIDELogStruct) Fatal(fatal error) (reErr error) {
-
+	//TODO: 日志写入到文件中时，期望的效果是：msg + stack + log file path
 	if fatal != nil {
 		fmt.Fprintln(os.Stderr, "Error:", fatal)
 		log.Fatal(fatal)

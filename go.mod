@@ -31,7 +31,7 @@ require (
 	github.com/spf13/viper v1.8.1
 	github.com/subosito/gotenv v1.2.0 // indirect
 	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4 // indirect
-	golang.org/x/sys v0.0.0-20210510120138-977fb7262007 // indirect
+	golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1 // indirect
 	golang.org/x/text v0.3.5 // indirect
 	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c // indirect
 	google.golang.org/grpc v1.38.0 // indirect
@@ -42,6 +42,8 @@ require (
 )
 
 require (
+	github.com/docker/cli v20.10.8+incompatible
 	github.com/jeandeaual/go-locale v0.0.0-20210323163322-5cf4ff553a8d
 	github.com/leansoftX/i18n v0.0.0-20210903074237-61e743e338d1 // indirect
+	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 )

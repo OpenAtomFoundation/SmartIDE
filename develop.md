@@ -24,3 +24,12 @@ go build -o ./build/smartide.exe main.go
 
 **发布静态文件**
 golang 在1.16后，引入了embed，可以灵活的导入静态文件，不需要把静态文件改为go后缀名这种麻烦的办法。
+
+
+## 设置当前开发目录下的文件为环境变量
+go build -o ./usr/local/bin/smartide
+chmod +x /usr/local/bin/smartide
+
+***删除容器***
+docker rm -f ide_product-service-db_1
+docker rm -f ide_product-service-dev_1

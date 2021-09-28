@@ -19,134 +19,107 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
+	"net/http"
 	"os"
 	"os/exec"
-	"runtime"
-
-	"github.com/leansoftX/smartide-cli/lib/i18n"
-
-	//"strconv"
 	"time"
 
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
-	"github.com/docker/go-connections/nat"
+	"github.com/leansoftX/smartide-cli/lib/common"
+	"github.com/leansoftX/smartide-cli/lib/i18n"
+	"github.com/leansoftX/smartide-cli/lib/tunnel"
+
 	"github.com/spf13/cobra"
 )
-
-func openbrowser(url string) {
-	var err error
-
-	switch runtime.GOOS {
-	case "linux":
-		err = exec.Command("xdg-open", url).Start()
-	case "windows":
-		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
-	case "darwin":
-		err = exec.Command("open", url).Start()
-	default:
-		err = fmt.Errorf("unsupported platform")
-	}
-	if err != nil {
-	}
-
-}
 
 var instanceI18nStart = i18n.GetInstance().Start
 
 // startCmd represents the start command
 var startCmd = &cobra.Command{
 	Use:   "start",
-	Short: instanceI18nStart.Info.Help_short, //"快速创建并启动SmartIDE开发环境",
+	Short: instanceI18nStart.Info.Help_short,
 	Long:  instanceI18nStart.Info.Help_long,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		var yamlFileCongfig YamlFileConfig
-		yamlFileCongfig.GetConfig()
-
-		var smartIDEPort = yamlFileCongfig.Workspace.IdePort
-		var smartIDEImage = yamlFileCongfig.Workspace.Image
-		var smartIDEName = yamlFileCongfig.Workspace.AppName
-		smartIDEImageDefaultPort := "3000"
-
+		//0. 提示文本
+		fmt.Println(Version)
 		fmt.Println(i18n.GetInstance().Start.Info.Info_start)
 
-		//get current path
-		currentDir, err := os.Getwd()
-		if err != nil {
-			log.Fatal(err)
-			return
-		}
+		//1. 获取docker compose的文件内容
+		var yamlFileCongfig YamlFileConfig
+		yamlFileCongfig.GetConfig()
+		dockerCompose, ideBindingPort, sshBindingPort := yamlFileCongfig.ConvertToDockerCompose()
+		yamlFilePath, _ := dockerCompose.SaveFile(yamlFileCongfig.Workspace.DevContainer.ServiceName)
+		fmt.Printf("docker-compose: %v \n", yamlFilePath)
+		fmt.Printf("SSH转发端口：%v \n", sshBindingPort) //TODO: 国际化	// 提示用户ssh端口绑定到了本地的某个端口
 
-		// e.g. docker run -i --user root --name=smartide --init -p 3030:3000 --expose 3001 -p 3001:3001 -v "$(pwd):/home/project" registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node:latest --inspect=0.0.0.0:3001
-
-		// port binding
-		portBinding := nat.PortMap{
-			nat.Port(yamlFileCongfig.Workspace.AppDebugPort): []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: yamlFileCongfig.Workspace.AppHostPort}},
-			nat.Port(smartIDEImageDefaultPort + "/tcp"):      []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: smartIDEPort}},
-		}
-
-		// docker run parameters
-		hostCfg := &container.HostConfig{
-			Mounts: []mount.Mount{
-				{
-					Type:   mount.TypeBind,
-					Source: currentDir,
-					Target: "/home/project",
-				}},
-			PortBindings: portBinding,
-			RestartPolicy: container.RestartPolicy{
-				Name: "always",
-			},
-			// AutoRemove: true,
-		}
-
+		//2. 创建容器
 		ctx := context.Background()
 		cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 		if err != nil {
 			panic(err)
 		}
 
-		//
-		startErr := cli.ContainerStart(ctx, smartIDEName, types.ContainerStartOptions{})
-		if startErr != nil {
-			fmt.Println(instanceI18nStart.Info.Info_running_container)
-			imageName := smartIDEImage
-			out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
+		//2.0. docker pull
+		for _, service := range dockerCompose.Services {
+			fmt.Println("docker pull ", service.Image.Name)
+			reader, err := cli.ImagePull(ctx, service.Image.Name, types.ImagePullOptions{})
 			if err != nil {
 				panic(err)
 			}
-			io.Copy(os.Stdout, out)
-			resp, err := cli.ContainerCreate(ctx, &container.Config{
-				User:  "root",
-				Image: imageName,
-				ExposedPorts: nat.PortSet{
-					nat.Port(yamlFileCongfig.Workspace.AppDebugPort): {},
-					nat.Port(smartIDEImageDefaultPort):               {},
-				}, // 容器对外暴露的端口，注意不是宿主机的端口
-			}, hostCfg, nil, nil, smartIDEName)
-			if err != nil {
-				panic(err)
-			}
-
-			if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
-				panic(err)
-			}
-			fmt.Println(resp.ID)
+			io.Copy(os.Stdout, reader)
 		}
 
-		// 使用浏览器打开web ide
-		fmt.Println(instanceI18nStart.Info.Info_running_openbrower)
-		/* outStatus, err := cli.ContainerStats(ctx, smartIDEName, false)
-		fmt.Println(outStatus) */
-		time.Sleep(10 * 1000) //TODO: 检测docker container的运行状态是否为running
-		url := fmt.Sprintf(`http://localhost:%v`, smartIDEPort)
-		openbrowser(url)
+		//2.1. 创建网络
+		for network := range dockerCompose.Networks {
+			networkList, _ := cli.NetworkList(ctx, types.NetworkListOptions{})
+			isContain := false
+			for _, item := range networkList {
+				if item.Name == network {
+					isContain = true
+					break
+				}
+			}
+			if !isContain {
+				cli.NetworkCreate(ctx, network, types.NetworkCreate{})
+				fmt.Print("创建网络 " + network) //TODO: 国际化
+			}
+		}
 
+		//2.2. 运行docker-compose命令
+		// e.g. docker-compose -f /Users/jasonchen/.ide/docker-compose-product-service-dev.yaml --project-directory /Users/jasonchen/Project/boat-house/boat-house-backend/src/product-service/api up -d
+		pwd, _ := os.Getwd()
+		composeCmd := exec.Command("docker-compose", "-f", yamlFilePath, "--project-directory", pwd, "up", "-d")
+		composeCmd.Stdout = os.Stdout
+		composeCmd.Stderr = os.Stderr
+		if composeCmdErr := composeCmd.Run(); composeCmdErr != nil {
+			common.SmartIDELog.Fatal(composeCmdErr)
+		}
+
+		//3. 使用浏览器打开web ide
+		fmt.Println(instanceI18nStart.Info.Info_running_openbrower) //TODO: 增加等待某某网址的提示
+		url := fmt.Sprintf(`http://localhost:%v`, ideBindingPort)
+		fmt.Println("打开", url) //TODO: 国际化
+		isUrlReady := false
+		for !isUrlReady {
+			resp, err := http.Get(url)
+			if (err == nil) && (resp.StatusCode == 200) {
+				isUrlReady = true
+				common.OpenBrowser(url)
+				fmt.Printf("打开 %v \n", url)
+			}
+
+		}
+
+		//99. 结束
 		fmt.Println(instanceI18nStart.Info.Info_end)
+
+		// tunnel， 死循环，不结束
+		for {
+			tunnel.AutoTunnelMultiple(fmt.Sprintf("localhost:%v", sshBindingPort), "root", "root123") //TODO: 登录的用户名，密码要能够从配置文件中读取出来
+			time.Sleep(time.Second * 10)
+		}
 
 	},
 }
