@@ -49,7 +49,7 @@ var startCmd = &cobra.Command{
 		//1. 获取docker compose的文件内容
 		var yamlFileCongfig YamlFileConfig
 		yamlFileCongfig.GetConfig()
-		dockerCompose, sshBindingPort := yamlFileCongfig.ConvertToDockerCompose()
+		dockerCompose, ideBindingPort, sshBindingPort := yamlFileCongfig.ConvertToDockerCompose()
 		yamlFilePath, _ := dockerCompose.SaveFile(yamlFileCongfig.Workspace.DevContainer.ServiceName)
 		fmt.Printf("docker-compose: %v \n", yamlFilePath)
 		fmt.Printf("SSH转发端口：%v \n", sshBindingPort) //TODO: 国际化	// 提示用户ssh端口绑定到了本地的某个端口
@@ -88,7 +88,7 @@ var startCmd = &cobra.Command{
 
 		//3. 使用浏览器打开web ide
 		fmt.Println(instanceI18nStart.Info.Info_running_openbrower) //TODO: 增加等待某某网址的提示
-		url := fmt.Sprintf(`http://localhost:%v`, yamlFileCongfig.Workspace.DevContainer.WebidePort)
+		url := fmt.Sprintf(`http://localhost:%v`, ideBindingPort)
 		isUrlReady := false
 		for !isUrlReady {
 			resp, err := http.Get(url)

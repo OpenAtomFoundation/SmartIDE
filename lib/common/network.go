@@ -40,3 +40,23 @@ func IsPortAvailable(port int) bool {
 	defer listener.Close()
 	return true
 }
+
+// 检查当前端口是否被占用，并返回一个可用端口
+func CheckAndGetAvailablePort(checkPort int, step int) (usablePort int) {
+	if step <= 0 {
+		step = 100
+	}
+	usablePort = checkPort
+
+	isPortUnable := false
+	for !isPortUnable {
+
+		if !IsPortAvailable(checkPort) {
+			usablePort += 100
+		} else {
+			isPortUnable = true
+		}
+	}
+
+	return usablePort
+}
