@@ -18,6 +18,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -55,12 +56,23 @@ var startCmd = &cobra.Command{
 		fmt.Printf("SSH转发端口：%v \n", sshBindingPort) //TODO: 国际化	// 提示用户ssh端口绑定到了本地的某个端口
 
 		//2. 创建容器
-		//2.1. 创建网络
 		ctx := context.Background()
 		cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 		if err != nil {
 			panic(err)
 		}
+
+		//2.0. docker pull
+		for _, service := range dockerCompose.Services {
+			fmt.Println("docker pull ", service.Image.Name)
+			reader, err := cli.ImagePull(ctx, service.Image.Name, types.ImagePullOptions{})
+			if err != nil {
+				panic(err)
+			}
+			io.Copy(os.Stdout, reader)
+		}
+
+		//2.1. 创建网络
 		for network := range dockerCompose.Networks {
 			networkList, _ := cli.NetworkList(ctx, types.NetworkListOptions{})
 			isContain := false
@@ -89,6 +101,7 @@ var startCmd = &cobra.Command{
 		//3. 使用浏览器打开web ide
 		fmt.Println(instanceI18nStart.Info.Info_running_openbrower) //TODO: 增加等待某某网址的提示
 		url := fmt.Sprintf(`http://localhost:%v`, ideBindingPort)
+		fmt.Println("打开", url) //TODO: 国际化
 		isUrlReady := false
 		for !isUrlReady {
 			resp, err := http.Get(url)

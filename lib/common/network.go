@@ -51,7 +51,7 @@ func CheckAndGetAvailablePort(checkPort int, step int) (usablePort int) {
 	isPortUnable := false
 	for !isPortUnable {
 
-		if !IsPortAvailable(checkPort) {
+		if !IsPortAvailable(usablePort) {
 			usablePort += 100
 		} else {
 			isPortUnable = true
