@@ -30,8 +30,6 @@ import (
 	"github.com/leansoftX/smartide-cli/lib/i18n"
 	"github.com/leansoftX/smartide-cli/lib/tunnel"
 
-	//"strconv"
-
 	"github.com/spf13/cobra"
 )
 
@@ -45,6 +43,7 @@ var startCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		//0. 提示文本
+		fmt.Println(Version)
 		fmt.Println(i18n.GetInstance().Start.Info.Info_start)
 
 		//1. 获取docker compose的文件内容

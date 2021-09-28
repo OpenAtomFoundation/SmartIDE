@@ -29,22 +29,25 @@ import (
 
 var cfgFile string
 
-var instanceI18n = i18n.GetInstance().Main
+var instanceI18nMain = i18n.GetInstance().Main
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "smartide-cli",
-	Short: instanceI18n.Info.Help_short,
-	Long:  instanceI18n.Info.Help_long, // logo only show in init
+	Short: instanceI18nMain.Info.Help_short,
+	Long:  instanceI18nMain.Info.Help_long, // logo only show in init
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
 }
 
+var Version string
+
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
+func Execute(version string) {
 
+	Version = version
 	common.SmartIDELog.Error(rootCmd.Execute())
 
 }
@@ -79,7 +82,7 @@ func init() {
 	rootCmd.AddCommand(startCmd)
 	rootCmd.AddCommand(stopCmd)
 	rootCmd.AddCommand(removeCmd)
-
+	rootCmd.AddCommand(versionCmd)
 }
 
 // initConfig reads in config file and ENV variables if set.
