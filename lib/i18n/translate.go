@@ -20,6 +20,9 @@ type I18nSource struct {
 			Help_long      string `json:"help_long"`
 			Usage_template string `json:"usage_template"`
 		} `json:"info"`
+		Error struct {
+			File_not_exit string `json:"file_not_exit"`
+		} `json:"error"`
 	} `json:"main"`
 
 	Help struct {

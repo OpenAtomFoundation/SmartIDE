@@ -19,8 +19,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/leansoftX/smartide-cli/cmd"
+	"github.com/leansoftX/smartide-cli/lib/common"
 )
 
 func main() {
@@ -30,7 +32,18 @@ func main() {
 
 // running before main
 func init() {
-	logFile, err := os.OpenFile("./smartide.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	dirname, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+	logFilePath := filepath.Join(dirname, ".ide/smartide.log") // current user dir + ...
+
+	if !common.FileIsExit(logFilePath) {
+		os.MkdirAll(filepath.Join(dirname, ".ide"), os.ModePerm) // create dir
+		os.Create(logFilePath)                                   // create file
+	}
+
+	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		fmt.Println("open log file failed, err:", err)
 		return
