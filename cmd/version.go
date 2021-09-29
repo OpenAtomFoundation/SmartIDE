@@ -47,9 +47,8 @@ func (smartVersion *SmartVersion) ConvertToJson() string {
 版本号：%v
 构建号：%v
 提交记录：%v
-构建时间：%v
 公司：%v`,
-		smartVersion.VersionNumber, smartVersion.BuildNumber, smartVersion.TargetCommitish, smartVersion.BuildQuqueTime, smartVersion.Company)
+		smartVersion.VersionNumber, smartVersion.BuildNumber, smartVersion.TargetCommitish, smartVersion.Company)
 	return json
 }
 
