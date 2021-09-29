@@ -36,7 +36,8 @@
             "usage_template": "使用:{{if .Runnable}}\n  {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}\n  {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}\nAliases:\n  {{.NameAndAliases}}{{end}}{{if .HasExample}}\nExamples:\n{{.Example}}{{end}}{{if .HasAvailableSubCommands}}\n命令:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name \"help\"))}}\n  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}\n标记:\n{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}\nGlobal Flags:\n{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasHelpSubCommands}}\nAdditional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}\n  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}\n使用 \"{{.CommandPath}} [command] --help\" 可以看到命令的详细帮助信息.{{end}}\n"          
         },
         "error":{           
-             "file_not_exit":"配置文件不存在，请手动在当前目录下创建 “.ide/.ide.yaml” ！"
+             "file_not_exit":"配置文件不存在，请手动在当前目录下创建 “.ide/.ide.yaml” ！",
+             "version_not_build":"请通过流水线生成版本号！"
         }
     },
     "init":{

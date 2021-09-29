@@ -35,13 +35,18 @@ func (sLog *smartIDELogStruct) Fatal(fatal error) (reErr error) {
 }
 
 func (sLog *smartIDELogStruct) Info(info string) (err error) {
-	//TOOD:
+
+	log.Println(info)
 
 	return nil
 }
 
 func (sLog *smartIDELogStruct) Debug(info string) (err error) {
-	//TOOD:
+	log.Println(info)
+	return nil
+}
 
+func (sLog *smartIDELogStruct) Warning(warning string) (err error) {
+	log.Println(warning)
 	return nil
 }

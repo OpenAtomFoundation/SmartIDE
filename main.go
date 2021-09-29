@@ -24,18 +24,22 @@ import (
 
 	"github.com/leansoftX/smartide-cli/cmd"
 	"github.com/leansoftX/smartide-cli/lib/common"
+	"github.com/leansoftX/smartide-cli/lib/i18n"
 
 	_ "embed"
 )
 
 func main() {
 
-	cmd.Execute(formatVerion())
+	currentVersion := formatVerion()
+	fmt.Print(currentVersion)
+
+	cmd.Execute(currentVersion)
 }
 
 // running before main
 func init() {
-	dirname, err := os.UserHomeDir()
+	dirname, err := os.UserHomeDir() // home dir
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -59,10 +63,18 @@ func init() {
 //go:embed stable.txt
 var version string
 
+// 格式化版本号，在stable.txt文件中读取
+// 注：embed 不支持 “..”， 即上级目录
 func formatVerion() string {
 
-	if strings.ToLower(version[0:1]) != "v" {
+	if version == "$(version)" {
+
+		common.SmartIDELog.Warning(i18n.GetInstance().Main.Error.Version_not_build)
+
+	} else if strings.ToLower(version[0:1]) != "v" {
+
 		return "" + version + "\n"
+
 	}
 
 	return version + "\n"
