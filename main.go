@@ -16,6 +16,7 @@ limitations under the License.
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -31,10 +32,10 @@ import (
 
 func main() {
 
-	currentVersion := formatVerion()
-	fmt.Print(currentVersion)
+	versionInfo := formatVerion()
+	fmt.Println(versionInfo.VersionNumber)
 
-	cmd.Execute(currentVersion)
+	cmd.Execute(versionInfo)
 }
 
 // running before main
@@ -61,22 +62,26 @@ func init() {
 }
 
 //go:embed stable.txt
-var version string
+var stable string
+
+//go:embed stable.json
+var stableJson string
 
 // 格式化版本号，在stable.txt文件中读取
 // 注：embed 不支持 “..”， 即上级目录
-func formatVerion() string {
+func formatVerion() (smartVersion cmd.SmartVersion) {
 
-	if version == "$(version)" {
+	// 转换为结构体
+	json.Unmarshal([]byte(stableJson), &smartVersion)
 
+	// 版本号赋值
+	smartVersion.VersionNumber = stable
+	if stable == "$(version)" {
 		common.SmartIDELog.Warning(i18n.GetInstance().Main.Error.Version_not_build)
-
-	} else if strings.ToLower(version[0:1]) != "v" {
-
-		return "" + version + "\n"
-
+	} else if strings.ToLower(stable[0:1]) != "v" {
+		smartVersion.VersionNumber = "v" + smartVersion.VersionNumber
 	}
 
-	return version + "\n"
+	return smartVersion
 
 }
