@@ -27,8 +27,30 @@ var versionCmd = &cobra.Command{
 	Short: "Version", //TODO: 国际化
 	Long:  "Version", //TODO: 国际化
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("SmartIDE " + Version)
+
+		fmt.Println(Version.ConvertToJson())
 	},
+}
+
+type SmartVersion struct {
+	VersionNumber   string
+	TagName         string `json:"tag_name"`
+	BuildNumber     string `json:"build_number"`
+	TargetCommitish string `json:"target_commitish"`
+	BuildQuqueTime  string `json:"build_ququeTime"`
+	Company         string `json:"company"`
+}
+
+//
+func (smartVersion *SmartVersion) ConvertToJson() string {
+	json := fmt.Sprintf(`
+版本号：%v
+构建号：%v
+提交记录：%v
+构建时间：%v
+公司：%v`,
+		smartVersion.VersionNumber, smartVersion.BuildNumber, smartVersion.TargetCommitish, smartVersion.BuildQuqueTime, smartVersion.Company)
+	return json
 }
 
 func init() {

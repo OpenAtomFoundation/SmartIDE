@@ -16,6 +16,7 @@ limitations under the License.
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -24,18 +25,22 @@ import (
 
 	"github.com/leansoftX/smartide-cli/cmd"
 	"github.com/leansoftX/smartide-cli/lib/common"
+	"github.com/leansoftX/smartide-cli/lib/i18n"
 
 	_ "embed"
 )
 
 func main() {
 
-	cmd.Execute(formatVerion())
+	versionInfo := formatVerion()
+	fmt.Println(versionInfo.VersionNumber)
+
+	cmd.Execute(versionInfo)
 }
 
 // running before main
 func init() {
-	dirname, err := os.UserHomeDir()
+	dirname, err := os.UserHomeDir() // home dir
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -57,14 +62,26 @@ func init() {
 }
 
 //go:embed stable.txt
-var version string
+var stable string
 
-func formatVerion() string {
+//go:embed stable.json
+var stableJson string
 
-	if strings.ToLower(version[0:1]) != "v" {
-		return "" + version + "\n"
+// 格式化版本号，在stable.txt文件中读取
+// 注：embed 不支持 “..”， 即上级目录
+func formatVerion() (smartVersion cmd.SmartVersion) {
+
+	// 转换为结构体
+	json.Unmarshal([]byte(stableJson), &smartVersion)
+
+	// 版本号赋值
+	smartVersion.VersionNumber = stable
+	if stable == "$(version)" {
+		common.SmartIDELog.Warning(i18n.GetInstance().Main.Error.Version_not_build)
+	} else if strings.ToLower(stable[0:1]) != "v" {
+		smartVersion.VersionNumber = "v" + smartVersion.VersionNumber
 	}
 
-	return version + "\n"
+	return smartVersion
 
 }

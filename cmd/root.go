@@ -41,13 +41,13 @@ var rootCmd = &cobra.Command{
 	// Run: func(cmd *cobra.Command, args []string) { },
 }
 
-var Version string
+var Version SmartVersion
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute(version string) {
+func Execute(smartVersion SmartVersion) {
 
-	Version = version
+	Version = smartVersion
 	common.SmartIDELog.Error(rootCmd.Execute())
 
 }

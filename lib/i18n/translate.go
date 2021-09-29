@@ -21,7 +21,8 @@ type I18nSource struct {
 			Usage_template string `json:"usage_template"`
 		} `json:"info"`
 		Error struct {
-			File_not_exit string `json:"file_not_exit"`
+			File_not_exit     string `json:"file_not_exit"`
+			Version_not_build string `json:"version_not_build"`
 		} `json:"error"`
 	} `json:"main"`
 
