@@ -2,7 +2,6 @@ package common
 
 import (
 	"fmt"
-	"log"
 	"net"
 )
 
@@ -33,7 +32,8 @@ func IsPortAvailable(port int) bool {
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
 
-		log.Printf("port %s is taken: %s", address, err)
+		SmartIDELog.Warning(fmt.Sprintf("port %s is taken: %s", address, err))
+
 		return false
 	}
 

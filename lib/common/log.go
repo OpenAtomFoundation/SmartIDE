@@ -48,5 +48,6 @@ func (sLog *smartIDELogStruct) Debug(info string) (err error) {
 
 func (sLog *smartIDELogStruct) Warning(warning string) (err error) {
 	log.Println(warning)
+	fmt.Println(warning)
 	return nil
 }

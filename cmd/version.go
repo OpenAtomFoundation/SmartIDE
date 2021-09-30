@@ -33,12 +33,13 @@ var versionCmd = &cobra.Command{
 }
 
 type SmartVersion struct {
-	VersionNumber   string
-	TagName         string `json:"tag_name"`
-	BuildNumber     string `json:"build_number"`
-	TargetCommitish string `json:"target_commitish"`
-	BuildQuqueTime  string `json:"build_ququeTime"`
-	Company         string `json:"company"`
+	VersionNumber        string
+	TagName              string `json:"tag_name"`
+	BuildNumber          string `json:"build_number"`
+	TargetCommitish      string `json:"target_commitish"`
+	TargetCommitishShort string
+	BuildQuqueTime       string `json:"build_ququeTime"`
+	Company              string `json:"company"`
 }
 
 //

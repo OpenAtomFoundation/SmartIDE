@@ -82,6 +82,11 @@ func formatVerion() (smartVersion cmd.SmartVersion) {
 		smartVersion.VersionNumber = "v" + smartVersion.VersionNumber
 	}
 
+	// commit id 截取最后8位
+	if len(smartVersion.TargetCommitish) > 8 {
+		smartVersion.TargetCommitishShort = smartVersion.TargetCommitish[(len(smartVersion.TargetCommitish) - 8):]
+	}
+
 	return smartVersion
 
 }
