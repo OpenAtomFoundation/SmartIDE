@@ -12,20 +12,24 @@ description: >
   使用mocah编写的测试代码可以完成所有以上API内部运算运算逻辑的验证，最终使用 mocha-junit-reports 来生成XML格式的测试结果文件以便 Azure DevOps 可以读取测试结果提供DevOps流水线的测试集成。
 ---
 
-## 场景说明
+## 场景
 
-- 本地构建本项目的方式
-- SmartIDE本地运行，链接本地开发容器
-- SmartIDE链接远程容器模式
+- SmartIDE本地运行，使用WebIDE方式调试
+- 使用本地VScode链接smartIDE开发容器调试
+
+## 整体说明
+
+![](images/process-all.png)
 
 ## 先决条件
 
 安装SmartIDE，参考链接: https://smartide.dev/zh/docs/getting-started/install/
 
-## 
+Demo源码获取地址，https://github.com/idcf-boat-house/boathouse-calculator/blob/master/README.md
 
-{{% pageinfo %}}
-内容更新中。
-{{% /pageinfo %}}
+##  场景1.SmartIDE本地运行，使用WebIDE方式调试
 
-内容更新中。
+
+
+##  场景2.使用本地VScode链接smartIDE开发容器调试
+
