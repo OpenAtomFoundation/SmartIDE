@@ -22,11 +22,13 @@ description: >
 
 ![](/images/process-all.png)
 
+机制说明：
+
 ## 先决条件
 
 安装SmartIDE，参考链接:https://smartide.dev/zh/docs/getting-started/install/
 
-Demo源码获取地址，参考链接:https://github.com/CadenGjy/boathouse-calculator.git
+Demo源码获取地址，链接:https://github.com/CadenGjy/boathouse-calculator.git
 
 ##  场景1.SmartIDE本地运行，使用WebIDE方式调试
 
@@ -56,7 +58,11 @@ npm start
 
 可以看到应用已在容器3001端口启动，这时通过隧道转发机制，我们可以直接通过http://localhost:3001/打开应用。
 
-3.
+3.添加断点调试程序
+
+使用‘Ctrl+z’终止程序
+
+![](/images/ctrl-z.png)
 
 ##  场景2.使用本地VScode链接smartIDE开发容器调试
 
