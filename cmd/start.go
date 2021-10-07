@@ -63,11 +63,12 @@ var startCmd = &cobra.Command{
 		//2.0. docker pull
 		for _, service := range dockerCompose.Services {
 			fmt.Println("docker pull ", service.Image.Name)
-			reader, err := cli.ImagePull(ctx, service.Image.Name, types.ImagePullOptions{})
+			out, err := cli.ImagePull(ctx, service.Image.Name, types.ImagePullOptions{})
 			if err != nil {
 				panic(err)
 			}
-			io.Copy(os.Stdout, reader)
+
+			io.Copy(io.Discard, out)
 		}
 
 		//2.1. 创建网络
