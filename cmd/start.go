@@ -62,7 +62,7 @@ var startCmd = &cobra.Command{
 
 		//2.0. docker pull
 		for _, service := range dockerCompose.Services {
-			fmt.Println("start pull ", service.Image.Name, " ... ")
+			fmt.Printf("start pull %v:%v ... \n", service.Image.Name, service.Image.Tag)
 			out, err := cli.ImagePull(ctx, service.Image.Name, types.ImagePullOptions{})
 			if err != nil {
 				panic(err)
