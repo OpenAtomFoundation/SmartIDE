@@ -66,3 +66,24 @@ func (c *DockerComposeYml) SaveFile(projectName string) (yamlFilePath string, er
 
 	return yamlFilePath, err
 }
+
+//获取docker-compose.yaml文件位置
+func (c *DockerComposeYml) GetDockerComposeFile(projectName string) (yamlFilePath string, err error) {
+
+	dirname, err := os.UserHomeDir()
+	if err != nil {
+		common.SmartIDELog.Fatal(err)
+	}
+	yamlFileName := fmt.Sprintf("docker-compose-%s.yaml", projectName)
+	yamlFileDirPath := filepath.Join(dirname, ".ide/") // current user dir + ...
+	yamlFilePath = filepath.Join(yamlFileDirPath, yamlFileName)
+
+	if common.FileIsExit(yamlFilePath) {
+		return yamlFilePath, err
+	} else {
+		//common.SmartIDELog.Fatal("err")
+		fmt.Sprintf("找不到docker-compose-%s.yaml", projectName)
+	}
+
+	return "", err
+}
