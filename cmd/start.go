@@ -42,6 +42,18 @@ var startCmd = &cobra.Command{
 	Long:  instanceI18nStart.Info.Help_long,
 	Run: func(cmd *cobra.Command, args []string) {
 
+		//校验是否能正常执行docker和docker-composefmt.Println("检测docker")
+		dockerCmd := exec.Command("docker", "-v")
+		if dockerErr := dockerCmd.Run(); dockerErr != nil {
+			fmt.Println(instanceI18nStart.Error.Docker_Err)
+			return
+		}
+		dockercomposeCmd := exec.Command("docker-compose", "version")
+		if dockercomposeErr := dockercomposeCmd.Run(); dockercomposeErr != nil {
+			fmt.Println(instanceI18nStart.Error.Docker_Compose_Err)
+			return
+		}
+
 		//0. 提示文本
 		fmt.Println(i18n.GetInstance().Start.Info.Info_start)
 
@@ -136,4 +148,26 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// startCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+func checkdocker() bool {
+	fmt.Println("检测docker")
+	dockerCmd := exec.Command("docker vsersion")
+	dockerCmd.Stdout = os.Stdout
+	dockerCmd.Stderr = os.Stderr
+	if dockerErr := dockerCmd.Run(); dockerErr != nil {
+		//common.SmartIDELog.Fatal(dockerErr)
+		fmt.Println(dockerErr)
+	}
+	aaaCmd := exec.Command("aaa")
+	aaaCmd.Stdout = os.Stdout
+	aaaCmd.Stderr = os.Stderr
+	if aaaErr := aaaCmd.Run(); aaaErr != nil {
+		fmt.Println(aaaErr)
+	}
+
+	dockercomposev := exec.Command("docker-compose version")
+
+	fmt.Println(dockercomposev)
+	return true
 }

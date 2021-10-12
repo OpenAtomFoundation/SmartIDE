@@ -8,7 +8,10 @@
             "info_running_openbrower":"打开浏览器......",
             "info_end":"SmartIDE启动完毕"
         },
-        "error":{}
+        "error":{
+            "docker_err":"请检查当前环境docker是否正常运行",
+            "docker_compose_err":"请检查当前环境docker-compose是否正常运行"
+        }
     },
     "stop":{
         "info":{

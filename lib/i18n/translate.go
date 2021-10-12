@@ -52,6 +52,8 @@ type I18nSource struct {
 			Info_running_openbrower string `json:"info_running_openbrower"`
 		} `json:"info"`
 		Error struct {
+			Docker_Err         string `json:"docker_err"`
+			Docker_Compose_Err string `json:"docker_compose_err"`
 		} `json:"error"`
 	} `json:"start"`
 

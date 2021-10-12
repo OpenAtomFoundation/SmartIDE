@@ -8,7 +8,10 @@
             "info_running_openbrower": "Open brower......",
             "info_end": "SmartIDE started......"
         },
-        "error": {}
+        "error": {
+            "docker_err":"Please check whether the docker in the current environment works normally",
+            "docker_compose_err":"Please check whether the docker-compose in the current environment works normally"
+        }
     },
     "stop": {
         "info": {
