@@ -16,13 +16,12 @@ limitations under the License.
 package cmd
 
 import (
-	"context"
 	"fmt"
+	"os"
+	"os/exec"
 
+	"github.com/leansoftX/smartide-cli/lib/common"
 	"github.com/leansoftX/smartide-cli/lib/i18n"
-
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/client"
 	"github.com/spf13/cobra"
 )
 
@@ -34,15 +33,25 @@ var removeCmd = &cobra.Command{
 	Short: instanceI18nRemove.Info.Help_short,
 	Long:  instanceI18nRemove.Info.Help_long,
 	Run: func(cmd *cobra.Command, args []string) {
-		var SmartIDEName = "smartide"
 
 		fmt.Println(instanceI18nRemove.Info.Info_start)
-		ctx := context.Background()
-		cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-		if err != nil {
-			panic(err)
+		//1. 获取docker compose的文件内容
+		var yamlFileCongfig YamlFileConfig
+		yamlFileCongfig.GetConfig()
+		dockerCompose, _, _ := yamlFileCongfig.ConvertToDockerCompose()
+		servicename := yamlFileCongfig.Workspace.DevContainer.ServiceName
+
+		fmt.Printf("docker-compose servicename: %v \n", servicename)
+
+		yamlFilePath, _ := dockerCompose.GetDockerComposeFile(servicename)
+
+		pwd, _ := os.Getwd()
+		composeCmd := exec.Command("docker-compose", "-f", yamlFilePath, "--project-directory", pwd, "down", "-v")
+		composeCmd.Stdout = os.Stdout
+		composeCmd.Stderr = os.Stderr
+		if composeCmdErr := composeCmd.Run(); composeCmdErr != nil {
+			common.SmartIDELog.Fatal(composeCmdErr)
 		}
-		cli.ContainerRemove(ctx, SmartIDEName, types.ContainerRemoveOptions{})
 		fmt.Println(instanceI18nRemove.Info.Info_end)
 	},
 }

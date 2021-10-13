@@ -42,6 +42,31 @@ var startCmd = &cobra.Command{
 	Long:  instanceI18nStart.Info.Help_long,
 	Run: func(cmd *cobra.Command, args []string) {
 
+		//校验是否能正常执行docker和docker-composefmt.Println("检测docker")
+		dockerCmd := exec.Command("docker", "-v")
+		if dockerErr := dockerCmd.Run(); dockerErr != nil {
+			fmt.Println(instanceI18nStart.Error.Docker_Err)
+			return
+		}
+
+		dockerpsCmd := exec.Command("docker", "ps")
+		if dockerpsErr := dockerpsCmd.Run(); dockerpsErr != nil {
+			fmt.Println(instanceI18nStart.Error.Docker_Err)
+			return
+		}
+
+		dockercomposeCmd := exec.Command("docker-compose", "version")
+		if dockercomposeErr := dockercomposeCmd.Run(); dockercomposeErr != nil {
+			fmt.Println(instanceI18nStart.Error.Docker_Compose_Err)
+			return
+		}
+
+		dockercomposeupCmd := exec.Command("docker-compose", "up")
+		if dockercomposeupErr := dockercomposeupCmd.Run(); dockercomposeupErr != nil {
+			fmt.Println(instanceI18nStart.Error.Docker_Compose_Err)
+			return
+		}
+
 		//0. 提示文本
 		fmt.Println(i18n.GetInstance().Start.Info.Info_start)
 
