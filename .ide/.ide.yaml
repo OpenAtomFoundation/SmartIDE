@@ -1,0 +1,26 @@
+
+  version: smartide/v0.2
+  orchestrator:
+    type: docker-compose
+    version: 3
+  workspace:
+    dev-container:
+      service-name: smartide-docs
+      webide-port: 6800
+    services:
+  
+      smartide-docs:
+        image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-ubuntu:latest
+        restart: always
+        environment:
+          ROOT_PASSWORD: root123
+        volumes:
+          - .:/home/project
+        expose:
+          - 3000
+        networks:
+          - smartide-network
+  
+    networks:
+      smartide-network:
+        external: true
