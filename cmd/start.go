@@ -149,25 +149,3 @@ func init() {
 	// is called directly, e.g.:
 	// startCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
-
-func checkdocker() bool {
-	fmt.Println("检测docker")
-	dockerCmd := exec.Command("docker vsersion")
-	dockerCmd.Stdout = os.Stdout
-	dockerCmd.Stderr = os.Stderr
-	if dockerErr := dockerCmd.Run(); dockerErr != nil {
-		//common.SmartIDELog.Fatal(dockerErr)
-		fmt.Println(dockerErr)
-	}
-	aaaCmd := exec.Command("aaa")
-	aaaCmd.Stdout = os.Stdout
-	aaaCmd.Stderr = os.Stderr
-	if aaaErr := aaaCmd.Run(); aaaErr != nil {
-		fmt.Println(aaaErr)
-	}
-
-	dockercomposev := exec.Command("docker-compose version")
-
-	fmt.Println(dockercomposev)
-	return true
-}
