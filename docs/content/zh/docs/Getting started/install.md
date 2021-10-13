@@ -24,23 +24,40 @@ description: >
 
 **使用curl下载并安装**
 
-> 您可以运行如下命令下载安装最新版
+> 最新稳定版安装命令
 
 ```bash
 curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/releases/$(curl -L -s https://smartidedl.blob.core.chinacloudapi.cn/releases/stable.txt)/smartide" \
-&& cp smartide /usr/local/bin/smartide \
+&& mv -f smartide /usr/local/bin/smartide \
 && chmod +x /usr/local/bin/smartide
 ```
+
+> 每日构建版本安装命令
+
+```bash
+curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/builds/$(curl -L -s https://smartidedl.blob.core.chinacloudapi.cn/builds/stable.txt)/smartide" \
+&& mv -f smartide /usr/local/bin/smartide \
+&& chmod +x /usr/local/bin/smartide
+```
+
 
 ### windows
 
 **使用powershell 下载并安装**
 
-> 您可以运行如下命令下载安装最新版
+> 最新稳定版安装命令
 
 ```powershell
 Invoke-WebRequest -Uri ("https://smartidedl.blob.core.chinacloudapi.cn/releases/"+(Invoke-RestMethod https://smartidedl.blob.core.chinacloudapi.cn/releases/stable.txt)+"/SetupSmartIDE.msi")  -OutFile "smartide.msi"
 
  .\smartIDE.msi
- 
 ```
+
+> 每日构建版本安装命令
+
+```powershell
+Invoke-WebRequest -Uri ("https://smartidedl.blob.core.chinacloudapi.cn/builds/"+(Invoke-RestMethod https://smartidedl.blob.core.chinacloudapi.cn/builds/stable.txt)+"/SetupSmartIDE.msi")  -OutFile "smartide.msi"
+
+ .\smartIDE.msi
+```
+

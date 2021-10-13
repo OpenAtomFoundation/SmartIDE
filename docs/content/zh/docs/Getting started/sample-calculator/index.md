@@ -4,10 +4,7 @@ linkTitle: "示例：计算器应用"
 weight: 10
 date: 2021-09-29
 description: >
-  本应用运行状态为网页中的计算器，使用node.js创建，并包含了试用mocha的单元测试代码，如下图：
-  
-  ![](images/calculator-ui.png)
-
+  本应用运行状态为网页中的计算器，使用node.js创建，并包含了试用mocha的单元测试代码。
   代码中使用node.js代码提供了REST APIs，其中提供各种数学计算功能单元。
   使用mocah编写的测试代码可以完成所有以上API内部运算运算逻辑的验证，最终使用 mocha-junit-reports 来生成XML格式的测试结果文件
 
@@ -20,7 +17,7 @@ description: >
 
 ## 整体说明
 
-![](images/process-all.png)
+![](process-all.png)
 
 机制说明：
 
@@ -45,7 +42,7 @@ cd boathouse-calculator
 smartide start 
 ```
 
-![](images/smartide-start.png)
+![](smartide-start.png)
 
 在打开的WebIDE 中打开 terminal，并启动项目
 
@@ -54,7 +51,7 @@ npm install
 npm start 
 ```
 
-![](images/start-calculator.png)
+![](start-calculator.png)
 
 可以看到应用已在容器3001端口启动，这时通过隧道转发机制，我们可以直接通过 http://localhost:3001/ 打开应用
 
@@ -62,36 +59,36 @@ npm start
 
 在终端中，使用‘Ctrl+z’终止进程
 
-![](images/ctrl-z.png)
+![](ctrl-z.png)
 
 添加断点 **/api/controllers/arithmeticController.js**  的line47
 
-![](images/line47.png)
+![](line47.png)
 
 输入 **F5** 启动调试，打开 http://localhost:3001/ 即可通过使用计算器进入调试步骤
 
-![](images/debug-step.png)
+![](debug-step.png)
 
 ##  场景2.使用本地VScode链接smartIDE开发容器调试
 
 1.VScode安装插件 **Remote Development**
 
-![](images/remote-deployment.png)
+![](remote-deployment.png)
 
 2.新建SSH连接并保存到配置文件
 
-![](images/ssh-remote.png)
+![](ssh-remote.png)
 
-![](images/save-ssh.png)
+![](save-ssh.png)
 
 3.打开SSH连接，中间需要多次输入密码
 
-![](images/login-password.png)
+![](login-password.png)
 
 4.打开远程容器目录
 
-![](images/opendir.png)
+![](opendir.png)
 
 5.npm i安装依赖包，运行和调试
 
-![](images/debugcode.png)
+![](debugcode.png)
