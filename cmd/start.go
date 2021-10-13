@@ -48,8 +48,21 @@ var startCmd = &cobra.Command{
 			fmt.Println(instanceI18nStart.Error.Docker_Err)
 			return
 		}
+
+		dockerpsCmd := exec.Command("docker", "ps")
+		if dockerpsErr := dockerpsCmd.Run(); dockerpsErr != nil {
+			fmt.Println(instanceI18nStart.Error.Docker_Err)
+			return
+		}
+
 		dockercomposeCmd := exec.Command("docker-compose", "version")
 		if dockercomposeErr := dockercomposeCmd.Run(); dockercomposeErr != nil {
+			fmt.Println(instanceI18nStart.Error.Docker_Compose_Err)
+			return
+		}
+
+		dockercomposeupCmd := exec.Command("docker-compose", "up")
+		if dockercomposeupErr := dockercomposeupCmd.Run(); dockercomposeupErr != nil {
 			fmt.Println(instanceI18nStart.Error.Docker_Compose_Err)
 			return
 		}
