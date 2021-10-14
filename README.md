@@ -18,15 +18,19 @@ git clone https://github.com/SmartIDE/SmartIDE.git
 cd SmartIDE
 ## Clone the submodules and all its dependencies
 git submodule update --init --recursive
+## If you have SmartIDE installed, run the following
+smartide start
 ```
 
 Use the following command to start a Hugo Development server to work on the documentation.
 
-> **Note:** Make sure you have [Hugo](https://gohugo.io/) installed first.
+> **Note:** 
+> - Make sure you have [Hugo](https://gohugo.io/) installed first.
+> - If you are running SmartIDE, use the build-in terminal to run the following commands
 
 ```shell
 cd docs
-hugo server
+hugo server --bind 0.0.0.0
 ```
 
 Open http://localhost:1313

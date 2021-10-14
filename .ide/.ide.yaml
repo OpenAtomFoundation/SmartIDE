@@ -10,7 +10,7 @@
     services:
   
       smartide-docs:
-        image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-go:hugo
+        image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-go:latest
         restart: always
         environment:
           ROOT_PASSWORD: root123
