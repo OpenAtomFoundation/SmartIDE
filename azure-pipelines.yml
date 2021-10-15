@@ -1,0 +1,27 @@
+# $(github_pat) is in pipeline varialbes
+
+trigger:
+- main
+
+resources:
+  repositories:
+  - repository: self
+    type: git
+    ref: refs/heads/main
+
+stages:
+  - stage: Sync2GitHub
+    jobs:
+    - job: Sync
+      displayName: Sync to Github
+      pool:
+        vmImage: ubuntu-20.04
+      steps:
+      - checkout: self
+      - task: CmdLine@2
+        displayName: Sync
+        inputs:
+          script: |
+            git pull https://github.com/SmartIDE/SmartIDE.git
+            git push https://$(github_pat)@github.com/SmartIDE/SmartIDE.git head:main
+
