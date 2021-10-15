@@ -22,6 +22,6 @@ stages:
         displayName: Sync
         inputs:
           script: |
-            git pull https://github.com/SmartIDE/SmartIDE.git
+            git pull https://github.com/SmartIDE/SmartIDE.git --no-rebase 
             git push https://$(github_pat)@github.com/SmartIDE/SmartIDE.git head:main
 
