@@ -22,6 +22,8 @@ stages:
         displayName: Sync
         inputs:
           script: |
+            git config user.email "smartide@leansoftx.com"
+            git config user.name "smartide team"
             git pull https://github.com/SmartIDE/SmartIDE.git --no-rebase 
             git push https://$(github_pat)@github.com/SmartIDE/SmartIDE.git head:main
 
