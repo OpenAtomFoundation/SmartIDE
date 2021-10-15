@@ -29,6 +29,7 @@ Use the following command to start a Hugo Development server to work on the docu
 > - If you are running SmartIDE, use the build-in terminal to run the following commands
 
 ```shell
+npm install
 cd docs
 hugo server --bind 0.0.0.0
 ```
