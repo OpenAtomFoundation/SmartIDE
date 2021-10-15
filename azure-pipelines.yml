@@ -1,7 +1,13 @@
 # $(github_pat) is in pipeline varialbes
+name: $(date:yyyyMMdd)$(rev:.r)_$(Build.BuildId)_$(SourceBranchName)_$(Build.Reason)
 
 trigger:
-- main
+  branches:
+   include:
+     - main
+  paths:
+   exclude:
+     - azure-pipelines.yml
 
 resources:
   repositories:
@@ -11,6 +17,7 @@ resources:
 
 stages:
   - stage: Sync2GitHub
+    condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
     jobs:
     - job: Sync
       displayName: Sync to Github
