@@ -16,8 +16,8 @@
           ROOT_PASSWORD: root123
         volumes:
           - .:/home/project
-        ports:
-          - 1313:1313
+        expose:
+          - 1313
         networks:
           - smartide-network
   
