@@ -1,6 +1,6 @@
 ---
 title: "Docker Desktop 安装手册 (macOS)"
-linkTitle: "Docker Desktop 安装手册 (macOS)"
+linkTitle: "Docker 安装手册 (MacOS)"
 weight: 21
 date: 2021-09-26
 description: >

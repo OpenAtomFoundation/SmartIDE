@@ -16,7 +16,7 @@ description: >
 下载完成后请参考以下文档完成 Docker Desktop 的安装：
 
 - [在 Windows 上安装 Docker Desktop](docker-install-windows)
-- [在 Linux 上安装 Docker Desktop](docker-install-osx)
+- [在 MacOS 上安装 Docker Desktop](docker-install-osx)
 
 ## SmartIDE 安装手册
 

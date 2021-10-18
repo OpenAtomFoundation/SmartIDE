@@ -1,6 +1,6 @@
 ---
 title: "Docker Desktop 安装手册 (Win)"
-linkTitle: "Docker Desktop 安装手册 (Win)"
+linkTitle: "Docker 安装手册 (Win)"
 weight: 20
 date: 2021-09-26
 description: >
