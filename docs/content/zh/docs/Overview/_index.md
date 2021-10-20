@@ -3,7 +3,7 @@ title: "概述"
 linkTitle: "概述"
 weight: 1
 description: >
-  Here's where your user finds out if your project is for them.
+  什么是SmartIDE，它能帮你做些什么？
 ---
 
 {{% pageinfo %}}

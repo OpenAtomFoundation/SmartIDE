@@ -5,7 +5,7 @@ linkTitle: "教程"
 weight: 8
 date: 2017-01-04
 description: >
-  Show your user how to work through some end to end examples.
+  详细的操作指引，帮助你了解SmartIDE的各种功能。
 ---
 
 {{% pageinfo %}}

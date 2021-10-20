@@ -3,7 +3,7 @@ title: "参考资料"
 linkTitle: "参考资料"
 weight: 9
 description: >
-  Low level reference docs for your project.
+  提供SmartIDE相关的各项配置，参数和定制化说明。
 ---
 
 {{% pageinfo %}}

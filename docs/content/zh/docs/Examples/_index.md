@@ -5,7 +5,7 @@ linkTitle: "示例应用"
 weight: 3
 date: 2017-01-05
 description: >
-  See your project in action!
+  通过示例学习如何使用SmartIDE
 ---
 
 {{% pageinfo %}}

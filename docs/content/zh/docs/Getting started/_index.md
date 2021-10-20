@@ -3,7 +3,7 @@ title: "入门操作手册"
 linkTitle: "入门操作手册"
 weight: 2
 description: >
-  What does your user need to know to try your project?
+  5分钟启动你的第一个开发调试环境，支持单步调试。
 ---
 
 {{% pageinfo %}}
