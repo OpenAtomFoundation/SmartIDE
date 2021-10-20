@@ -1,32 +1,19 @@
-/*
-Copyright © 2021 NAME HERE <EMAIL ADDRESS>
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
 package cmd
 
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"os/exec"
+	"runtime"
+	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/leansoftX/smartide-cli/lib/common"
+	"github.com/leansoftX/smartide-cli/lib/docker/compose"
 	"github.com/leansoftX/smartide-cli/lib/i18n"
 	"github.com/leansoftX/smartide-cli/lib/tunnel"
 
@@ -35,6 +22,8 @@ import (
 
 var instanceI18nStart = i18n.GetInstance().Start
 
+var ideyamlfile string
+
 // startCmd represents the start command
 var startCmd = &cobra.Command{
 	Use:   "start",
@@ -42,40 +31,49 @@ var startCmd = &cobra.Command{
 	Long:  instanceI18nStart.Info.Help_long,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		//校验是否能正常执行docker和docker-composefmt.Println("检测docker")
-		dockerCmd := exec.Command("docker", "-v")
-		if dockerErr := dockerCmd.Run(); dockerErr != nil {
-			fmt.Println(instanceI18nStart.Error.Docker_Err)
-			return
-		}
-
-		dockerpsCmd := exec.Command("docker", "ps")
-		if dockerpsErr := dockerpsCmd.Run(); dockerpsErr != nil {
-			fmt.Println(instanceI18nStart.Error.Docker_Err)
-			return
-		}
-
-		dockercomposeCmd := exec.Command("docker-compose", "version")
-		if dockercomposeErr := dockercomposeCmd.Run(); dockercomposeErr != nil {
-			fmt.Println(instanceI18nStart.Error.Docker_Compose_Err)
-			return
-		}
-
-		dockercomposeupCmd := exec.Command("docker-compose", "up")
-		if dockercomposeupErr := dockercomposeupCmd.Run(); dockercomposeupErr != nil {
-			fmt.Println(instanceI18nStart.Error.Docker_Compose_Err)
-			return
-		}
-
 		//0. 提示文本
 		fmt.Println(i18n.GetInstance().Start.Info.Info_start)
 
+		//0.1. 校验是否能正常执行docker
+		dockerCmd := exec.Command("docker", "-v")
+		if dockerErr := dockerCmd.Run(); dockerErr != nil {
+			common.SmartIDELog.Error(instanceI18nStart.Error.Docker_Err)
+		}
+		dockerpsCmd := exec.Command("docker", "ps")
+		if dockerpsErr := dockerpsCmd.Run(); dockerpsErr != nil {
+			common.SmartIDELog.Error(instanceI18nStart.Error.DockerPs_Err)
+		}
+
+		//0.2. 校验是否能正常执行 docker-compose
+		dockercomposeCmd := exec.Command("docker-compose", "version")
+		if dockercomposeErr := dockercomposeCmd.Run(); dockercomposeErr != nil {
+			common.SmartIDELog.Error(instanceI18nStart.Error.Docker_Compose_Err)
+		}
+
 		//1. 获取docker compose的文件内容
 		var yamlFileCongfig YamlFileConfig
-		yamlFileCongfig.GetConfig()
-		dockerCompose, ideBindingPort, sshBindingPort := yamlFileCongfig.ConvertToDockerCompose()
-		yamlFilePath, _ := dockerCompose.SaveFile(yamlFileCongfig.Workspace.DevContainer.ServiceName)
-		fmt.Printf("docker-compose: %v \n", yamlFilePath)
+		if ideyamlfile != "" { //增加指定yaml文件启动
+			yamlFileCongfig.SetYamlFilePath(ideyamlfile)
+		}
+		yamlFileCongfig.GetConfig() // 读取配置
+		var dockerCompose compose.DockerComposeYml
+		dockeComposeYamlFilePath := dockerCompose.GetDockerComposeFilePath(yamlFileCongfig.Workspace.DevContainer.ServiceName) // 获取docker compose文件的路径
+
+		//1.1. 校验docker compose文件对应的环境是否已经启动
+		dockerComposeContainers := getDockerComposeContainers(dockeComposeYamlFilePath, dockerCompose.Services)
+		if len(dockerComposeContainers) > 0 {
+			common.SmartIDELog.Error("容器已经启动！") //TODO 如果已经启动，需要监听stop
+		}
+
+		//1.2. 保存文件
+		dockerCompose, ideBindingPort, sshBindingPort := yamlFileCongfig.ConvertToDockerCompose() // 转换为docker compose格式
+		err := dockerCompose.SaveFile(dockeComposeYamlFilePath)                                   // 保存docker compose文件
+		if err != nil {
+			common.SmartIDELog.Error(err, "save docker compose file:")
+		}
+
+		//1.3. print
+		fmt.Printf("docker-compose: %v \n", dockeComposeYamlFilePath)
 		fmt.Printf("SSH转发端口：%v \n", sshBindingPort) //TODO: 国际化	// 提示用户ssh端口绑定到了本地的某个端口
 
 		//2. 创建容器
@@ -83,17 +81,6 @@ var startCmd = &cobra.Command{
 		cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 		if err != nil {
 			panic(err)
-		}
-
-		//2.0. docker pull
-		for _, service := range dockerCompose.Services {
-			fmt.Printf("start pull %v:%v ... \n", service.Image.Name, service.Image.Tag)
-			out, err := cli.ImagePull(ctx, service.Image.Name, types.ImagePullOptions{})
-			if err != nil {
-				panic(err)
-			}
-
-			io.Copy(io.Discard, out)
 		}
 
 		//2.1. 创建网络
@@ -115,16 +102,27 @@ var startCmd = &cobra.Command{
 		//2.2. 运行docker-compose命令
 		// e.g. docker-compose -f /Users/jasonchen/.ide/docker-compose-product-service-dev.yaml --project-directory /Users/jasonchen/Project/boat-house/boat-house-backend/src/product-service/api up -d
 		pwd, _ := os.Getwd()
-		composeCmd := exec.Command("docker-compose", "-f", yamlFilePath, "--project-directory", pwd, "up", "-d")
+		composeCmd := exec.Command("docker-compose", "-f", dockeComposeYamlFilePath, "--project-directory", pwd, "up", "-d")
+
 		composeCmd.Stdout = os.Stdout
 		composeCmd.Stderr = os.Stderr
 		if composeCmdErr := composeCmd.Run(); composeCmdErr != nil {
 			common.SmartIDELog.Fatal(composeCmdErr)
 		}
 
+		//2.3. 配置gitconfig
+		//ConfigGit()
+
 		//3. 使用浏览器打开web ide
 		fmt.Println(instanceI18nStart.Info.Info_running_openbrower) //TODO: 增加等待某某网址的提示
-		url := fmt.Sprintf(`http://localhost:%v`, ideBindingPort)
+
+		var url string
+		//指定yaml文件启动时候默认打开文件夹处理
+		if ideyamlfile != "" {
+			url = fmt.Sprintf("http://localhost:%v/?folder=vscode-remote://localhost:%v/home/project", ideBindingPort, ideBindingPort)
+		} else {
+			url = fmt.Sprintf(`http://localhost:%v`, ideBindingPort)
+		}
 		fmt.Println("打开", url) //TODO: 国际化
 		isUrlReady := false
 		for !isUrlReady {
@@ -132,7 +130,6 @@ var startCmd = &cobra.Command{
 			if (err == nil) && (resp.StatusCode == 200) {
 				isUrlReady = true
 				common.OpenBrowser(url)
-				fmt.Printf("打开 %v \n", url)
 			}
 
 		}
@@ -149,7 +146,143 @@ var startCmd = &cobra.Command{
 	},
 }
 
+// 获取docker compose运行起来对应的容器
+func getDockerComposeContainers(dockerComposeFilePath string, dockerComposeServices map[string]compose.Service) []DockerComposeContainer {
+
+	var dockerComposeContainers []DockerComposeContainer // result define
+
+	//0. valid
+	if !common.FileIsExit(dockerComposeFilePath) {
+		return dockerComposeContainers
+	}
+
+	//1. docker-compose ps
+	//1.1. copy
+	runRemoveCommand4DockerComposeFile()                            // 删除文件
+	outRunCopyCommand, err := runCopyCommand(dockerComposeFilePath) // 创建docker-compose.yaml文件
+	if err != nil {
+		runRemoveCommand4DockerComposeFile() // 删除文件
+		common.SmartIDELog.Fatal(err, "copy file:", string(outRunCopyCommand))
+	}
+
+	//1.2. ps
+	psExecCmd := exec.Command("docker-compose", "ps", "-a")
+	outPSCommand, err := psExecCmd.CombinedOutput()
+	outputPSCommand := string(outPSCommand)
+	if err != nil {
+		runRemoveCommand4DockerComposeFile() // 删除文件
+		common.SmartIDELog.Fatal(err, "docker-compose ps -a:", outputPSCommand)
+	}
+	common.SmartIDELog.Info(outputPSCommand)
+	runRemoveCommand4DockerComposeFile() // 删除文件
+
+	//3. parse output
+	/*
+						e.g.
+		                   Name                                  Command               State                                       Ports
+		---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		boathouse-calculator_boathouse-calculator_1   sh /usr/local/bin/entry_po ...   Up      0.0.0.0:7122->22/tcp,:::7122->22/tcp, 0.0.0.0:7100->3000/tcp,:::7100->3000/tcp
+	*/
+	lines := strings.Split(outputPSCommand, "\n")
+	if len(lines) <= 2 { // 读取的结果有问题
+		fmt.Println(outPSCommand)
+		return dockerComposeContainers
+	}
+	resultLines := lines[2:]
+	for _, line := range resultLines {
+		// 不能为空
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+
+		// 拆分字符串
+		params := strings.Split(strings.ReplaceAll(line, "...", " "), "  ")
+		params = common.RemoveEmptyItem(params)
+
+		// 获取基本信息
+		dockerComposeContainer := DockerComposeContainer{
+			ServiceName:   "",
+			ContainerName: params[0],
+			//Ports:         strings.TrimSpace(params[3]),
+			State: strings.TrimSpace(params[2]),
+		}
+
+		// 从container name 中获取 service name
+		for serviceName, item := range dockerComposeServices {
+			if dockerComposeContainer.ContainerName == item.ContainerName {
+				dockerComposeContainer.ServiceName = item.Name
+			} else if strings.Contains(dockerComposeContainer.ContainerName, item.ContainerName) {
+				dockerComposeContainer.ServiceName = item.Name
+			} else if strings.Contains(dockerComposeContainer.ContainerName, serviceName) {
+				dockerComposeContainer.ServiceName = item.Name
+			} else {
+				//TODO 查看端口映射是否相同
+			}
+		}
+
+		dockerComposeContainers = append(dockerComposeContainers, dockerComposeContainer)
+	}
+
+	return dockerComposeContainers
+}
+
+// 运行拷贝文件命令
+func runCopyCommand(dockerComposeFilePath string) (output string, err error) {
+	command := ""
+	var cpCommand *exec.Cmd
+
+	switch runtime.GOOS {
+
+	case "windows":
+		command = fmt.Sprintf("copy %v docker-compose.yaml", dockerComposeFilePath)
+		cpCommand = exec.Command("cmd", "/c", command)
+
+	default:
+		command = fmt.Sprintf("cp -i %v docker-compose.yaml", dockerComposeFilePath)
+		cpCommand = exec.Command("bash", "-c", command)
+	}
+
+	bytes, err := cpCommand.CombinedOutput()
+	output = string(bytes)
+
+	return output, err
+}
+
+// 运行删除命令
+func runRemoveCommand4DockerComposeFile() (output string, err error) {
+	command := ""
+	var removeCommand *exec.Cmd
+
+	filePath := "docker-compose.yaml"
+	switch runtime.GOOS {
+
+	case "windows":
+		command = fmt.Sprintf("del %v", filePath)
+		removeCommand = exec.Command("cmd", "/c", command)
+
+	default:
+		command = fmt.Sprintf("rm -rf %v", filePath)
+		removeCommand = exec.Command("bash", "-c", command)
+	}
+
+	bytes, err := removeCommand.CombinedOutput()
+	output = string(bytes)
+
+	return output, err
+}
+
+// 容器信息
+type DockerComposeContainer struct {
+	ServiceName   string
+	ContainerName string
+	//Command       string
+	Ports string
+	State string
+}
+
 func init() {
+
+	startCmd.Flags().StringVarP(&ideyamlfile, "filepath", "f", "", "指定yaml文件路径")
 	//rootCmd.AddCommand(startCmd)
 
 	// Here you will define your flags and configuration settings.

@@ -38,20 +38,25 @@ func (c *DockerComposeYml) ConvertToStr() string {
 	return string(d)
 }
 
-// 保存yaml文件到home目录下
-func (c *DockerComposeYml) SaveFile(projectName string) (yamlFilePath string, err error) {
-
+// 获取docker compose文件名称
+func (c *DockerComposeYml) GetDockerComposeFilePath(projectName string) string {
 	dirname, err := os.UserHomeDir()
 	if err != nil {
 		common.SmartIDELog.Fatal(err)
 	}
-	yamlFileName := fmt.Sprintf("docker-compose-%s.yaml", projectName)
-	yamlFileDirPath := filepath.Join(dirname, ".ide/") // current user dir + ...
-	yamlFilePath = filepath.Join(yamlFileDirPath, yamlFileName)
 
-	if !common.FileIsExit(yamlFilePath) {
-		os.MkdirAll(yamlFileDirPath, os.ModePerm) // create dir
-		os.Create(yamlFilePath)                   // create file
+	dockerComposeFileName := fmt.Sprintf("docker-compose-%s.yaml", projectName)
+	yamlFileDirPath := filepath.Join(dirname, ".ide/") // current user dir + ...
+	yamlFilePath := filepath.Join(yamlFileDirPath, dockerComposeFileName)
+	return yamlFilePath
+}
+
+// 保存docker compose yaml文件到home目录下
+func (c *DockerComposeYml) SaveFile(dockerComposeFilePath string) (err error) {
+
+	if !common.FileIsExit(dockerComposeFilePath) {
+		os.MkdirAll(dockerComposeFilePath, os.ModePerm) // create dir
+		os.Create(dockerComposeFilePath)                // create file
 	}
 
 	d, err := yaml.Marshal(&c)
@@ -59,12 +64,12 @@ func (c *DockerComposeYml) SaveFile(projectName string) (yamlFilePath string, er
 		common.SmartIDELog.Fatal(err)
 	}
 
-	err = ioutil.WriteFile(yamlFilePath, d, 0)
+	err = ioutil.WriteFile(dockerComposeFilePath, d, 0)
 	if err != nil {
 		common.SmartIDELog.Fatal(err)
 	}
 
-	return yamlFilePath, err
+	return err
 }
 
 //获取docker-compose.yaml文件位置

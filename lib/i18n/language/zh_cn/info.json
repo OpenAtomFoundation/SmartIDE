@@ -9,7 +9,8 @@
             "info_end":"SmartIDE启动完毕"
         },
         "error":{
-            "docker_err":"请检查当前环境docker是否正常运行",
+            "docker_err":"请检查当前环境docker是否安装",
+            "dockerps_err":"请检查当前环境docker是否正常运行",
             "docker_compose_err":"请检查当前环境docker-compose是否正常运行"
         }
     },

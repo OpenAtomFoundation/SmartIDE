@@ -53,6 +53,7 @@ type I18nSource struct {
 		} `json:"info"`
 		Error struct {
 			Docker_Err         string `json:"docker_err"`
+			DockerPs_Err       string `json:"dockerps_err"`
 			Docker_Compose_Err string `json:"docker_compose_err"`
 		} `json:"error"`
 	} `json:"start"`

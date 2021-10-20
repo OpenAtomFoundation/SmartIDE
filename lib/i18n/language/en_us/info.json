@@ -9,7 +9,8 @@
             "info_end": "SmartIDE started......"
         },
         "error": {
-            "docker_err":"Please check whether the docker in the current environment works normally",
+            "docker_err":"Please check whether docker is installed in the current environment",
+            "dockerps_err":"Please check whether the docker in the current environment works normally",
             "docker_compose_err":"Please check whether the docker-compose in the current environment works normally"
         }
     },

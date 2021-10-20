@@ -6,7 +6,7 @@ require (
 	github.com/Microsoft/go-winio v0.4.17 // indirect
 	github.com/containerd/containerd v1.5.5 // indirect
 	github.com/docker/distribution v2.7.1+incompatible // indirect
-	github.com/docker/docker v20.10.8+incompatible
+	github.com/docker/docker v20.10.9+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
@@ -37,13 +37,23 @@ require (
 	google.golang.org/grpc v1.38.0 // indirect
 	google.golang.org/protobuf v1.26.0 // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 
 )
 
 require (
-	github.com/docker/cli v20.10.8+incompatible
 	github.com/jeandeaual/go-locale v0.0.0-20210323163322-5cf4ff553a8d
-	github.com/leansoftX/i18n v0.0.0-20210903074237-61e743e338d1 // indirect
+	github.com/leansoftX/i18n v0.0.0-20210903074237-61e743e338d1
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
+	gopkg.in/yaml.v2 v2.4.0
+)
+
+require (
+	github.com/Microsoft/hcsshim v0.8.18 // indirect
+	github.com/containerd/cgroups v1.0.1 // indirect
+	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
+	github.com/moby/sys/mount v0.2.0 // indirect
+	github.com/moby/sys/mountinfo v0.4.1 // indirect
+	github.com/opencontainers/runc v1.0.1 // indirect
+	go.opencensus.io v0.23.0 // indirect
+	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 // indirect
 )

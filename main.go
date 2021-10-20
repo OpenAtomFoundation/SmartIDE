@@ -31,15 +31,17 @@ import (
 )
 
 func main() {
-
+	// print version
 	versionInfo := formatVerion()
 	fmt.Println(versionInfo.VersionNumber)
 
+	// command line startup
 	cmd.Execute(versionInfo)
 }
 
 // running before main
 func init() {
+
 	dirname, err := os.UserHomeDir() // home dir
 	if err != nil {
 		log.Fatal(err)
@@ -53,8 +55,7 @@ func init() {
 
 	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
-		fmt.Println("open log file failed, err:", err)
-		return
+		common.SmartIDELog.Fatal(err, "open log file failed, err:")
 	}
 	log.SetOutput(logFile)
 	log.SetFlags(log.Llongfile | log.Lmicroseconds | log.Ldate)

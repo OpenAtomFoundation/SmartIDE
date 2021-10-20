@@ -1,7 +1,14 @@
+<!--
+ * @Author: kenan
+ * @Date: 2021-09-29 16:41:13
+ * @LastEditors: kenan
+ * @LastEditTime: 2021-10-13 20:00:58
+ * @Description: file content
+-->
 
 ## 资源文件
 
-1. 
+1.  
 
 ## **编译windows可执行程序（exe）**
 
@@ -20,6 +27,7 @@ SET CGO_ENABLED=0
 SET GOOS=windows 
 SET GOARCH=amd64 
 go build -o ./build/smartide.exe main.go
+GO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o smartide
 ```
 
 **发布静态文件**
@@ -27,7 +35,7 @@ golang 在1.16后，引入了embed，可以灵活的导入静态文件，不需�
 
 
 ## 设置当前开发目录下的文件为环境变量
-go build -o ./usr/local/bin/smartide
+go build -o /usr/local/bin/smartide
 chmod +x /usr/local/bin/smartide
 
 ***删除容器***
