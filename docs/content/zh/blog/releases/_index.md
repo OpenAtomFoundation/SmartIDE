@@ -1,7 +1,7 @@
 
 ---
-title: "版本发布"
-linkTitle: "版本发布"
+title: "版本日志"
+linkTitle: "版本日志"
 weight: 21
 ---
 

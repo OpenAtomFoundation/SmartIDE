@@ -7,10 +7,13 @@
     dev-container:
       service-name: smartide-docs
       webide-port: 6800
+      volumes: 
+        git-config: true
+        ssh-key: true
     services:
   
       smartide-docs:
-        image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-go:latest
+        image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-go-opvscode:latest
         restart: always
         environment:
           ROOT_PASSWORD: root123
