@@ -69,7 +69,7 @@ SmartIDE可以帮助你完成开发环境的一键搭建，你只需要学会一
 - [示例操作手册](/zh/docs/getting-started/sample-calculator/)
   - Boathouse-Calcuator 是我们通过 [IDCF Boathouse 开源共创项目](https://idcf.org.cn) 提供给社区的示例应用之一，我们已经在这个应用中适配了SmartIDE的文件，您可以按照以上操作手册的内容体验SmartIDE的功能
 
-## 祝各位开发1024节快乐
+## 祝各位开发者1024节快乐
 
 SmartIDE选择了在这样一个特殊的日子跟大家说 Hello World。希望在后续的日子里面一直都有SmartIDE的陪伴，让每一名开发者的编码人生更加高效，快乐！
 
