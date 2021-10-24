@@ -46,32 +46,35 @@ smartide start
 - 左侧的浏览器中是我们正在运行的程序，这是一个用node.js编写的计算器应用
 - 全部的操作都通过WebIDE的的方式，更重要的是，全部都运行在你的本地开发机上，注意浏览器中的地址全部都是 localhost
 
-是的，SmartIDE可以帮助你完成开发环境的一键式搭建，你只需要学会一个命令 (smartide start) 就可以在自己所需要的环境中，使用自己喜欢的开发工具进行编码和开发调试了,不再需要安装任何工具，SDK，调试器，编译器，环境变量等繁琐的操作。如果我们把Vscode和JetBrain这些IDE成为传统IDE的话，这些传统IDE最大的问题就是：他们虽然在 I (Integration) 和 D (Development) 上面都做的非常不错，但是都没有解决 E (Environment) 的问题。SmartIDE的重点就是要解决 E 的问题。
+SmartIDE可以帮助你完成开发环境的一键搭建，你只需要学会一个命令 (smartide start) 就可以在自己所需要的环境中，使用自己喜欢的开发工具进行编码和开发调试了，不再需要安装任何工具，SDK，调试器，编译器，环境变量等繁琐的操作。如果我们把Vscode和JetBrain这些IDE称为传统IDE的话，这些传统IDE最大的问题是：他们虽然在 I (Integration) 和 D (Development) 上面都做的非常不错，但是都没有解决 E (Environment) 的问题。SmartIDE的重点就是要解决 E 的问题。
 
 ## SmartIDE v0.1.2 发布说明
 
 这是SmartIDE的第一个公开发行版，我们已经实现了如下功能：
 
 - 本地模式smartide start
-- 开发调试容器镜像制作和自动化流水线，支持了node.js, java, go三类环境
-- 支持使用vscode和Eclipse Theia两种WebIDE
-- 支持使用vscode本地IDE通过SSH方式连接到开发调试容器进行开发
-- 通过ssh tunnel实现容器内端口的本地访问，允许开发者使用习惯的 http://localhost:port 方式进入WebIDE并运行被调试应用
+- 开发容器镜像制作和自动化流水线，当前已经支持了 node.js, java, go 三类环境
+- 支持使用 vscode 和 Eclipse Theia 两种 WebIDE
+- 支持使用 vscode 本地 IDE 通过 SSH 方式连接到开发容器进行开发
+- 通过 ssh tunnel 实现容器内端口的本地访问，允许开发者使用习惯的 http://localhost:port 方式进入WebIDE进行编码并运行和调试被开发应用
 - 多语言支持：当前提供中文版和英文版两种语言版本，通过自动识别开发者操作系统环境自动切换显示语言
-- 跨平台支持：支持Windows和MacOS两种操作系统
+- 跨平台支持：支持 Windows 和 MacOS 两种操作系统
 - 一键安装支持：开发者可以从 [安装手册](/zh/docs/getting-started/install/) 获取一键安装命令，并支持在现有版本上的一键升级。
 
-环境大家通过以下资源体验SmartIDE的快捷开发调试功能：
+欢迎大家通过以下资源体验SmartIDE的快捷开发调试功能，并通过GitHub给我们提供反馈
 
-- [安装手册](/zh/docs/getting-started/install/)：提供Windows和Mac两种环境的意见安装和升级脚本，可以选择安装我们的稳定版或者每日构建版本。
-  - 稳定版：按2周一个版本的节奏进行更新，提供经过完整测试的受支持版本
-  - 每日构建版：每天通过我们的自动化CI/CD流水线自动构建并发布，包括最新的功能但可能会有不稳定的情况
+- [安装手册](/zh/docs/getting-started/install/)：提供Windows和Mac两种环境的一键安装和升级脚本，并提供2个更新通道。
+  - 稳定版通道：按2周一个版本的节奏进行更新，提供经过完整测试的受支持版本
+  - 每日构建版通道：每天通过我们的自动化CI/CD流水线自动构建并发布，包括最新的功能但可能会有不稳定的情况
 - [示例操作手册](/zh/docs/getting-started/sample-calculator/)
-  - Boathouse-Calcuator 是我们通过 [IDCF Boathouse 开源共创项目](https://idcf.org.cn) 提供给社区的示例应用之一，我们已经在这个应用中适配了SmartIDE的文件，您可以按照以上操作手册的内容体验我们的功能
+  - Boathouse-Calcuator 是我们通过 [IDCF Boathouse 开源共创项目](https://idcf.org.cn) 提供给社区的示例应用之一，我们已经在这个应用中适配了SmartIDE的文件，您可以按照以上操作手册的内容体验SmartIDE的功能
 
 ## 祝各位开发1024节快乐
 
-SmartIDE是有生命的，她选择了在这样一个特殊的日子跟大家说了一句 Hello World。希望在后续的日记里面一直都有SmartIDE的陪伴，让你的编码人生更加高效，快乐！
+SmartIDE选择了在这样一个特殊的日子跟大家说 Hello World。希望在后续的日子里面一直都有SmartIDE的陪伴，让每一名开发者的编码人生更加高效，快乐！
+
+> 赋能每一名开发者，赋能每一家企业 ... ...
+> <br/> 这就是 SmartIDE 产品团队的愿景。
 
 2021.10.24 徐磊 @ 北京
 
