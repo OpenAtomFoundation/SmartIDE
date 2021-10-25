@@ -41,6 +41,7 @@ require (
 )
 
 require (
+	github.com/howeyc/gopass v0.0.0-20210920133722-c8aef6fb66ef
 	github.com/jeandeaual/go-locale v0.0.0-20210323163322-5cf4ff553a8d
 	github.com/leansoftX/i18n v0.0.0-20210903074237-61e743e338d1
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519

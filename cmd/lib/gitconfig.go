@@ -6,7 +6,7 @@
  * @Description: file content
  */
 
-package cmd
+package lib
 
 import (
 	"bufio"

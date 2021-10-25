@@ -12,6 +12,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
+	"github.com/leansoftX/smartide-cli/cmd/lib"
 	"github.com/leansoftX/smartide-cli/lib/common"
 	"github.com/leansoftX/smartide-cli/lib/docker/compose"
 	"github.com/leansoftX/smartide-cli/lib/i18n"
@@ -51,7 +52,7 @@ var startCmd = &cobra.Command{
 		}
 
 		//1. 获取docker compose的文件内容
-		var yamlFileCongfig YamlFileConfig
+		var yamlFileCongfig lib.YamlFileConfig
 		if ideyamlfile != "" { //增加指定yaml文件启动
 			yamlFileCongfig.SetYamlFilePath(ideyamlfile)
 		}
@@ -66,14 +67,14 @@ var startCmd = &cobra.Command{
 		}
 
 		//1.2. 保存文件
-		dockerCompose, ideBindingPort, sshBindingPort := yamlFileCongfig.ConvertToDockerCompose() // 转换为docker compose格式
-		err := dockerCompose.SaveFile(dockeComposeYamlFilePath)                                   // 保存docker compose文件
+		dockerCompose, ideBindingPort, sshBindingPort := yamlFileCongfig.ConvertToDockerCompose(common.SSHRemote{}) // 转换为docker compose格式
+		err := dockerCompose.SaveFile(dockeComposeYamlFilePath)                                                     // 保存docker compose文件
 		if err != nil {
 			common.SmartIDELog.Error(err, "save docker compose file:")
 		}
 
 		//1.3. print
-		fmt.Printf("docker-compose: %v \n", dockeComposeYamlFilePath)
+		fmt.Printf("docker-compose yaml file path: %v \n", dockeComposeYamlFilePath)
 		fmt.Printf("SSH转发端口：%v \n", sshBindingPort) //TODO: 国际化	// 提示用户ssh端口绑定到了本地的某个端口
 
 		//2. 创建容器
@@ -152,7 +153,7 @@ func getDockerComposeContainers(dockerComposeFilePath string, dockerComposeServi
 	var dockerComposeContainers []DockerComposeContainer // result define
 
 	//0. valid
-	if !common.FileIsExit(dockerComposeFilePath) {
+	if !common.IsExit(dockerComposeFilePath) {
 		return dockerComposeContainers
 	}
 
@@ -215,9 +216,9 @@ func getDockerComposeContainers(dockerComposeFilePath string, dockerComposeServi
 				dockerComposeContainer.ServiceName = item.Name
 			} else if strings.Contains(dockerComposeContainer.ContainerName, serviceName) {
 				dockerComposeContainer.ServiceName = item.Name
-			} else {
+			} /* else {
 				//TODO 查看端口映射是否相同
-			}
+			} */
 		}
 
 		dockerComposeContainers = append(dockerComposeContainers, dockerComposeContainer)

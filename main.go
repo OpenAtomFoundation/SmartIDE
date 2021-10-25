@@ -48,7 +48,7 @@ func init() {
 	}
 	logFilePath := filepath.Join(dirname, ".ide/smartide.log") // current user dir + ...
 
-	if !common.FileIsExit(logFilePath) {
+	if !common.IsExit(logFilePath) {
 		os.MkdirAll(filepath.Join(dirname, ".ide"), os.ModePerm) // create dir
 		os.Create(logFilePath)                                   // create file
 	}

@@ -54,9 +54,16 @@ func (c *DockerComposeYml) GetDockerComposeFilePath(projectName string) string {
 // 保存docker compose yaml文件到home目录下
 func (c *DockerComposeYml) SaveFile(dockerComposeFilePath string) (err error) {
 
-	if !common.FileIsExit(dockerComposeFilePath) {
-		os.MkdirAll(dockerComposeFilePath, os.ModePerm) // create dir
-		os.Create(dockerComposeFilePath)                // create file
+	// create dir
+	dockerComposeFileDir := filepath.Dir(dockerComposeFilePath) // docker compose 文件所在的目录
+	if !common.IsExit(dockerComposeFileDir) {
+		os.MkdirAll(dockerComposeFileDir, os.ModePerm)
+		fmt.Println("创建目录：" + dockerComposeFileDir)
+	}
+
+	// create file
+	if !common.IsExit(dockerComposeFilePath) {
+		os.Create(dockerComposeFilePath)
 	}
 
 	d, err := yaml.Marshal(&c)
@@ -83,11 +90,11 @@ func (c *DockerComposeYml) GetDockerComposeFile(projectName string) (yamlFilePat
 	yamlFileDirPath := filepath.Join(dirname, ".ide/") // current user dir + ...
 	yamlFilePath = filepath.Join(yamlFileDirPath, yamlFileName)
 
-	if common.FileIsExit(yamlFilePath) {
+	if common.IsExit(yamlFilePath) {
 		return yamlFilePath, err
 	} else {
 		//common.SmartIDELog.Fatal("err")
-		fmt.Sprintf("找不到docker-compose-%s.yaml", projectName)
+		fmt.Printf("找不到docker-compose-%s.yaml", projectName)
 	}
 
 	return "", err

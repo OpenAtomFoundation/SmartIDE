@@ -2,24 +2,23 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
-	"net"
 	"net/http"
 	"net/url"
 	"os"
-	"os/signal"
 	"strconv"
 	"strings"
+	"text/tabwriter"
 	"time"
 
 	/*"strings" */
 
+	"github.com/howeyc/gopass"
 	"github.com/spf13/cobra"
-	"golang.org/x/crypto/ssh"
-	"golang.org/x/crypto/ssh/terminal"
 	"gopkg.in/yaml.v2"
 
+	"github.com/leansoftX/smartide-cli/cmd/lib"
 	"github.com/leansoftX/smartide-cli/lib/common"
+	"github.com/leansoftX/smartide-cli/lib/docker/compose"
 	"github.com/leansoftX/smartide-cli/lib/tunnel"
 )
 
@@ -34,7 +33,7 @@ var vmCmd = &cobra.Command{
 }
 
 var host string
-var port int
+var port int = 22
 var username string
 var password string
 var repourl string
@@ -42,12 +41,13 @@ var repourl string
 const repoRoot string = "project"
 
 /* smartide vm start/stop/remove
---host, -H XXX.XXX.XXX.XXX
---username, -U XXX （可选）
---password, -P XXX（可选）
+--host, -o XXX.XXX.XXX.XXX
+--port, -p 默认为22
+--username, -u XXX （可选）
+--password, -t XXX（可选）
 --repourl, -R https://github.com/idcf-boat-house/boathouse-calculator
 
-e.g.  vm start --host {host}:22 --username {username} --password {password} --repourl https://github.com/idcf-boat-house/boathouse-calculator.git
+e.g.  vm start --host {host} --port 22 --username {username} --password {password} --repourl https://github.com/idcf-boat-house/boathouse-calculator.git
 */
 var vmStartCmd = &cobra.Command{
 	Use:   "start",
@@ -55,10 +55,17 @@ var vmStartCmd = &cobra.Command{
 	Long:  instanceI18nStop.Info.Help_long,
 	Run: func(cmd *cobra.Command, args []string) {
 
+		//0. 参数
+		if len(strings.TrimSpace(username)) > 0 && len(strings.TrimSpace(password)) == 0 {
+			fmt.Printf("密码不能为空，请输入: ")
+			passwordBytes, _ := gopass.GetPasswdMasked()
+			password = string(passwordBytes)
+		}
+
 		// 1. 连接到远程主机
 		fmt.Println("连接到远程主机 ...")
-		clientConn, err := connectionDial(host, port, username, password)
-		checkError(err, "")
+		var sshRemote common.SSHRemote
+		sshRemote.Instance(host, port, username, password)
 
 		// 2. 在远程主机上执行相应的命令
 		repoName := getRepoName(repourl)
@@ -67,26 +74,28 @@ var vmStartCmd = &cobra.Command{
 		//2.1. 执行git clone
 		command := fmt.Sprintf(`git clone %v %v`, repourl, repoWorkspace)
 		fmt.Printf("%v ...\n", command)
-		output, _ := exeSSHCommand(clientConn, command)
+		output, _ := sshRemote.ExeSSHCommand(command)
 		common.SmartIDELog.Info(output)
 
 		//2.2. git pull
-		gitPullCommand := fmt.Sprintf("cd %v && git pull cd ~", repoWorkspace)
-		exeSSHCommand(clientConn, gitPullCommand)
+		fmt.Println("git pull ")
+		gitPullCommand := fmt.Sprintf("cd %v && git pull && cd ~", repoWorkspace)
+		output, err := sshRemote.ExeSSHCommand(gitPullCommand)
+		if err != nil {
+			common.SmartIDELog.Warning(err.Error(), output)
+		}
 
 		//2.3. 读取配置.ide.yaml 并 转换为docker-compose
-		fmt.Println("读取代码库下的配置文件 ...")
-		command = fmt.Sprintf(`
-		cd %v
-		cat ./.ide/.ide.yaml
-		`, repoWorkspace)
-		output, err = exeSSHCommand(clientConn, command)
+		ideYamlFilePath := fmt.Sprintf(`%v/.ide/.ide.yaml`, repoWorkspace)
+		fmt.Println("读取代码库下的配置文件(", ideYamlFilePath, ") ...")
+		catCommand := fmt.Sprintf(`cat %v`, ideYamlFilePath)
+		output, err = sshRemote.ExeSSHCommand(catCommand)
 		checkError(err, output)
-		fmt.Println(output) // 打印配置文件的内容
+		// fmt.Println(output) // 打印配置文件的内容
 		yamlContent := output
-		var yamlFileCongfig YamlFileConfig
+		var yamlFileCongfig lib.YamlFileConfig
 		yamlFileCongfig.GetConfigWithStr(yamlContent)
-		dockerCompose, ideBindingPort, _ := yamlFileCongfig.ConvertToDockerCompose()
+		dockerCompose, ideBindingPort, _ := yamlFileCongfig.ConvertToDockerCompose(sshRemote)
 
 		//2.4. 创建网络
 		fmt.Println("创建网络 ...")
@@ -94,39 +103,46 @@ var vmStartCmd = &cobra.Command{
 		for network := range dockerCompose.Networks {
 			networkCreateCommand += "docker network create " + network + "\n "
 		}
-		output, _ = exeSSHCommand(clientConn, networkCreateCommand)
+		output, _ = sshRemote.ExeSSHCommand(networkCreateCommand)
 		common.SmartIDELog.Info(output)
 
 		//2.5. 在远程vm上生成docker-compose文件，运行docker-compose up
 		fmt.Println("docker-compose up ...")
 		bytesDockerComposeContent, err := yaml.Marshal(&dockerCompose)
+		printServices(dockerCompose.Services) // 打印services
+		fmt.Println()
 		strDockerComposeContent := strings.ReplaceAll(string(bytesDockerComposeContent), "\"", "\\\"") // 文本中包含双引号
 		checkError(err, string(bytesDockerComposeContent))
 		commandCreateDockerComposeFile := fmt.Sprintf(`
 		mkdir -p ~/.ide
+		rm -rf ~/.ide/docker-compose-%v.yaml
 		echo "%v" >> ~/.ide/docker-compose-%v.yaml
 		docker-compose -f ~/.ide/docker-compose-%v.yaml --project-directory %v up -d
-		`, strDockerComposeContent, repoName, repoName, repoWorkspace)
-		output, err = exeSSHCommand(clientConn, commandCreateDockerComposeFile)
-		checkError(err, commandCreateDockerComposeFile+"\n"+output)
+		`, repoName, strDockerComposeContent, repoName, repoName, repoWorkspace)
+		err = sshRemote.ExeSSHCommandNotOutput(commandCreateDockerComposeFile)
+		checkError(err, commandCreateDockerComposeFile)
 
 		//3. 当前主机绑定到远程端口
 		var addrMapping map[string]string = map[string]string{}
-		remotePortBindings := GetPortBindings(dockerCompose)
+		remotePortBindings := lib.GetPortBindings(dockerCompose)
+		unusedLocalPort4IdeBindingPort := ideBindingPort // 未使用的本地端口，与ide端口对应
 		// 查找所有远程主机的端口
-		for bindingPort := range remotePortBindings {
+		for bindingPort, containerPort := range remotePortBindings {
 			portInt, _ := strconv.Atoi(bindingPort)
-			unusedClientPort := strconv.Itoa(common.CheckAndGetAvailablePort(portInt, 100))
-			addrMapping["localhost:"+unusedClientPort] = "localhost:" + bindingPort
-			fmt.Printf("localhost:%v 绑定到 %v:%v", unusedClientPort, host, bindingPort)
+			unusedLocalPort := common.CheckAndGetAvailablePort(portInt, 100) // 得到一个未被占用的本地端口
+			if portInt == ideBindingPort && unusedLocalPort != ideBindingPort {
+				unusedLocalPort4IdeBindingPort = unusedLocalPort
+			}
+			addrMapping["localhost:"+strconv.Itoa(unusedLocalPort)] = "localhost:" + bindingPort
+			fmt.Printf("localhost:%v -> %v:%v -> container:%v", unusedLocalPort, host, bindingPort, containerPort)
 			fmt.Println()
 		}
 		// 执行绑定
-		tunnel.TunnelMultiple(clientConn, addrMapping)
+		tunnel.TunnelMultiple(sshRemote.Connection, addrMapping)
 
 		//4. 打开浏览器
-		url := fmt.Sprintf(`http://localhost:%v`, ideBindingPort)
-		fmt.Printf("等待WebIDE启动 %s ... \n", url) //TODO: 国际化
+		url := fmt.Sprintf(`http://localhost:%v`, unusedLocalPort4IdeBindingPort)
+		fmt.Println("等待WebIDE启动 ... ") //TODO: 国际化
 		go func(checkUrl string) {
 			isUrlReady := false
 			for !isUrlReady {
@@ -146,105 +162,23 @@ var vmStartCmd = &cobra.Command{
 	},
 }
 
+// 打印 service 列表
+func printServices(services map[string]compose.Service) {
+	w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
+	fmt.Fprintln(w, "service\timage\tports\t")
+	for serviceName, service := range services {
+		line := fmt.Sprintf("%v\t%v\t%v\t", serviceName, service.Image.Name+":"+service.Image.Tag, strings.Join(service.Ports, ";"))
+		fmt.Fprintln(w, line)
+	}
+	w.Flush()
+}
+
 // 检查错误
 func checkError(err error, info string) {
 	if err != nil {
 		fmt.Printf("%s. error: %s\n", info, err)
-		common.SmartIDELog.Error(err)
+		common.SmartIDELog.Error(err, info)
 	}
-}
-
-// 连接到远程主机
-func connectionDial(sshHost string, sshPort int, sshUserName, sshPassword string) (clientConn *ssh.Client, err error) {
-
-	// initialize SSH connection
-	var clientConfig *ssh.ClientConfig
-
-	if len(sshUserName) > 0 {
-
-		// 输入账号就要有密码
-		if len(sshPassword) <= 0 {
-			fmt.Print("密码不能为空，请输入: ")
-			bytes, _ := readPass(0)
-			sshPassword = string(bytes)
-			fmt.Println()
-		}
-
-		clientConfig = &ssh.ClientConfig{
-			User: sshUserName,
-			Auth: []ssh.AuthMethod{
-				ssh.Password(sshPassword),
-			},
-			Timeout: 30 * time.Second, // 30 秒超时
-			// 解决 “ssh: must specify HostKeyCallback” 的问题
-			HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
-				return nil
-			},
-		}
-
-	} else { // 如果用户不输入用户名和密码，则尝试使用ssh key pair的方式链接远程服务器
-		var hostKey ssh.PublicKey
-		key, err := ioutil.ReadFile("/home/user/.ssh/id_rsa")
-		checkError(err, "unable to read private key:")
-
-		// Create the Signer for this private key.
-		signer, err := ssh.ParsePrivateKey(key)
-		checkError(err, "unable to parse private key:")
-
-		clientConfig = &ssh.ClientConfig{
-			User: "user",
-			Auth: []ssh.AuthMethod{
-				// Use the PublicKeys method for remote authentication.
-				ssh.PublicKeys(signer),
-			},
-			HostKeyCallback: ssh.FixedHostKey(hostKey),
-		}
-
-	}
-
-	addr := fmt.Sprintf("%v:%v", sshHost, sshPort)
-	return ssh.Dial("tcp", addr, clientConfig)
-}
-
-// 读取密码
-func readPass(fd int) ([]byte, error) {
-	// make sure an interrupt won't break the terminal
-	sigint := make(chan os.Signal)
-	state, err := terminal.GetState(fd)
-	if err != nil {
-		return nil, err
-	}
-	go func() {
-		for _ = range sigint {
-			terminal.Restore(fd, state)
-			fmt.Println("^C")
-			os.Exit(1)
-		}
-	}()
-	signal.Notify(sigint, os.Interrupt)
-	defer func() {
-		signal.Stop(sigint)
-		close(sigint)
-	}()
-	return terminal.ReadPassword(fd)
-}
-
-// 执行ssh command，在session模式下，standard output 只能在执行结束的时候获取到
-func exeSSHCommand(clientConn *ssh.Client, sshCommand string) (outContent string, err error) {
-	session, err := clientConn.NewSession()
-	if err != nil {
-		panic(err)
-	}
-	defer session.Close() //
-
-	// 在ssh主机上执行命令
-	out, err := session.CombinedOutput(sshCommand)
-	session.StdoutPipe()
-	session.Stdout = os.Stdout
-	session.Stderr = os.Stderr
-	outContent = string(out)
-
-	return outContent, err
 }
 
 // get repo name
@@ -260,12 +194,12 @@ func getRepoName(repoUrl string) string {
 //
 func init() {
 
-	vmStartCmd.Flags().StringVarP(&host, "host", "H", "", "远程IP")
+	vmStartCmd.Flags().StringVarP(&host, "host", "o", "", "远程IP")
 	vmStartCmd.MarkFlagRequired("host")
-	vmStartCmd.Flags().IntVarP(&port, "port", "P", 22, "SSH 端口，默认为22")
-	vmStartCmd.Flags().StringVarP(&username, "username", "U", "", "SSH 登录用户")
-	vmStartCmd.Flags().StringVarP(&password, "password", "T", "", "SSH 用户密码")
-	vmStartCmd.Flags().StringVarP(&repourl, "repourl", "R", "", "远程IP")
+	vmStartCmd.Flags().IntVarP(&port, "port", "p", 22, "SSH 端口，默认为22")
+	vmStartCmd.Flags().StringVarP(&username, "username", "u", "", "SSH 登录用户")
+	vmStartCmd.Flags().StringVarP(&password, "password", "t", "", "SSH 用户密码")
+	vmStartCmd.Flags().StringVarP(&repourl, "repourl", "r", "", "远程代码仓库的克隆地址")
 	vmStartCmd.MarkFlagRequired("repourl")
 
 	vmCmd.AddCommand(vmStartCmd)

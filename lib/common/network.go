@@ -31,7 +31,7 @@ func IsPortAvailable(port int) bool {
 	address := fmt.Sprintf("%s:%d", "localhost", port)
 	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", "localhost", port))
 	if err != nil {
-		SmartIDELog.Warning(fmt.Sprintf("tcp port %s is taken: %s", address, err))
+		SmartIDELog.Debug(fmt.Sprintf("tcp port %s is taken: %s", address, err))
 		return false
 	}
 	defer listener.Close()
@@ -39,7 +39,7 @@ func IsPortAvailable(port int) bool {
 	address = fmt.Sprintf("%s:%d", "0.0.0.0", port)
 	conn, err := net.Listen("tcp", address)
 	if err != nil {
-		SmartIDELog.Warning(fmt.Sprintf("tcp port %s is taken: %s", address, err))
+		SmartIDELog.Debug(fmt.Sprintf("tcp port %s is taken: %s", address, err))
 		return false
 	}
 	defer conn.Close()

@@ -23,6 +23,8 @@ import (
 	"github.com/leansoftX/smartide-cli/lib/common"
 	"github.com/leansoftX/smartide-cli/lib/i18n"
 	"github.com/spf13/cobra"
+
+	"github.com/leansoftX/smartide-cli/cmd/lib"
 )
 
 var instanceI18nRemove = i18n.GetInstance().Remove
@@ -36,9 +38,9 @@ var removeCmd = &cobra.Command{
 
 		fmt.Println(instanceI18nRemove.Info.Info_start)
 		//1. 获取docker compose的文件内容
-		var yamlFileCongfig YamlFileConfig
+		var yamlFileCongfig lib.YamlFileConfig
 		yamlFileCongfig.GetConfig()
-		dockerCompose, _, _ := yamlFileCongfig.ConvertToDockerCompose()
+		dockerCompose, _, _ := yamlFileCongfig.ConvertToDockerCompose(common.SSHRemote{})
 		servicename := yamlFileCongfig.Workspace.DevContainer.ServiceName
 
 		fmt.Printf("docker-compose servicename: %v \n", servicename)
