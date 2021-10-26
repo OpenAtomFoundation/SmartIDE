@@ -119,7 +119,7 @@ var startCmd = &cobra.Command{
 
 		var url string
 		//指定yaml文件启动时候默认打开文件夹处理
-		if ideyamlfile != "" {
+		if yamlFileCongfig.Orchestrator.Idetype == "vscode" {
 			url = fmt.Sprintf("http://localhost:%v/?folder=vscode-remote://localhost:%v/home/project", ideBindingPort, ideBindingPort)
 		} else {
 			url = fmt.Sprintf(`http://localhost:%v`, ideBindingPort)
