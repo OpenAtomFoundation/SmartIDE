@@ -21,6 +21,8 @@
           - .:/home/project
         expose:
           - 1313
+        ports:
+          - 1313:1313
         networks:
           - smartide-network
   
