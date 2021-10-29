@@ -28,14 +28,14 @@ smartIDE将通过隧道技术以及动态端口映射机制提供开发人员与
 
 安装SmartIDE，参考链接: https://smartide.dev/zh/docs/getting-started/install/
 
-Demo源码获取地址，链接: https://github.com/CadenGjy/boathouse-calculator.git
+Demo源码获取地址，链接: https://github.com/idcf-boat-house/boathouse-calculator.git
 
 ##  场景1.SmartIDE本地运行，使用WebIDE方式调试
 
 1.clone代码库
 
 ```shell
-git clone https://github.com/CadenGjy/boathouse-calculator.git
+git clone https://github.com/idcf-boat-house/boathouse-calculator.git
 cd boathouse-calculator
 ```
 
