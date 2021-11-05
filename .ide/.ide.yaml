@@ -7,6 +7,7 @@
     dev-container:
       service-name: smartide-docs
       webide-port: 6800
+      ide-type: vscode
       volumes: 
         git-config: true
         ssh-key: true
