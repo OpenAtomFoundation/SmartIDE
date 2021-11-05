@@ -1,4 +1,3 @@
-
 ---
 title: "SmartIDE v0.1.2 发布说明"
 linkTitle: "版本 0.1.2 发布说明"
