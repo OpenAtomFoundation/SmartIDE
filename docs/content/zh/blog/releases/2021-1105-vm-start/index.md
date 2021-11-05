@@ -11,3 +11,5 @@ description: >
 既然SmartIDE的代码是如此的懂得开发者，那么就让我们来认识一下这位新朋友。到底SmartIDE是谁？她能做些什么？
 
 “人如其名”，SmartIDE是一个Smart的IDE（智能化集成开发环境）。你可能在想：好吧，又是一个新的IDE，我已经有了vscode/jetbrain全家桶，为什么我还需要另外一个IDE？
+
+![](abc.png)
