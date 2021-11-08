@@ -28,17 +28,24 @@ import (
 )
 
 var cfgFile string
+var isDebug bool = false
 
 var instanceI18nMain = i18n.GetInstance().Main
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "smartide-cli",
+	Use:   "smartide",
 	Short: instanceI18nMain.Info.Help_short,
 	Long:  instanceI18nMain.Info.Help_long, // logo only show in init
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+
+		// 初始化
+		logLevel := ""
+		if isDebug {
+			logLevel = "debug"
+		}
+		common.SmartIDELog.InitLogger(logLevel)
+	},
 }
 
 var Version SmartVersion
@@ -66,6 +73,7 @@ func init() {
 
 	// help command short
 	rootCmd.Flags().BoolP("help", "h", false, i18n.GetInstance().Help.Info.Help_short)
+	rootCmd.PersistentFlags().BoolVarP(&isDebug, "debug", "d", false, i18n.GetInstance().Main.Info.Help_flag_debug)
 
 	// disable completion command
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
@@ -82,7 +90,8 @@ func init() {
 	rootCmd.AddCommand(startCmd)
 	rootCmd.AddCommand(stopCmd)
 	rootCmd.AddCommand(removeCmd)
-	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(versionCmd, udpateCmd)
+	rootCmd.AddCommand(restartCmd)
 	rootCmd.AddCommand(vmCmd)
 }
 

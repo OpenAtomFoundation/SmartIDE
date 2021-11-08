@@ -34,17 +34,20 @@ var stopCmd = &cobra.Command{
 	Long:  instanceI18nStop.Info.Help_long,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		fmt.Println(instanceI18nStop.Info.Info_start)
+		common.SmartIDELog.Info(instanceI18nStop.Info.Info_start)
 
 		//1. 获取docker compose的文件内容
 		var yamlFileCongfig lib.YamlFileConfig
+		if ideyamlfile != "" { //增加指定yaml文件启动
+			yamlFileCongfig.SetYamlFilePath(ideyamlfile)
+		}
 		yamlFileCongfig.GetConfig()
-		dockerCompose, _, _ := yamlFileCongfig.ConvertToDockerCompose(common.SSHRemote{})
+		dockerCompose, _, _ := yamlFileCongfig.ConvertToDockerCompose(common.SSHRemote{}, "")
 		servicename := yamlFileCongfig.Workspace.DevContainer.ServiceName
 
-		fmt.Printf("docker-compose servicename: %v \n", servicename)
+		common.SmartIDELog.Info(fmt.Sprintf("docker-compose servicename: %v", servicename))
 
-		yamlFilePath, _ := dockerCompose.GetDockerComposeFile(servicename)
+		yamlFilePath := dockerCompose.GetTmpDockerComposeFilePath(servicename)
 
 		pwd, _ := os.Getwd()
 		composeCmd := exec.Command("docker-compose", "-f", yamlFilePath, "--project-directory", pwd, "stop")
@@ -54,21 +57,12 @@ var stopCmd = &cobra.Command{
 			common.SmartIDELog.Fatal(composeCmdErr)
 		}
 
-		fmt.Println(instanceI18nStop.Info.Info_end)
+		common.SmartIDELog.Info(instanceI18nStop.Info.Info_end)
 
 	},
 }
 
 func init() {
-	//rootCmd.AddCommand(stopCmd)
+	stopCmd.Flags().StringVarP(&ideyamlfile, "filepath", "f", "", instanceI18nStop.Info.Help_flag_filepath)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// stopCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// stopCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

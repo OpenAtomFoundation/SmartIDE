@@ -1,63 +1,155 @@
 {
-    "start": {
-        "info": {
-            "help_short": "Quickly create and start SmartIDE development environment ",
-            "help_long": "A longer description that spans multiple lines and likely contains examples and usage of using your command. For example: Cobra is a CLI library for Go that empowers applications. This application is a tool to generate the needed files to quickly create a Cobra application.",
-            "info_start": "SmartIDE startup......",
-            "info_running_container": "SmartIDE container being created......",
-            "info_running_openbrower": "Open brower......",
-            "info_end": "SmartIDE started......"
+   "config": {
+       "info": {
+           "read_docker_compose":"Read docker-compose file:"
         },
-        "error": {
-            "docker_err":"Please check whether docker is installed in the current environment",
-            "dockerps_err":"Please check whether the docker in the current environment works normally",
-            "docker_compose_err":"Please check whether the docker-compose in the current environment works normally"
+       "error": {
+           "services_not_exit":"Docker-compose mode requires services",
+           "file_not_exit":"%v file does not exist",
+           "devcontainer_not_contains":"The \"%s\" defined in the dev-container node does not appear in services",
+           "gitconfig_not_exit":"Note: User git configuration not obtained"
         }
     },
-    "stop": {
-        "info": {
-            "help_short": "",
-            "help_long": "",
-            "info_start": "",
-            "info_end": "SmartIDE closed......"
+   "start": {
+       "info": {
+           "help_short":"Use your local machine to run SmartIDE dev environment",
+           "help_long":"Use your local machine to run SmartIDE dev environment",
+           "info_start":"SmartIDE Local Mode is starting up ...",
+           "info_running_container":"[Docker] Creating dev containers ...",
+           "info_running_openbrower":"[WebIDE] Opening brower ....",
+           "info_end":"SmartIDE Local Mode started successfully.",
+           "info_docker_compose_filepath":"[Docker-Compose] Using docker-compose file from : %v",
+           "info_ssh_tunnel":"[SSH] Port forwarding : %v",
+           "info_create_network":"[Docker] Creating  network %v",
+           "info_open_in_brower":"[WebIDE] You can now open your browser to access the WebIDE :",
+           "help_flag_filepath":"Specify a YAML file as the configuration."
         },
-        "error": {}
-    },
-    "remove": {
-        "info": {
-            "help_short": "",
-            "help_long": "",
-            "info_start": "",
-            "info_end": "SmartIDE deleted......"
-        },
-        "error": {}
-    },
-    "main": {
-        "info": {
-            "help_short": "SmartIDE Development has never been easier",
-            "help_long": "- SmartIDE Development has never been easier！ \n\n- The SmartIDE CLI helps developers quickly set up development environments, including local and cloud environments.",
-            "usage_template":"Usage:{{if .Runnable}}\n  {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}\n  {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}\nAliases:\n  {{.NameAndAliases}}{{end}}{{if .HasExample}}\nExamples:\n{{.Example}}{{end}}{{if .HasAvailableSubCommands}}\nAvailable Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name \"help\"))}}\n  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}\nFlags:\n{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}\nGlobal Flags:\n{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasHelpSubCommands}}\nAdditional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}\n  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}\nUse \"{{.CommandPath}} [command] --help\" for more information about a command.{{end}}\n"
-        },
-        "error": {
-            "file_not_exit":"The configuration file does not exist. Please manually create \".ide/.ide.yaml\" in the current directory. ",
-            "version_not_build":"Please generate version number through pipeline!"
-
+       "error": {
+           "docker_err":"Please check whether docker is installed in the current environment",
+           "dockerps_err":"Please check whether docker in the current environment works normally",
+           "docker_compose_err":"Please check whether docker-compose in the current environment works normally",
+           "docker_started":"The container has been started!",
+           "docker_compose_save":"Error saving docker-compose file:"
         }
     },
-    "init": {
-        "info": {
-            "help_short ": " Quickly initialize SmartIDE configuration file ",
-            "help_long": "",
-            "info_start": "SmartIDE initialization......",
-            "info_end": "SmartIDE initialization completed"
+   "stop": {
+       "info": {
+           "help_short":"Stop the SmartIDE dev environment",
+           "help_long":"Stop the SmartIDE dev environment",
+           "info_start":"SmartIDE dev environment is stoping ...",
+           "info_end":"SmartIDE dev environment stopped",
+           "help_flag_filepath":"Specify a YAML file as the configuration."
         },
-        "error": {}
+       "error": {}
     },
-    "help":{
-        "info":{
-            "help_short":"help for SmartIDE",
-            "help_long":""
+   "remove": {
+       "info": {
+           "help_short":"Remove the SmartIDE dev environment completely",
+           "help_long":"Remove the SmartIDE dev environment completely",
+           "info_start":"Deleting environment ...",
+           "info_end":"SmartIDE dev environment deleted",
+           "help_flag_filepath":"Specify a YAML file as the configuration.h"
         },
-        "error":{}
+       "error": {}
+    },
+   "restart": {
+       "info": {
+           "help_short":"Restart the SmartIDE dev environment",
+           "help_long":"Restart the SmartIDE dev environment"
+        },
+       "error": {}
+    },
+   "main": {
+       "info": {
+           "help_short":"SmartIDE CLI",
+           "help_long":"SmartIDE CLI allows you to create local and remote dev environment with integrated WebIDE.",
+           "usage_template":"Usage:{{if .Runnable}}\n  {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}\n  {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}\nAliases:\n  {{.NameAndAliases}}{{end}}{{if .HasExample}}\nExamples:\n{{.Example}}{{end}}{{if .HasAvailableSubCommands}}\nAvailable Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name \"help\"))}}\n  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}\nFlags:\n{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}\nGlobal Flags:\n{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasHelpSubCommands}}\nAdditional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}\n  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}\nUse \"{{.CommandPath}} [command] --help\" for more information about a command.{{end}}\n",
+            "help_flag_debug": "Whether to enable the Debug mode. In this mode, more log information is displayed"
+        },
+       "error": {
+           "file_not_exit":"The configuration file does not exist. Please manually create \".ide/.ide.yaml\" in the current directory.",
+           "version_not_build":"Please generate version number through pipeline!"
+        }
+    },
+   "init": {
+       "info": {
+           "help_short":"Quickly initialize SmartIDE configuration file",
+           "help_long":"",
+           "info_start":"SmartIDE initialization......",
+           "info_end":"SmartIDE initialization completed"
+        },
+       "error": {}
+    },
+   "help": {
+       "info": {
+           "help_short":"SmartIDE help",
+           "help_long":"For example, SmartIDE start --help"
+        },
+       "error": {}
+    },
+   "version": {
+       "info": {
+           "help_short":"Viewing version Information",
+           "help_long":"Viewing version Information",
+           "template":"Version number: %v\n Build number: %v\n Commit record: %v\n Company: %v"
+        },
+       "error": {}
+    },
+   "vm_start": {
+       "info": {
+           "help_short":"Use a remote host to run SmartIDE dev environment",
+           "help_long":"Use a remote host to run SmartIDE dev environment",
+           "info_starting":"SmartIDE VM Mode is starting up...",
+           "info_connect_remote":"[SSH] Connecting to a remote host",
+           "info_git_clone":"[Git] Running git clone on your RepoUrl ...",
+           "info_git_checkout_and_pull":"[Git] Running git checkout && pull ...",
+           "info_read_config":"[Config] Use the the configuration file in your repo : %v",
+           "info_create_network":"[Docker] Creating a docker network ...",
+           "info_compose_up":"[Docker-Compose] Runing docker-compose up command ...",
+           "info_warting_for_webide":"[WebIDE] Waiting for WebIDE to start ...",
+           "info_open_brower":"[WebIDE] You can now open your browser to access the WebIDE : %v "
+        },
+       "error": {}
+    },
+   "update": {
+       "info": {
+           "help_short":"Automatically upgrade or update to a specified version",
+           "help_long":"Automatically upgrade or update to a specified version",
+           "info_remove_repeat":"Delete duplicate files locally",
+           "help_flag_version":"Updates to the specified version",
+           "help_flag_build":"Whether to update the build version"
+        },
+       "error": {},
+       "warn": {
+           "warn_rel_lastest":"The current version %v does not need to be upgraded"
+        }
+    },
+   "common": {
+       "debug": {
+           "debug_key_public":"Local public key:",
+           "debug_same_not_overwrite":"SSH private key is the same, do not need to overwrite!",
+           "debug_auto_connect_gitrepo":"Automatically determine the connection to Git repositories",
+           "debug_empty_error":"SSH command output error (error, output are empty), skipped!",
+           "info_port_is_binding": "Port %v is bound and can be used directly",
+           "info_port_binding_result2": "Container: %v -> localhost:%v  ( %v used)",
+           "info_port_binding_result": "Container: %v -> localhost:%v  ",
+           "info_find_new_port":"Discovering a new port:"
+        },
+       "info": {
+           "info_privatekey_is_overwrite":"The SSH private key file already exists. Overwrite it (y/n).?",
+           "info_whether_overwrite":"In SSH mode, whether to copy the local private key to the server （y/n）?",
+           "info_gitrepo_cloned":"Git repo cloned!",
+           "info_please_enter_password":"Please enter the current git repository access password:",
+           "info_canel_privatekey_password":"The remote server needs to cancel the private key password, please enter the private key password:",
+           "info_port_is_binding": "Port %v is bound and can be used directly",
+           "info_port_binding_result2": "Container: %v -> localhost:%v  ( %v used)",
+           "info_port_binding_result": "Container: %v -> localhost:%v  ",
+           "info_find_new_port":"Discovering a new port:"
+        },
+       "error": {
+           "err_sshremote_param_repourl_none":"The gitRepoUrl argument cannot be empty",
+           "err_password_none":"Password cannot be empty!"
+        },
+       "warn": {}
     }
 }

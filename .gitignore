@@ -11,6 +11,5 @@ smartide-cli
 sign.json
 smartIDE.p12
 smartide-cli-linux-x64
-.gitignore
 smartide-cli-macos-x64
 __debug_bin

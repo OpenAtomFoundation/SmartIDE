@@ -17,6 +17,7 @@ import (
 	"strings"
 
 	"github.com/leansoftX/smartide-cli/lib/common"
+	"github.com/leansoftX/smartide-cli/lib/i18n"
 )
 
 func ConfigGitByDockerExec() {
@@ -25,14 +26,11 @@ func ConfigGitByDockerExec() {
 	cmd := exec.Command("git", "config", "--list")
 	cmd.Stderr = os.Stderr
 	out, cmdErr := cmd.Output()
-	if cmdErr != nil {
-		common.SmartIDELog.Fatal(cmdErr)
-	}
+	common.CheckError(cmdErr)
 
 	gitconfigs := string(out)
 	if gitconfigs == "" {
-		fmt.Println("注意：未获取到用户git配置信息")
-		return
+		common.SmartIDELog.Error(i18n.GetInstance().Config.Error.Gitconfig_not_exit)
 	}
 	s := bufio.NewScanner(strings.NewReader(gitconfigs))
 	for s.Scan() {

@@ -1,3 +1,10 @@
+/*
+ * @Author: kenan
+ * @Date: 2021-10-29 15:00:37
+ * @LastEditors: kenan
+ * @LastEditTime: 2021-11-03 14:32:46
+ * @Description: file content
+ */
 package common
 
 import "strings"
@@ -11,6 +18,18 @@ func Contains(slice []string, item string) bool {
 
 	_, ok := set[item]
 	return ok
+}
+
+// 数组中是否包含(模糊匹配)
+func Contains4StringArry(slice []string, item string) bool {
+	for _, s := range slice {
+		if strings.Contains(s, item) {
+			return true
+		}
+
+	}
+
+	return false
 }
 
 // 数组中是否包含某个元素

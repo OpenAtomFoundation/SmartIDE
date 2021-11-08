@@ -17,10 +17,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
-	"log"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/leansoftX/smartide-cli/cmd"
@@ -33,7 +29,7 @@ import (
 func main() {
 	// print version
 	versionInfo := formatVerion()
-	fmt.Println(versionInfo.VersionNumber)
+	common.SmartIDELog.Console(versionInfo.VersionNumber)
 
 	// command line startup
 	cmd.Execute(versionInfo)
@@ -42,23 +38,7 @@ func main() {
 // running before main
 func init() {
 
-	dirname, err := os.UserHomeDir() // home dir
-	if err != nil {
-		log.Fatal(err)
-	}
-	logFilePath := filepath.Join(dirname, ".ide/smartide.log") // current user dir + ...
-
-	if !common.IsExit(logFilePath) {
-		os.MkdirAll(filepath.Join(dirname, ".ide"), os.ModePerm) // create dir
-		os.Create(logFilePath)                                   // create file
-	}
-
-	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-	if err != nil {
-		common.SmartIDELog.Fatal(err, "open log file failed, err:")
-	}
-	log.SetOutput(logFile)
-	log.SetFlags(log.Llongfile | log.Lmicroseconds | log.Ldate)
+	common.SmartIDELog.InitLogger("")
 
 }
 

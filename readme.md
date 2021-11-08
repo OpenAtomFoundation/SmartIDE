@@ -1,4 +1,4 @@
-# SmartIDE CLI
+# SmartIDE CLI 
 
 [![Go](https://github.com/leansoftX/smartide-cli/actions/workflows/go.yml/badge.svg)](https://github.com/leansoftX/smartide-cli/actions/workflows/go.yml)
 
@@ -6,7 +6,7 @@ This SmartIDE CLI tool makes it easy to run Your Development Environment:
 * locally as a command in the SmartIDE CLI, using `smartide ...` comands.
 
 
-## Getting started
+## Getting started 
 
 To get started with SmartIDE CLI, all you need is:
 

@@ -2,6 +2,8 @@ package common
 
 import (
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 // 判断所给路径文件/文件夹是否存在
@@ -25,4 +27,23 @@ func IsDir(path string) bool {
 // 判断所给路径是否为文件
 func IsFile(path string) bool {
 	return !IsDir(path)
+}
+
+type OSType int32
+
+const (
+	OS_Windows OSType = 1
+	OS_Linux   OSType = 2
+)
+
+// 路径组合，参数 os 可以是windows
+func FilePahtJoin(osType OSType, paths ...string) string {
+	result := filepath.Join(paths...)
+	switch osType {
+	case OS_Windows:
+		result = strings.ReplaceAll(result, "/", "\\")
+	case OS_Linux:
+		result = strings.ReplaceAll(result, "\\", "/")
+	}
+	return result
 }

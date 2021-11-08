@@ -31,7 +31,7 @@ require (
 	github.com/spf13/viper v1.8.1
 	github.com/subosito/gotenv v1.2.0 // indirect
 	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4 // indirect
-	golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1 // indirect
+	golang.org/x/sys v0.0.0-20210927094055-39ccf1dd6fa6 // indirect
 	golang.org/x/text v0.3.5 // indirect
 	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c // indirect
 	google.golang.org/grpc v1.38.0 // indirect
@@ -49,12 +49,39 @@ require (
 )
 
 require (
+	github.com/mattn/go-isatty v0.0.14 // indirect
+	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 // indirect
+)
+
+require (
 	github.com/Microsoft/hcsshim v0.8.18 // indirect
+	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/containerd/cgroups v1.0.1 // indirect
+	github.com/go-ole/go-ole v1.2.6-0.20210915003542-8b1f7f90f6b1 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
+	github.com/google/gops v0.3.21 // indirect
+	github.com/keybase/go-ps v0.0.0-20190827175125-91aafc93ba19 // indirect
 	github.com/moby/sys/mount v0.2.0 // indirect
 	github.com/moby/sys/mountinfo v0.4.1 // indirect
+	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/opencontainers/runc v1.0.1 // indirect
+	github.com/shirou/gopsutil/v3 v3.21.9 // indirect
+	github.com/tklauser/go-sysconf v0.3.9 // indirect
+	github.com/tklauser/numcpus v0.3.0 // indirect
+	github.com/xlab/treeprint v1.1.0 // indirect
 	go.opencensus.io v0.23.0 // indirect
+	go.uber.org/zap v1.19.1
 	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 // indirect
+	rsc.io/goversion v1.2.0 // indirect
 )
+
+require (
+	github.com/bramvdbogaerde/go-scp v1.1.0
+	github.com/gookit/color v1.5.0
+	github.com/mattn/go-colorable v0.1.11
+	github.com/tmc/scp v0.0.0-20170824174625-f7b48647feef
+	go.uber.org/atomic v1.7.0 // indirect
+	go.uber.org/multierr v1.6.0 // indirect
+)
+
+require github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect

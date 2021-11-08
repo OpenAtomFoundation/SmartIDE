@@ -1,63 +1,152 @@
 {
-    "start":{
-        "info":{
-            "help_short":"快速创建并启动SmartIDE开发环境",
-            "help_long":"快速创建并启动SmartIDE开发环境",
-            "info_start":"SmartIDE启动中......",
-            "info_running_container":"SmartIDE容器创建中......",
-            "info_running_openbrower":"打开浏览器......",
-            "info_end":"SmartIDE启动完毕"
+    "config": {
+        "info": {
+            "read_docker_compose": "读取docker-compose文件："
         },
-        "error":{
-            "docker_err":"请检查当前环境docker是否安装",
-            "dockerps_err":"请检查当前环境docker是否正常运行",
-            "docker_compose_err":"请检查当前环境docker-compose是否正常运行"
+        "error": {
+            "services_not_exit": "docker-compose 模式下需要设置services",
+            "file_not_exit": "%v 文件不存在",
+            "devcontainer_not_contains": "dev-container 节点中定义的 “%s” 未出现在 services",
+            "gitconfig_not_exit": "注意：未获取到用户git配置信息"
         }
     },
-    "stop":{
-        "info":{
-            "help_short":"停止SmartIDE开发环境",
-            "help_long":"停止SmartIDE开发环境",
-            "info_start":"SmartIDE停止中......",
-            "info_end":"SmartIDE已停止"
-
+    "start": {
+        "info": {
+            "help_short": "快速创建并启动SmartIDE开发环境",
+            "help_long": "快速创建并启动SmartIDE开发环境",
+            "info_start": "SmartIDE启动中......",
+            "info_running_container": "SmartIDE容器创建中......",
+            "info_running_openbrower": "打开浏览器......",
+            "info_end": "SmartIDE启动完毕",
+            "info_docker_compose_filepath": "docker-compose 文件路径: %v",
+            "info_ssh_tunnel": "SSH转发端口：%v",
+            "info_create_network": "创建网络 %v",
+            "info_open_in_brower": "从浏览器中打开：",
+            "help_flag_filepath": "指定yaml文件路径"
         },
-        "error":{}
-    },
-    "remove":{
-        "info":{
-            "help_short":"彻底删除SmartIDE开发环境",
-            "help_long":"彻底删除SmartIDE开发环境",
-            "info_start":"SmartIDE删除中......",
-            "info_end":"SmartIDE删除完毕"
-        },
-        "error":{}
-    },
-    "main":{
-        "info":{
-            "help_short":"SmartIDE 开发从未如此简单！",
-            "help_long":"- SmartIDE 开发从未如此简单！\n- SmartIDE CLI可以帮助开发人员快速搭建开发环境，包括本地以及云端环境。",
-            "usage_template": "使用:{{if .Runnable}}\n  {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}\n  {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}\nAliases:\n  {{.NameAndAliases}}{{end}}{{if .HasExample}}\nExamples:\n{{.Example}}{{end}}{{if .HasAvailableSubCommands}}\n命令:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name \"help\"))}}\n  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}\n标记:\n{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}\nGlobal Flags:\n{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasHelpSubCommands}}\nAdditional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}\n  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}\n使用 \"{{.CommandPath}} [command] --help\" 可以看到命令的详细帮助信息.{{end}}\n"          
-        },
-        "error":{           
-             "file_not_exit":"配置文件不存在，请手动在当前目录下创建 “.ide/.ide.yaml” ！",
-             "version_not_build":"请通过流水线生成版本号！"
+        "error": {
+            "docker_err": "请检查当前环境docker是否安装",
+            "dockerps_err": "请检查当前环境docker是否正常运行",
+            "docker_compose_err": "请检查当前环境docker-compose是否正常运行",
+            "docker_started": "容器已经启动！",
+            "docker_compose_save": "保存docker-compose文件出错："
         }
     },
-    "init":{
-        "info":{
-            "help_short":"快速初始化SmartIDE配置文件",
-            "help_long":"",
-            "info_start":"SmartIDE 初始化中......",
-            "info_end":"SmartIDE 初始化结束"
+    "stop": {
+        "info": {
+            "help_short": "停止SmartIDE开发环境",
+            "help_long": "停止SmartIDE开发环境",
+            "info_start": "SmartIDE停止中......",
+            "info_end": "SmartIDE已停止",
+            "help_flag_filepath": "指定yaml文件路径"
         },
-        "error":{}
+        "error": {}
     },
-    "help":{
-        "info":{
-            "help_short":"为 SmartIDE 提供帮助",
-            "help_long":"具体的命令不会使用时，可以使用 例如：SmartIDE start --help"
+    "remove": {
+        "info": {
+            "help_short": "彻底删除SmartIDE开发环境",
+            "help_long": "彻底删除SmartIDE开发环境",
+            "info_start": "SmartIDE删除中......",
+            "info_end": "SmartIDE删除完毕",
+            "help_flag_filepath": "指定yaml文件路径"
         },
-        "error":{}
+        "error": {}
+    },
+    "restart": {
+        "info": {
+            "help_short": "重启SmartIDE开发环境",
+            "help_long": "重启SmartIDE开发环境",
+            "help_flag_filepath": "指定yaml文件路径"
+        },
+        "error": {}
+    },
+    "main": {
+        "info": {
+            "help_short": "SmartIDE 开发从未如此简单！",
+            "help_long": "- SmartIDE 开发从未如此简单！\n- SmartIDE CLI可以帮助开发人员快速搭建开发环境，包括本地以及云端环境。",
+            "usage_template": "使用:{{if .Runnable}}\n  {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}\n  {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}\nAliases:\n  {{.NameAndAliases}}{{end}}{{if .HasExample}}\nExamples:\n{{.Example}}{{end}}{{if .HasAvailableSubCommands}}\n命令:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name \"help\"))}}\n  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}\n标记:\n{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}\nGlobal Flags:\n{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasHelpSubCommands}}\nAdditional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}\n  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}\n使用 \"{{.CommandPath}} [command] --help\" 可以看到命令的详细帮助信息.{{end}}\n",
+            "help_flag_debug": "是否开启Debug模式，在该模式下将显示更多的日志信息"
+        },
+        "error": {
+            "file_not_exit": "配置文件不存在，请手动在当前目录下创建 “.ide/.ide.yaml” ！",
+            "version_not_build": "请通过流水线生成版本号！"
+        }
+    },
+    "init": {
+        "info": {
+            "help_short": "快速初始化SmartIDE配置文件",
+            "help_long": "",
+            "info_start": "SmartIDE 初始化中......",
+            "info_end": "SmartIDE 初始化结束"
+        },
+        "error": {}
+    },
+    "help": {
+        "info": {
+            "help_short": "为 SmartIDE 提供帮助",
+            "help_long": "具体的命令不会使用时，可以使用 例如：SmartIDE start --help"
+        },
+        "error": {}
+    },
+    "version": {
+        "info": {
+            "help_short": "查看版本信息",
+            "help_long": "查看版本信息",
+            "template": "版本号：%v\n构建号：%v\n提交记录：%v\n公司：%v"
+        },
+        "error": {}
+    },
+    "vm_start": {
+        "info": {
+            "help_short": "调用远程主机启动web ide",
+            "help_long": "调用远程主机启动web ide",
+            "info_starting": "vm start 开始 ... ",
+            "info_connect_remote": "连接远程主机 ",
+            "info_git_clone": "git 克隆 ... ",
+            "info_git_checkout_and_pull": "git checkout && pull ",
+            "info_read_config": "读取代码库下的配置文件( %v ) ...",
+            "info_create_network": "创建网络 ...",
+            "info_compose_up": "docker-compose up ...",
+            "info_warting_for_webide": "等待WebIDE启动 ... ",
+            "info_open_brower": "打开浏览器访问：%v "
+        },
+        "error": {}
+    },
+    "update": {
+        "info": {
+            "help_short": "自动升级 或者 更新到指定的版本",
+            "help_long": "自动升级 或者 更新到指定的版本",
+            "info_remove_repeat": "本地删除重复文件",
+            "help_flag_version": "更新到指定的版本",
+            "help_flag_build": "是否更新build版本"
+        },
+        "error": {},
+        "warn": {
+            "warn_rel_lastest": "当前版本 %v 无须升级"
+        }
+    },
+    "common": {
+        "debug": {
+            "debug_key_public": "本地公钥: ",
+            "debug_same_not_overwrite": "SSH私钥相同，不需要覆盖！",
+            "debug_auto_connect_gitrepo": "自动确定连接Git库",
+            "debug_empty_error": "ssh 执行command 遇到空错误(error、output均为空)，已跳过！"
+        },
+        "info": {
+            "info_privatekey_is_overwrite": " SSH私钥文件已存在，是否覆盖（y/n）？",
+            "info_whether_overwrite": "当前为ssh方式，是否复制本地私钥到服务器（y/n）？",
+            "info_gitrepo_cloned": "Git库已克隆！",
+            "info_please_enter_password": "请输入当前git库的访问密码: ",
+            "info_canel_privatekey_password": "远程服务器需要取消私钥密码，请录入私钥密码：",
+            "info_port_is_binding": "端口 %v 已绑定，可以直接使用",
+            "info_port_binding_result2": "容器: %d -> localhost:%d  ( %d 被占用)",
+            "info_port_binding_result": "容器: %d -> localhost:%d  ",
+            "info_find_new_port": "发现新端口："
+        },
+        "error": {
+            "err_sshremote_param_repourl_none": "参数 gitRepoUrl 不能为空",
+            "err_password_none": "密码不能为空！"
+        },
+        "warn": {}
     }
 }

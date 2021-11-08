@@ -11,6 +11,6 @@ var helpCmd = &cobra.Command{
 	Short: i18n.GetInstance().Help.Info.Help_short,
 	Long:  i18n.GetInstance().Help.Info.Help_long,
 	Run: func(cmd *cobra.Command, args []string) {
-		//fmt.Println(i18n.GetInstance().Init.Info.Info_start)
+
 	},
 }

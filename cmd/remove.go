@@ -16,7 +16,6 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 
@@ -36,16 +35,19 @@ var removeCmd = &cobra.Command{
 	Long:  instanceI18nRemove.Info.Help_long,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		fmt.Println(instanceI18nRemove.Info.Info_start)
+		common.SmartIDELog.Info(instanceI18nRemove.Info.Info_start)
 		//1. 获取docker compose的文件内容
 		var yamlFileCongfig lib.YamlFileConfig
+		if ideyamlfile != "" { //增加指定yaml文件启动
+			yamlFileCongfig.SetYamlFilePath(ideyamlfile)
+		}
 		yamlFileCongfig.GetConfig()
-		dockerCompose, _, _ := yamlFileCongfig.ConvertToDockerCompose(common.SSHRemote{})
+		dockerCompose, _, _ := yamlFileCongfig.ConvertToDockerCompose(common.SSHRemote{}, "")
 		servicename := yamlFileCongfig.Workspace.DevContainer.ServiceName
 
-		fmt.Printf("docker-compose servicename: %v \n", servicename)
+		//fmt.Printf("docker-compose servicename: %v \n", servicename)
 
-		yamlFilePath, _ := dockerCompose.GetDockerComposeFile(servicename)
+		yamlFilePath := dockerCompose.GetTmpDockerComposeFilePath(servicename)
 
 		pwd, _ := os.Getwd()
 		composeCmd := exec.Command("docker-compose", "-f", yamlFilePath, "--project-directory", pwd, "down", "-v")
@@ -54,12 +56,12 @@ var removeCmd = &cobra.Command{
 		if composeCmdErr := composeCmd.Run(); composeCmdErr != nil {
 			common.SmartIDELog.Fatal(composeCmdErr)
 		}
-		fmt.Println(instanceI18nRemove.Info.Info_end)
+		common.SmartIDELog.Info(instanceI18nRemove.Info.Info_end)
 	},
 }
 
 func init() {
-	//rootCmd.AddCommand(removeCmd)
+	removeCmd.Flags().StringVarP(&ideyamlfile, "filepath", "f", "", instanceI18nRemove.Info.Help_flag_filepath)
 
 	// Here you will define your flags and configuration settings.
 

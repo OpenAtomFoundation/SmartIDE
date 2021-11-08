@@ -14,19 +14,19 @@ type Service struct {
 	// TODO configs
 	ContainerName string `yaml:"container_name,omitempty"` // 容器名称
 	// TODO credential_spec
-	DependsOn []string `yaml:"depends_on,omitempty"` // 服务之间的依赖关系
+	DependsOn interface{} `yaml:"depends_on,omitempty"` // 服务之间的依赖关系 //TODO 有时候是[]string, 有时候是 map[string]interface{}
 	// TODO deploy
 	// TODO devices
 	DNS []string `yaml:"dns,omitempty"`
 	// TODO dns_search
 	// TODO entrypoint
 	// TODO env_file
-	Environment map[string]interface{} `yaml:"environment,omitempty"` // 环境变量
-	// TODO expose
+	Environment map[string]string `yaml:"environment,omitempty"` // 环境变量
+	Expose      []string          `yaml:"expose,omitempty"`      // 暴露的端口
 	// TODO external_links
 	// TODO extra_hosts
-	// TODO healthcheck
-	Image Image `yaml:"image"` // 容器启动的镜像
+	HealthCheck map[string]interface{} `yaml:"healthcheck,omitempty"` // 健康检查
+	Image       Image                  `yaml:"image"`                 // 容器启动的镜像
 	// TODO init
 	// TODO isolation
 	// TODO labels
