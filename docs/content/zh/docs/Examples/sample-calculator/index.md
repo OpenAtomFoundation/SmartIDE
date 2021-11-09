@@ -1,6 +1,6 @@
 ---
-title: "示例：计算器应用"
-linkTitle: "示例：计算器应用"
+title: "Boathouse计算器"
+linkTitle: "Boathosue计算器"
 weight: 10
 date: 2021-09-29
 description: >
