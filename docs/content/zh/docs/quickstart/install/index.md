@@ -20,44 +20,46 @@ description: >
 
 ## SmartIDE 安装手册
 
-### Mac
+### 稳定版
 
-**使用curl下载并安装**
-
-> 最新稳定版安装命令
-
+{{< tabs name="stable_install" >}}
+{{% tab name="MacOS" %}}
 ```bash
+# 打开终端窗口，复制粘贴以下脚本即可安装稳定版SmartIDE CLI应用
 curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/releases/$(curl -L -s https://smartidedl.blob.core.chinacloudapi.cn/releases/stable.txt)/smartide" \
 && mv -f smartide /usr/local/bin/smartide \
 && chmod +x /usr/local/bin/smartide
 ```
+{{% /tab %}}
 
-> 每日构建版本安装命令
+{{% tab name="Windows" %}}
+```powershell
+# 打开PowerShell终端窗口，复制粘贴以下脚本即可自动下载稳定版SmartIDE MSI安装包，并启动安装程序
+Invoke-WebRequest -Uri ("https://smartidedl.blob.core.chinacloudapi.cn/releases/"+(Invoke-RestMethod https://smartidedl.blob.core.chinacloudapi.cn/releases/stable.txt)+"/SetupSmartIDE.msi")  -OutFile "smartide.msi"
+ .\smartIDE.msi
+```
+{{% /tab %}}
 
+{{< /tabs >}}
+
+### 每日构建版
+
+{{< tabs name="daily_install" >}}
+{{% tab name="MacOS" %}}
 ```bash
+# 打开终端窗口，复制粘贴以下脚本即可安装稳定版SmartIDE CLI应用
 curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/builds/$(curl -L -s https://smartidedl.blob.core.chinacloudapi.cn/builds/stable.txt)/smartide" \
 && mv -f smartide /usr/local/bin/smartide \
 && chmod +x /usr/local/bin/smartide
 ```
+{{% /tab %}}
 
-
-### windows
-
-**使用powershell 下载并安装**
-
-> 最新稳定版安装命令
-
+{{% tab name="Windows" %}}
 ```powershell
-Invoke-WebRequest -Uri ("https://smartidedl.blob.core.chinacloudapi.cn/releases/"+(Invoke-RestMethod https://smartidedl.blob.core.chinacloudapi.cn/releases/stable.txt)+"/SetupSmartIDE.msi")  -OutFile "smartide.msi"
-
- .\smartIDE.msi
-```
-
-> 每日构建版本安装命令
-
-```powershell
+# 打开PowerShell终端窗口，复制粘贴以下脚本即可自动下载稳定版SmartIDE MSI安装包，并启动安装程序
 Invoke-WebRequest -Uri ("https://smartidedl.blob.core.chinacloudapi.cn/builds/"+(Invoke-RestMethod https://smartidedl.blob.core.chinacloudapi.cn/builds/stable.txt)+"/SetupSmartIDE.msi")  -OutFile "smartide.msi"
-
  .\smartIDE.msi
 ```
+{{% /tab %}}
 
+{{< /tabs >}}
