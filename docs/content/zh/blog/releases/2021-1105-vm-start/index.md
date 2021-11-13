@@ -13,3 +13,10 @@ description: >
 - 完善远程主机连接方式：允许用户选择用户名密码或者SSH密钥两种方式连接到远程主机
 - SSH密钥同步：允许用户将本地的SSH密钥同步到远程主机上，省去用户重新设置SSH密钥的步骤
 - Git URL改进：允许用户通过https/SSH两种GitURL连接到自己的Git仓库，同时完善了私有Git库的支持
+
+```bash
+# 打开终端窗口，复制粘贴以下脚本即可安装稳定版SmartIDE CLI应用
+curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/releases/$(curl -L -s https://smartidedl.blob.core.chinacloudapi.cn/releases/stable.txt)/smartide" \
+&& mv -f smartide /usr/local/bin/smartide \
+&& chmod +x /usr/local/bin/smartide
+```

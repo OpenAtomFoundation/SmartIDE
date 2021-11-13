@@ -1,0 +1,35 @@
+
+.copy-code-button {
+    color: #272822;
+    background-color: #fff;
+    border-color: #272822;
+    border: 2px solid;
+    border-radius: 3px 3px 0px 0px;
+  
+    /* right-align */
+    display: block;
+    margin-left: auto;
+    margin-right: 0;
+  
+    margin-bottom: -2px;
+  
+    padding: 3px 8px;
+    font-size: 0.8em;
+  }
+  
+  .copy-code-button:hover {
+    cursor: pointer;
+    background-color: #f2f2f2;
+  }
+  
+  .copy-code-button:focus {
+    /* avoid an ugly focus outline on click in Chrome, but darken the button
+       for accessibility. https://stackoverflow.com/a/25298082/1481479 */
+    background-color: #e6e6e6;
+    outline: 0;
+  }
+  
+  .copy-code-button:active {
+    background-color: #d9d9d9;
+  }
+  

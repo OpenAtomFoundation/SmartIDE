@@ -1,0 +1,17 @@
+{{ define "head-extra" }}
+    <link rel="stylesheet" href="/css/post.css" type="text/css" />
+
+    {{ with .Params.canonicalUrl }}
+        <link rel="canonical" href="{{.}}" />
+    {{ end }}
+{{ end }}
+
+{{ define "main" }}
+{{ .Render "content" }}
+{{ end }}
+
+{{ define "js-extra" }}
+    {{ if (findRE "<pre" .Content 1) }}
+        <script src="/js/copy-code-button.js"></script>
+    {{ end  }}
+{{ end  }}
