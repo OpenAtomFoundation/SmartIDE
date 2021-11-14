@@ -1,0 +1,7 @@
+{{ define "main" }}
+<link rel="stylesheet" href="/css/post.css" type="text/css" />
+{{ .Render "content" }}
+{{ if (findRE "<pre" .Content 1) }}
+<script src="/js/copy-code-button.js"></script>
+{{ end  }}
+{{ end }}

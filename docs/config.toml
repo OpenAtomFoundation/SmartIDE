@@ -70,6 +70,18 @@ time_format_default = "2006.01.02"
 time_format_blog = "2006.01.02"
 weight = 2
 
+# Additional menu items
+[[languages.zh.menu.main]]
+    name = "快速开始"
+    weight = -100
+    url = "docs/quickstart/"
+
+[[languages.zh.menu.main]]
+    name = "GitHub"
+    url = "https://github.com/SmartIDE/SmartIDE"
+    pre = "<i class='fab fa-github'></i>"
+    weight = 50
+
 [markup]
   [markup.goldmark]
     [markup.goldmark.renderer]
@@ -130,7 +142,7 @@ github_branch= "main"
 algolia_docsearch = false
 
 # Enable Lunr.js offline search
-offlineSearch = false
+offlineSearch = true
 
 # Enable syntax highlighting and copy buttons on code blocks with Prism
 prism_syntax_highlighting = false
