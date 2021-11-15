@@ -18,7 +18,7 @@ description: >
 
 ### 关键特性说明
 
-#### 完善远程主机模式连接方式
+#### 完善远程主机模式使用场景
 
 远程主机方式（smartide vm start）方式允许用户使用任何的远程主机作为IDE运行环境，通过一个命令完成IDE在远程主机上的启动。远程主机方式可以让开发者不必受限于本地开发机的算力，存储和网络环境，使用位于数据中心，私有云或者公有云上的任何远程主机作为自己的开发环境；这种开发模式的优势有以下几点。
 
@@ -69,4 +69,9 @@ smartide vm start --host <主机IP或者域名> --username <SSH用户名> --repo
 ![](images/local-port-forwarding.png)
 
 **说明**：[Hugo](https://gohugo.io/) 是一个用Go语言实现的静态站点生成器，你当前所浏览的 [smartide.dev](https://smartide.dev) 站点所使用的就是hugo。我在使用hugo进行 [smartide.dev](https://smartide.dev) 开发的过程中遇到了一个很麻烦的问题：git submodule恢复的问题，因为hugo使用了大量github资源，并且是通过git submodule的方式引入的，在我本地环境中获取这些资源非常的缓慢。通过SmartIDE的远程主机模式，我可以使用一台云平台中的主机，因为云平台所处网络环境大大优于本地开发机（你知道为什么！），因此我的git submodule获取时间可以从20-30分钟（本地模式）减少到2分钟（远程主机模式）。
+
+以上就是Sprint5所发布版本的特性描述，我们2周后见。
+
+徐磊
+2021.11.05于北京
 

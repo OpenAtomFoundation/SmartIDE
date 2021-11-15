@@ -24,7 +24,7 @@ description: >
 
 ### 稳定版通道
 
-稳定版的发布按照sprint进行，每个sprint结束后我们会发布一个稳定版到这个通道。这个版本经过开发团队相对完整的测试，确保所提供的功能稳定可用，同时我们会在每个sprint结束时同时发布“版本发布说明”并对当前版本的性能和改进进行说明。
+稳定版的发布按照sprint进行，我们采用2周一个sprint的开发节奏，每个sprint结束后我们会发布一个稳定版到这个通道。这个版本经过开发团队相对完整的测试，确保所提供的功能稳定可用，同时我们会在每个sprint结束时同时发布“版本发布说明”并对当前版本的性能和改进进行说明。
 
 版本发布说明列表：
 
@@ -65,7 +65,7 @@ SmartIDE CI/CD 流水线每晚8点（GMT+8 Beijing) 会自动将当天提交到s
 {{% tab name="MacOS" %}}
 ```bash
 # SmartIDE 每日构建版通道安装脚本
-# 打开终端窗口，复制粘贴以下脚本即可安装稳定版SmartIDE CLI应用
+# 打开终端窗口，复制粘贴以下脚本即可安装每日构建版SmartIDE CLI应用
 # 再次执行此命令即可更新版本
 curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/builds/$(curl -L -s https://smartidedl.blob.core.chinacloudapi.cn/builds/stable.txt)/smartide" \
 && mv -f smartide /usr/local/bin/smartide \
@@ -76,7 +76,7 @@ curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/builds/$(curl -L -s htt
 {{% tab name="Windows" %}}
 ```powershell
 # SmartIDE 每日构建版通道安装脚本
-# 打开PowerShell终端窗口，复制粘贴以下脚本即可自动下载稳定版SmartIDE MSI安装包，并启动安装程序
+# 打开PowerShell终端窗口，复制粘贴以下脚本即可自动下载每日构建版SmartIDE MSI安装包，并启动安装程序
 # 再次执行此命令即可更新版本
 Invoke-WebRequest -Uri ("https://smartidedl.blob.core.chinacloudapi.cn/builds/"+(Invoke-RestMethod https://smartidedl.blob.core.chinacloudapi.cn/builds/stable.txt)+"/SetupSmartIDE.msi")  -OutFile "smartide.msi"
  .\smartIDE.msi
