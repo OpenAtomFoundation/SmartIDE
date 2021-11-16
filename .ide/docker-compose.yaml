@@ -8,7 +8,7 @@ services:
     environment:
       ROOT_PASSWORD: root123
     volumes:
-      - code:/home/project
+      - .:/home/project
     expose:
       - 1313
     ports:
@@ -19,10 +19,3 @@ services:
 networks:
   smartide-network:
     external: true
-
-volumes:
-  code:
-    driver_opts:
-      type: none
-      device: ./.ide/
-      o: bind
