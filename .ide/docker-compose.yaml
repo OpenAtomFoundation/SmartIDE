@@ -24,5 +24,5 @@ volumes:
   code:
     driver_opts:
       type: none
-      device: ./.ide/tmp
+      device: ./.ide/
       o: bind
