@@ -2,7 +2,7 @@
 
 The Cloud Native designed for boosting development efficiency.
 
-## Release  
+## Release
 
 - v0.1 
 
