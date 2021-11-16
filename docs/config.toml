@@ -1,5 +1,5 @@
 baseURL = "/"
-title = "smartIDE"
+title = "SmartIDE"
 
 enableRobotsTXT = true
 
@@ -54,16 +54,16 @@ id = "UA-00000000-0"
 [languages]
 
 [languages.en]
-title = "smart IDE"
-description = "The Cloud Native IDE."
+title = "SmartIDE"
+description = "Be a Smart Developer, Use SmartIDE."
 languageName ="English"
 contentDir = "content/en"
 # Weight used for sorting.
 weight = 1
 
 [languages.zh]
-title = "smartIDE"
-description = "云原生IDE"
+title = "SmartIDE"
+description = "开发从未如此简单"
 languageName ="中文（简体）"
 contentDir = "content/zh"
 time_format_default = "2006.01.02"
@@ -124,9 +124,9 @@ version = "0.1"
 url_latest_version = "https://example.com"
 
 # Repository configuration (URLs for in-page links to opening issues and suggesting changes)
-github_repo = "https://github.com/smartIDE/smartIDE"
+github_repo = "https://github.com/SmartIDE/smartIDE"
 # An optional link to a related project repo. For example, the sibling repository where your product code lives.
-github_project_repo = "https://github.com/smartIDE/smartide"
+github_project_repo = "https://github.com/SmartIDE/SmartIDE"
 
 # Specify a value here if your content directory is not in your repo's root directory
 github_subdir = "docs"
