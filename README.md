@@ -2,7 +2,7 @@
 
 The Cloud Native designed for boosting development efficiency.
 
-## Release
+## Release 
 
 - v0.1 
 
@@ -41,4 +41,6 @@ Now you can simply edit your markdown file and view the site updated on the fly.
 ## Copyright 
 
 &copy;[leansoftX.com](https://leansoftx.com) 2021
+
+...
 
