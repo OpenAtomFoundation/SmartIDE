@@ -1,6 +1,6 @@
 ---
 title: "SmartIDE v0.1.2 发布说明"
-linkTitle: "版本 0.1.2 发布说明"
+linkTitle: "v0.1.2"
 date: 2021-10-24
 description: >
   SmartIDE的第一次版本发布。
