@@ -31,7 +31,7 @@ Use the following command to start a Hugo Development server to work on the docu
 ```shell
 npm install
 cd docs
-hugo server --bind 0.0.0.0
+hugo server --bind 0.0.0.0 --disableFastRender
 ```
 
 Open http://localhost:1313
