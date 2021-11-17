@@ -1,4 +1,4 @@
-# SmartIDE - The Cloud Native IDE
+# SmartIDE - The Cloud Native IDE 
 
 The Cloud Native designed for boosting development efficiency.
 
@@ -41,6 +41,3 @@ Now you can simply edit your markdown file and view the site updated on the fly.
 ## Copyright 
 
 &copy;[leansoftX.com](https://leansoftx.com) 2021
-
-...
-

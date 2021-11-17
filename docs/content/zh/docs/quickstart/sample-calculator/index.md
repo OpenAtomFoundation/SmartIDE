@@ -1,7 +1,7 @@
 ---
 title: "Boathouse计算器"
 linkTitle: "Boathosue计算器"
-weight: 10
+weight: 15
 date: 2021-09-29
 description: >
   本应用运行状态为网页中的计算器，使用node.js创建，并包含了试用mocha的单元测试代码。
