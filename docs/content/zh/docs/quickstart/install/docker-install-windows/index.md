@@ -95,8 +95,27 @@ wsl --set-default-version 2
 
 ## 运行安装程序
 
-双击打开下载的安装包
+双击打开下载的安装包，确保选中以下选项，并点击 OK
 
+- Install required Windows componenets for WSL2
+
+![安装](images/docker-install-win007.png)
+
+安装程序需要从网络下载一些资源，请确保安装过程网络畅通
+
+![安装](images/docker-install-win008.png)
+
+安装完成后，点击 Close，关闭安装程序
+
+![安装](images/docker-install-win009.png)
+
+点击 **开始按钮 ｜ 输入 Docker | 点击打开** 
+
+![安装](images/docker-install-win010.png)
+
+接受用户协议
+
+![安装](images/docker-install-win011.png)
 
 
 ## 配置Docker桌面版
