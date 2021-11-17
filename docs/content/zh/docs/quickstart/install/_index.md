@@ -2,7 +2,7 @@
 title: "安装手册"
 linkTitle: "安装手册"
 date: 2021-09-24
-weight: 1
+weight: 10
 description: >
   本文档介绍如何完成SmartIDE的安装。当前SmartIDE支持MacOS和Windows两种操作系统，我们提供了一键安装脚本方便开发人员快速完成安装。
 ---
