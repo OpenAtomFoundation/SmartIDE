@@ -4,19 +4,22 @@ linkTitle: "安装手册"
 date: 2021-09-24
 weight: 1
 description: >
-  本文档介绍如何完成SmartIDE的安装。当前SmartIDE支持MacOS和Windows两种操作系统，我们提供了一键安装脚方便开发人员快速完成安装。
+  本文档介绍如何完成SmartIDE的安装。当前SmartIDE支持MacOS和Windows两种操作系统，我们提供了一键安装脚本方便开发人员快速完成安装。
 ---
 
 ## 先决条件
 
-使用SmartIDE需要首先安装 Docker Desktop 工具，请从以下网盘地址下载最新版的 Docker Desktop 安装包 
+SmartIDE 通过调用docker和docker-compose来实现容器化环境的管理，因此你需要确保在自己的环境中已经正确安装了这两个软件。如果你已经在使用这两个工具，那么可以直接进入以下 [SmartIDE 安装手册](#smartide-安装手册) 部分。
 
-> 链接: https://pan.baidu.com/s/1xQcif-oeVNNzonawywK7Lw 提取码: vu8c 
+> **说明：** 如果你只需要使用smartide远程主机模式，那么本地开发机上并不需要安装 Docker Desktop 工具，因为所有的环境调度都在远程主机上完成，但是你仍然需要确保远程主机上已经正确安装了docker和docker-compose工具。
 
-下载完成后请参考以下文档完成 Docker Desktop 的安装：
+如果您需要docker和docker-compose的安装指导，可以参考以下链接：
 
-- [在 Windows 上安装 Docker Desktop](docker-install-windows)
-- [在 MacOS 上安装 Docker Desktop](docker-install-osx)
+- [在 Windows 上安装 Docker 桌面版 (包含Docker-Compose)](docker-install-windows)
+- [在 MacOS 上安装 Docker 桌面版 (包含Docker-Compose)](docker-install-osx)
+- [在 Linux 服务器上安装 Docker 和 Docker-Compose](docker-install-linux)
+
+> **说明：** 我们在国内提供了安装包镜像地址以及一键安装脚本以便提升大家的安装体验，具体请参考以上文档中的说明。
 
 ## SmartIDE 安装手册
 
