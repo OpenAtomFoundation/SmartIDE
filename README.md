@@ -1,4 +1,4 @@
-# SmartIDE - The Cloud Native IDE
+# SmartIDE - The Cloud Native IDE 
 
 The Cloud Native designed for boosting development efficiency.
 
