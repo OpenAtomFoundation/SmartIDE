@@ -7,6 +7,7 @@ smartide-cli
 /build
 *.log
 *.zip
+*.msi
 
 sign.json
 smartIDE.p12

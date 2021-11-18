@@ -37,9 +37,12 @@ func main() {
 
 // running before main
 func init() {
+	// new type转换为结构体
+	var typee []cmd.NewType
+	json.Unmarshal([]byte(templateJson), &typee)
+	cmd.SetNewType(typee)
 
 	common.SmartIDELog.InitLogger("")
-
 }
 
 //go:embed stable.txt
@@ -47,6 +50,9 @@ var stable string
 
 //go:embed stable.json
 var stableJson string
+
+//go:embed template.json
+var templateJson string
 
 // 格式化版本号，在stable.txt文件中读取
 // 注：embed 不支持 “..”， 即上级目录

@@ -2,6 +2,7 @@ package i18n
 
 import (
 	"embed"
+
 	"encoding/json"
 
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"github.com/jeandeaual/go-locale"
 
 	// 这里不要忘记引入驱动,如引入默认的json驱动
+
 	_ "github.com/leansoftX/i18n/parser_json"
 )
 
@@ -107,6 +109,8 @@ type I18nSource struct {
 			Info_create_network          string `json:"info_create_network"`
 			Info_open_in_brower          string `json:"info_open_in_brower"`
 			Help_flag_filepath           string `json:"help_flag_filepath"`
+
+			Info_saving_workspace string `json:"info_saving_workspace"`
 		} `json:"info"`
 		Error struct {
 			Docker_Err          string `json:"docker_err"`
@@ -151,17 +155,59 @@ type I18nSource struct {
 		} `json:"error"`
 	} `json:"restart"`
 
+	New struct {
+		Info struct {
+			Help_short              string `json:"help_short"`
+			Help_long               string `json:"help_long"`
+			Help_info               string `json:"help_info"`
+			Help_info_operation     string `json:"help_info_operation"`
+			Help_flag_type          string `json:"help_flag_type"`
+			Help_flag_projectFolder string `json:"help_flag_projectFolder"`
+			Info_yaml_exist         string `json:"info_yaml_exist"`
+			Info_noempty_is_comfirm string `json:"info_noempty_is_comfirm"`
+			Info_type_no_exist      string `json:"info_type_no_exist"`
+			Info_creating_project   string `json:"info_creating_project"`
+		} `json:"info"`
+		Error struct {
+		} `json:"error"`
+	} `json:"new"`
+
+	Host struct {
+		Info struct {
+			Help_short string `json:"help_short"`
+			Help_long  string `json:"help_long"`
+
+			Help_get_short string `json:"help_get_short"`
+			Help_get_long  string `json:"help_get_long"`
+
+			Help_list_short string `json:"help_list_short"`
+			Help_list_long  string `json:"help_list_long"`
+
+			Info_host_table_header    string `json:"info_host_table_header"`
+			Info_host_detail_template string `json:"info_host_detail_template"`
+
+			Help_flag_hostid string `json:"help_flag_hostid"`
+		} `json:"info"`
+		Error struct {
+		} `json:"error"`
+	} `json:"host"`
+
 	Common struct {
 		Debug struct {
 			Debug_key_public           string `json:"debug_key_public"`
 			Debug_same_not_overwrite   string `json:"debug_same_not_overwrite"`
 			Debug_auto_connect_gitrepo string `json:"debug_auto_connect_gitrepo"`
 			Debug_empty_error          string `json:"debug_empty_error"`
-		}
+		} `json:"debug"`
 		Error struct {
 			Err_sshremote_param_repourl_none string `json:"err_sshremote_param_repourl_none"`
 			Err_password_none                string `json:"err_password_none"`
-		}
+
+			Err_dal_record_repeat         string `json:"err_dal_record_repeat"`
+			Err_dal_update_fail           string `json:"err_dal_update_fail"`
+			Err_dal_update_count_too_much string `json:"err_dal_update_count_too_much"`
+			Err_enum_error                string `json:"err_ernum_error"`
+		} `json:"error"`
 		Info struct {
 			Info_privatekey_is_overwrite   string `json:"info_privatekey_is_overwrite"`
 			Info_whether_overwrite         string `json:"info_whether_overwrite"`
@@ -172,8 +218,25 @@ type I18nSource struct {
 			Info_port_binding_result2      string `json:"info_port_binding_result2"`
 			Info_port_binding_result       string `json:"info_port_binding_result"`
 			Info_find_new_port             string `json:"info_find_new_port"`
-		}
-		Warn struct{}
+
+			Info_webide_host_port string `json:"info_webide_host_port"`
+			Info_ssh_host_port    string `json:"info_ssh_host_port"`
+
+			Info_create_directory string `json:"info_create_directory"`
+
+			Info_temp_created_docker_compose string `json:"info_temp_created_docker_compose"`
+			Info_temp_created_config         string `json:"info_temp_created_config"`
+
+			Info_table_header_containers string `json:"info_table_header_containers"`
+		} `json:"info"`
+		Warn struct {
+			// 没有查询到对应的数据
+			Warn_dal_record_not_exit_condition string `json:"warn_dal_record_not_exit_condition"`
+			// 没有查询到对应的数据
+			Warn_dal_record_not_exit string `json:"warn_dal_record_not_exit"`
+			// 参数为空
+			Warn_param_is_null string `json:"warn_param_is_null"`
+		} `json:"warn"`
 	} `json:"common"`
 }
 

@@ -1,0 +1,10 @@
+[
+  {
+    "type_name": "node",  
+    "type_yaml_url":"https://smartidedl.blob.core.chinacloudapi.cn/template/node.ide.yaml"
+  },
+  {
+    "type_name": "express",  
+    "type_yaml_url":"https://smartidedl.blob.core.chinacloudapi.cn/template/node.ide.yaml"
+  }
+]

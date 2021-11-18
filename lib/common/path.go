@@ -47,3 +47,8 @@ func FilePahtJoin(osType OSType, paths ...string) string {
 	}
 	return result
 }
+
+// 路径组合 for linux
+func FilePahtJoin4Linux(paths ...string) string {
+	return FilePahtJoin(OS_Linux, paths...)
+}

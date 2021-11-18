@@ -36,14 +36,15 @@ func (sLog *smartIDELogStruct) InitLogger(logLevel string) {
 func (sLog *smartIDELogStruct) Error(err interface{}, headers ...string) (reErr error) {
 
 	if err != nil {
+		headers = RemoveDuplicatesAndEmpty(headers)
 		msg := fmt.Sprint(strings.Join(headers, " "), err)
 
 		prefix := getPrefix(zapcore.ErrorLevel)
 		stack := string(debug.Stack())
 		if isDebugLevel {
-			fmt.Println(prefix, msg, stack)
+			fmt.Println(strings.Join([]string{prefix, msg, stack}, "; "))
 		} else {
-			fmt.Println(prefix, msg)
+			fmt.Println(strings.Join([]string{prefix, msg}, "; "))
 		}
 
 		sugarLogger.Error(msg, stack)
@@ -56,14 +57,14 @@ func (sLog *smartIDELogStruct) Error(err interface{}, headers ...string) (reErr 
 //
 func (sLog *smartIDELogStruct) Fatal(fatal interface{}, headers ...string) (reErr error) {
 	if fatal != nil {
-
+		headers = RemoveDuplicatesAndEmpty(headers)
 		msg := fmt.Sprint(strings.Join(headers, " "), fatal)
 
 		prefix := getPrefix(zapcore.FatalLevel)
 		stack := string(debug.Stack())
-		fmt.Println(prefix, msg, stack)
+		fmt.Println(strings.Join([]string{prefix, msg, stack}, "; "))
 
-		sugarLogger.Fatal(msg, stack)
+		sugarLogger.Fatal(strings.Join([]string{prefix, msg, stack}, "; "))
 		os.Exit(1)
 	}
 
@@ -76,6 +77,7 @@ func (sLog *smartIDELogStruct) Info(info ...string) (err error) {
 		return nil
 	}
 
+	info = RemoveDuplicatesAndEmpty(info)
 	msg := strings.Join(info, " ")
 
 	prefix := getPrefix(zapcore.InfoLevel)
@@ -88,21 +90,38 @@ func (sLog *smartIDELogStruct) Info(info ...string) (err error) {
 
 //
 func (sLog *smartIDELogStruct) InfoF(format string, args ...interface{}) (err error) {
-	if strings.Count(format, "%v") != len(args) {
-		panic("format %v reads arg count != length of args")
-	}
+
+	validF(format, args...)
+
 	msg := fmt.Sprintf(format, args...)
 
 	return SmartIDELog.Info(msg)
 }
 
+func validF(format string, args ...interface{}) {
+	if strings.Count(format, "%v") != len(args) {
+		msg := fmt.Sprintf(": format tag reads arg count != length of args; format: %v, values: %v", format, args)
+		panic(msg)
+	}
+}
+
 //
+func (sLog *smartIDELogStruct) DebugF(format string, args ...interface{}) (err error) {
+
+	validF(format, args...)
+
+	msg := fmt.Sprintf(format, args...)
+
+	return SmartIDELog.Debug(msg)
+}
+
 func (sLog *smartIDELogStruct) Debug(info ...string) (err error) {
 
 	if len(info) <= 0 {
 		return nil
 	}
 
+	info = RemoveDuplicatesAndEmpty(info)
 	msg := strings.Join(info, " ")
 
 	prefix := getPrefix(zapcore.DebugLevel)
@@ -147,9 +166,9 @@ func (sLog *smartIDELogStruct) Warning(warning ...string) (err error) {
 
 //
 func (sLog *smartIDELogStruct) WarningF(format string, args ...interface{}) (err error) {
-	if strings.Count(format, "%v") != len(args) {
-		panic("format %v reads arg count != length of args")
-	}
+
+	validF(format, args...)
+
 	msg := fmt.Sprintf(format, args...)
 	return SmartIDELog.Warning(msg)
 }

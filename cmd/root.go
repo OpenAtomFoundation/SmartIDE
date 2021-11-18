@@ -91,8 +91,12 @@ func init() {
 	rootCmd.AddCommand(stopCmd)
 	rootCmd.AddCommand(removeCmd)
 	rootCmd.AddCommand(versionCmd, udpateCmd)
-	rootCmd.AddCommand(restartCmd)
-	rootCmd.AddCommand(vmCmd)
+	//rootCmd.AddCommand(restartCmd)
+	//rootCmd.AddCommand(vmCmd)
+	rootCmd.AddCommand(newCmd)
+	rootCmd.AddCommand(listCmd)
+	rootCmd.AddCommand(getCmd)
+	rootCmd.AddCommand(hostCmd)
 }
 
 // initConfig reads in config file and ENV variables if set.

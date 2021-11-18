@@ -2,6 +2,7 @@ package common
 
 import (
 	"bytes"
+	//"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -20,15 +21,18 @@ import (
 
 //
 type SSHRemote struct {
-	SSHHost     string
-	SSHPort     int
-	SSHUserName string
-	SSHPassword string
-	Connection  *ssh.Client
+	SSHHost        string
+	SSHPort        int
+	SSHUserName    string
+	SSHPassword    string
+	SSHKey         string
+	SSHKeyPassword string
+	SSHKeyPath     string
+	Connection     *ssh.Client
 }
 
 // 实例
-func (instance *SSHRemote) Instance(host string, port int, userName, password string) {
+func (instance *SSHRemote) Instance(host string, port int, userName, password string) error {
 
 	if (instance.Connection == &ssh.Client{}) || instance.Connection == nil {
 		instance.SSHHost = host
@@ -37,11 +41,31 @@ func (instance *SSHRemote) Instance(host string, port int, userName, password st
 		instance.SSHPassword = password
 
 		connection, err := connectionDial(host, port, userName, password)
-		CheckError(err)
+		if err != nil {
+			return err
+		}
 
 		instance.Connection = connection
 	}
 
+	return nil
+}
+
+// 验证
+func (instance *SSHRemote) CheckDail(host string, port int, userName, password string) error {
+
+	if (instance.Connection == &ssh.Client{}) || instance.Connection == nil {
+
+		connection, err := connectionDial(host, port, userName, password)
+
+		if err != nil {
+			return err
+		}
+
+		defer connection.Close()
+	}
+
+	return nil
 }
 
 // 判断端口是否可以（未被占用）
@@ -78,13 +102,13 @@ func (instance *SSHRemote) CheckAndGetAvailablePort(checkPort int, step int) (us
 }
 
 // git clone
-func (instance *SSHRemote) GitClone(gitRepoUrl string, workSpace string) (outContent string, err error) {
+func (instance *SSHRemote) GitClone(gitRepoUrl string, workSpaceDir string) (outContent string, err error) {
 
 	if strings.TrimSpace(gitRepoUrl) == "" {
 		SmartIDELog.Error(i18n.GetInstance().Common.Error.Err_sshremote_param_repourl_none)
 	}
-	if workSpace == "" {
-		workSpace = getRepoName(gitRepoUrl)
+	if workSpaceDir == "" {
+		workSpaceDir = getRepoName(gitRepoUrl)
 	}
 
 	// 检测是否为ssh模式
@@ -92,22 +116,23 @@ func (instance *SSHRemote) GitClone(gitRepoUrl string, workSpace string) (outCon
 		isOverwrite := "y" // 是否覆盖服务器上的私钥文件
 		isAllowCopyPrivateKey := ""
 
-		remoteRsaPri, err := instance.ExeSSHCommand(`[[ -f ".ssh/id_rsa" ]] && cat ~/.ssh/id_rsa || echo ""`)
+		commandRsa := `[[ -f ".ssh/id_rsa" ]] && cat ~/.ssh/id_rsa || echo ""`
+		remoteRsaPri, err := instance.ExeSSHCommandConsole(commandRsa, false)
 		CheckError(err)
-		remoteRsaPub, err := instance.ExeSSHCommand(`[[ -f ".ssh/id_rsa.pub" ]] && cat ~/.ssh/id_rsa.pub || echo ""`)
+		SmartIDELog.DebugF("%v >> `%v`", commandRsa, "****")
+
+		commandRsaPub := `[[ -f ".ssh/id_rsa.pub" ]] && cat ~/.ssh/id_rsa.pub || echo ""`
+		remoteRsaPub, err := instance.ExeSSHCommandConsole(commandRsaPub, false)
 		CheckError(err)
+		SmartIDELog.DebugF("%v >> `%v`", commandRsaPub, "****")
+
 		if remoteRsaPri != "" && remoteRsaPub != "" { // 文件存在时提示是否覆盖
 
 			// 读取本地的ssh配置文件
 			homeDir, err := os.UserHomeDir()
 			CheckError(err)
 			localRsaPub, err := ioutil.ReadFile(filepath.Join(homeDir, "/.ssh/id_rsa.pub")) // 读取本地的 id_rsa 文件
-			CheckError(err, string(localRsaPub))
-			/* 	localRsaPri, err := ioutil.ReadFile(filepath.Join(homeDir, "/.ssh/id_rsa")) // 读取本地的 id_rsa 文件
-			CheckError(err, string(localRsaPri)) */
-
-			//		SmartIDELog.Debug("本地私钥: " + string(localRsaPri))
-			SmartIDELog.Debug(i18n.GetInstance().Common.Debug.Debug_key_public + string(localRsaPub))
+			CheckError(err)                                                                 // , string(localRsaPub)
 
 			// 公钥 文件不同时才会提示覆盖
 			if strings.TrimSpace(remoteRsaPub) != strings.TrimSpace(string(localRsaPub)) {
@@ -145,8 +170,13 @@ func (instance *SSHRemote) GitClone(gitRepoUrl string, workSpace string) (outCon
 			chmod 600 ~/.ssh/id_rsa.pub
 
 			`, string(idRsa), string(idRsaPub))
-				output, err := instance.ExeSSHCommand(command)
+				output, err := instance.ExeSSHCommandConsole(command, false)
 				CheckError(err, output)
+
+				// log
+				consoleCommand := strings.ReplaceAll(command, string(idRsa), "***")
+				consoleCommand = strings.ReplaceAll(consoleCommand, string(idRsaPub), "***")
+				SmartIDELog.DebugF("%v >> `%v`", consoleCommand, output)
 
 				// 执行私钥密码的取消 —— 把私钥密码设置为空
 				// https://docs.github.com/cn/authentication/connecting-to-github-with-ssh/working-with-ssh-key-passphrases
@@ -156,13 +186,14 @@ func (instance *SSHRemote) GitClone(gitRepoUrl string, workSpace string) (outCon
 	}
 
 	// 执行clone
-	gitDirPath := strings.Replace(filepath.Join(workSpace, ".git"), "~/", "", -1) // 把路径变成 “a/b/c” 的形式，不支持 “./a/b/c”、“～/a/b/c”、“./a/b/c”
+	gitDirPath := strings.Replace(FilePahtJoin4Linux(workSpaceDir, ".git"), "~/", "", -1) // 把路径变成 “a/b/c” 的形式，不支持 “./a/b/c”、“～/a/b/c”、“./a/b/c”
 	cloneCommand := fmt.Sprintf(`[[ ! -d "%v" ]] && rm -rf %v && git clone %v %v || echo "%v"`,
-		gitDirPath, workSpace, gitRepoUrl, workSpace, i18n.GetInstance().Common.Info.Info_gitrepo_cloned) // .git 文件如果不存在，在需要git clone
+		gitDirPath, workSpaceDir, gitRepoUrl, workSpaceDir, i18n.GetInstance().Common.Info.Info_gitrepo_cloned) // .git 文件如果不存在，在需要git clone
 	outContent, err = instance.ExeSSHCommand(cloneCommand)
 	if err != nil {
 		SmartIDELog.Debug(err.Error())
 	}
+	// instance.ExecSSHCommandRealTime2(cloneCommand)
 
 	// 需要录入密码的情况
 	newGitRepoUrl := strings.ToLower(gitRepoUrl)
@@ -321,13 +352,18 @@ func (instance *SSHRemote) continueConnectingAndGoOn(repoUrl string, cloneComman
 
 // get repo name
 func getRepoName(repoUrl string) string {
-
 	index := strings.LastIndex(repoUrl, "/")
 	return strings.Replace(repoUrl[index+1:], ".git", "", -1)
 }
 
 // 执行ssh command，在session模式下，standard output 只能在执行结束的时候获取到
 func (instance *SSHRemote) ExeSSHCommand(sshCommand string) (outContent string, err error) {
+
+	return instance.ExeSSHCommandConsole(sshCommand, true)
+}
+
+// 执行ssh command，在session模式下，standard output 只能在执行结束的时候获取到
+func (instance *SSHRemote) ExeSSHCommandConsole(sshCommand string, isConsoleAndLog bool) (outContent string, err error) {
 	if len(sshCommand) <= 0 {
 		return "", nil
 	}
@@ -336,7 +372,7 @@ func (instance *SSHRemote) ExeSSHCommand(sshCommand string) (outContent string, 
 	CheckError(err)
 
 	// 在ssh主机上执行命令
-	SmartIDELog.Debug(sshCommand)
+	SmartIDELog.Debug(sshCommand + " >> ...")
 	out, err := session.CombinedOutput(sshCommand)
 	outContent = string(out)
 	defer session.Close()
@@ -348,15 +384,22 @@ func (instance *SSHRemote) ExeSSHCommand(sshCommand string) (outContent string, 
 		}
 	}
 
-	// 记录日志
-	outContent = strings.Trim(outContent, "\n")
-	SmartIDELog.Debug(fmt.Sprintf("%v >> `%v`", sshCommand, outContent))
+	/* 	// 错误判断
+	   	if strings.Contains(outContent, "error:") || strings.Contains(outContent, "fatal:") {
+	   		return "", errors.New(outContent)
+	   	} */
+
+	// 记录日志，有些情况下不想输出信息，比如cat id_rsa时
+	if isConsoleAndLog {
+		outContent = strings.Trim(outContent, "\n")
+		SmartIDELog.Debug(fmt.Sprintf("%v >> `%v`", sshCommand, outContent))
+	}
 
 	return outContent, err
 }
 
 // 执行ssh command，在session模式下实时输出日志
-func (instance *SSHRemote) ExeSSHCommandNotOutput(sshCommand string) (err error) {
+func (instance *SSHRemote) ExecSSHCommandRealTime(sshCommand string) (err error) {
 	session, err := instance.Connection.NewSession()
 	CheckError(err)
 
@@ -367,6 +410,50 @@ func (instance *SSHRemote) ExeSSHCommandNotOutput(sshCommand string) (err error)
 
 	defer session.Close() //
 	return err
+}
+
+//
+func (instance *SSHRemote) ExecSSHCommandRealTime2(sshCommand string) (err error) {
+
+	session, err := instance.Connection.NewSession()
+	CheckError(err)
+	defer session.Close()
+
+	modes := ssh.TerminalModes{
+		ssh.ECHO:          0,     // disable echoing
+		ssh.TTY_OP_ISPEED: 14400, // input speed = 14.4kbaud
+		ssh.TTY_OP_OSPEED: 14400, // output speed = 14.4kbaud
+	}
+
+	err = session.RequestPty("xterm", 80, 40, modes)
+	CheckError(err)
+
+	stdoutB := new(bytes.Buffer)
+	session.Stdout = stdoutB
+	in, _ := session.StdinPipe()
+
+	go func(in io.Writer, output *bytes.Buffer) {
+
+		var t int = 0
+
+		for {
+			str := string(output.Bytes()[t:])
+			if str == "" {
+				continue
+			}
+
+			t = output.Len()
+
+			if strings.Contains(str, ":error") || strings.Contains(str, ":fatal") {
+				SmartIDELog.Error(str)
+			} else {
+				SmartIDELog.Info(str)
+			}
+		}
+	}(in, stdoutB)
+
+	return session.Run(sshCommand)
+	//CheckError(err)
 }
 
 func (instance *SSHRemote) RemoteUpload(filesMaps map[string]string) (err error) {
@@ -453,9 +540,13 @@ func (instance *SSHRemote) RemoteUpload(filesMaps map[string]string) (err error)
 
 // 连接到远程主机
 func connectionDial(sshHost string, sshPort int, sshUserName, sshPassword string) (clientConn *ssh.Client, err error) {
+	// SmartIDELog.InfoF("连接到远程主机 %v@%v:%v ...", sshUserName, sshHost, sshPort)
 
 	// initialize SSH connection
 	var clientConfig *ssh.ClientConfig
+	if sshPort <= 0 {
+		sshPort = 22
+	}
 
 	if len(sshPassword) > 0 {
 

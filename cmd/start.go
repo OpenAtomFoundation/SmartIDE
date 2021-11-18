@@ -1,242 +1,365 @@
 package cmd
 
 import (
-	"context"
+	"errors"
 	"fmt"
-	"net/http"
 	"os"
-	"os/exec"
+	"path/filepath"
+	"strconv"
 	"strings"
-	"text/tabwriter"
-	"time"
 
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/client"
+	"github.com/leansoftX/smartide-cli/cmd/dal"
 	"github.com/leansoftX/smartide-cli/cmd/lib"
+	"github.com/leansoftX/smartide-cli/cmd/start"
 	"github.com/leansoftX/smartide-cli/lib/common"
-	"github.com/leansoftX/smartide-cli/lib/docker/compose"
 	"github.com/leansoftX/smartide-cli/lib/i18n"
-	"github.com/leansoftX/smartide-cli/lib/tunnel"
+	"gopkg.in/src-d/go-git.v4"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
-var instanceI18nStart = i18n.GetInstance().Start
+// 远程服务器上的根目录
+const REMOTE_REPO_ROOT string = "project"
 
-var ideyamlfile string
+// var i18nInstance.Start = i18n.GetInstance().Start
+var i18nInstance = i18n.GetInstance()
+
+// yaml 文件的相对路径
+var configYamlFileRelativePath string = lib.ConfigRelativeFilePath
 
 // startCmd represents the start command
 var startCmd = &cobra.Command{
 	Use:   "start",
-	Short: instanceI18nStart.Info.Help_short,
-	Long:  instanceI18nStart.Info.Help_long,
-	Run: func(cmd *cobra.Command, args []string) {
+	Short: i18nInstance.Start.Info.Help_short,
+	Long:  i18nInstance.Start.Info.Help_long,
+	Example: `  smartide start --host <host> --username <username> --password <password> --repourl <git clone url> --branch <branch name> --filepath <config file path>
+  smartide start --workspaceid <workspaceid>
+  smartide get <workspaceid>`,
+	RunE: func(cmd *cobra.Command, args []string) error {
 
 		//0. 提示文本
 		common.SmartIDELog.Info(i18n.GetInstance().Start.Info.Info_start)
 
-		//0.1. 校验是否能正常执行docker
-		dockerCmd := exec.Command("docker", "-v")
-		if dockerErr := dockerCmd.Run(); dockerErr != nil {
-			common.SmartIDELog.Error(instanceI18nStart.Error.Docker_Err)
-		}
-		dockerpsCmd := exec.Command("docker", "ps")
-		if dockerpsErr := dockerpsCmd.Run(); dockerpsErr != nil {
-			common.SmartIDELog.Error(instanceI18nStart.Error.DockerPs_Err)
-		}
-
-		//0.2. 校验是否能正常执行 docker-compose
-		dockercomposeCmd := exec.Command("docker-compose", "version")
-		if dockercomposeErr := dockercomposeCmd.Run(); dockercomposeErr != nil {
-			common.SmartIDELog.Error(instanceI18nStart.Error.Docker_Compose_Err)
-		}
-
-		//1. 获取docker compose的文件内容
-		var yamlFileCongfig lib.YamlFileConfig
-		if ideyamlfile != "" { //增加指定yaml文件启动
-			yamlFileCongfig.SetYamlFilePath(ideyamlfile)
-		}
-		yamlFileCongfig.GetConfig() // 读取配置
-		var dockerCompose compose.DockerComposeYml
-		dockeComposeYamlFilePath :=
-			dockerCompose.GetTmpDockerComposeFilePath(yamlFileCongfig.Workspace.DevContainer.ServiceName) // 获取临时docker-compose文件的路径
-		dockerCompose, ideBindingPort, sshBindingPort := yamlFileCongfig.ConvertToDockerCompose(common.SSHRemote{}, "") // 转换为docker compose格式
-
-		//1.1. 校验docker compose文件对应的环境是否已经启动
-		dockerComposeContainers := getDockerComposeContainers(dockeComposeYamlFilePath, dockerCompose.Services)
-		if len(dockerComposeContainers) > 0 {
-			common.SmartIDELog.Error(instanceI18nStart.Error.Docker_started) //TODO 如果已经启动，需要监听stop
-		}
-
-		//1.2. 生成docker-compose文件内容并保存
-		err := dockerCompose.SaveFile(dockeComposeYamlFilePath) // 保存docker-compose文件
+		//0.1. 从参数中获取结构体，并做基本的数据有效性校验
+		common.SmartIDELog.Info("加载工作区信息...")
+		worksapce, err := getWorkspace4Start(cmd, args)
 		common.CheckError(err)
+		/* if validErr != nil {
+			return validErr // 采用return的方式，可以显示flag列表 //TODO 根据错误的类型，如果是参数格式错误就是return，其他直接抛错
+		} */
 
-		//1.3. print
-		common.SmartIDELog.InfoF(instanceI18nStart.Info.Info_docker_compose_filepath, dockeComposeYamlFilePath)
-		common.SmartIDELog.InfoF(instanceI18nStart.Info.Info_ssh_tunnel, sshBindingPort) // 提示用户ssh端口绑定到了本地的某个端口
-
-		//2. 创建容器
-		ctx := context.Background()
-		cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-		common.CheckError(err)
-
-		//2.1. 创建网络
-		for network := range dockerCompose.Networks {
-			networkList, _ := cli.NetworkList(ctx, types.NetworkListOptions{})
-			isContain := false
-			for _, item := range networkList {
-				if item.Name == network {
-					isContain = true
-					break
-				}
-			}
-			if !isContain {
-				cli.NetworkCreate(ctx, network, types.NetworkCreate{})
-				common.SmartIDELog.InfoF(instanceI18nStart.Info.Info_create_network, network)
-			}
-		}
-
-		//2.2. 运行docker-compose命令
-		// e.g. docker-compose -f /Users/jasonchen/.ide/docker-compose-product-service-dev.yaml --project-directory /Users/jasonchen/Project/boat-house/boat-house-backend/src/product-service/api up -d
-		pwd, _ := os.Getwd()
-		composeCmd := exec.Command("docker-compose", "-f", dockeComposeYamlFilePath, "--project-directory", pwd, "up", "-d")
-		composeCmd.Stdout = os.Stdout
-		composeCmd.Stderr = os.Stderr
-		if composeCmdErr := composeCmd.Run(); composeCmdErr != nil {
-			common.SmartIDELog.Fatal(composeCmdErr)
-		}
-
-		//2.3. 配置gitconfig
-		//3. 使用浏览器打开web ide
-		common.SmartIDELog.Info(instanceI18nStart.Info.Info_running_openbrower)
-
-		var url string
-		//vscode启动时候默认打开文件夹处理
-		if yamlFileCongfig.Workspace.DevContainer.IdeType == "vscode" {
-			url = fmt.Sprintf("http://localhost:%v/?folder=vscode-remote://localhost:%v/home/project", ideBindingPort, ideBindingPort)
+		// 执行命令
+		if worksapce.Mode == dal.WorkingMode_Local {
+			start.ExecuteStartCmd(worksapce, func(v string, d common.Docker) {})
 		} else {
-			url = fmt.Sprintf(`http://localhost:%v`, ideBindingPort)
-		}
-		common.SmartIDELog.Info(instanceI18nStart.Info.Info_open_in_brower, url)
-		isUrlReady := false
-		for !isUrlReady {
-			resp, err := http.Get(url)
-			if (err == nil) && (resp.StatusCode == 200) {
-				isUrlReady = true
-				common.OpenBrowser(url)
-			}
-
+			start.ExecuteVmStartCmd(worksapce)
 		}
 
-		// 启动的容器列表
-		dockerComposeContainers = getDockerComposeContainers(dockeComposeYamlFilePath, dockerCompose.Services)
-		var containerName string
-		for _, container := range dockerComposeContainers {
-			if container.ServiceName == yamlFileCongfig.Workspace.DevContainer.ServiceName {
-				containerName = container.ContainerName
-				break
-			}
-		}
-		docker := *common.NewDocker(cli)
-		out := ""
-		out, err = docker.Exec(context.Background(), strings.ReplaceAll(containerName, "/", ""), "/bin", []string{"chmod", "-R", "700", "/root"}, []string{})
-		common.CheckError(err)
-		common.SmartIDELog.Debug(out)
-
-		//99. 结束
-		common.SmartIDELog.Info(instanceI18nStart.Info.Info_end)
-
-		// tunnel， 死循环，不结束
-		for {
-			tunnel.AutoTunnelMultiple(fmt.Sprintf("localhost:%v", sshBindingPort), "root", "root123", dockerCompose.GetLocalBindingPorts()) //TODO: 登录的用户名，密码要能够从配置文件中读取出来
-			time.Sleep(time.Second * 10)
-		}
-
+		return nil
 	},
 }
 
-// 获取docker compose运行起来对应的容器
-func getDockerComposeContainers(dockerComposeFilePath string, dockerComposeServices map[string]compose.Service) []DockerComposeContainer {
-
-	var dockerComposeContainers []DockerComposeContainer // result define
-
-	//0. valid
-	if !common.IsExit(dockerComposeFilePath) {
-		return dockerComposeContainers
+//
+func checkFlagNotRequired(fflags *pflag.FlagSet, flagName string, headers ...string) {
+	if fflags.Changed(flagName) {
+		common.SmartIDELog.WarningF(strings.Join(headers, " ")+"设置%v无效", flagName)
 	}
+}
 
-	//第一步：获取ctx
-	ctx := context.Background()
+//
+func checkFlagRequired(fflags *pflag.FlagSet, flagName string) error {
+	if !fflags.Changed(flagName) {
+		return fmt.Errorf("%v 参数必填", flagName)
+	}
+	return nil
+}
 
-	//获取cli客户端对象
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	common.CheckError(err)
+var (
+	flag_workspaceid = "workspaceid"
+	flag_host        = "host"
+	flag_port        = "port"
+	flag_username    = "username"
+	flag_password    = "password"
+	flag_filepath    = "filepath"
+	flag_repourl     = "repourl"
+	flag_branch      = "branch"
+)
 
-	//通过cli客户端对象去执行ContainerList(其实docker ps 不就是一个docker正在运行容器的一个list嘛)
-	containers, err2 := cli.ContainerList(ctx, types.ContainerListOptions{})
-	common.CheckError(err2)
+// 获取工作区id
+func getWorkspaceIdFromFlagsAndArgs(cmd *cobra.Command, args []string) int {
+	fflags := cmd.Flags()
 
-	//
-	for serviceName, _ := range dockerComposeServices {
+	// 从args 或者 flag 中获取值
+	var workspaceId int
+	if len(args) > 0 { // 从args中加载
+		str := args[0]
+		tmpWorkspaceId, err := strconv.Atoi(str)
+		if err == nil && tmpWorkspaceId > 0 {
+			workspaceId = tmpWorkspaceId
+		}
 
-		for _, container := range containers {
-
-			if container.Labels["com.docker.compose.service"] == serviceName {
-				var ports []string
-				for _, port := range container.Ports {
-					str := fmt.Sprintf("%v:%v", port.PublicPort, port.PrivatePort)
-					if !common.Contains(ports, str) { // 限制重复的端口绑定信息
-						ports = append(ports, str)
-					}
-				}
-
-				dockerComposeContainer := DockerComposeContainer{
-					ServiceName:   serviceName,
-					ContainerName: strings.Join(container.Names, ","),
-					State:         container.State,
-					Image:         container.Image,
-					Ports:         strings.Join(ports, ";"),
-				}
-				dockerComposeContainers = append(dockerComposeContainers, dockerComposeContainer)
-				break
-			}
-
+		checkFlagNotRequired(fflags, flag_workspaceid)
+	} else if fflags.Changed(flag_workspaceid) { // 从flag中加载
+		tmpWorkspaceId, err := fflags.GetInt32(flag_workspaceid)
+		common.CheckError(err)
+		if tmpWorkspaceId > 0 {
+			workspaceId = int(tmpWorkspaceId)
 		}
 	}
 
-	// 打印
-	printDockerComposeContainers(dockerComposeContainers)
-
-	return dockerComposeContainers
+	return workspaceId
 }
 
-// 打印 service 列表
-func printDockerComposeContainers(dockerComposeContainers []DockerComposeContainer) {
-	if len(dockerComposeContainers) <= 0 {
-		return
+// 从start command的flag、args中获取workspace
+func getWorkspace4Start(cmd *cobra.Command, args []string) (workspaceInfo dal.WorkspaceInfo, err error) {
+	fflags := cmd.Flags()
+	workspaceId := getWorkspaceIdFromFlagsAndArgs(cmd, args)
+
+	//1. 加载workspace
+	workspaceInfo = dal.WorkspaceInfo{}
+	//1.1. 指定了从workspaceid，从sqlite中读取
+	if workspaceId > 0 {
+		checkFlagNotRequired(fflags, flag_host)
+		checkFlagNotRequired(fflags, flag_username)
+		checkFlagNotRequired(fflags, flag_password)
+
+		workspaceInfo, err = getWorkspaceWithDbAndValid(workspaceId)
+		if err != nil {
+			return dal.WorkspaceInfo{}, err
+		}
+		if (workspaceInfo == dal.WorkspaceInfo{}) {
+			return dal.WorkspaceInfo{}, errors.New("查找不到对应的workspace信息")
+		}
+
+	} else { //1.2. 没有指定 workspaceid 的情况
+		workingMode := dal.WorkingMode_Local
+
+		// 当前目录
+		pwd, err := os.Getwd()
+		if err != nil {
+			return dal.WorkspaceInfo{}, err
+		}
+
+		// 1.2.1. 远程模式
+		if fflags.Changed(flag_host) {
+			workingMode = dal.WorkingMode_Remote
+			hostInfo, err := getRemoteAndValid(fflags)
+			if err != nil {
+				return dal.WorkspaceInfo{}, err
+			}
+
+			workspaceInfo.Remote = hostInfo
+			workspaceInfo.GitCloneRepoUrl = getFlagValue(fflags, flag_repourl)
+			if strings.Index(workspaceInfo.GitCloneRepoUrl, "git") == 0 {
+				workspaceInfo.GitRepoAuthType = dal.GitRepoAuthType_SSH
+			} else if strings.Index(workspaceInfo.GitCloneRepoUrl, "https") == 0 {
+				workspaceInfo.GitRepoAuthType = dal.GitRepoAuthType_HTTPS
+			}
+
+			repoName := getRepoName(workspaceInfo.GitCloneRepoUrl)
+			workspaceInfo.ProjectName = repoName
+
+			repoWorkspaceDir := filepath.Join("~", REMOTE_REPO_ROOT, repoName)
+			workspaceInfo.WorkingDirectoryPath = repoWorkspaceDir
+
+			//TODO git 连接验证
+		} else { //1.2.2. 本地模式
+			// 本地模式下，不需要录入git库的克隆地址、分支
+			checkFlagNotRequired(fflags, flag_repourl)
+			checkFlagNotRequired(fflags, flag_branch)
+
+			workspaceInfo.WorkingDirectoryPath = pwd
+
+			repoUrl := getLocalGitRepoUrl()
+			repoName := getRepoName(repoUrl)
+			workspaceInfo.GitCloneRepoUrl = repoUrl
+			workspaceInfo.ProjectName = repoName
+		}
+
+		workspaceInfo.Mode = workingMode
+		workspaceInfo.Branch = getFlagValue(fflags, flag_branch)
+
+		if fflags.Changed(flag_filepath) {
+			workspaceInfo.ConfigFilePath = getFlagValue(fflags, flag_filepath)
+		}
+
 	}
-	w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
-	fmt.Fprintln(w, "service\tstate\timage\tports\t")
-	for _, service := range dockerComposeContainers {
-		line := fmt.Sprintf("%v\t%v\t%v\t%v\t", service.ServiceName, service.State, service.Image, service.Ports)
-		fmt.Fprintln(w, line)
+
+	// 避免为空
+	if workspaceInfo.ConfigFilePath == "" {
+		workspaceInfo.ConfigFilePath = lib.ConfigRelativeFilePath
 	}
-	w.Flush()
+
+	// 验证
+	if workspaceInfo.Mode == dal.WorkingMode_Remote {
+		// path change
+		workspaceInfo.ConfigFilePath = common.FilePahtJoin4Linux(workspaceInfo.ConfigFilePath)
+		workspaceInfo.TempDockerComposeFilePath = common.FilePahtJoin4Linux(workspaceInfo.TempDockerComposeFilePath)
+		workspaceInfo.WorkingDirectoryPath = common.FilePahtJoin4Linux(workspaceInfo.WorkingDirectoryPath)
+
+		// 在远程模式下，首先验证远程服务器是否可以登录
+		ssmRemote := common.SSHRemote{}
+		common.SmartIDELog.Info(fmt.Sprintf("检查ssh连接是否正常 %v:%v ...", workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort))
+		err = ssmRemote.CheckDail(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password)
+		if err != nil {
+			return workspaceInfo, err
+		}
+
+	} else {
+		//TODO 配置文件是否存在
+	}
+
+	return workspaceInfo, err
 }
 
-// 容器信息
-type DockerComposeContainer struct {
-	ServiceName   string
-	ContainerName string
-	//Command       string
-	Image string
-	Ports string
-	State string
+//
+func getLocalGitRepoUrl() (gitRemmoteUrl string) {
+	// current directory
+	pwd, err := os.Getwd()
+	common.CheckError(err)
+
+	// git remote url
+	gitRepo, err := git.PlainOpen(pwd)
+	common.CheckError(err)
+	gitRemote, err := gitRepo.Remote("origin")
+	common.CheckError(err)
+	gitRemmoteUrl = gitRemote.Config().URLs[0]
+
+	return gitRemmoteUrl
+}
+
+//
+func getFlagValue(fflags *pflag.FlagSet, flag string) string {
+	value, err := fflags.GetString(flag)
+	if err != nil {
+		if strings.Contains(err.Error(), "flag accessed but not defined:") {
+			common.SmartIDELog.Debug(err.Error())
+		} else {
+			common.SmartIDELog.Error(err)
+		}
+
+	}
+	return value
+}
+
+// 友好的错误
+type FriendlyError struct {
+	Err error
+}
+
+func (e *FriendlyError) Error() string {
+	return e.Err.Error()
+}
+
+//
+func getWorkspaceWithDbAndValid(workspaceId int) (workspaceInfo dal.WorkspaceInfo, err error) {
+
+	workspaceInfo, err = dal.GetSingleWorkspace(int(workspaceId))
+	common.CheckError(err)
+
+	// 验证在workspace中是否存在
+	if (workspaceInfo == dal.WorkspaceInfo{}) {
+		msg := fmt.Sprintf("指定的的workspaceid（%v）无效", workspaceId)
+		err = errors.New(msg)
+		return workspaceInfo, err
+	}
+
+	twd, _ := os.Getwd()
+	if workspaceInfo.Mode == dal.WorkingMode_Local && twd == workspaceInfo.WorkingDirectoryPath {
+		common.SmartIDELog.Warning("当前目录下不需要录入workspaceid")
+	}
+
+	repoName := getRepoName(workspaceInfo.GitCloneRepoUrl)
+	workspaceInfo.ProjectName = repoName
+
+	return workspaceInfo, err
+}
+
+// 根据参数，从数据库或者其他参数中加载远程服务器的信息
+func getRemoteAndValid(fflags *pflag.FlagSet) (remoteInfo dal.RemoteInfo, err error) {
+
+	host, _ := fflags.GetString(flag_host)
+	remoteInfo = dal.RemoteInfo{}
+
+	// 指定了host信息，尝试从数据库中加载
+	if common.IsNumber(host) {
+		remoteId, err := strconv.Atoi(host)
+		common.CheckError(err)
+		remoteInfo, err = dal.GetRemoteById(remoteId)
+		common.CheckError(err)
+
+		if (dal.RemoteInfo{} == remoteInfo) {
+			common.SmartIDELog.Warning("没有在缓存中查找到关联的host信息")
+		}
+	} else {
+		remoteInfo, err = dal.GetRemoteByHost(host)
+
+		// 如果在sqlite中有缓存数据，就不需要用户名、密码
+		if (dal.RemoteInfo{} != remoteInfo) {
+			header := "host信息已经缓存，"
+			checkFlagNotRequired(fflags, flag_username, header)
+			checkFlagNotRequired(fflags, flag_password, header)
+		}
+	}
+
+	// 从参数中加载
+	if (dal.RemoteInfo{} == remoteInfo) {
+		//  必填字段验证
+		err = checkFlagRequired(fflags, flag_host)
+		if err != nil {
+			return remoteInfo, &FriendlyError{Err: err}
+		}
+		err = checkFlagRequired(fflags, flag_username)
+		if err != nil {
+			return remoteInfo, &FriendlyError{Err: err}
+		}
+
+		remoteInfo.Addr = host
+		remoteInfo.UserName = getFlagValue(fflags, flag_username)
+		remoteInfo.SSHPort, err = fflags.GetInt(flag_port) //strconv.Atoi(getFlagValue(fflags, flag_port))
+		common.CheckError(err)
+		if remoteInfo.SSHPort <= 0 {
+			remoteInfo.SSHPort = lib.CONST_DefaultSSHPort
+		}
+		// 认证类型
+		if fflags.Changed(flag_password) {
+			remoteInfo.Password = getFlagValue(fflags, flag_password)
+			remoteInfo.AuthType = dal.RemoteAuthType_Password
+		} else {
+			remoteInfo.AuthType = dal.RemoteAuthType_SSH
+		}
+
+	}
+
+	//common.CheckError(err)
+
+	return remoteInfo, err
 }
 
 func init() {
 
-	startCmd.Flags().StringVarP(&ideyamlfile, "filepath", "f", "", instanceI18nStart.Info.Help_flag_filepath)
+	startCmd.Flags().Int32P("workspaceid", "w", 0, "设置后，可以使用本地保存的信息环境信息，直接启动web ide环境")
 
+	startCmd.Flags().StringP("host", "o", "", "可以指定host，或者hostid")
+	startCmd.Flags().IntP("port", "p", 22, "SSH 端口，默认为22")
+	startCmd.Flags().StringP("username", "u", "", "SSH 登录用户")
+	//vmStartCmd.MarkFlagRequired("username")
+	startCmd.Flags().StringP("password", "t", "", "SSH 用户密码")
+	startCmd.Flags().StringP("repourl", "r", "", "远程代码仓库的克隆地址")
+	//vmStartCmd.MarkFlagRequired("repourl")
+
+	startCmd.Flags().StringVarP(&configYamlFileRelativePath, "filepath", "f", "", i18nInstance.Start.Info.Help_flag_filepath)
+	startCmd.Flags().StringP("branch", "b", "", "指定git分支")
+
+}
+
+// get repo name
+func getRepoName(repoUrl string) string {
+	/* _, err := url.ParseRequestURI(repoUrl)
+	if err != nil {
+		panic(err)
+	} */
+	index := strings.LastIndex(repoUrl, "/")
+	return strings.Replace(repoUrl[index+1:], ".git", "", -1)
 }

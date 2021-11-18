@@ -1,0 +1,192 @@
+package start
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+	"os/exec"
+	"strings"
+	"text/tabwriter"
+
+	"github.com/leansoftX/smartide-cli/lib/common"
+	"github.com/leansoftX/smartide-cli/lib/i18n"
+
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/client"
+)
+
+// 容器信息
+type DockerComposeContainer struct {
+	ServiceName   string
+	ContainerName string
+	//Command       string
+	Image string
+	Ports []string
+	State string
+}
+
+// 检查本地环境，是否安装docker、docker-compose
+func CheckLocalEnv() error {
+	var errMsgArray []string
+
+	//0.1. 校验是否能正常执行docker
+	dockerErr := exec.Command("docker", "-v").Run()
+	dockerpsErr := exec.Command("docker", "ps").Run()
+	if dockerErr != nil || dockerpsErr != nil {
+		errMsgArray = append(errMsgArray, i18n.GetInstance().Start.Error.DockerPs_Err)
+	}
+
+	//0.2. 校验是否能正常执行 docker-compose
+	dockercomposeErr := exec.Command("docker-compose", "version").Run()
+	if dockercomposeErr != nil {
+		errMsgArray = append(errMsgArray, i18n.GetInstance().Start.Error.Docker_Compose_Err)
+	}
+
+	// 错误判断
+	if len(errMsgArray) > 0 {
+		return errors.New(strings.Join(errMsgArray, "; "))
+	}
+
+	return nil
+}
+
+// 检测远程服务器的环境，是否安装docker、docker-compose、git
+func CheckRemoveEnv(sshRemote common.SSHRemote) error {
+	var msg []string
+
+	// 环境监测
+	output, err := sshRemote.ExeSSHCommand("git version")
+	if err != nil || strings.Contains(output, "error:") {
+		msg = append(msg, "git 未正确安装")
+	}
+	sshRemote.ExeSSHCommand("docker version")
+	if err != nil || strings.Contains(output, "error:") {
+		msg = append(msg, "docker 未正确安装")
+	}
+	sshRemote.ExeSSHCommand("docker-compose version")
+	if err != nil || strings.Contains(output, "error:") {
+		msg = append(msg, "docker-compose 未正确安装")
+	}
+
+	// 错误判断
+	if len(msg) > 0 {
+		return errors.New(strings.Join(msg, "; "))
+	}
+
+	// 把当前用户加到docker用户组里面
+	_, err = sshRemote.ExeSSHCommand("sudo usermod -a -G docker " + sshRemote.SSHUserName)
+	if err != nil {
+		common.SmartIDELog.Debug(err.Error())
+	}
+
+	return nil
+}
+
+// 获取docker compose运行起来对应的容器
+func GetLocalContainersWithServices(dockerComposeFilePath string, dockerComposeServices []string) []DockerComposeContainer {
+
+	var dockerComposeContainers []DockerComposeContainer // result define
+
+	//0. valid
+	if !common.IsExit(dockerComposeFilePath) {
+		return dockerComposeContainers
+	}
+
+	//第一步：获取ctx
+	ctx := context.Background()
+
+	//获取cli客户端对象
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	common.CheckError(err)
+
+	//通过cli客户端对象去执行ContainerList(其实docker ps 不就是一个docker正在运行容器的一个list嘛)
+	containers, err2 := cli.ContainerList(ctx, types.ContainerListOptions{})
+	common.CheckError(err2)
+	dockerComposeContainers = convertOriginContainer(containers, dockerComposeServices)
+
+	// 打印
+	PrintDockerComposeContainers(dockerComposeContainers)
+
+	return dockerComposeContainers
+}
+
+// 检测远程服务器的环境，是否安装docker、docker-compose、git
+func GetRemoteContainersWithServices(sshRemote common.SSHRemote, dockerComposeServices []string) (dockerComposeContainers []DockerComposeContainer, err error) {
+
+	command := "sudo curl -s --unix-socket /var/run/docker.sock http://dummy/containers/json "
+	output, err := sshRemote.ExeSSHCommand(command)
+	common.CheckError(err)
+
+	if len(output) >= 0 { // 有返回结果的时候才需要转换
+		var originContainers []types.Container
+		err = json.Unmarshal([]byte(output), &originContainers)
+		dockerComposeContainers = convertOriginContainer(originContainers, dockerComposeServices)
+	}
+
+	return dockerComposeContainers, err
+}
+
+// 转换结构体
+func convertOriginContainer(containers []types.Container, dockerComposeServices []string) (dockerComposeContainers []DockerComposeContainer) {
+	//
+	for _, serviceName := range dockerComposeServices {
+
+		for _, container := range containers {
+
+			if container.Labels["com.docker.compose.service"] == serviceName {
+				var ports []string
+				for _, port := range container.Ports {
+					str := fmt.Sprintf("%v:%v", port.PublicPort, port.PrivatePort)
+					if !common.Contains(ports, str) { // 限制重复的端口绑定信息
+						ports = append(ports, str)
+					}
+				}
+
+				// 去掉/
+				containerName := ""
+				for _, name := range container.Names {
+					tmp := ""
+					if strings.Index(name, "/") == 0 {
+						tmp = name[1:]
+					} else {
+						tmp = name
+					}
+					if len(containerName) > 0 {
+						containerName += "," + tmp
+					} else {
+						containerName += tmp
+					}
+				}
+
+				dockerComposeContainer := DockerComposeContainer{
+					ServiceName:   serviceName,
+					ContainerName: containerName,
+					State:         container.State,
+					Image:         container.Image,
+					Ports:         ports,
+				}
+				dockerComposeContainers = append(dockerComposeContainers, dockerComposeContainer)
+				break
+			}
+
+		}
+	}
+
+	return dockerComposeContainers
+}
+
+// 打印 service 列表
+func PrintDockerComposeContainers(dockerComposeContainers []DockerComposeContainer) {
+	if len(dockerComposeContainers) <= 0 {
+		return
+	}
+	w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
+	fmt.Fprintln(w, i18nInstance.Common.Info.Info_table_header_containers) //"service\tstate\timage\tports\t"
+	for _, service := range dockerComposeContainers {
+		line := fmt.Sprintf("%v\t%v\t%v\t%v\t", service.ServiceName, service.State, service.Image, strings.Join(service.Ports, "; "))
+		fmt.Fprintln(w, line)
+	}
+	w.Flush()
+}

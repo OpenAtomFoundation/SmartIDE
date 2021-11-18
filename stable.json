@@ -3,7 +3,5 @@
   "build_number":"$(Build.BuildNumber)",
   "target_commitish":"$(Build.SourceVersion)",
   "build_ququeTime":"$(QuqueTime)",
-  "company":"lensoftx.com"
-
-
+  "company":"leansoftX.com"
 }
