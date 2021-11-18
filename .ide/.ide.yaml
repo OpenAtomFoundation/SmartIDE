@@ -11,4 +11,21 @@
       volumes: 
         git-config: true
         ssh-key: true
-    docker-compose-file: docker-compose.yaml
+    services:
+      smartide-docs:
+        image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-go-opvscode:latest
+        restart: always
+        environment:
+          ROOT_PASSWORD: root123
+        volumes:
+          - .:/home/project
+        expose:
+          - 1313
+        ports:
+          - 1313:1313
+        networks:
+          - smartide-network
+
+    networks:
+      smartide-network:
+        external: true
