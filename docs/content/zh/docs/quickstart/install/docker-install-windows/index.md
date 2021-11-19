@@ -113,10 +113,48 @@ wsl --set-default-version 2
 
 ![安装](images/docker-install-win010.png)
 
-接受用户协议
+点击 Accept 接受用户协议
 
 ![安装](images/docker-install-win011.png)
 
+等待 Docker 启动完毕
+
+![安装](images/docker-install-win012.png)
+
+出现以下界面表示 Docker 已经正常启动，可以使用了。
+
+![安装](images/docker-install-win013.png)
 
 ## 配置Docker桌面版
+
+默认情况下Docker桌面版会对其所使用的资源比例采取比较保守的策略，因为我们需要在容器中运行开发环境，你可以根据自己本地开发机的配置适当调高以下设置以便获得更好的体验。
+
+因为我们指定Docker使用WSL2作为后台，因此我们无法通过Docker桌面版的配置工具直接修改资源占用情况。如果你打开 Docker 配置工具 会看到如下提示，提示用户要通过wslconfig配置文件来控制WSL的资源使用，以便控制Docker的资源占用。
+
+![安装](images/docker-install-win014.png)
+
+你可以在 ～/.wslconfig 位置创建如下内容的文件，然后从新启动 Docker桌面版 即可。
+
+```plaintext
+[wsl2]
+memory=8GB # Limits VM memory
+processors=4 # Makes the WSL 2 VM use two virtual processors
+```
+> 有关wslconfig的详细配置请参考 [配置 Linux 分发版 官方文档](https://docs.microsoft.com/zh-cn/windows/wsl/wsl-config#configure-global-options-with-wslconfig)
+
+建议给予WSL2至少8G内存和4以上的CPU Core以便获得比较好的使用体验。
+
+## 验证 Docker桌面版 可以正常使用
+
+打开命令行窗口运行以下命令：
+
+```PowerShell
+docker run hello-world
+```
+
+如果你看到了类似如下的输出，则表示你的Docker桌面版已经正常工作，你现在就可以继续按照 [快速启动](/zh/docs/quickstart/) 继续体验SmartIDE的功能了。
+
+![安装](images/docker-install-win015.png)
+
+
 
