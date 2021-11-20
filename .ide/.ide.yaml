@@ -11,6 +11,11 @@
       volumes: 
         git-config: true
         ssh-key: true
+      command:
+        - git submodule update --init --recursive
+        - cd docs
+        - npm install
+        - hugo server --bind 0.0.0.0 --disableFastRender
     services:
       smartide-docs:
         image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-go-opvscode:latest
