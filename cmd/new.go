@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/leansoftX/smartide-cli/cmd/dal"
 	"github.com/leansoftX/smartide-cli/cmd/start"
@@ -36,9 +37,11 @@ var newCmd = &cobra.Command{
 			fmt.Println(cmd.Flags().FlagUsages())
 		} else {
 			var yamlUrl string
+			var typeCommand []string
 			for i := 0; i < len(newTypeStruct); i++ {
 				if newTypeStruct[i].TypeName == newProjectType {
 					yamlUrl = newTypeStruct[i].TypeYamlUrl
+					typeCommand = newTypeStruct[i].TypeCommand
 					break
 				}
 			}
@@ -70,35 +73,38 @@ var newCmd = &cobra.Command{
 			//创建.gitignore
 			var d1 = []byte("node_modules/")
 			_ = ioutil.WriteFile(folderPath+"/.gitignore", d1, 0666)
-		}
 
-		//执行start
-		if newProjectType != "" {
 			// if newProjectFolder != "" {
 			// 	fmt.Println(newProjectFolder)
 			// }
+			//执行start
 			//0. 提示文本
 			common.SmartIDELog.Info(i18n.GetInstance().Start.Info.Info_start)
 
-			//0.1. 校验是否能正常执行docker
-			start.CheckLocalEnv()
-
 			//0.1. 从参数中获取结构体，并做基本的数据有效性校验
-			worksapce, validErr := getWorkspace4Start(cmd, args)
-			if validErr != nil {
-				return validErr // 采用return的方式，可以显示flag列表 //TODO 根据错误的类型，如果是参数格式错误就是return，其他直接抛错
-			}
+			common.SmartIDELog.Info("加载工作区信息...")
+			pwd, _ := os.Getwd()
+			fileInfo, _ := os.Stat(pwd)
+			worksapce, err := getWorkspace4Start(cmd, args, fileInfo.Name())
+			common.CheckError(err)
 
 			// 执行命令
 			if worksapce.Mode == dal.WorkingMode_Local {
 				start.ExecuteStartCmd(worksapce, func(dockerContainerName string, docker common.Docker) {
 					if dockerContainerName != "" {
 						common.SmartIDELog.Info(instanceI18nNew.Info.Info_creating_project)
-						out, err := docker.Exec(context.Background(), dockerContainerName, "/home/project", []string{"npm", "install", "-g", "express-generator"}, []string{})
-						out, err = docker.Exec(context.Background(), dockerContainerName, "/home/project", []string{"express", "-f"}, []string{})
-						out, err = docker.Exec(context.Background(), dockerContainerName, "/home/project", []string{"sed", "-i", "s/3000/3001/", "/home/project/bin/www"}, []string{})
-						common.CheckError(err)
-						common.SmartIDELog.Debug(out)
+
+						for i := 0; i < len(typeCommand); i++ {
+							var arra []string
+							arra = strings.Split(typeCommand[i], " ")
+							out, err := docker.Exec(context.Background(), dockerContainerName, "/home/project", arra, []string{})
+							common.CheckError(err)
+							common.SmartIDELog.Debug(out)
+						}
+						//out, err := docker.Exec(context.Background(), dockerContainerName, "/home/project", []string{"npm", "install", "-g", "express-generator"}, []string{})
+						//out, err := docker.Exec(context.Background(), dockerContainerName, "/home/project", []string{"express", "-f"}, []string{})
+						//out, err = docker.Exec(context.Background(), dockerContainerName, "/home/project", []string{"sed", "-i", "s/3000/3001/", "/home/project/bin/www"}, []string{})
+
 					}
 				})
 			}
@@ -168,6 +174,7 @@ func init() {
 }
 
 type NewType struct {
-	TypeName    string `json:"type_name"`
-	TypeYamlUrl string `json:"type_yaml_url"`
+	TypeName    string   `json:"type_name"`
+	TypeYamlUrl string   `json:"type_yaml_url"`
+	TypeCommand []string `json:"type_command"`
 }

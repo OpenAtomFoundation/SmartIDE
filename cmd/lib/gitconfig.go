@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2021-10-13 15:31:52
  * @LastEditors: kenan
- * @LastEditTime: 2021-11-17 10:43:59
+ * @LastEditTime: 2021-11-19 14:52:19
  * @Description: file content
  */
 
@@ -103,6 +103,8 @@ func GitConfig(configGit string, isVmCommand bool, containerName string, cli *cl
 		if configStr == "" {
 			return
 		}
+		// git config 默认设置
+
 		gitconfigs := strings.ReplaceAll(configStr, "file:", "")
 		s := bufio.NewScanner(strings.NewReader(gitconfigs))
 		for s.Scan() {
@@ -111,7 +113,7 @@ func GitConfig(configGit string, isVmCommand bool, containerName string, cli *cl
 			var index = strings.Index(str, "=")
 			var key = str[0:index]
 			var value = str[index+1:]
-			if strings.Contains(key, "user.name") || strings.Contains(key, "user.email") {
+			if strings.Contains(key, "user.name") || strings.Contains(key, "user.email") || strings.Contains(key, "core.autocrlf") {
 				gitConfigCmd := fmt.Sprint("git config --global ", key, " ", "\"", value, "\"")
 				if isVmCommand {
 					err = sshRemote.ExecSSHCommandRealTime(gitConfigCmd)

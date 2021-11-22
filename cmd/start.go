@@ -43,7 +43,8 @@ var startCmd = &cobra.Command{
 
 		//0.1. 从参数中获取结构体，并做基本的数据有效性校验
 		common.SmartIDELog.Info("加载工作区信息...")
-		worksapce, err := getWorkspace4Start(cmd, args)
+		worksapce, err := getWorkspace4Start(cmd, args, "")
+
 		common.CheckError(err)
 		/* if validErr != nil {
 			return validErr // 采用return的方式，可以显示flag列表 //TODO 根据错误的类型，如果是参数格式错误就是return，其他直接抛错
@@ -112,7 +113,7 @@ func getWorkspaceIdFromFlagsAndArgs(cmd *cobra.Command, args []string) int {
 }
 
 // 从start command的flag、args中获取workspace
-func getWorkspace4Start(cmd *cobra.Command, args []string) (workspaceInfo dal.WorkspaceInfo, err error) {
+func getWorkspace4Start(cmd *cobra.Command, args []string, projectName string) (workspaceInfo dal.WorkspaceInfo, err error) {
 	fflags := cmd.Flags()
 	workspaceId := getWorkspaceIdFromFlagsAndArgs(cmd, args)
 
@@ -171,10 +172,16 @@ func getWorkspace4Start(cmd *cobra.Command, args []string) (workspaceInfo dal.Wo
 
 			workspaceInfo.WorkingDirectoryPath = pwd
 
-			repoUrl := getLocalGitRepoUrl()
-			repoName := getRepoName(repoUrl)
-			workspaceInfo.GitCloneRepoUrl = repoUrl
-			workspaceInfo.ProjectName = repoName
+			if projectName == "" {
+				repoUrl := getLocalGitRepoUrl()
+				repoName := getRepoName(repoUrl)
+				workspaceInfo.GitCloneRepoUrl = repoUrl
+				workspaceInfo.ProjectName = repoName
+			} else {
+				workspaceInfo.GitCloneRepoUrl = ""
+				workspaceInfo.ProjectName = projectName
+			}
+
 		}
 
 		workspaceInfo.Mode = workingMode
