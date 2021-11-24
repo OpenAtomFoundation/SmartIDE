@@ -1,7 +1,7 @@
 ---
 title: "SmartIDE - 开发从未如此简单"
 linkTitle: "快速开始"
-weight: 2
+weight: 30
 description: >
   使用SmartIDE，你可以在5分钟之内启动任何一个项目的编码调试，无需安装任何SDK，无需配置任何工具。
 ---
@@ -16,7 +16,7 @@ description: >
 
 > 第一步：安装smartide cli工具
 
-详细安装说明请参考 [安装手册](/zh/docs/quickstart/install/)
+详细安装说明请参考 [安装手册](/zh/docs/install/)
 
 {{< tabs name="stable_install" >}}
 {{% tab name="MacOS" %}}
