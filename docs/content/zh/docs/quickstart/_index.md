@@ -11,7 +11,7 @@ description: >
 你也无需在本地安装IDE软件，只需要浏览器就够了。SmartIDE内置了Web版的vscode，你只需要打开浏览器就可以进行编码，使用智能提示，设置断点并且进行交互式单步调试，就如同使用一个全功能的IDE软件一样的体验。
 
 {{% pageinfo %}}
-*为了让你快速体验SmartIDE的快速开发体验，我们准备了一个示例应用 [Boathouse计算器](/zh/docs/quickstart/sample-calculator/)，无论你是否熟悉这个应用的代码，或者它所使用的 Node.Js 技术栈，你都可以在5分钟之内完成这个应用的开发和调试。*
+*为了让你快速体验SmartIDE的快速开发体验，我们准备了一个示例应用 [Boathouse计算器](/zh/docs/examples/sample-calculator/)，无论你是否熟悉这个应用的代码，或者它所使用的 Node.Js 技术栈，你都可以在5分钟之内完成这个应用的开发和调试。*
 {{% /pageinfo %}}
 
 > 第一步：安装smartide cli工具
@@ -69,17 +69,17 @@ npm install
 
 ![smartide debugging](smartide-debugging.png)
 
-到这里，你已经完成了 [Boathouse计算器示例应用](/zh/docs/quickstart/sample-calculator/) 的开发调试过程，一切的操作就像在本地使用vscode一样的顺畅。
+到这里，你已经完成了 [Boathouse计算器示例应用](/zh/docs/examples/sample-calculator/) 的开发调试过程，一切的操作就像在本地使用vscode一样的顺畅。
 
 > 下一步
 
-现在你已经完成了基本的SmartIDE操作，下一步你可以点击 **[安装手册](/zh/docs/quickstart/install/)** 了解如何获取最新版的SmartIDE工具，以及如何进行更新。作为一款面向开发人员的工具，我们的更新速度非常快，基本上每天都会发布新版本。通过 **[安装手册](/zh/docs/quickstart/install/)** 你可以详细了解我们的更新策略和不同更新通道的获取方式。
+现在你已经完成了基本的SmartIDE操作，下一步你可以点击 **[安装手册](/zh/docs/install/)** 了解如何获取最新版的SmartIDE工具，以及如何进行更新。作为一款面向开发人员的工具，我们的更新速度非常快，基本上每天都会发布新版本。通过 **[安装手册](/zh/docs/install/)** 你可以详细了解我们的更新策略和不同更新通道的获取方式。
 
-以上所展示的仅仅是 **[Boathouse计算器示例应用](/zh/docs/quickstart/sample-calculator/)** 的最简单开发场景，SmartIDE的更多使用场景包括：使用本地VSCode连接到SmartIDE工作区，使用远程主机作为工作区，GitConfig和SSH密钥同步等等，你可以点击这个链接了解完整的 **[Boathouse计算器示例应用](/zh/docs/quickstart/sample-calculator/)** 使用体验。
+以上所展示的仅仅是 **[Boathouse计算器示例应用](/zh/docs/examples/sample-calculator/)** 的最简单开发场景，SmartIDE的更多使用场景包括：使用本地VSCode连接到SmartIDE工作区，使用远程主机作为工作区，GitConfig和SSH密钥同步等等，你可以点击这个链接了解完整的 **[Boathouse计算器示例应用](/zh/docs/examples/sample-calculator/)** 使用体验。
 
 > 更多SmartIDE 开发示例
 
-另外，我们还对很多常用的开发框架进行了SmartIDE适配，你可以通过 [示例应用](zh/docs/examples/) 部分的文档获取更多示例应用的体验文档，这些示例包括：
+另外，我们还对很多常用的开发框架进行了SmartIDE适配，你可以通过 [示例应用](/zh/docs/examples/) 部分的文档获取更多示例应用的体验文档，这些示例包括：
 
 - Vue Element Admin
 - Element UI

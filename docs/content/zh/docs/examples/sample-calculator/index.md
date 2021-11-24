@@ -1,51 +1,39 @@
 ---
-title: "Boathouse计算器"
-linkTitle: "Boathosue计算器"
+title: "Boathouse 计算器"
+linkTitle: "Boathouse 计算器"
 weight: 15
 date: 2021-09-29
 description: >
-  本应用运行状态为网页中的计算器，使用node.js创建，并包含了试用mocha的单元测试代码。
-  代码中使用node.js代码提供了REST APIs，其中提供各种数学计算功能单元。
-  使用mocah编写的测试代码可以完成所有以上API内部运算运算逻辑的验证，最终使用 mocha-junit-reports 来生成XML格式的测试结果文件
+  Boathouse计算器 是使用 node.js 实现的一个非常简单的Web应用，但是麻雀虽小五脏俱全，Boathouse计算器中使用了Rest API实现了基本的加减乘除计算，并通过api调用与前端交互，在非常小的代码量情况下展示了一个典型的现代应用的基本架构。
 
 ---
 
-## 场景
+# 整体说明
+
+本demo示例提供两个场景，开发人员通过本地运行SmartIDE可以使用webide和使用本地开发工具链接SmartIDE生成的开发容器进行代码调试，全程无需再安装调试所需环境。
+SmartIDE将通过隧道技术以及动态端口映射机制提供开发人员与本地开发调试一样的开发体验。
 
 - SmartIDE本地运行，使用WebIDE方式调试
-- 使用本地VScode链接smartIDE开发容器调试
-
-## 整体说明
+- 使用本地VScode链接SmartIDE开发容器调试
 
 ![](process-all.png)
 
-> 本demo示例提供两个场景，开发人员通过本地运行smartIDE可以使用webide和使用本地开发工具链接smartIDE生成的开发容器进行代码调试，全程无需再安装调试所需环境。
-smartIDE将通过隧道技术以及动态端口映射机制提供开发人员与本地开发调试一样的开发体验。
-
-机制说明：
-
-## 先决条件
-
-安装SmartIDE，参考链接: https://smartide.dev/zh/docs/getting-started/install/
-
-Demo源码获取地址，链接: https://github.com/idcf-boat-house/boathouse-calculator.git
-
 ##  场景1.SmartIDE本地运行，使用WebIDE方式调试
 
-1.clone代码库
+1. clone代码库
 
 ```shell
 git clone https://github.com/idcf-boat-house/boathouse-calculator.git
 cd boathouse-calculator
 ```
 
-2.快速创建并启动SmartIDE开发环境
+2. 快速创建并启动SmartIDE开发环境
 
 ```shell
 smartide start 
 ```
 
-![](smartide-start.png)
+![](SmartIDE-start.png)
 
 在打开的WebIDE 中打开 terminal，并启动项目
 
@@ -72,7 +60,7 @@ npm start
 
 ![](debug-step.png)
 
-##  场景2.使用本地VScode链接smartIDE开发容器调试
+##  场景2.使用本地VScode链接SmartIDE开发容器调试
 
 1.VScode安装插件 **Remote Development**
 
