@@ -24,8 +24,8 @@ Docker 桌面版（Docker Desktop）可以在桌面操作系统上管理容器�
 
 Docker桌面是一款免费工具，大家可以从以下两个渠道下载：
 
-- 官网下载地址 https://www.docker.com
-- SmartIDE所提供的国内镜像
+- 官网下载地址 <a href="https://www.docker.com/products/docker-desktop" target="_blank">Docker Desktop</a> 
+- 国内镜像
   - [Intel芯片版下载地址](https://smartidedl.blob.core.chinacloudapi.cn/docker/20210926/Docker-osx-intel.dmg)
   - [Apple M1芯片版下载地址](https://smartidedl.blob.core.chinacloudapi.cn/docker/20210926/Docker-osx-apple.dmg)
 
