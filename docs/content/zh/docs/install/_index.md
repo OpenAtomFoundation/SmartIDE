@@ -52,6 +52,7 @@ curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/releases/$(curl -L -s h
 # SmartIDE 稳定版通道安装脚本
 # 打开PowerShell终端窗口，复制粘贴以下脚本即可自动下载稳定版SmartIDE MSI安装包，并启动安装程序
 # 再次执行此命令即可更新版本
+# 如果是第一次在Windows上安装，请重新打开PowerShell窗口以便PATH设置生效
 Invoke-WebRequest -Uri ("https://smartidedl.blob.core.chinacloudapi.cn/releases/"+(Invoke-RestMethod https://smartidedl.blob.core.chinacloudapi.cn/releases/stable.txt)+"/SetupSmartIDE.msi")  -OutFile "smartide.msi"
  .\smartIDE.msi
 ```
@@ -81,6 +82,7 @@ curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/builds/$(curl -L -s htt
 # SmartIDE 每日构建版通道安装脚本
 # 打开PowerShell终端窗口，复制粘贴以下脚本即可自动下载每日构建版SmartIDE MSI安装包，并启动安装程序
 # 再次执行此命令即可更新版本
+# 如果是第一次在Windows上安装，请重新打开PowerShell窗口以便PATH设置生效
 Invoke-WebRequest -Uri ("https://smartidedl.blob.core.chinacloudapi.cn/builds/"+(Invoke-RestMethod https://smartidedl.blob.core.chinacloudapi.cn/builds/stable.txt)+"/SetupSmartIDE.msi")  -OutFile "smartide.msi"
  .\smartIDE.msi
 ```
