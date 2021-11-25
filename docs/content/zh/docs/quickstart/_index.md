@@ -48,7 +48,7 @@ cd boathouse-calculator
 smartide start
 ```
 运行后的效果如下：
-![smartide start](smartide-start.png)
+![smartide start](images/smartide-start.png)
 
 > 第三步：设置断点、启动调试
 
@@ -61,13 +61,13 @@ SmartIDE会自动启动内置的WebIDE，你会看到一个类似vscode的IDE窗
 ```shell
 npm install
 ```
-![npm install](npm-install.png)
+![npm install](images/npm-install.png)
 
 完成以上操作后，你可以直接点击WebIDE左侧的调试工具栏，启动调试。
 
 你也可以像我一样在 /api/controllers/arithmeticController.js 文件的第47行设置一个端点，并启动另外一个浏览器打开 http://localhost:3001 即可进入交互式调试体验。
 
-![smartide debugging](smartide-debugging.png)
+![smartide debugging](images/smartide-debugging.png)
 
 到这里，你已经完成了 [Boathouse计算器示例应用](/zh/docs/examples/sample-calculator/) 的开发调试过程，一切的操作就像在本地使用vscode一样的顺畅。
 
