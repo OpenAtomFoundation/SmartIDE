@@ -1,3 +1,5 @@
+![example workflow](https://github.com/smartide/smartide/actions/workflows/smartide-docs-publish/badge.svg)
+
 # SmartIDE - The Cloud Native IDE
 
 The Cloud Native designed for boosting development efficiency.

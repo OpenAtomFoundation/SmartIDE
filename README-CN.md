@@ -1,0 +1,1 @@
+![example workflow](https://github.com/smartide/smartide/actions/workflows/smartide-docs-publish/badge.svg)
