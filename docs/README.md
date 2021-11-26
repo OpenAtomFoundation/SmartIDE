@@ -1,0 +1,3 @@
+# SmartIDE Docs
+
+.
