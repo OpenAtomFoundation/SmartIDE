@@ -26,7 +26,6 @@ description: >
 {{% tab name="MacOS" %}}
 ```shell
 # 在 MacOS 上打开 终端应用(Terminal) 并复制粘贴本段脚本
-# 可以复制所有脚本一键执行，如果需要分布执行，请删除结尾处的反斜杠
 git clone https://gitee.com/idcf-boat-house/boathouse-calculator.git 
 cd boathouse-calculator 
 smartide start
@@ -35,7 +34,6 @@ smartide start
 {{% tab name="Windows" %}}
 ```powershell
 # 在 Windows 上打开 PowerShell 并复制粘贴本段脚本
-# 可以复制所有脚本一键执行，如果需要分布执行，请删除结尾处的单引号
 git clone https://gitee.com/idcf-boat-house/boathouse-calculator.git 
 cd boathouse-calculator 
 smartide start
