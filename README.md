@@ -1,4 +1,4 @@
-![example workflow](https://github.com/smartide/smartide/actions/workflows/smartide-docs-publish/badge.svg)
+![example workflow](https://github.com/smartide/smartide/actions/workflows/smartide-docs-publish.yml/badge.svg)
 
 # SmartIDE - The Cloud Native IDE
 
