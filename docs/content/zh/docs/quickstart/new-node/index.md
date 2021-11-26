@@ -29,7 +29,7 @@ smartide new node
 ```powershell
 # 可以复制所有脚本一键执行，如果需要分布执行，请删除结尾处的单引号
 mkdir node-quickstart `
-cd snode-quickstart `
+cd node-quickstart `
 smartide new node
 ```
 {{% /tab %}}
