@@ -20,11 +20,29 @@ description: >
 
 ## 1. 一键启动
 
+运行以下脚本一键启动 **Boathouse计算器** 应用的 **集成开发环境(IDE)** 。
+
+{{< tabs name="start_script" >}}
+{{% tab name="MacOS" %}}
 ```shell
-git clone https://gitee.com/idcf-boat-house/boathouse-calculator.git
-cd boathouse-calculator
+# 在 MacOS 上打开 终端应用(Terminal) 并复制粘贴本段脚本
+# 可以复制所有脚本一键执行，如果需要分布执行，请删除结尾处的反斜杠
+git clone https://gitee.com/idcf-boat-house/boathouse-calculator.git \
+cd boathouse-calculator \
 smartide start
 ```
+{{% /tab %}}
+{{% tab name="Windows" %}}
+```powershell
+# 在 Windows 上打开 PowerShell 并复制粘贴本段脚本
+# 可以复制所有脚本一键执行，如果需要分布执行，请删除结尾处的单引号
+git clone https://gitee.com/idcf-boat-house/boathouse-calculator.git `
+cd boathouse-calculator `
+smartide start
+```
+{{% /tab %}}
+{{< /tabs >}}
+
 运行后的效果如下：
 ![smartide start](images/smartide-start.png)
 
@@ -32,17 +50,17 @@ smartide start
 
 SmartIDE会自动启动内置的WebIDE，你会看到一个类似vscode的IDE窗口在你的默认浏览器中出现。
 
-同时，SmartIDE会自动启动 npm install 脚本的运行，自动完成应用所需要的依赖包的获取和安装。
+同时，SmartIDE会自动启动 npm install 脚本的运行，自动完成依赖包的获取和安装。
 
-**说明**: npm是node.js的包管理器，npm install的作用是根据当前代码库的配置获取应用所需要的依赖包。一般来说，为了能够正确运行node.js应用，你首先需要安装node.js的sdk环境，但是SmartIDE已经为你完成了这个动作，作为开发者的你不再需要关心开发环境搭建的问题。
+**说明**: npm是node.js的包管理器，npm install 的作用是获取应用所需要的依赖包。一般来说，为了能够正确运行 node.js 应用，你首先需要安装 node.js 的 sdk 环境，但是 SmartIDE 已经为完成了这个动作，作为开发者的你不再需要关心开发环境搭建的问题。
 
 ![npm install](images/npm-install.png)
 
-完成以上操作后，你可以直接点击WebIDE左侧的调试工具栏，启动调试。
+完成以上操作后，你可以直接点击 WebIDE 左侧的调试工具栏，启动调试。
 
 ![启动调试](images/start-debug.png)
 
-你也可以像我一样在 **/api/controllers/arithmeticController.js** 文件的 **第47行** 设置一个端点，并启动另外一个浏览器打开 http://localhost:3001 即可进入交互式调试体验。
+你也可以像我一样在 **/api/controllers/arithmeticController.js** 文件的 **第47行** 设置一个断点，并用另外一个浏览器打开 http://localhost:3001 即可进入交互式调试状态。现在，你可以尝试在计算机中进行一些加减乘除的操作，当你点击 = 按钮的时候，代码中的断点就会被触发，应用进入暂停状态，IDE会自动聚焦到断点所在的代码行，如下图所示：
 
 ![调试状态](images/smartide-debugging.png)
 
@@ -50,20 +68,19 @@ SmartIDE会自动启动内置的WebIDE，你会看到一个类似vscode的IDE窗
 
 ## 下一步
 
-现在你已经完成了基本的SmartIDE操作，下一步你可以点击 **[安装手册](/zh/docs/install/)** 了解如何获取最新版的SmartIDE工具，以及如何进行更新。作为一款面向开发人员的工具，我们的更新速度非常快，基本上每天都会发布新版本。通过 **[安装手册](/zh/docs/install/)** 你可以详细了解我们的更新策略和不同更新通道的获取方式。
-
 Boathouse计算器 是一个已经适配好 SmartIDE 开发环境的应用，如果你希望了解如何使用 SmartIDE 从头创建一个全新的项目，我们还为你准备了一系列针对不同开发技术栈的快速启动教程：
 
-- [Node.Js 快速启动教程](/zh/docs/quickstart/new-node/)
-- Golang 快速启动教程
-- Java 快速启动教程
-- .NetCore 快速启动教程
-- Python 快速启动教程
-- PHP 快速启动教程
+- [Node.JS](/zh/docs/quickstart/new-node/)
+- Golang 
+- Java 
+- .NetCore 
+- Python 
+- PHP 
+- c/c++
 
-## 更多真实项目开发场景
+## 项目开发案例
 
-另外，我们还对很多常用的开发框架进行了SmartIDE适配，你可以通过 [示例应用](/zh/docs/examples/) 部分的文档获取更多示例应用的体验文档，示例部分所展示的全部都是真实项目的开发场景，包括 SmartIDE 本身其实都是使用 SmartIDE 开发环境进行开发的。
+我们还对很多 *开源项目* 进行了SmartIDE适配，你可以通过 [示例应用](/zh/docs/examples/) 获取更多示例应用的体验文档，示例部分所展示的全部都是真实项目的开发场景，包括 SmartIDE 本身其实都是使用 SmartIDE 开发环境进行开发的。
 
 
 这些示例包括：
