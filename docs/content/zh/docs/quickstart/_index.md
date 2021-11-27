@@ -14,6 +14,9 @@ description: >
 *为了让你快速体验SmartIDE的快速开发体验，我们准备了一个示例应用 [Boathouse计算器](/zh/docs/examples/sample-calculator/)，无论你是否熟悉这个应用的代码，或者它所使用的 Node.Js 技术栈，你都可以在5分钟之内完成这个应用的开发和调试。*
 {{% /pageinfo %}}
 
+以下为文档演示视频，视频长度4:40，无快进无剪辑。
+{{< bilibili 336989627 >}}
+
 ## 准备工作
 
 请参考 <a href="/zh/docs/install/" target="_blank">安装手册</a> 完成 SmartIDE 工具的安装。
