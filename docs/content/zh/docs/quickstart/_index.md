@@ -1,5 +1,5 @@
 ---
-title: "SmartIDE - 开发从未如此简单"
+title: "快速开始 - 开发从未如此简单"
 linkTitle: "快速开始"
 weight: 30
 description: >
