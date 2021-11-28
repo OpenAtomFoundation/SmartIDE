@@ -38,11 +38,21 @@ jobs:
           npm install
           hugo --minify --verbose
 
-      - name: 📂 Sync files
+      - name: 📂 Sync files - smartide.cn
         uses: SamKirkland/FTP-Deploy-Action@4.1.0
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
+          server: ${{ secrets.FTP_CHINA_URL }}
+          username: ${{ secrets.FTP_CHINA_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./docs/public/
+          server-dir: site/wwwroot/
+          dangerous-clean-slate: false
+
+      - name: 📂 Sync files - smartide.dev
+        uses: SamKirkland/FTP-Deploy-Action@4.1.0
+        with:
+          server: ${{ secrets.FTP_GLOBAL_URL }}
+          username: ${{ secrets.FTP_GLOBAL_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./docs/public/
           server-dir: site/wwwroot/
