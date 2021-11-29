@@ -19,17 +19,19 @@ SmartIDE内置了node.js开发环境模板，你可以通过一个简单的指�
 {{< tabs name="new_node" >}}
 {{% tab name="MacOS" %}}
 ```shell
+# 在 MacOS 上打开 终端（Terminal）应用，复制粘贴以下脚本
 # 可以复制所有脚本一键执行，如果需要分布执行，请删除结尾处的反斜杠
-mkdir node-quickstart \
-cd snode-quickstart \
+mkdir node-quickstart 
+cd node-quickstart 
 smartide new node
 ```
 {{% /tab %}}
 {{% tab name="Windows" %}}
 ```powershell
+# 在 Windows 上打开 PowerShell 应用，复制粘贴以下脚本
 # 可以复制所有脚本一键执行，如果需要分布执行，请删除结尾处的单引号
-mkdir node-quickstart `
-cd node-quickstart `
+mkdir node-quickstart 
+cd node-quickstart 
 smartide new node
 ```
 {{% /tab %}}
