@@ -11,7 +11,7 @@ description: >
 你也无需在本地安装IDE软件，只需要浏览器就够了。SmartIDE内置了Web版的vscode，你只需要打开浏览器就可以进行编码，使用智能提示，设置断点并且进行交互式单步调试，就如同使用一个全功能的IDE软件一样的体验。
 
 {{% pageinfo %}}
-*为了让你快速体验SmartIDE的快速开发体验，我们准备了一个示例应用 [Boathouse计算器](/zh/docs/examples/sample-calculator/)，无论你是否熟悉这个应用的代码，或者它所使用的 Node.Js 技术栈，你都可以在5分钟之内完成这个应用的开发和调试。*
+*为了让你快速体验SmartIDE的快速开发体验，我们准备了一个示例应用 [Boathouse计算器](/zh/docs/examples/boathouse-calculator/)，无论你是否熟悉这个应用的代码，或者它所使用的 Node.Js 技术栈，你都可以在5分钟之内完成这个应用的开发和调试。*
 {{% /pageinfo %}}
 
 以下为文档演示视频，视频长度4:40，无快进无剪辑。
@@ -65,7 +65,7 @@ SmartIDE会自动启动内置的WebIDE，你会看到一个类似vscode的IDE窗
 
 ![调试状态](images/smartide-debugging.png)
 
-到这里，你已经完成了 [Boathouse计算器示例应用](/zh/docs/examples/sample-calculator/) 的开发调试过程，一切的操作就像在本地使用vscode一样的顺畅。
+到这里，你已经完成了 [Boathouse计算器示例应用](/zh/docs/examples/boathouse-calculator/) 的开发调试过程，一切的操作就像在本地使用vscode一样的顺畅。
 
 ## 下一步
 
