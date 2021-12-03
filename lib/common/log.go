@@ -72,13 +72,13 @@ func (sLog *smartIDELogStruct) Fatal(fatal interface{}, headers ...string) (reEr
 }
 
 //
-func (sLog *smartIDELogStruct) Info(info ...string) (err error) {
-	if len(info) <= 0 {
+func (sLog *smartIDELogStruct) Info(args ...string) (err error) {
+	args = RemoveDuplicatesAndEmpty(args)
+	if len(args) <= 0 {
 		return nil
 	}
 
-	info = RemoveDuplicatesAndEmpty(info)
-	msg := strings.Join(info, " ")
+	msg := strings.Join(args, " ")
 
 	prefix := getPrefix(zapcore.InfoLevel)
 	fmt.Println(prefix, msg)
@@ -115,14 +115,14 @@ func (sLog *smartIDELogStruct) DebugF(format string, args ...interface{}) (err e
 	return SmartIDELog.Debug(msg)
 }
 
-func (sLog *smartIDELogStruct) Debug(info ...string) (err error) {
+func (sLog *smartIDELogStruct) Debug(args ...string) (err error) {
 
-	if len(info) <= 0 {
+	args = RemoveDuplicatesAndEmpty(args)
+	if len(args) <= 0 {
 		return nil
 	}
 
-	info = RemoveDuplicatesAndEmpty(info)
-	msg := strings.Join(info, " ")
+	msg := strings.Join(args, " ")
 
 	prefix := getPrefix(zapcore.DebugLevel)
 	if isDebugLevel {
@@ -135,13 +135,27 @@ func (sLog *smartIDELogStruct) Debug(info ...string) (err error) {
 }
 
 // 输出到控制台，但是不加任何的修饰
-func (sLog *smartIDELogStruct) Console(info ...interface{}) (err error) {
-	if len(info) <= 0 {
+func (sLog *smartIDELogStruct) Console(args ...interface{}) (err error) {
+
+	if len(args) <= 0 {
 		return nil
 	}
 
-	fmt.Println(info...)
-	sugarLogger.Info(info...)
+	fmt.Println(args...)
+	sugarLogger.Info(args...)
+
+	return nil
+}
+
+// 输出到控制台，在一行
+func (sLog *smartIDELogStruct) ConsoleInLine(args ...interface{}) (err error) {
+
+	if len(args) <= 0 {
+		return nil
+	}
+
+	fmt.Printf("\r%v\r", args...)
+	sugarLogger.Info(args...)
 
 	return nil
 }

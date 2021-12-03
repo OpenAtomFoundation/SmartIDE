@@ -22,6 +22,18 @@ type DockerComposeYml struct {
 	// TODO configs
 	// TODO Variable substitution
 	// TODO Extension fields
+
+	//SmartIDE SmartIDE `yaml:"smartide,omitempty"` // 一些自定义的信息
+}
+
+//
+func (c *DockerComposeYml) IsNil() bool {
+	return c.Version == "" && len(c.Services) == 0 && len(c.Volumes) == 0 && len(c.Networks) == 0 && len(c.Secrets) == 0
+}
+
+//
+func (c *DockerComposeYml) IsNotNil() bool {
+	return !c.IsNil()
 }
 
 // 获取本地端口 和 容器端口的绑定关系
@@ -55,13 +67,13 @@ func (c *DockerComposeYml) GetLocalBindingPorts() []int {
 }
 
 // 把结构化对象转换为string
-func (c *DockerComposeYml) ConvertToStr() string {
-	d, err := yaml.Marshal(&c)
-	if err != nil {
-		common.SmartIDELog.Fatal(err)
+func (c *DockerComposeYml) ToString() string {
+	if c.IsNil() {
+		return ""
 	}
-	common.SmartIDELog.Info("--- m dump:\n%s\n\n", string(d))
 
-	//fmt.Print(string(dockerCompose))
+	d, err := yaml.Marshal(&c)
+	common.CheckError(err)
+
 	return string(d)
 }

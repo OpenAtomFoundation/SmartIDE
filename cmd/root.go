@@ -20,6 +20,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/leansoftX/smartide-cli/lib/appinsight"
 	"github.com/leansoftX/smartide-cli/lib/common"
 	"github.com/leansoftX/smartide-cli/lib/i18n"
 	"github.com/spf13/cobra"
@@ -35,10 +36,19 @@ var instanceI18nMain = i18n.GetInstance().Main
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "smartide",
-	Short: instanceI18nMain.Info.Help_short,
-	Long:  instanceI18nMain.Info.Help_long, // logo only show in init
+	Short: instanceI18nMain.Info_Info_help_short,
+	Long:  instanceI18nMain.Info_Info_help_long, // logo only show in init
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		if cmd.Use == "start" || cmd.Use == "new" {
 
+		} else {
+			//ai记录
+			var trackEvent string
+			for _, val := range args {
+				trackEvent = trackEvent + " " + val
+			}
+			appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, "no", "no")
+		}
 		// 初始化
 		logLevel := ""
 		if isDebug {
@@ -72,8 +82,8 @@ func init() {
 	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
 	// help command short
-	rootCmd.Flags().BoolP("help", "h", false, i18n.GetInstance().Help.Info.Help_short)
-	rootCmd.PersistentFlags().BoolVarP(&isDebug, "debug", "d", false, i18n.GetInstance().Main.Info.Help_flag_debug)
+	rootCmd.Flags().BoolP("help", "h", false, i18n.GetInstance().Help.Info_help_short)
+	rootCmd.PersistentFlags().BoolVarP(&isDebug, "debug", "d", false, i18n.GetInstance().Main.Info_Info_help_flag_debug)
 
 	// disable completion command
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
@@ -82,7 +92,7 @@ func init() {
 	rootCmd.SetHelpCommand(helpCmd)
 
 	// usage template
-	usage_tempalte := strings.ReplaceAll(i18n.GetInstance().Main.Info.Usage_template, "\\n", "\n")
+	usage_tempalte := strings.ReplaceAll(i18n.GetInstance().Main.Info_Usage_template, "\\n", "\n")
 	rootCmd.SetUsageTemplate(usage_tempalte)
 
 	// custom command
@@ -93,6 +103,7 @@ func init() {
 	rootCmd.AddCommand(versionCmd, udpateCmd)
 	//rootCmd.AddCommand(restartCmd)
 	//rootCmd.AddCommand(vmCmd)
+	rootCmd.AddCommand(configCmd)
 	rootCmd.AddCommand(newCmd)
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(getCmd)

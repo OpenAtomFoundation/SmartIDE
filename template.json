@@ -1,7 +1,11 @@
 [
   {
-    "type_name": "node",  
-    "type_yaml_url":"https://smartidedl.blob.core.chinacloudapi.cn/template/node.ide.yaml",
+    "type_name": "node",
+    "type_command":[
+    ]
+  },
+  {
+    "type_name": "express",
     "type_command":[
       "npm install -g express-generator",
       "express -f",
@@ -9,12 +13,21 @@
     ]
   },
   {
-    "type_name": "express",  
-    "type_yaml_url":"https://smartidedl.blob.core.chinacloudapi.cn/template/node.ide.yaml",
+    "type_name": "golang",
     "type_command":[
-      "npm install -g express-generator",
-      "express -f",
-      "sed -i s/3000/3001/ /home/project/bin/www"
+      
+    ]
+  },
+  {
+    "type_name": "java",
+    "type_command":[
+      
+    ]
+  },
+  {
+    "type_name": "php",
+    "type_command":[
+      
     ]
   }
 ]

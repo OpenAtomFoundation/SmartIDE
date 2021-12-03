@@ -48,7 +48,7 @@ func IsPortAvailable(port int) bool {
 }
 
 // 检查当前端口是否被占用，并返回一个可用端口
-func CheckAndGetAvailablePort(checkPort int, step int) (usablePort int) {
+func CheckAndGetAvailableLocalPort(checkPort int, step int) (usablePort int) {
 	if step <= 0 {
 		step = 100
 	}

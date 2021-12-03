@@ -17,15 +17,15 @@ var i18nInstance = i18n.GetInstance()
 // initCmd represents the init command
 var HostGetCmd = &cobra.Command{
 	Use:   "get",
-	Short: i18nInstance.Host.Info.Help_get_short,
-	Long:  i18nInstance.Host.Info.Help_get_long,
+	Short: i18nInstance.Host.Info_help_get_short,
+	Long:  i18nInstance.Host.Info_help_get_long,
 	Example: ` smartide host get --hostid <hostid>
   smartide host get <hostid>`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		hostId := getHostIdFromFlagsAndArgs(cmd, args)
 		if hostId <= 0 {
-			common.SmartIDELog.WarningF(i18nInstance.Common.Warn.Warn_param_is_null, flag_hostid)
+			common.SmartIDELog.WarningF(i18nInstance.Common.Warn_param_is_null, flag_hostid)
 			cmd.Help()
 			return
 		}
@@ -34,7 +34,7 @@ var HostGetCmd = &cobra.Command{
 		common.CheckError(err)
 		createTime := remote.CreatedTime.Format("2006-01-02 15:04:05")
 
-		print := fmt.Sprintf(i18nInstance.Host.Info.Info_host_detail_template,
+		print := fmt.Sprintf(i18nInstance.Host.Info_host_detail_template,
 			remote.ID, remote.Addr, remote.AuthType, remote.UserName, createTime)
 		common.SmartIDELog.Console(print)
 
@@ -67,6 +67,6 @@ func getHostIdFromFlagsAndArgs(cmd *cobra.Command, args []string) int {
 }
 
 func init() {
-	HostGetCmd.Flags().Int32P("hostid", "r", 0, i18nInstance.Host.Info.Help_flag_hostid)
+	HostGetCmd.Flags().Int32P("hostid", "r", 0, i18nInstance.Host.Info_help_flag_hostid)
 
 }

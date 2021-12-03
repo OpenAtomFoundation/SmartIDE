@@ -2,15 +2,16 @@
  * @Author: kenan
  * @Date: 2021-10-13 15:31:52
  * @LastEditors: kenan
- * @LastEditTime: 2021-11-19 14:52:19
+ * @LastEditTime: 2021-12-02 14:06:07
  * @Description: file content
  */
 
-package lib
+package dal
 
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -36,7 +37,7 @@ func ConfigGitByDockerExec() {
 
 	gitconfigs := string(out)
 	if gitconfigs == "" {
-		common.SmartIDELog.Error(i18n.GetInstance().Config.Error.Gitconfig_not_exit)
+		common.SmartIDELog.Error(i18n.GetInstance().Config.Err_Gitconfig_not_exit)
 	}
 	s := bufio.NewScanner(strings.NewReader(gitconfigs))
 	for s.Scan() {
@@ -47,7 +48,7 @@ func ConfigGitByDockerExec() {
 		var value = str[index+1:]
 
 		var yamlFileCongfig YamlFileConfig
-		yamlFileCongfig.GetConfig()
+		yamlFileCongfig.GetLocalConfig()
 
 		var servicename = yamlFileCongfig.Workspace.DevContainer.ServiceName
 		cmdStr := fmt.Sprint("docker exec ", servicename, " git config --global ", key, " ", value)
@@ -66,15 +67,19 @@ func ConfigGitByDockerExec() {
 
 }
 
-func SSHVolumesConfig(sshKey string, isVmCommand bool, service compose.Service) (ser compose.Service) {
+func SSHVolumesConfig(sshKey string, isVmCommand bool, service compose.Service, sshRemote common.SSHRemote) (ser compose.Service) {
 	var configPaths []string
 	if sshKey == "true" {
+		if isVmCommand {
+			configPaths = []string{"$HOME/.ssh:/root/.ssh"}
+			chmodSSH := "sudo chmod 700 -R /$HOME/.ssh "
+			err := sshRemote.ExecSSHCommandRealTime(chmodSSH)
+			common.CheckError(err)
 
-		if isVmCommand || runtime.GOOS != "windows" {
+		} else if runtime.GOOS != "windows" {
 			configPaths = []string{"$HOME/.ssh:/root/.ssh"}
 		} else {
 			configPaths = []string{fmt.Sprint(os.Getenv("USERPROFILE"), "/.ssh:/root/.ssh")}
-
 		}
 		if configPaths != nil {
 			service.Volumes = append(service.Volumes, configPaths...)
@@ -114,15 +119,15 @@ func GitConfig(configGit string, isVmCommand bool, containerName string, cli *cl
 			var key = str[0:index]
 			var value = str[index+1:]
 			if strings.Contains(key, "user.name") || strings.Contains(key, "user.email") || strings.Contains(key, "core.autocrlf") {
-				gitConfigCmd := fmt.Sprint("git config --global ", key, " ", "\"", value, "\"")
+				gitConfigCmd := fmt.Sprint("git config --global --replace-all ", key, " ", "\"", value, "\"")
 				if isVmCommand {
-					err = sshRemote.ExecSSHCommandRealTime(gitConfigCmd)
+					output, err := sshRemote.ExeSSHCommand(gitConfigCmd)
 					isConfig = true
-					common.CheckError(err)
+					common.CheckError(err, output)
 				} else if cli != nil {
 					docker := *common.NewDocker(cli)
 					out := ""
-					out, err = docker.Exec(context.Background(), strings.ReplaceAll(containerName, "/", ""), "/bin", []string{"git", "config", "--global", key, value}, []string{})
+					out, err = docker.Exec(context.Background(), strings.ReplaceAll(containerName, "/", ""), "/bin", []string{"git", "config", "--global", "--replace-all", key, value}, []string{})
 					common.CheckError(err)
 					common.SmartIDELog.Debug(out)
 				}
@@ -138,4 +143,22 @@ func GitConfig(configGit string, isVmCommand bool, containerName string, cli *cl
 
 	}
 	return service
+}
+
+// 检查本地环境，是否安装git
+func CheckLocalGitEnv() error {
+	var errMsgArray []string
+
+	// 校验是否能正常执行 git
+	gitErr := exec.Command("git", "version").Run()
+	if gitErr != nil {
+		errMsgArray = append(errMsgArray, i18n.GetInstance().Common.Err_git_env_check)
+	}
+
+	// 错误判断
+	if len(errMsgArray) > 0 {
+		return errors.New(strings.Join(errMsgArray, "; "))
+	}
+
+	return nil
 }

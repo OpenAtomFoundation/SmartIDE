@@ -35,13 +35,13 @@ func CheckLocalEnv() error {
 	dockerErr := exec.Command("docker", "-v").Run()
 	dockerpsErr := exec.Command("docker", "ps").Run()
 	if dockerErr != nil || dockerpsErr != nil {
-		errMsgArray = append(errMsgArray, i18n.GetInstance().Start.Error.DockerPs_Err)
+		errMsgArray = append(errMsgArray, i18n.GetInstance().Start.Err_DockerPs)
 	}
 
 	//0.2. 校验是否能正常执行 docker-compose
 	dockercomposeErr := exec.Command("docker-compose", "version").Run()
 	if dockercomposeErr != nil {
-		errMsgArray = append(errMsgArray, i18n.GetInstance().Start.Error.Docker_Compose_Err)
+		errMsgArray = append(errMsgArray, i18n.GetInstance().Start.Err_Docker_Compose)
 	}
 
 	// 错误判断
@@ -61,12 +61,12 @@ func CheckRemoveEnv(sshRemote common.SSHRemote) error {
 	if err != nil || strings.Contains(output, "error:") {
 		msg = append(msg, "git 未正确安装")
 	}
-	sshRemote.ExeSSHCommand("docker version")
+	output, err = sshRemote.ExeSSHCommand("docker version")
 	if err != nil || strings.Contains(output, "error:") {
 		msg = append(msg, "docker 未正确安装")
 	}
-	sshRemote.ExeSSHCommand("docker-compose version")
-	if err != nil || strings.Contains(output, "error:") {
+	output, err = sshRemote.ExeSSHCommand("docker-compose version")
+	if err != nil || !strings.Contains(output, "docker-compose version") || strings.Contains(output, "error:") {
 		msg = append(msg, "docker-compose 未正确安装")
 	}
 
@@ -81,25 +81,22 @@ func CheckRemoveEnv(sshRemote common.SSHRemote) error {
 		common.SmartIDELog.Debug(err.Error())
 	}
 
+	// clone 代码库时，不提示：“are you sure you want to continue connecting (yes/no) ”
+	sshConfig, err := sshRemote.ExeSSHCommand("[[ -f \".ssh/config\" ]] && cat ~/.ssh/config || echo \"\"")
+	common.CheckError(err)
+	if !strings.Contains(sshConfig, "StrictHostKeyChecking no") { // 不包含就添加
+		command := "echo -e \"StrictHostKeyChecking no\n\" >> ~/.ssh/config"
+		_, err := sshRemote.ExeSSHCommand(command)
+		common.CheckError(err)
+	}
+
 	return nil
 }
 
 // 获取docker compose运行起来对应的容器
-func GetLocalContainersWithServices(dockerComposeFilePath string, dockerComposeServices []string) []DockerComposeContainer {
+func GetLocalContainersWithServices(ctx context.Context, cli *client.Client, dockerComposeServices []string) []DockerComposeContainer {
 
 	var dockerComposeContainers []DockerComposeContainer // result define
-
-	//0. valid
-	if !common.IsExit(dockerComposeFilePath) {
-		return dockerComposeContainers
-	}
-
-	//第一步：获取ctx
-	ctx := context.Background()
-
-	//获取cli客户端对象
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	common.CheckError(err)
 
 	//通过cli客户端对象去执行ContainerList(其实docker ps 不就是一个docker正在运行容器的一个list嘛)
 	containers, err2 := cli.ContainerList(ctx, types.ContainerListOptions{})
@@ -115,6 +112,7 @@ func GetLocalContainersWithServices(dockerComposeFilePath string, dockerComposeS
 // 检测远程服务器的环境，是否安装docker、docker-compose、git
 func GetRemoteContainersWithServices(sshRemote common.SSHRemote, dockerComposeServices []string) (dockerComposeContainers []DockerComposeContainer, err error) {
 
+	// https://docs.docker.com/engine/api/v1.41/#operation/ContainerList
 	command := "sudo curl -s --unix-socket /var/run/docker.sock http://dummy/containers/json "
 	output, err := sshRemote.ExeSSHCommand(command)
 	common.CheckError(err)
@@ -183,7 +181,7 @@ func PrintDockerComposeContainers(dockerComposeContainers []DockerComposeContain
 		return
 	}
 	w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
-	fmt.Fprintln(w, i18nInstance.Common.Info.Info_table_header_containers) //"service\tstate\timage\tports\t"
+	fmt.Fprintln(w, i18nInstance.Common.Info_table_header_containers)
 	for _, service := range dockerComposeContainers {
 		line := fmt.Sprintf("%v\t%v\t%v\t%v\t", service.ServiceName, service.State, service.Image, strings.Join(service.Ports, "; "))
 		fmt.Fprintln(w, line)

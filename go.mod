@@ -51,8 +51,10 @@ require (
 )
 
 require (
+	code.cloudfoundry.org/clock v0.0.0-20180518195852-02e53af36e6c // indirect
 	github.com/alcortesm/tgz v0.0.0-20161220082320-9c5fe88206d7 // indirect
 	github.com/emirpasic/gods v1.12.0 // indirect
+	github.com/gofrs/uuid v3.3.0+incompatible // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jessevdk/go-flags v1.5.0 // indirect
@@ -119,4 +121,7 @@ require (
 	go.uber.org/multierr v1.6.0 // indirect
 )
 
-require github.com/docker/cli v20.10.10+incompatible
+require (
+	github.com/docker/cli v20.10.10+incompatible
+	github.com/microsoft/ApplicationInsights-Go v0.4.4
+)

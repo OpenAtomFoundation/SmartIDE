@@ -18,8 +18,8 @@ import (
 // initCmd represents the init command
 var udpateCmd = &cobra.Command{
 	Use:   "update",
-	Short: i18n.GetInstance().Update.Info.Help_short,
-	Long:  i18n.GetInstance().Update.Info.Help_long,
+	Short: i18n.GetInstance().Update.Info_help_short,
+	Long:  i18n.GetInstance().Update.Info_help_long,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		common.SmartIDELog.Info("update ...")
@@ -59,20 +59,22 @@ var udpateCmd = &cobra.Command{
 
 			// 比较版本号，检查是否有必要升级
 			if len(strings.Split(Version.BuildNumber, ".")) == 4 && compareVersion(Version.BuildNumber, version) > -1 {
-				common.SmartIDELog.WarningF(i18n.GetInstance().Update.Warn.Warn_rel_lastest, version)
+				common.SmartIDELog.WarningF(i18nInstance.Update.Warn_rel_lastest, version)
 				return
 			}
 		}
 
+		// log
 		common.SmartIDELog.Info("update to v" + version)
 
 		// 删除文件
 		if common.IsExit("smartide") {
 			os.Remove("smartide")
-			common.SmartIDELog.Info(i18n.GetInstance().Update.Info.Info_remove_repeat)
+			common.SmartIDELog.Info(i18n.GetInstance().Update.Info_remove_repeat)
 		}
 
 		// 运行升级脚本
+		common.SmartIDELog.Info("updating ... ")
 		switch runtime.GOOS {
 		case "windows":
 
@@ -158,6 +160,6 @@ func compareVersion(version1 string, version2 string) int {
 }
 
 func init() {
-	udpateCmd.Flags().BoolP("build", "b", false, i18n.GetInstance().Update.Info.Help_flag_build)
-	udpateCmd.Flags().StringP("version", "v", "", i18n.GetInstance().Update.Info.Help_flag_version)
+	udpateCmd.Flags().BoolP("build", "b", false, i18n.GetInstance().Update.Info_help_flag_build)
+	udpateCmd.Flags().StringP("version", "v", "", i18n.GetInstance().Update.Info_help_flag_version)
 }

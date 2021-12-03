@@ -19,12 +19,10 @@ import (
 	"github.com/docker/go-connections/nat"
 )
 
-var instanceI18nStart = i18n.GetInstance().Start
-
 // docker run
 func dockerCreateAndRun(cli *client.Client, smartIDEImage, smartIDEName string, hostMapping map[string]string, networks []string, tunnelIP string) { //TODO: Command
 	// 提示文本
-	common.SmartIDELog.Info(i18n.GetInstance().Start.Info.Info_start)
+	common.SmartIDELog.Info(i18n.GetInstance().Start.Info_start)
 
 	// check tunnel
 	//isTunnel := common.Contains(args, "-tunnel") //TODO: 不区分大小写
@@ -85,7 +83,7 @@ func dockerCreateAndRun(cli *client.Client, smartIDEImage, smartIDEName string, 
 	//
 	startErr := cli.ContainerStart(ctx, smartIDEName, types.ContainerStartOptions{})
 	if startErr != nil {
-		common.SmartIDELog.Info(instanceI18nStart.Info.Info_running_container)
+		common.SmartIDELog.Info(i18n.GetInstance().Start.Info_running_container)
 		imageName := smartIDEImage
 		out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
 		if err != nil {

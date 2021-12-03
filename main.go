@@ -27,6 +27,13 @@ import (
 )
 
 func main() {
+	//
+	defer func() {
+		if err := recover(); err != nil {
+			common.SmartIDELog.Fatal(err)
+		}
+	}()
+
 	// print version
 	versionInfo := formatVerion()
 	common.SmartIDELog.Console(versionInfo.VersionNumber)
@@ -37,11 +44,6 @@ func main() {
 
 // running before main
 func init() {
-	// new type转换为结构体
-	var typee []cmd.NewType
-	json.Unmarshal([]byte(templateJson), &typee)
-	cmd.SetNewType(typee)
-
 	common.SmartIDELog.InitLogger("")
 }
 
@@ -50,9 +52,6 @@ var stable string
 
 //go:embed stable.json
 var stableJson string
-
-//go:embed template.json
-var templateJson string
 
 // 格式化版本号，在stable.txt文件中读取
 // 注：embed 不支持 “..”， 即上级目录
@@ -64,7 +63,7 @@ func formatVerion() (smartVersion cmd.SmartVersion) {
 	// 版本号赋值
 	smartVersion.VersionNumber = stable
 	if stable == "$(version)" {
-		common.SmartIDELog.Warning(i18n.GetInstance().Main.Error.Version_not_build)
+		common.SmartIDELog.Warning(i18n.GetInstance().Main.Err_version_not_build)
 	} else if strings.ToLower(stable[0:1]) != "v" {
 		smartVersion.VersionNumber = "v" + smartVersion.VersionNumber
 	}

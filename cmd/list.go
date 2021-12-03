@@ -13,28 +13,28 @@ import (
 // initCmd represents the init command
 var listCmd = &cobra.Command{
 	Use:     "list",
-	Short:   "",
-	Long:    "",
+	Short:   i18nInstance.List.Info_help_short,
+	Long:    i18nInstance.List.Info_help_long,
 	Example: `  smartide list`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		list, err := dal.GetWorkspaceList()
 		common.CheckError(err)
 
-		common.SmartIDELog.Debug("工作区数据查询中...")
+		common.SmartIDELog.Debug(i18nInstance.List.Info_start)
 		printWorkspaces(list)
-		common.SmartIDELog.Debug("查询结束")
+		common.SmartIDELog.Debug(i18nInstance.List.Info_end)
 	},
 }
 
 // 打印 service 列表
 func printWorkspaces(workspaces []dal.WorkspaceInfo) {
 	if len(workspaces) <= 0 {
-		common.SmartIDELog.Info("没有查询到数据！")
+		common.SmartIDELog.Info(i18nInstance.List.Info_dal_none)
 		return
 	}
 	w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
-	fmt.Fprintln(w, "ID\tName\tMode\tWoring Dir\tConfig File\tHost\tCreate Time")
+	fmt.Fprintln(w, i18nInstance.List.Info_workspace_list_header)
 	for _, worksapce := range workspaces {
 		dir := worksapce.WorkingDirectoryPath
 		if len(dir) <= 0 {

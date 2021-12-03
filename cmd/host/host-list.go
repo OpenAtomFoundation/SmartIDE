@@ -13,8 +13,8 @@ import (
 // initCmd represents the init command
 var HostListCmd = &cobra.Command{
 	Use:   "list",
-	Short: i18nInstance.Host.Info.Help_list_short,
-	Long:  i18nInstance.Host.Info.Help_list_long,
+	Short: i18nInstance.Host.Info_help_list_short,
+	Long:  i18nInstance.Host.Info_help_list_long,
 	Example: `
   smartide host list`,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -28,11 +28,11 @@ var HostListCmd = &cobra.Command{
 // 打印 service 列表
 func printRemotes(remotes []dal.RemoteInfo) {
 	if len(remotes) <= 0 {
-		common.SmartIDELog.Info(i18nInstance.Common.Warn.Warn_dal_record_not_exit)
+		common.SmartIDELog.Info(i18nInstance.Common.Warn_dal_record_not_exit)
 		return
 	}
 	w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
-	fmt.Fprintln(w, i18nInstance.Host.Info.Info_host_table_header)
+	fmt.Fprintln(w, i18nInstance.Host.Info_host_table_header)
 	for _, worksapce := range remotes {
 
 		createTime := worksapce.CreatedTime.Format("2006-01-02 15:04:05")

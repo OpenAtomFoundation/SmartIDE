@@ -21,65 +21,52 @@ import (
 	"os/exec"
 
 	"github.com/leansoftX/smartide-cli/cmd/dal"
-	"github.com/leansoftX/smartide-cli/cmd/lib"
 	"github.com/leansoftX/smartide-cli/cmd/start"
 	"github.com/leansoftX/smartide-cli/lib/common"
-	"github.com/leansoftX/smartide-cli/lib/i18n"
 	"github.com/spf13/cobra"
 ) // stopCmd represents the stop command
 
-var instanceI18nStop = i18n.GetInstance().Stop
-
 var stopCmd = &cobra.Command{
 	Use:   "stop",
-	Short: instanceI18nStop.Info.Help_short,
-	Long:  instanceI18nStop.Info.Help_long,
+	Short: i18nInstance.Stop.Info_help_short,
+	Long:  i18nInstance.Stop.Info_help_long,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		common.SmartIDELog.Info(instanceI18nStop.Info.Info_start)
-		//0.1. 校验是否能正常执行docker
-		err := start.CheckLocalEnv()
-		common.CheckError(err)
+		common.SmartIDELog.Info(i18nInstance.Stop.Info_start)
 
 		// 获取 workspace 信息
-		common.SmartIDELog.Info("读取工作区信息...")
+		common.SmartIDELog.Info(i18nInstance.Main.Info_workspace_loading)
 		workspaceInfo := loadWorkspaceWithDb(cmd, args)
 
 		// 执行
-		if (workspaceInfo != dal.WorkspaceInfo{}) {
-			if workspaceInfo.Mode == dal.WorkingMode_Local {
-				stopLocal(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFilePath)
-			} else {
-				//TODO
-				stopRemove()
-			}
+		// 判断是否有工作区数据
+		if workspaceInfo.IsNil() {
+			common.SmartIDELog.Error(i18nInstance.Main.Err_workspace_none)
 		}
 
-		common.SmartIDELog.Info(instanceI18nStop.Info.Info_end)
+		// 执行对应的stop
+		if workspaceInfo.Mode == dal.WorkingMode_Local {
+			stopLocal(workspaceInfo)
+
+		} else {
+			stopRemove(workspaceInfo)
+
+		}
+
+		common.SmartIDELog.Info(i18nInstance.Stop.Info_end)
 
 	},
 }
 
-//
-func stopLocal(workingDir string, configFilePath string) {
-	//1. 获取docker compose的文件内容
-	var yamlFileCongfig lib.YamlFileConfig
-	/* 	if configFilePath != "" { //增加指定yaml文件启动
-		yamlFileCongfig.SetYamlFilePath(configFilePath)
-	} */
-	yamlFileCongfig.SetWorkspace(workingDir, configFilePath)
-	yamlFileCongfig.GetConfig()
-	yamlFileCongfig.ConvertToDockerCompose(common.SSHRemote{}, "", true)
-	//servicename := yamlFileCongfig.Workspace.DevContainer.ServiceName
+// 停止本地容器
+func stopLocal(workspace dal.WorkspaceInfo) {
+	// 校验是否能正常执行docker
+	err := start.CheckLocalEnv()
+	common.CheckError(err)
 
-	repoUrl := getLocalGitRepoUrl()
-	projectName := getRepoName(repoUrl)
-	common.SmartIDELog.Info(fmt.Sprintf("项目名称: %v", projectName))
-
-	yamlFilePath := yamlFileCongfig.GetTempDockerComposeFilePath(yamlFileCongfig.GetLocalWorkingDirectry(), projectName)
-
-	pwd, _ := os.Getwd()
-	composeCmd := exec.Command("docker-compose", "-f", yamlFilePath, "--project-directory", pwd, "stop")
+	// 本地执行docker-compose
+	composeCmd := exec.Command("docker-compose", "-f", workspace.TempDockerComposeFilePath,
+		"--project-directory", workspace.WorkingDirectoryPath, "stop")
 	composeCmd.Stdout = os.Stdout
 	composeCmd.Stderr = os.Stderr
 	if composeCmdErr := composeCmd.Run(); composeCmdErr != nil {
@@ -87,12 +74,28 @@ func stopLocal(workingDir string, configFilePath string) {
 	}
 }
 
-//
-func stopRemove() {
+// 停止远程容器
+func stopRemove(workspace dal.WorkspaceInfo) {
+	// ssh 连接
+	common.SmartIDELog.Info(i18nInstance.Stop.Info_sshremote_connection_creating)
+	var sshRemote common.SSHRemote
+	err := sshRemote.Instance(workspace.Remote.Addr, workspace.Remote.SSHPort, workspace.Remote.UserName, workspace.Remote.Password)
+	common.CheckError(err)
+
+	// 检查环境
+	err = start.CheckRemoveEnv(sshRemote)
+	common.CheckError(err)
+
+	// 停止容器
+	common.SmartIDELog.Info(i18nInstance.Stop.Info_docker_stopping)
+	command := fmt.Sprintf("docker-compose -f %v --project-directory %v stop",
+		common.FilePahtJoin4Linux(workspace.TempDockerComposeFilePath), common.FilePahtJoin4Linux(workspace.WorkingDirectoryPath))
+	err = sshRemote.ExecSSHCommandRealTime(command)
+	common.CheckError(err)
 
 }
 
 func init() {
-	stopCmd.Flags().StringVarP(&configYamlFileRelativePath, "filepath", "f", "", instanceI18nStop.Info.Help_flag_filepath)
+	stopCmd.Flags().StringVarP(&configYamlFileRelativePath, "filepath", "f", "", i18nInstance.Stop.Info_help_flag_filepath)
 
 }
