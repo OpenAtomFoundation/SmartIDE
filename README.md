@@ -1,7 +1,7 @@
 ![example workflow](https://github.com/smartide/smartide/actions/workflows/smartide-docs-publish.yml/badge.svg)
 
 
-<p align="center"><a href="https://smartide.cn"><img src="https://smartidedl.z1.web.core.chinacloudapi.cn/images/smartide-logo-small.png" alt="MeterSphere" width="300" /></a></p>
+![](/docs/content/zh/docs/overview/images/smartide-logo-small.png)
 <h3 align="center">Be a Smart Developer, 开发从未如此简单</h3>
 <p align="center">产品主页: 
   <a href="https://smartide.cn">https://smartide.cn</a>
@@ -21,9 +21,13 @@ SmartIDE可以帮助你完成开发环境的一键搭建，你只需要学会一
 
 ## 快速启动
 
-请参考 [快速启动](https://smartide.cn/zh/docs/quickstart/) 文档或者以下视频 
+请参考以下资料开始使用SmartIDE
 
-<iframe src="//player.bilibili.com/player.html?aid=336989627&bvid=BV1pR4y147wn&cid=450303967&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+- 文档 [5分钟快速启动](https://smartide.cn/zh/docs/quickstart/) 
+- 文档 [Node.Js 快速启动教程](https://smartide.cn/zh/docs/quickstart/new-node/)
+- 视频 [SmartIDE 开发从未如此简单](https://www.bilibili.com/video/BV1pR4y147wn)
+- 视频 [开发从未如此简单 - 谁说vue.js和大型微服务Java Spring项目不能在WebIDE中运行，谁说不能一键部署WebIDE到远程主机](https://www.bilibili.com/video/BV1zb4y1i7B1)
+- 视频 [SmartIDE 产品发布会](https://www.bilibili.com/video/BV1xR4y1s7sx)
 
 ## SmartIDE 三种形态
 
