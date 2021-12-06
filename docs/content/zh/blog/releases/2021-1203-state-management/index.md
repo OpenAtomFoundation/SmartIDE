@@ -1,5 +1,5 @@
 ---
-title: "SmartIDE v0.1.7 发布说明 - 状态管理"
+title: "SmartIDE 产品发布 (v0.1.7)"
 linkTitle: "v0.1.7"
 date: 2021-12-03
 description: >
@@ -7,6 +7,10 @@ description: >
 ---
 
 在经过了7个迭代以后，SmartIDE终于对外正式发布了，我们在2021年12月2日通过【冬哥有话说】栏目进行了一场产品发布会，正式对外公布了SmartIDE当前的功能、产品规划路线图以及后期推广计划。发布会本身非常成功，有超过2000人通过B站直播间直接参与了整个直播过程，同时有超过1500人坚持到了整个2个半小时的直播结束。同时，我们在发布会之前1周投放在B站上的产品介绍视频【SmartIDE - 开发从未如此简单】获得了超过1.4万的点击率并为我们的B站渠道收获了超过200名粉丝。
+
+以下是这次发布会的视频录制
+
+{{< bilibili 337130918 >}}
 
 ## SmartIDE的三种模式
 
@@ -85,5 +89,4 @@ SmartIDE所使用的项目模板全部采用开源方式公布在GitHub上，同
 
 为了方便开发者快速初始化自己的远程linux主机为SmartIDE使用，我们提供了安装脚本可以一键完成 docker 和 docker-compose 的安装配置，确保开发者可以顺利使用SmartIDE调度这台Linux主机，具体内容请参考：[Docker & Docker-Compose 安装手册 (Linux服务器)](/zh/docs/install/docker-install-linux/)
 
-
-
+以上就是v0.1.7的主要功能，我们下个版本见。
