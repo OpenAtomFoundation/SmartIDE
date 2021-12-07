@@ -29,10 +29,14 @@ SmartIDE 通过调用docker和docker-compose来实现容器化环境的管理，
 
 稳定版的发布按照sprint进行，我们采用2周一个sprint的开发节奏，每个sprint结束后我们会发布一个稳定版到这个通道。这个版本经过开发团队相对完整的测试，确保所提供的功能稳定可用，同时我们会在每个sprint结束时同时发布“版本发布说明”并对当前版本的性能和改进进行说明。
 
+流水线状态 
+[![Build Status](https://dev.azure.com/leansoftx/smartide/_apis/build/status/smartide-codesign-ci?branchName=main)](https://dev.azure.com/leansoftx/smartide/_build/latest?definitionId=32&branchName=main)
+
 版本发布说明列表：
 
 | 版本号      | 构建编号 | 发布日期      |   简要说明   |
 | ----------- | ----------- | ----------- | ----------- |
+| [v0.1.7](/zh/blog/2021-1203-state-management/)          | 1456 | 2021.12.02 | 公开发布，状态管理，远程模式稳定性，项目模板       |
 | [v0.1.5](/zh/blog/2021-1105-vm-start/)          | 819 | 2021.11.05 | 完善本地模式和远程主机模式下对Git的支持       |
 | [v0.1.2](/zh/blog/2021-1024-first-release/)     | 933 | 2021.10.24 | 第一个公开发行版，本地模式       |
 
@@ -64,6 +68,9 @@ Invoke-WebRequest -Uri ("https://smartidedl.blob.core.chinacloudapi.cn/releases/
 SmartIDE CI/CD 流水线每晚8点（GMT+8 Beijing) 会自动将当天提交到sprint分支上的代码进行自动化构建和测试，并发布到每日构建版通道；产品组每天早上会对这个版本进行冒烟测试，确保基本功能可以正常运行，如果在冒烟测试过程中发现任何问题，我们会优先进行修复并立即通过这个通道发布修复后的版本。
 
 每日构建版本通道的目标用户是产品组成员和早期试用社区用户，大家可以通过我们的SmartIDE GitHub首页提交issue或者通过微信公众号，B站等社区渠道提供反馈给我们。我们非常希望得到社区的反馈，并会尽力为社区用户提供最快速度的响应。
+
+流水线状态 
+[![Build Status](https://dev.azure.com/leansoftx/smartide/_apis/build/status/smartide-codesign-ci?branchName=releases/release-8)](https://dev.azure.com/leansoftx/smartide/_build/latest?definitionId=32&branchName=releases/release-8)
 
 {{< tabs name="daily_install" >}}
 {{% tab name="MacOS" %}}
