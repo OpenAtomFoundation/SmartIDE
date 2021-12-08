@@ -1,0 +1,20 @@
+name: Sync2Gitee
+
+on:
+  push:
+    branches:
+      - main  # Set a branch to deploy
+
+jobs:
+  Sync-To-Gitee:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Sync to Gitee
+      uses: wearerequired/git-mirror-action@master
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.GITEE_RSA_PRIVATE_KEY }}
+      with:
+        # 来源仓库
+        source-repo: "git@github.com:SmartIDE/SmartIDE.git"
+        # 目标仓库
+        destination-repo: "git@gitee.com:smartide/SmartIDE.git"
