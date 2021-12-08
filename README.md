@@ -4,8 +4,8 @@
 </p>
 <h3 align="center">Be a Smart Developer, 开发从未如此简单</h3>
 <p align="center">
-  中国主页: <a href="https://smartide.cn/zh/">https://smartide.cn</a> 
-  海外主页: <a href="https://smartide.dev/en/">https://smartide.dev</a> 
+  中国主页: <a href="https://smartide.cn/zh/" target="_blank">https://smartide.cn</a> 
+  海外主页: <a href="https://smartide.dev/en/" target="_blank">https://smartide.dev</a> 
 </p>
 <p align="center">
   <img src="https://dev.azure.com/leansoftx/smartide/_apis/build/status/smartide-codesign-ci?branchName=main" />
