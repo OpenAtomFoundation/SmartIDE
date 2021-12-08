@@ -1,6 +1,6 @@
 ![](/docs/content/zh/docs/overview/images/smartide-logo-small.png)
 <p align="center">
-  中文 ｜ <a href="https://github.com/SmartIDE/SmartIDE/blob/main/README-EN.md">English
+  中文 ｜ <a href="/blob/main/README-EN.md">English
 </a>
 <h3 align="center">Be a Smart Developer, 开发从未如此简单</h3>
 <p align="center">
