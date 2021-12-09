@@ -46,7 +46,7 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./docs/public/
           server-dir: site/wwwroot/
-          dangerous-clean-slate: true
+          dangerous-clean-slate: false
 
       - name: 📂 Sync files - smartide.dev
         uses: SamKirkland/FTP-Deploy-Action@4.1.0
