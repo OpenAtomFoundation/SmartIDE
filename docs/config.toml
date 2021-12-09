@@ -77,6 +77,16 @@ weight = 2
     url = "docs/quickstart/"
 
 [[languages.zh.menu.main]]
+    name = "Gitee"
+    url = "https://gitee.com/SmartIDE/SmartIDE"
+    pre = "<i class='iconfont icon-gitee'></i>"
+    weight = 50
+
+[[languages.en.menu.main]]
+    name = "QuickStart"
+    weight = -100
+    url = "docs/quickstart/"
+[[languages.en.menu.main]]
     name = "GitHub"
     url = "https://github.com/SmartIDE/SmartIDE"
     pre = "<i class='fab fa-github'></i>"
@@ -125,8 +135,10 @@ url_latest_version = "https://example.com"
 
 # Repository configuration (URLs for in-page links to opening issues and suggesting changes)
 github_repo = "https://github.com/SmartIDE/smartIDE"
+gitee_repo = "https://gitee.com/smartide/SmartIDE"
 # An optional link to a related project repo. For example, the sibling repository where your product code lives.
 github_project_repo = "https://github.com/SmartIDE/SmartIDE"
+gitee_project_repo = "https://gitee.com/smartide/SmartIDE"
 
 # Specify a value here if your content directory is not in your repo's root directory
 github_subdir = "docs"
@@ -196,7 +208,7 @@ enable = false
 # Developer relevant links. These will show up on right side of footer and in the community page if you have one.
 [[params.links.developer]]
 	name = "GitHub"
-	url = "https://github.com/google/docsy"
+	url = "https://github.com/smartide"
 	icon = "fab fa-github"
         desc = "Development takes place here!"
 [[params.links.developer]]
