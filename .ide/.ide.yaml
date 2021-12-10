@@ -17,7 +17,7 @@
         - npm install
     services:
       smartide-docs:
-        image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-golang:1.17.4-latest
+        image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-golang:latest
         restart: always
         environment:
           ROOT_PASSWORD: root123
