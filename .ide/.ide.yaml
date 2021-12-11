@@ -15,6 +15,7 @@
         - git submodule update --init --recursive
         - cd docs
         - npm install
+        - hugo server --bind 0.0.0.0 --disableFastRender --forceSyncStatic --buildDrafts --buildFuture 
     services:
       smartide-docs:
         image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-hugo:latest
