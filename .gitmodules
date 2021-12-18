@@ -1,3 +1,3 @@
 [submodule "docs/themes/docsy"]
 	path = docs/themes/docsy
-	url = ../../smartide/docsy.git
+	url = ../../smartide/docsy
