@@ -12,11 +12,11 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/leansoftX/smartide-cli/cmd/dal"
 	"github.com/leansoftX/smartide-cli/cmd/start"
-	"github.com/leansoftX/smartide-cli/lib/appinsight"
-	"github.com/leansoftX/smartide-cli/lib/common"
-	"gopkg.in/src-d/go-git.v4"
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
+	"github.com/leansoftX/smartide-cli/internal/biz/config"
+	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
+	"github.com/leansoftX/smartide-cli/pkg/common"
 
 	"github.com/spf13/cobra"
 )
@@ -35,7 +35,8 @@ var newCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		if len(args) == 0 {
-			templateGitPath := filepath.Join(dal.SmartIdeHome, templateFolder, ".git")
+			common.SmartIDELog.Info(i18nInstance.New.Info_loading_templates)
+			templateGitPath := filepath.Join(config.SmartIdeHome, templateFolder, ".git")
 			templatesGitIsExist := common.IsExit(templateGitPath)
 			if !templatesGitIsExist {
 				templatesClone()
@@ -52,7 +53,7 @@ var newCmd = &cobra.Command{
 			common.CheckError(err)
 
 			//检测git环境
-			err = dal.CheckLocalGitEnv()
+			err = config.CheckLocalGitEnv()
 			common.CheckError(err)
 
 			//1.检测当前文件夹是否有.ide.yaml
@@ -123,7 +124,7 @@ var newCmd = &cobra.Command{
 			//0.1. 从坂数中获坖结构体，并坚基本的数杮有效性校验
 			common.SmartIDELog.Info(i18nInstance.Main.Info_workspace_loading)
 
-			worksapce, err := getWorkspace4Start(cmd, args)
+			worksapceInfo, err := getWorkspace4Start(cmd, args)
 			common.CheckError(err)
 
 			//ai记录
@@ -133,12 +134,12 @@ var newCmd = &cobra.Command{
 			}
 
 			// 执行命令
-			if worksapce.Mode == dal.WorkingMode_Local {
-				start.ExecuteStartCmd(worksapce, func(dockerContainerName string, docker common.Docker) {
+			if worksapceInfo.Mode == workspace.WorkingMode_Local {
+				start.ExecuteStartCmd(worksapceInfo, func(dockerContainerName string, docker common.Docker) {
 					if dockerContainerName != "" {
 						common.SmartIDELog.Info(i18nInstance.New.Info_creating_project)
 						for i := 0; i < len(typeCommand); i++ {
-							workFolder := fmt.Sprintf("/home/project/%v", worksapce.ProjectName)
+							workFolder := fmt.Sprintf("/home/project/%v", worksapceInfo.GetProjectDirctoryName())
 							var cmdarr []string
 							cmdarr = strings.Split(typeCommand[i], " ")
 							out, err := docker.Exec(context.Background(), dockerContainerName, workFolder, cmdarr, []string{})
@@ -146,7 +147,7 @@ var newCmd = &cobra.Command{
 							common.SmartIDELog.Debug(out)
 						}
 					}
-				}, func(yamlConfig dal.YamlFileConfig) {
+				}, func(yamlConfig config.SmartIdeConfig) {
 					var imageNames string
 					for image := range yamlConfig.Workspace.Servcies {
 						tag := yamlConfig.Workspace.Servcies[image].Image.Tag
@@ -157,7 +158,7 @@ var newCmd = &cobra.Command{
 							imageNames = imageNames + imageName + ":" + tag + ","
 						}
 					}
-					appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(worksapce.Mode), imageNames)
+					appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(worksapceInfo.Mode), imageNames)
 				})
 			}
 		}
@@ -189,7 +190,7 @@ func copyTemplate(modelType, newProjectType string) {
 	if newProjectType == "" {
 		newProjectType = "_default"
 	}
-	templatePath := filepath.Join(dal.SmartIdeHome, templateFolder, modelType, newProjectType)
+	templatePath := filepath.Join(config.SmartIdeHome, templateFolder, modelType, newProjectType)
 	templatesFolderIsExist := common.IsExit(templatePath)
 	if !templatesFolderIsExist {
 		common.SmartIDELog.Error(i18nInstance.New.Info_type_no_exist)
@@ -216,38 +217,52 @@ func folderEmpty(dirname string) (bool, error) {
 
 //clone模版
 func templatesClone() {
-	templatePath := filepath.Join(dal.SmartIdeHome, templateFolder)
+	templatePath := filepath.Join(config.SmartIdeHome, templateFolder)
 	templatesFolderIsExist := common.IsExit(templatePath)
 	if templatesFolderIsExist {
 		var errArry []string
 		templateGitPath := filepath.Join(templatePath, ".git")
 		templatesGitIsExist := common.IsExit(templateGitPath)
 		if templatesGitIsExist {
-			gitRepo, err := git.PlainOpen(templatePath)
-			common.CheckError(err)
-			gitRemote, err := gitRepo.Remote("origin")
-			common.CheckError(err)
-			gitRemmoteUrl := gitRemote.Config().URLs[0]
-			if gitRemmoteUrl != dal.SmartIdeConfig.TemplateRepo {
-				var gitCmd exec.Cmd
-				gitCmd = *exec.Command("git", "remote", "set-url", "origin", dal.SmartIdeConfig.TemplateRepo)
-				gitCmd.Dir = templatePath
-				gitErr := gitCmd.Run()
-				if gitErr != nil {
-					errArry = append(errArry, "git remote set-url")
-				}
+			//修正git地址不一致
+			// gitRepo, err := git.PlainOpen(templatePath)
+			// common.CheckError(err)
+			// gitRemote, err := gitRepo.Remote("origin")
+			// common.CheckError(err)
+			// gitRemmoteUrl := gitRemote.Config().URLs[0]
+			// if gitRemmoteUrl != config.GlobalSmartIdeConfig.TemplateRepo {
+			// 	gitCmd := exec.Command("git", "remote", "set-url", "origin", config.GlobalSmartIdeConfig.TemplateRepo)
+			// 	gitCmd.Stdout = os.Stdout
+			// 	gitCmd.Stderr = os.Stderr
+			// 	gitCmd.Dir = templatePath
+			// 	gitErr := gitCmd.Run()
+			// 	if gitErr != nil {
+			// 		errArry = append(errArry, "git remote set-url")
+			// 	}
+			// }
+			// errArry = forceTemplatesPull(templatePath)
+			gitCmd := exec.Command("git", "pull")
+			gitCmd.Dir = templatePath
+			gitErr := gitCmd.Run()
+			if gitErr != nil {
+				errArry = append(errArry, "git pull err")
 			}
-			errArry = forceTemplatesPull(templatePath)
 		}
 		if len(errArry) != 0 || !templatesGitIsExist {
 			err := os.RemoveAll(templatePath)
 			common.CheckError(err)
-			gitcloneErr := exec.Command("git", "clone", dal.SmartIdeConfig.TemplateRepo, templatePath).Run()
+			gitCmd := exec.Command("git", "clone", config.GlobalSmartIdeConfig.TemplateRepo, templatePath)
+			gitCmd.Stdout = os.Stdout
+			gitCmd.Stderr = os.Stderr
+			gitcloneErr := gitCmd.Run()
 			common.CheckError(gitcloneErr)
 		}
 
 	} else {
-		gitcloneErr := exec.Command("git", "clone", dal.SmartIdeConfig.TemplateRepo, templatePath).Run()
+		gitCmd := exec.Command("git", "clone", config.GlobalSmartIdeConfig.TemplateRepo, templatePath)
+		gitCmd.Stdout = os.Stdout
+		gitCmd.Stderr = os.Stderr
+		gitcloneErr := gitCmd.Run()
 		common.CheckError(gitcloneErr)
 	}
 }
@@ -352,7 +367,7 @@ func copyFile(src, dest string) (w int64, err error) {
 //加载templates索引json
 func loadTemplatesJson() {
 	// new type转换为结构体
-	templatesPath := filepath.Join(dal.SmartIdeHome, templateFolder, "templates.json")
+	templatesPath := filepath.Join(config.SmartIdeHome, templateFolder, "templates.json")
 	templatesByte, err := os.ReadFile(templatesPath)
 	common.SmartIDELog.Error(err, i18nInstance.New.Err_read_templates, templatesPath)
 	err = json.Unmarshal(templatesByte, &newTypeStruct)

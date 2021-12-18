@@ -1,3 +1,10 @@
+/*
+ * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
+ * @Description:
+ * @Date: 2021-11
+ * @LastEditors:
+ * @LastEditTime:
+ */
 package host
 
 import (
@@ -5,8 +12,9 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/leansoftX/smartide-cli/cmd/dal"
-	"github.com/leansoftX/smartide-cli/lib/common"
+	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
+	"github.com/leansoftX/smartide-cli/internal/dal"
+	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
 )
 
@@ -26,7 +34,7 @@ var HostListCmd = &cobra.Command{
 }
 
 // 打印 service 列表
-func printRemotes(remotes []dal.RemoteInfo) {
+func printRemotes(remotes []workspace.RemoteInfo) {
 	if len(remotes) <= 0 {
 		common.SmartIDELog.Info(i18nInstance.Common.Warn_dal_record_not_exit)
 		return

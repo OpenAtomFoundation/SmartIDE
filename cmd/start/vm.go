@@ -1,3 +1,10 @@
+/*
+ * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
+ * @Description:
+ * @Date: 2021-11
+ * @LastEditors:
+ * @LastEditTime:
+ */
 package start
 
 import (
@@ -9,22 +16,23 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/leansoftX/smartide-cli/cmd/dal"
-	"github.com/leansoftX/smartide-cli/lib/common"
-	"github.com/leansoftX/smartide-cli/lib/docker/compose"
-	"github.com/leansoftX/smartide-cli/lib/tunnel"
+	"github.com/leansoftX/smartide-cli/internal/biz/config"
+	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
+	"github.com/leansoftX/smartide-cli/internal/dal"
+	"github.com/leansoftX/smartide-cli/pkg/common"
+	"github.com/leansoftX/smartide-cli/pkg/docker/compose"
+	"github.com/leansoftX/smartide-cli/pkg/tunnel"
 	"gopkg.in/yaml.v2"
 )
 
-// 远程服务器执行 start
-func ExecuteVmStartCmd(workspace dal.WorkspaceInfo, yamlExecuteFun func(yamlConfig dal.YamlFileConfig)) {
+// 远程服务器执行 start 命令
+func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) {
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_starting)
 
 	//0. 连接到远程主机
-	msg := fmt.Sprintf(" %v@%v:%v ...", workspace.Remote.UserName, workspace.Remote.Addr, workspace.Remote.SSHPort)
+	msg := fmt.Sprintf(" %v@%v:%v ...", workspaceInfo.Remote.UserName, workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort)
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_connect_remote + msg)
-	var sshRemote common.SSHRemote
-	err := sshRemote.Instance(workspace.Remote.Addr, workspace.Remote.SSHPort, workspace.Remote.UserName, workspace.Remote.Password)
+	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password)
 	common.CheckError(err)
 
 	//1. 检查远程主机是否有docker、docker-compose、git
@@ -34,63 +42,84 @@ func ExecuteVmStartCmd(workspace dal.WorkspaceInfo, yamlExecuteFun func(yamlConf
 	//2. git clone & checkout
 	//2.1. 是否已 clone
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_git_clone)
-	isCloned := sshRemote.IsCloned(workspace.WorkingDirectoryPath)
+	isCloned := sshRemote.IsCloned(workspaceInfo.WorkingDirectoryPath)
 
 	//2.2. git 操作
 	if isCloned {
 		common.SmartIDELog.Info(i18nInstance.VmStart.Info_git_cloned)
 	} else {
-		gitAction(sshRemote, workspace)
-
+		gitAction(sshRemote, workspaceInfo)
 	}
 
-	//3. 配置文件
+	//3. 获取配置文件的内容
 	var ideBindingPort int
 	var tempDockerCompose compose.DockerComposeYml
-	ideYamlFilePath := common.FilePahtJoin(common.OS_Linux, workspace.WorkingDirectoryPath, workspace.ConfigFilePath) //fmt.Sprintf(`%v/.ide/.ide.yaml`, repoWorkspace)
+	ideYamlFilePath := common.FilePahtJoin(common.OS_Linux, workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFilePath) //fmt.Sprintf(`%v/.ide/.ide.yaml`, repoWorkspace)
 	common.SmartIDELog.Info(fmt.Sprintf(i18nInstance.VmStart.Info_read_config, ideYamlFilePath))
-	catCommand := fmt.Sprintf(`cat %v`, ideYamlFilePath)
-	output, err := sshRemote.ExeSSHCommand(catCommand)
-	if strings.Contains(output, "No such file or directory") {
-		message := fmt.Sprintf(i18nInstance.Main.Err_file_not_exit2, workspace.ConfigFilePath)
+	if !sshRemote.IsExit(ideYamlFilePath) {
+		message := fmt.Sprintf(i18nInstance.Main.Err_file_not_exit2, ideYamlFilePath)
 		common.SmartIDELog.Error(message)
 	}
+	catCommand := fmt.Sprintf(`cat %v`, ideYamlFilePath)
+	output, err := sshRemote.ExeSSHCommand(catCommand)
 	common.CheckError(err, output)
-	yamlContent := output
-	var yamlFileCongfig dal.YamlFileConfig
-	yamlFileCongfig.GetConfigWithStr(yamlContent)
-	yamlFileCongfig.SetWorkspace(workspace.WorkingDirectoryPath, workspace.ConfigFilePath)
+	configYamlContent := output
+	currentConfig := config.NewConfigRemote(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFilePath, configYamlContent)
 
 	//3. docker-compose
-	//3.1. 获取compose数据
-	_, linkComposeFileContent := yamlFileCongfig.GetLocalLinkDockerComposeFile()
-	hasChanged := workspace.ChangeConfig(yamlFileCongfig.ToYaml(), linkComposeFileContent) // 是否改变
-	if hasChanged {                                                                        // 改变包括了初始化
+	//3.1. 获取 compose 数据
+	_, linkComposeFileContent := currentConfig.GetRemoteLinkDockerComposeFile(&sshRemote)
+	yamlStr, err := currentConfig.ToYaml()
+	common.CheckError(err)
+	hasChanged := workspaceInfo.ChangeConfig(yamlStr, linkComposeFileContent) // 是否改变
+	if hasChanged {                                                           // 改变包括了初始化
 		// log
-		common.SmartIDELog.Info("工作区配置改变！")
+		if workspaceInfo.ID > 0 {
+			common.SmartIDELog.Info(i18nInstance.Start.Info_workspace_changed)
+
+		} else {
+			common.SmartIDELog.Info(i18nInstance.Start.Info_workspace_create)
+
+		}
 
 		// 获取compose配置
-		tempDockerCompose, ideBindingPort, _ = yamlFileCongfig.ConvertToDockerCompose(sshRemote, workspace.ProjectName, workspace.WorkingDirectoryPath, true)
+		tempDockerCompose, ideBindingPort, _ = currentConfig.ConvertToDockerCompose(sshRemote, workspaceInfo.GetProjectDirctoryName(), workspaceInfo.WorkingDirectoryPath, true)
+		workspaceInfo.TempDockerCompose = tempDockerCompose
 
-		//
-		workspaceExtend := dal.WorkspaceExtend{Ports: yamlFileCongfig.GetPortMappings()}
-		workspace.Extend = workspaceExtend
-	} else {
-		yamlFileCongfig.SaveTempFilesForRemote(sshRemote, workspace.TempDockerCompose, workspace.ProjectName) // 先保存，确保临时文件存在
+		// 配置
+		workspaceInfo.ConfigYaml = *currentConfig
+
+		// 链接的 docker-compose 文件
+		if workspaceInfo.ConfigYaml.IsLinkDockerComposeFile() {
+			yaml.Unmarshal([]byte(linkComposeFileContent), workspaceInfo.LinkDockerCompose)
+		}
+
+		// 扩展信息
+		workspaceExtend := workspace.WorkspaceExtend{Ports: currentConfig.GetPortMappings()}
+		workspaceInfo.Extend = workspaceExtend
+
+		// 保存 docker-compose、config 文件
+		err := workspaceInfo.SaveTempFilesForRemote(sshRemote) // 保存 docker-compose 文件
 		common.CheckError(err)
 
-		tempDockerCompose, ideBindingPort, _ = yamlFileCongfig.LoadDockerComposeFromTempFile(sshRemote, workspace.WorkingDirectoryPath, workspace.ProjectName)
-	}
-	//3.2. 保存 docker-compose、config 文件
-	tempRemoteDockerComposeFilePath, _, err := yamlFileCongfig.SaveTempFilesForRemote(sshRemote, tempDockerCompose, workspace.ProjectName) // 保存docker-compose文件
-	common.CheckError(err)
+	} else {
+		// 先保存，确保临时文件存在	且 是最新的
+		err := workspaceInfo.SaveTempFilesForRemote(sshRemote)
+		common.CheckError(err)
 
-	//4. ai统计yaml
-	yamlExecuteFun(yamlFileCongfig)
+		// 从临时文件中加载docker-compose
+		tempDockerCompose, ideBindingPort, _ = currentConfig.LoadDockerComposeFromTempFile(sshRemote, workspaceInfo.TempDockerComposeFilePath)
+	}
+
+	//3.2. 扩展信息
+	workspaceInfo.Extend = workspaceInfo.GetWorkspaceExtend()
+
+	//4. ai 统计yaml
+	yamlExecuteFun(*currentConfig)
 
 	//5. docker 容器
 	//5.1. 对应容器是否运行
-	isDockerComposeRunning := isRemoteDockerComposeRunning(sshRemote, yamlFileCongfig.GetServiceNames())
+	isDockerComposeRunning := isRemoteDockerComposeRunning(sshRemote, currentConfig.GetServiceNames())
 
 	//5.2. docker
 	if !isDockerComposeRunning || hasChanged { // 容器没有运行 或者 有改变，重新创建容器
@@ -107,10 +136,10 @@ func ExecuteVmStartCmd(workspace dal.WorkspaceInfo, yamlExecuteFun func(yamlConf
 		common.SmartIDELog.Info(i18nInstance.VmStart.Info_compose_up) // 提示文本：compose up
 		bytesDockerComposeContent, err := yaml.Marshal(&tempDockerCompose)
 		printServices(tempDockerCompose.Services) // 打印services
-		//strDockerComposeContent := strings.ReplaceAll(string(bytesDockerComposeContent), "\"", "\\\"") // 文本中包含双引号
 		common.CheckError(err, string(bytesDockerComposeContent))
 		commandCreateDockerComposeFile := fmt.Sprintf("docker-compose -f %v --project-directory %v up -d",
-			tempRemoteDockerComposeFilePath, workspace.WorkingDirectoryPath)
+			workspaceInfo.TempDockerComposeFilePath, workspaceInfo.WorkingDirectoryPath)
+		fmt.Println() // 避免向前覆盖
 		err = sshRemote.ExecSSHCommandRealTimeFunc(commandCreateDockerComposeFile, func(output string) error {
 			if strings.Contains(output, ":error") || strings.Contains(output, ":fatal") {
 				common.SmartIDELog.Error(output)
@@ -145,11 +174,11 @@ func ExecuteVmStartCmd(workspace dal.WorkspaceInfo, yamlExecuteFun func(yamlConf
 		// 日志
 		unusedLocalPortStr := strconv.Itoa(unusedLocalPort)
 		// 【注意】这里非常的绕！！！ 远程主机的docker-compose才保存了端口的label信息，所以只能使用远程主机的端口
-		label := yamlFileCongfig.GetLabelWithPort(remoteBindingPortInt)
+		label := currentConfig.GetLabelWithPort(remoteBindingPortInt)
 		if label != "" {
 			unusedLocalPortStr += fmt.Sprintf("(%v)", label)
 		}
-		msg := fmt.Sprintf("localhost:%v -> %v:%v -> container:%v", unusedLocalPortStr, workspace.Remote.Addr, remoteBindingPort, containerPort)
+		msg := fmt.Sprintf("localhost:%v -> %v:%v -> container:%v", unusedLocalPortStr, workspaceInfo.Remote.Addr, remoteBindingPort, containerPort)
 		common.SmartIDELog.Info(msg)
 	}
 	//6.2. 执行绑定
@@ -157,15 +186,14 @@ func ExecuteVmStartCmd(workspace dal.WorkspaceInfo, yamlExecuteFun func(yamlConf
 
 	//7. 保存数据
 	if hasChanged {
-		remoteDockerComposeContainers, err := GetRemoteContainersWithServices(sshRemote, yamlFileCongfig.GetServiceNames())
+		remoteDockerComposeContainers, err := GetRemoteContainersWithServices(sshRemote, currentConfig.GetServiceNames())
 		common.CheckError(err)
 		//7.1. 补充数据
-		devContainerName := getDevContainerName(remoteDockerComposeContainers, yamlFileCongfig.Workspace.DevContainer.ServiceName)
-		workspace.Name = devContainerName
-		workspace.TempDockerCompose = tempDockerCompose
-		workspace.TempDockerComposeFilePath = tempRemoteDockerComposeFilePath
+		devContainerName := getDevContainerName(remoteDockerComposeContainers, currentConfig.Workspace.DevContainer.ServiceName)
+		workspaceInfo.Name = devContainerName
+		workspaceInfo.TempDockerCompose = tempDockerCompose
 		//7.2. save
-		workspaceId, err := dal.InsertOrUpdateWorkspace(workspace)
+		workspaceId, err := dal.InsertOrUpdateWorkspace(workspaceInfo)
 		common.CheckError(err)
 		common.SmartIDELog.InfoF(i18nInstance.Start.Info_workspace_saved, workspaceId)
 
@@ -174,8 +202,8 @@ func ExecuteVmStartCmd(workspace dal.WorkspaceInfo, yamlExecuteFun func(yamlConf
 	//8. 打开浏览器
 	var url string
 	//vscode启动时候默认打开文件夹处理
-	if yamlFileCongfig.Workspace.DevContainer.IdeType == "vscode" {
-		url = fmt.Sprintf("http://localhost:%v/?folder=vscode-remote://localhost:%v/home/project/%v", unusedLocalPort4IdeBindingPort, unusedLocalPort4IdeBindingPort, workspace.ProjectName)
+	if currentConfig.Workspace.DevContainer.IdeType == "vscode" {
+		url = fmt.Sprintf("http://localhost:%v/?folder=vscode-remote://localhost:%v/home/project/%v", unusedLocalPort4IdeBindingPort, unusedLocalPort4IdeBindingPort, workspaceInfo.GetProjectDirctoryName())
 	} else {
 		url = fmt.Sprintf(`http://localhost:%v`, unusedLocalPort4IdeBindingPort)
 	}
@@ -223,8 +251,9 @@ func isRemoteDockerComposeRunning(sshRemote common.SSHRemote, serviceNames []str
 	return isDockerComposeRunning
 }
 
-func gitAction(sshRemote common.SSHRemote, workspace dal.WorkspaceInfo) {
-	// 执行git clone
+// git 相关操作
+func gitAction(sshRemote common.SSHRemote, workspace workspace.WorkspaceInfo) {
+	// 执行 git clone
 	err := sshRemote.GitClone(workspace.GitCloneRepoUrl, workspace.WorkingDirectoryPath)
 	common.CheckError(err)
 
@@ -249,6 +278,6 @@ func gitAction(sshRemote common.SSHRemote, workspace dal.WorkspaceInfo) {
 	// git checkout & pull
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_git_checkout_and_pull)
 	gitPullCommand := fmt.Sprintf("cd %v && %v && git pull && cd ~", workspace.WorkingDirectoryPath, checkoutCommand)
-	output, err := sshRemote.ExeSSHCommand(gitPullCommand)
-	common.CheckError(err, output)
+	err = sshRemote.ExecSSHCommandRealTime(gitPullCommand)
+	common.CheckError(err)
 }

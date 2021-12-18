@@ -1,3 +1,10 @@
+/*
+ * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
+ * @Description:
+ * @Date: 2021-11
+ * @LastEditors:
+ * @LastEditTime:
+ */
 package cmd
 
 import (
@@ -14,9 +21,9 @@ func TestStart(t *testing.T) {
 
 	dir, err := os.Getwd()
 	common.CheckError(err)
-	workspace := dal.WorkspaceInfo{
+	workspace := workspace.WorkspaceInfo{
 		LocalWorkingDirectoryPath: dir,
-		Mode:                      dal.WorkingMode_Local,
+		Mode:                      workspace.WorkingMode_Local,
 	}
 	dal.InsertWorkspace(workspace)
 

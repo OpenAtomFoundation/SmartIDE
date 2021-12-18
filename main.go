@@ -17,11 +17,13 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/leansoftX/smartide-cli/cmd"
-	"github.com/leansoftX/smartide-cli/lib/common"
-	"github.com/leansoftX/smartide-cli/lib/i18n"
+	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
+	"github.com/leansoftX/smartide-cli/pkg/common"
 
 	_ "embed"
 )
@@ -53,6 +55,8 @@ var stable string
 //go:embed stable.json
 var stableJson string
 
+var BuildTime string
+
 // 格式化版本号，在stable.txt文件中读取
 // 注：embed 不支持 “..”， 即上级目录
 func formatVerion() (smartVersion cmd.SmartVersion) {
@@ -60,10 +64,14 @@ func formatVerion() (smartVersion cmd.SmartVersion) {
 	// 转换为结构体
 	json.Unmarshal([]byte(stableJson), &smartVersion)
 
+	// 编译时间
+	smartVersion.BuildTime, _ = time.ParseInLocation("2006-01-02 15:04:05", BuildTime, time.Local)
+
 	// 版本号赋值
 	smartVersion.VersionNumber = stable
 	if stable == "$(version)" {
-		common.SmartIDELog.Warning(i18n.GetInstance().Main.Err_version_not_build)
+		smartVersion.VersionNumber = fmt.Sprintf(i18n.GetInstance().Main.Info_version_local, smartVersion.BuildTime.Format("2006-01-02 15:04:05"))
+		common.SmartIDELog.Importance(i18n.GetInstance().Main.Err_version_not_build)
 	} else if strings.ToLower(stable[0:1]) != "v" {
 		smartVersion.VersionNumber = "v" + smartVersion.VersionNumber
 	}

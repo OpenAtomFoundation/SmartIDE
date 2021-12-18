@@ -1,9 +1,17 @@
+/*
+ * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
+ * @Description:
+ * @Date: 2021-11
+ * @LastEditors:
+ * @LastEditTime:
+ */
 package cmd
 
 import (
 	"fmt"
+	"time"
 
-	"github.com/leansoftX/smartide-cli/lib/common"
+	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
 )
 
@@ -26,12 +34,14 @@ type SmartVersion struct {
 	TargetCommitishShort string
 	BuildQuqueTime       string `json:"build_ququeTime"`
 	Company              string `json:"company"`
+	// 编译时间
+	BuildTime time.Time
 }
 
 //
 func (smartVersion *SmartVersion) ConvertToJson() string {
 	json := fmt.Sprintf(i18nInstance.Version.Info_template,
-		smartVersion.VersionNumber, smartVersion.BuildNumber, smartVersion.TargetCommitish, smartVersion.Company)
+		smartVersion.VersionNumber, smartVersion.BuildNumber, smartVersion.BuildTime.Format("2006-01-02 15:04:05"), smartVersion.TargetCommitish, smartVersion.Company)
 	return json
 }
 

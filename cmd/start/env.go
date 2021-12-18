@@ -1,3 +1,10 @@
+/*
+ * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
+ * @Description:
+ * @Date: 2021-11
+ * @LastEditors:
+ * @LastEditTime:
+ */
 package start
 
 import (
@@ -10,8 +17,8 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/leansoftX/smartide-cli/lib/common"
-	"github.com/leansoftX/smartide-cli/lib/i18n"
+	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
+	"github.com/leansoftX/smartide-cli/pkg/common"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -22,9 +29,10 @@ type DockerComposeContainer struct {
 	ServiceName   string
 	ContainerName string
 	//Command       string
-	Image string
-	Ports []string
-	State string
+	Image   string
+	ImageID string
+	Ports   []string
+	State   string
 }
 
 // 检查本地环境，是否安装docker、docker-compose
@@ -35,13 +43,13 @@ func CheckLocalEnv() error {
 	dockerErr := exec.Command("docker", "-v").Run()
 	dockerpsErr := exec.Command("docker", "ps").Run()
 	if dockerErr != nil || dockerpsErr != nil {
-		errMsgArray = append(errMsgArray, i18n.GetInstance().Start.Err_DockerPs)
+		errMsgArray = append(errMsgArray, i18n.GetInstance().Main.Err_env_DockerPs)
 	}
 
 	//0.2. 校验是否能正常执行 docker-compose
 	dockercomposeErr := exec.Command("docker-compose", "version").Run()
 	if dockercomposeErr != nil {
-		errMsgArray = append(errMsgArray, i18n.GetInstance().Start.Err_Docker_Compose)
+		errMsgArray = append(errMsgArray, i18n.GetInstance().Main.Err_env_Docker_Compose)
 	}
 
 	// 错误判断
@@ -59,15 +67,15 @@ func CheckRemoveEnv(sshRemote common.SSHRemote) error {
 	// 环境监测
 	output, err := sshRemote.ExeSSHCommand("git version")
 	if err != nil || strings.Contains(output, "error:") {
-		msg = append(msg, "git 未正确安装")
+		msg = append(msg, i18nInstance.Main.Err_env_git_check)
 	}
 	output, err = sshRemote.ExeSSHCommand("docker version")
 	if err != nil || strings.Contains(output, "error:") {
-		msg = append(msg, "docker 未正确安装")
+		msg = append(msg, i18nInstance.Main.Err_env_docker)
 	}
 	output, err = sshRemote.ExeSSHCommand("docker-compose version")
 	if err != nil || !strings.Contains(output, "docker-compose version") || strings.Contains(output, "error:") {
-		msg = append(msg, "docker-compose 未正确安装")
+		msg = append(msg, i18nInstance.Main.Err_env_Docker_Compose)
 	}
 
 	// 错误判断
@@ -163,6 +171,7 @@ func convertOriginContainer(containers []types.Container, dockerComposeServices 
 					ContainerName: containerName,
 					State:         container.State,
 					Image:         container.Image,
+					ImageID:       container.ImageID,
 					Ports:         ports,
 				}
 				dockerComposeContainers = append(dockerComposeContainers, dockerComposeContainer)

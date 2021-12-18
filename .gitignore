@@ -30,3 +30,5 @@ smartide-cli-linux-x64
 smartide-cli-macos-x64
 __debug_bin
 .ide/.temp/
+smartide-linux
+-linux--x64-origin

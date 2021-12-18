@@ -1,18 +1,10 @@
 /*
-Copyright © 2021 NAME HERE <EMAIL ADDRESS>
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+ * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
+ * @Description:
+ * @Date: 2021-11
+ * @LastEditors:
+ * @LastEditTime:
+ */
 package cmd
 
 import (
@@ -20,9 +12,9 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/leansoftX/smartide-cli/cmd/dal"
 	"github.com/leansoftX/smartide-cli/cmd/start"
-	"github.com/leansoftX/smartide-cli/lib/common"
+	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
+	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
 ) // stopCmd represents the stop command
 
@@ -38,18 +30,17 @@ var stopCmd = &cobra.Command{
 		common.SmartIDELog.Info(i18nInstance.Main.Info_workspace_loading)
 		workspaceInfo := loadWorkspaceWithDb(cmd, args)
 
-		// 执行
 		// 判断是否有工作区数据
 		if workspaceInfo.IsNil() {
 			common.SmartIDELog.Error(i18nInstance.Main.Err_workspace_none)
 		}
 
 		// 执行对应的stop
-		if workspaceInfo.Mode == dal.WorkingMode_Local {
+		if workspaceInfo.Mode == workspace.WorkingMode_Local {
 			stopLocal(workspaceInfo)
 
 		} else {
-			stopRemove(workspaceInfo)
+			stopRemote(workspaceInfo)
 
 		}
 
@@ -59,7 +50,7 @@ var stopCmd = &cobra.Command{
 }
 
 // 停止本地容器
-func stopLocal(workspace dal.WorkspaceInfo) {
+func stopLocal(workspace workspace.WorkspaceInfo) {
 	// 校验是否能正常执行docker
 	err := start.CheckLocalEnv()
 	common.CheckError(err)
@@ -75,12 +66,22 @@ func stopLocal(workspace dal.WorkspaceInfo) {
 }
 
 // 停止远程容器
-func stopRemove(workspace dal.WorkspaceInfo) {
+func stopRemote(workspaceInfo workspace.WorkspaceInfo) {
 	// ssh 连接
 	common.SmartIDELog.Info(i18nInstance.Stop.Info_sshremote_connection_creating)
-	var sshRemote common.SSHRemote
-	err := sshRemote.Instance(workspace.Remote.Addr, workspace.Remote.SSHPort, workspace.Remote.UserName, workspace.Remote.Password)
+	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password)
 	common.CheckError(err)
+
+	// 项目文件夹是否存在
+	if !sshRemote.IsCloned(workspaceInfo.WorkingDirectoryPath) {
+		msg := fmt.Sprintf(i18nInstance.Stop.Err_env_project_dir_remove, workspaceInfo.ID)
+		common.SmartIDELog.Error(msg)
+	}
+
+	// 检查临时文件夹是否存在
+	if !sshRemote.IsExit(workspaceInfo.TempDockerComposeFilePath) || !sshRemote.IsExit(workspaceInfo.ConfigYaml.GetConfigYamlFilePath()) {
+		workspaceInfo.SaveTempFilesForRemote(sshRemote)
+	}
 
 	// 检查环境
 	err = start.CheckRemoveEnv(sshRemote)
@@ -89,7 +90,7 @@ func stopRemove(workspace dal.WorkspaceInfo) {
 	// 停止容器
 	common.SmartIDELog.Info(i18nInstance.Stop.Info_docker_stopping)
 	command := fmt.Sprintf("docker-compose -f %v --project-directory %v stop",
-		common.FilePahtJoin4Linux(workspace.TempDockerComposeFilePath), common.FilePahtJoin4Linux(workspace.WorkingDirectoryPath))
+		common.FilePahtJoin4Linux(workspaceInfo.TempDockerComposeFilePath), common.FilePahtJoin4Linux(workspaceInfo.WorkingDirectoryPath))
 	err = sshRemote.ExecSSHCommandRealTime(command)
 	common.CheckError(err)
 

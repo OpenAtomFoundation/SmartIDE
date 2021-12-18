@@ -1,3 +1,10 @@
+/*
+ * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
+ * @Description:
+ * @Date: 2021-11
+ * @LastEditors:
+ * @LastEditTime:
+ */
 package cmd
 
 import (
@@ -8,11 +15,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/leansoftX/smartide-cli/cmd/dal"
 	"github.com/leansoftX/smartide-cli/cmd/start"
-	"github.com/leansoftX/smartide-cli/lib/appinsight"
-	"github.com/leansoftX/smartide-cli/lib/common"
-	"github.com/leansoftX/smartide-cli/lib/i18n"
+	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
+	"github.com/leansoftX/smartide-cli/internal/biz/config"
+	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
+	"github.com/leansoftX/smartide-cli/internal/dal"
+	"github.com/leansoftX/smartide-cli/internal/model"
+
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
+	"github.com/leansoftX/smartide-cli/pkg/common"
 	"gopkg.in/src-d/go-git.v4"
 
 	"github.com/spf13/cobra"
@@ -26,7 +37,7 @@ const REMOTE_REPO_ROOT string = "project"
 var i18nInstance = i18n.GetInstance()
 
 // yaml 文件的相对路径
-var configYamlFileRelativePath string = dal.ConfigRelativeFilePath
+var configYamlFileRelativePath string = model.CONST_Default_ConfigRelativeFilePath
 
 // startCmd represents the start command
 var startCmd = &cobra.Command{
@@ -42,7 +53,7 @@ var startCmd = &cobra.Command{
 
 		//0.1. 从参数中获取结构体，并做基本的数据有效性校验
 		common.SmartIDELog.Info(i18nInstance.Main.Info_workspace_loading)
-		worksapce, err := getWorkspace4Start(cmd, args)
+		worksapceInfo, err := getWorkspace4Start(cmd, args)
 		common.CheckError(err)
 
 		//ai记录
@@ -52,8 +63,8 @@ var startCmd = &cobra.Command{
 		}
 
 		// 执行命令
-		if worksapce.Mode == dal.WorkingMode_Local {
-			start.ExecuteStartCmd(worksapce, func(v string, d common.Docker) {}, func(yamlConfig dal.YamlFileConfig) {
+		if worksapceInfo.Mode == workspace.WorkingMode_Local {
+			executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
 				var imageNames string
 				for image := range yamlConfig.Workspace.Servcies {
 					tag := yamlConfig.Workspace.Servcies[image].Image.Tag
@@ -64,10 +75,12 @@ var startCmd = &cobra.Command{
 						imageNames = imageNames + imageName + ":" + tag + ","
 					}
 				}
-				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(worksapce.Mode), imageNames)
-			})
+				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(worksapceInfo.Mode), imageNames)
+			}
+
+			start.ExecuteStartCmd(worksapceInfo, func(v string, d common.Docker) {}, executeStartCmdFunc)
 		} else {
-			start.ExecuteVmStartCmd(worksapce, func(yamlConfig dal.YamlFileConfig) {
+			executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
 				var imageNames string
 				for image := range yamlConfig.Workspace.Servcies {
 					tag := yamlConfig.Workspace.Servcies[image].Image.Tag
@@ -78,8 +91,10 @@ var startCmd = &cobra.Command{
 						imageNames = imageNames + imageName + ":" + tag + ","
 					}
 				}
-				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(worksapce.Mode), imageNames)
-			})
+				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(worksapceInfo.Mode), imageNames)
+			}
+
+			start.ExecuteVmStartCmd(worksapceInfo, executeStartCmdFunc)
 		}
 
 		return nil
@@ -138,12 +153,12 @@ func getWorkspaceIdFromFlagsAndArgs(cmd *cobra.Command, args []string) int {
 }
 
 // 从start command的flag、args中获取workspace
-func getWorkspace4Start(cmd *cobra.Command, args []string) (workspaceInfo dal.WorkspaceInfo, err error) {
+func getWorkspace4Start(cmd *cobra.Command, args []string) (workspaceInfo workspace.WorkspaceInfo, err error) {
 	fflags := cmd.Flags()
 	workspaceId := getWorkspaceIdFromFlagsAndArgs(cmd, args)
 
 	//1. 加载workspace
-	workspaceInfo = dal.WorkspaceInfo{}
+	workspaceInfo = workspace.WorkspaceInfo{}
 	//1.1. 指定了从workspaceid，从sqlite中读取
 	if workspaceId > 0 {
 		checkFlagUnnecessary(fflags, flag_host, flag_workspaceid)
@@ -152,77 +167,94 @@ func getWorkspace4Start(cmd *cobra.Command, args []string) (workspaceInfo dal.Wo
 
 		workspaceInfo, err = getWorkspaceWithDbAndValid(workspaceId)
 		if err != nil {
-			return dal.WorkspaceInfo{}, err
+			return workspace.WorkspaceInfo{}, err
 		}
 		if workspaceInfo.IsNil() {
-			return dal.WorkspaceInfo{}, errors.New(i18nInstance.Main.Err_workspace_none)
+			return workspace.WorkspaceInfo{}, errors.New(i18nInstance.Main.Err_workspace_none)
 		}
 
 	} else { //1.2. 没有指定 workspaceid 的情况
-		workingMode := dal.WorkingMode_Local
+		workingMode := workspace.WorkingMode_Local
 
 		// 当前目录
 		pwd, err := os.Getwd()
 		if err != nil {
-			return dal.WorkspaceInfo{}, err
+			return workspace.WorkspaceInfo{}, err
 		}
 
 		// 1.2.1. 远程模式
 		if fflags.Changed(flag_host) {
-			workingMode = dal.WorkingMode_Remote
+			workingMode = workspace.WorkingMode_Remote
 			hostInfo, err := getRemoteAndValid(fflags)
 			if err != nil {
-				return dal.WorkspaceInfo{}, err
+				return workspace.WorkspaceInfo{}, err
 			}
 
 			workspaceInfo.Remote = hostInfo
 			workspaceInfo.GitCloneRepoUrl = getFlagValue(fflags, flag_repourl)
 			if strings.Index(workspaceInfo.GitCloneRepoUrl, "git") == 0 {
-				workspaceInfo.GitRepoAuthType = dal.GitRepoAuthType_SSH
+				workspaceInfo.GitRepoAuthType = workspace.GitRepoAuthType_SSH
 			} else if strings.Index(workspaceInfo.GitCloneRepoUrl, "https") == 0 {
-				workspaceInfo.GitRepoAuthType = dal.GitRepoAuthType_HTTPS
+				workspaceInfo.GitRepoAuthType = workspace.GitRepoAuthType_HTTPS
+			} else if strings.Index(workspaceInfo.GitCloneRepoUrl, "http") == 0 {
+				workspaceInfo.GitRepoAuthType = workspace.GitRepoAuthType_HTTP
 			}
 
 			repoName := getRepoName(workspaceInfo.GitCloneRepoUrl)
-			workspaceInfo.ProjectName = repoName
-
 			repoWorkspaceDir := filepath.Join("~", REMOTE_REPO_ROOT, repoName)
 			workspaceInfo.WorkingDirectoryPath = repoWorkspaceDir
 
-			//TODO git 连接验证
 		} else { //1.2.2. 本地模式
 			// 本地模式下，不需要录入git库的克隆地址、分支
 			checkFlagUnnecessary(fflags, flag_repourl, "mode=local")
 			checkFlagUnnecessary(fflags, flag_branch, "mode=local")
 
 			workspaceInfo.WorkingDirectoryPath = pwd
-
-			repoUrl, pathName := getLocalGitRepoUrl()
-			if repoUrl != "" {
-				repoName := getRepoName(repoUrl)
-				workspaceInfo.GitCloneRepoUrl = repoUrl
-				workspaceInfo.ProjectName = repoName
-			} else if pathName != "" {
-				workspaceInfo.ProjectName = pathName
-			}
+			workspaceInfo.GitCloneRepoUrl, _ = getLocalGitRepoUrl() // 获取本地关联的repo url
 		}
 
+		// 运行模式
 		workspaceInfo.Mode = workingMode
-		workspaceInfo.Branch = getFlagValue(fflags, flag_branch)
 
-		if fflags.Changed(flag_filepath) {
-			workspaceInfo.ConfigFilePath = getFlagValue(fflags, flag_filepath)
+		// 从数据库中查找是否存在对应的workspace信息，主要是针对在当前目录再次start的情况
+		workspaceInfoDb, err := dal.GetSingleWorkspaceByParams(workspaceInfo.Mode, workspaceInfo.WorkingDirectoryPath,
+			workspaceInfo.GitCloneRepoUrl, workspaceInfo.Remote.ID, workspaceInfo.Remote.Addr)
+		common.CheckError(err)
+		if workspaceInfoDb.ID > 0 && workspaceInfoDb.IsNotNil() {
+			workspaceInfo = workspaceInfoDb
+
+		} else {
+			// docker-compose 文件路径
+			workspaceInfo.TempDockerComposeFilePath = workspaceInfo.GetTempDockerComposeFilePath()
 		}
-
 	}
 
-	// 避免为空
-	if workspaceInfo.ConfigFilePath == "" {
-		workspaceInfo.ConfigFilePath = dal.ConfigRelativeFilePath
+	/* // 项目名称
+	workspaceInfo.GetProjectDirctoryName() = getProjectName(workspaceInfo.Mode, workspaceInfo.GitCloneRepoUrl) */
+
+	// 涉及到配置文件的改变
+	if fflags.Changed(flag_filepath) {
+		configFilePath, err := fflags.GetString(flag_filepath)
+		common.CheckError(err)
+
+		if configFilePath != "" {
+			workspaceInfo.ConfigFilePath = configFilePath
+		}
+	}
+	if workspaceInfo.ConfigFilePath == "" { // 避免配置文件的路径为空
+		workspaceInfo.ConfigFilePath = model.CONST_Default_ConfigRelativeFilePath
+	}
+	if fflags.Changed(flag_branch) {
+		branch, err := fflags.GetString(flag_branch)
+		common.CheckError(err)
+
+		if branch != "" {
+			workspaceInfo.Branch = branch
+		}
 	}
 
 	// 验证
-	if workspaceInfo.Mode == dal.WorkingMode_Remote {
+	if workspaceInfo.Mode == workspace.WorkingMode_Remote {
 		// path change
 		workspaceInfo.ConfigFilePath = common.FilePahtJoin4Linux(workspaceInfo.ConfigFilePath)
 		workspaceInfo.TempDockerComposeFilePath = common.FilePahtJoin4Linux(workspaceInfo.TempDockerComposeFilePath)
@@ -237,7 +269,13 @@ func getWorkspace4Start(cmd *cobra.Command, args []string) (workspaceInfo dal.Wo
 		}
 
 	} else {
-		//TODO 配置文件是否存在
+
+	}
+
+	// 提示 加载对应的workspace
+	if workspaceInfo.ID > 0 && workspaceInfo.IsNotNil() {
+		common.SmartIDELog.InfoF(i18nInstance.Start.Info_workspace_record_load, workspaceInfo.ID)
+
 	}
 
 	return workspaceInfo, err
@@ -284,23 +322,16 @@ type FriendlyError struct {
 	Err error
 }
 
+//
 func (e *FriendlyError) Error() string {
 	return e.Err.Error()
 }
 
-//
-func getWorkspaceWithDbAndValid(workspaceId int) (workspaceInfo dal.WorkspaceInfo, err error) {
+// 从数据库中加载工作区信息，并进行验证
+func getWorkspaceWithDbAndValid(workspaceId int) (workspaceInfo workspace.WorkspaceInfo, err error) {
 
 	workspaceInfo, err = dal.GetSingleWorkspace(int(workspaceId))
 	common.CheckError(err)
-
-	// 如果为空，就从docker-compose文件中加载扩展信息
-	if workspaceInfo.Extend.IsNil() &&
-		workspaceInfo.ConfigYaml.IsNotNil() && workspaceInfo.TempDockerCompose.IsNotNil() {
-		workspaceInfo.Extend =
-			workspaceInfo.ConfigYaml.GetWorkspaceExtend(workspaceInfo.LinkDockerCompose, workspaceInfo.TempDockerCompose, workspaceInfo.Mode)
-
-	}
 
 	// 验证在workspace中是否存在
 	if workspaceInfo.IsNil() {
@@ -309,24 +340,36 @@ func getWorkspaceWithDbAndValid(workspaceId int) (workspaceInfo dal.WorkspaceInf
 		return workspaceInfo, err
 	}
 
-	//
-	twd, _ := os.Getwd()
-	if workspaceInfo.Mode == dal.WorkingMode_Local && twd == workspaceInfo.WorkingDirectoryPath {
-		common.SmartIDELog.Warning(i18nInstance.Main.Err_flag_value_invalid2)
+	// 如果扩展信息为空（通常是旧项目导致的），就从docker-compose文件中加载扩展信息
+	if workspaceInfo.Extend.IsNil() &&
+		workspaceInfo.ConfigYaml.IsNotNil() && workspaceInfo.TempDockerCompose.IsNotNil() {
+		workspaceInfo.Extend = workspaceInfo.GetWorkspaceExtend()
+
 	}
 
-	// 项目名
-	repoName := getRepoName(workspaceInfo.GitCloneRepoUrl)
-	workspaceInfo.ProjectName = repoName
+	// 当前目录下不需要再次录入workspaceid
+	twd, _ := os.Getwd()
+	if workspaceInfo.Mode == workspace.WorkingMode_Local && twd == workspaceInfo.WorkingDirectoryPath {
+		common.SmartIDELog.Warning(i18nInstance.Main.Err_flag_value_invalid2)
+
+	}
+
+	// 临时compose文件路径
+	if workspaceInfo.TempDockerComposeFilePath == "" {
+		workspaceInfo.TempDockerComposeFilePath = workspaceInfo.GetTempDockerComposeFilePath()
+	}
+
+	// 验证数据
+	err = workspaceInfo.Valid()
 
 	return workspaceInfo, err
 }
 
 // 根据参数，从数据库或者其他参数中加载远程服务器的信息
-func getRemoteAndValid(fflags *pflag.FlagSet) (remoteInfo dal.RemoteInfo, err error) {
+func getRemoteAndValid(fflags *pflag.FlagSet) (remoteInfo workspace.RemoteInfo, err error) {
 
 	host, _ := fflags.GetString(flag_host)
-	remoteInfo = dal.RemoteInfo{}
+	remoteInfo = workspace.RemoteInfo{}
 
 	// 指定了host信息，尝试从数据库中加载
 	if common.IsNumber(host) {
@@ -335,21 +378,21 @@ func getRemoteAndValid(fflags *pflag.FlagSet) (remoteInfo dal.RemoteInfo, err er
 		remoteInfo, err = dal.GetRemoteById(remoteId)
 		common.CheckError(err)
 
-		if (dal.RemoteInfo{} == remoteInfo) {
+		if (workspace.RemoteInfo{} == remoteInfo) {
 			common.SmartIDELog.Warning(i18nInstance.Host.Err_host_data_not_exit)
 		}
 	} else {
 		remoteInfo, err = dal.GetRemoteByHost(host)
 
 		// 如果在sqlite中有缓存数据，就不需要用户名、密码
-		if (dal.RemoteInfo{} != remoteInfo) {
+		if (workspace.RemoteInfo{} != remoteInfo) {
 			checkFlagUnnecessary(fflags, flag_username, flag_host)
 			checkFlagUnnecessary(fflags, flag_password, flag_host)
 		}
 	}
 
 	// 从参数中加载
-	if (dal.RemoteInfo{} == remoteInfo) {
+	if (workspace.RemoteInfo{} == remoteInfo) {
 		//  必填字段验证
 		err = checkFlagRequired(fflags, flag_host)
 		if err != nil {
@@ -365,19 +408,17 @@ func getRemoteAndValid(fflags *pflag.FlagSet) (remoteInfo dal.RemoteInfo, err er
 		remoteInfo.SSHPort, err = fflags.GetInt(flag_port) //strconv.Atoi(getFlagValue(fflags, flag_port))
 		common.CheckError(err)
 		if remoteInfo.SSHPort <= 0 {
-			remoteInfo.SSHPort = dal.CONST_Container_SSHPort
+			remoteInfo.SSHPort = model.CONST_Container_SSHPort
 		}
 		// 认证类型
 		if fflags.Changed(flag_password) {
 			remoteInfo.Password = getFlagValue(fflags, flag_password)
-			remoteInfo.AuthType = dal.RemoteAuthType_Password
+			remoteInfo.AuthType = workspace.RemoteAuthType_Password
 		} else {
-			remoteInfo.AuthType = dal.RemoteAuthType_SSH
+			remoteInfo.AuthType = workspace.RemoteAuthType_SSH
 		}
 
 	}
-
-	//common.CheckError(err)
 
 	return remoteInfo, err
 }
@@ -389,10 +430,8 @@ func init() {
 	startCmd.Flags().StringP("host", "o", "", i18nInstance.Start.Info_help_flag_host)
 	startCmd.Flags().IntP("port", "p", 22, i18nInstance.Start.Info_help_flag_port)
 	startCmd.Flags().StringP("username", "u", "", i18nInstance.Start.Info_help_flag_username)
-	//vmStartCmd.MarkFlagRequired("username")
 	startCmd.Flags().StringP("password", "t", "", i18nInstance.Start.Info_help_flag_password)
 	startCmd.Flags().StringP("repourl", "r", "", i18nInstance.Start.Info_help_flag_repourl)
-	//vmStartCmd.MarkFlagRequired("repourl")
 
 	startCmd.Flags().StringVarP(&configYamlFileRelativePath, "filepath", "f", "", i18nInstance.Start.Info_help_flag_filepath)
 	startCmd.Flags().StringP("branch", "b", "", i18nInstance.Start.Info_help_flag_branch)

@@ -1,3 +1,10 @@
+/*
+ * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
+ * @Description:
+ * @Date: 2021-11
+ * @LastEditors:
+ * @LastEditTime:
+ */
 package cmd
 
 import (
@@ -8,8 +15,8 @@ import (
 // initCmd represents the init command
 var hostCmd = &cobra.Command{
 	Use:   "host",
-	Short: "host list | get",
-	Long:  "",
+	Short: i18nInstance.Host.Info_help_short,
+	Long:  i18nInstance.Host.Info_help_long,
 	Example: `  smartide host list
   smartide host get <hostid>`,
 	Run: func(cmd *cobra.Command, args []string) {

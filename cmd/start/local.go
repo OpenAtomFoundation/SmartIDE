@@ -1,3 +1,10 @@
+/*
+ * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
+ * @Description:
+ * @Date: 2021-11
+ * @LastEditors: kenan
+ * @LastEditTime: 2021-12-14 10:08:22
+ */
 package start
 
 import (
@@ -9,17 +16,23 @@ import (
 	"strings"
 	"time"
 
-	"github.com/leansoftX/smartide-cli/cmd/dal"
-	"github.com/leansoftX/smartide-cli/lib/common"
-	"github.com/leansoftX/smartide-cli/lib/docker/compose"
-	"github.com/leansoftX/smartide-cli/lib/tunnel"
+	"github.com/leansoftX/smartide-cli/internal/biz/config"
+	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
+	"github.com/leansoftX/smartide-cli/internal/dal"
+	"github.com/leansoftX/smartide-cli/internal/model"
+	"github.com/leansoftX/smartide-cli/pkg/common"
+	"github.com/leansoftX/smartide-cli/pkg/docker/compose"
+	"github.com/leansoftX/smartide-cli/pkg/tunnel"
+	"gopkg.in/yaml.v2"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 )
 
 // 本地执行 start
-func ExecuteStartCmd(workspace dal.WorkspaceInfo, endPostExecuteFun func(dockerContainerName string, docker common.Docker), yamlExecuteFun func(yamlConfig dal.YamlFileConfig)) {
+func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo,
+	endPostExecuteFun func(dockerContainerName string, docker common.Docker),
+	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) {
 
 	//0. 检查本地环境
 	err := CheckLocalEnv()
@@ -36,48 +49,60 @@ func ExecuteStartCmd(workspace dal.WorkspaceInfo, endPostExecuteFun func(dockerC
 	var ideBindingPort, sshBindingPort int
 
 	//1.3. 初始化配置文件对象
-	var yamlFileCongfig dal.YamlFileConfig
-	yamlFileCongfig.SetWorkspace(workspace.WorkingDirectoryPath, workspace.ConfigFilePath)
-	yamlFileCongfig.GetLocalConfig() // 读取本地配置
-	localWorkingDir := yamlFileCongfig.GetLocalWorkingDirectry()
-	dockeComposeTempYamlFilePath := yamlFileCongfig.GetTempDockerComposeFilePath(localWorkingDir, workspace.ProjectName) // 获取临时docker-compose文件的路径
+	currentConfig := config.NewConfig(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFilePath, "")
 
 	//2. docker-compose
 	//2.1. 获取compose数据
-	_, linkComposeFileContent := yamlFileCongfig.GetLocalLinkDockerComposeFile()
-	hasChanged := workspace.ChangeConfig(yamlFileCongfig.ToYaml(), linkComposeFileContent) // 是否改变
-	if hasChanged {                                                                        // 改变包括了初始化
+	_, linkComposeFileContent := currentConfig.GetLocalLinkDockerComposeFile()
+	configYamlStr, err := currentConfig.ToYaml()
+	common.CheckError(err)
+	hasChanged := workspaceInfo.ChangeConfig(configYamlStr, linkComposeFileContent) // 是否改变
+	if hasChanged {                                                                 // 改变包括了初始化
 		// log
-		common.SmartIDELog.Info("工作区配置改变！")
+		if workspaceInfo.ID > 0 {
+			common.SmartIDELog.Info(i18nInstance.Start.Info_workspace_changed)
+
+		} else {
+			common.SmartIDELog.Info(i18nInstance.Start.Info_workspace_create)
+		}
 
 		// 获取compose配置
-		tempDockerCompose, ideBindingPort, sshBindingPort = yamlFileCongfig.ConvertToDockerCompose(common.SSHRemote{}, workspace.ProjectName, "", true) // 转换为docker compose格式
+		tempDockerCompose, ideBindingPort, sshBindingPort =
+			currentConfig.ConvertToDockerCompose(common.SSHRemote{}, workspaceInfo.GetProjectDirctoryName(), "", true) // 转换为docker compose格式
 
 		// 更新端口绑定列表，只在改变的时候才需要赋值
-		workspaceExtend := dal.WorkspaceExtend{Ports: yamlFileCongfig.GetPortMappings()}
-		workspace.Extend = workspaceExtend
+		workspaceInfo.Extend = workspace.WorkspaceExtend{Ports: currentConfig.GetPortMappings()}
+
+		// 链接的docker-compose文件
+		if workspaceInfo.ConfigYaml.IsLinkDockerComposeFile() {
+			yaml.Unmarshal([]byte(linkComposeFileContent), workspaceInfo.LinkDockerCompose)
+		}
+
+		// 保存 docker-compose 、config 文件到临时文件夹
+		workspaceInfo.ConfigYaml = *currentConfig
+		workspaceInfo.TempDockerCompose = tempDockerCompose
+		err = workspaceInfo.SaveTempFiles() // 保存docker-compose文件
+		common.CheckError(err)
 	} else {
-		yamlFileCongfig.SaveTempFiles(workspace.TempDockerCompose, workspace.ProjectName) // 先保存，确保临时文件存在
+		// 先保存，确保临时文件存在 以及是最新的
+		err = workspaceInfo.SaveTempFiles()
 		common.CheckError(err)
 
-		tempDockerCompose, ideBindingPort, sshBindingPort = yamlFileCongfig.LoadDockerComposeFromTempFile(common.SSHRemote{}, "", workspace.ProjectName)
+		tempDockerCompose, ideBindingPort, sshBindingPort = currentConfig.LoadDockerComposeFromTempFile(common.SSHRemote{}, workspaceInfo.TempDockerComposeFilePath)
 	}
-
-	//2.2. 保存 docker-compose 、config 文件到临时文件夹
-	err = yamlFileCongfig.SaveTempFiles(tempDockerCompose, workspace.ProjectName) // 保存docker-compose文件
-	common.CheckError(err)
+	//2.2. 扩展信息
+	workspaceInfo.Extend = workspaceInfo.GetWorkspaceExtend()
 
 	//3. 容器
 	//3.1. 校验 docker-compose 文件对应的环境是否已经启动
-	isDockerComposeRunning := isDockerComposeRunning(ctx, cli, yamlFileCongfig.GetServiceNames())
+	isDockerComposeRunning := isDockerComposeRunning(ctx, cli, currentConfig.GetServiceNames())
 
 	//3.2. 运行容器
 	if !isDockerComposeRunning || hasChanged { // 容器没有运行 或者 有改变，重新创建容器
 		// print
-		common.SmartIDELog.InfoF(i18nInstance.Start.Info_docker_compose_filepath, dockeComposeTempYamlFilePath)
 		common.SmartIDELog.InfoF(i18nInstance.Start.Info_ssh_tunnel, sshBindingPort) // 提示用户ssh端口绑定到了本地的某个端口
 
-		// 创建网络
+		// 创建网络（docker-compose 创建的网络会增加文件夹名，导致无法匹配）
 		for network := range tempDockerCompose.Networks {
 			networkList, _ := cli.NetworkList(ctx, types.NetworkListOptions{})
 			isContain := false
@@ -94,9 +119,9 @@ func ExecuteStartCmd(workspace dal.WorkspaceInfo, endPostExecuteFun func(dockerC
 		}
 
 		// 运行docker-compose命令
-		// e.g. docker-compose -f /Users/jasonchen/.ide/docker-compose-product-service-dev.yaml --project-directory /Users/jasonchen/Project/boat-house/boat-house-backend/src/product-service/api up -d
+		// e.g. docker-compose -f {docker-compose文件路径} --project-directory {工作目录} up -d
 		pwd, _ := os.Getwd()
-		composeCmd := exec.Command("docker-compose", "-f", dockeComposeTempYamlFilePath, "--project-directory", pwd, "up", "-d")
+		composeCmd := exec.Command("docker-compose", "-f", workspaceInfo.TempDockerComposeFilePath, "--project-directory", pwd, "up", "-d")
 		composeCmd.Stdout = os.Stdout
 		composeCmd.Stderr = os.Stderr
 		if composeCmdErr := composeCmd.Run(); composeCmdErr != nil {
@@ -105,13 +130,25 @@ func ExecuteStartCmd(workspace dal.WorkspaceInfo, endPostExecuteFun func(dockerC
 	}
 
 	//4. 获取启动的容器列表
-	dockerComposeContainers := GetLocalContainersWithServices(ctx, cli, yamlFileCongfig.GetServiceNames())
-	devContainerName := getDevContainerName(dockerComposeContainers, yamlFileCongfig.Workspace.DevContainer.ServiceName)
-	gitconfig := yamlFileCongfig.Workspace.DevContainer.Volumes.GitConfig
-	dal.GitConfig(gitconfig, false, devContainerName, cli, compose.Service{}, common.SSHRemote{})
+	dockerComposeContainers := GetLocalContainersWithServices(ctx, cli, currentConfig.GetServiceNames())
+	devContainerName := getDevContainerName(dockerComposeContainers, currentConfig.Workspace.DevContainer.ServiceName)
+	gitconfig := currentConfig.Workspace.DevContainer.Volumes.GitConfig
+	config.GitConfig(gitconfig, false, devContainerName, cli, compose.Service{}, common.SSHRemote{})
 	docker := *common.NewDocker(cli)
 	dockerContainerName := strings.ReplaceAll(devContainerName, "/", "")
-	out, err := docker.Exec(context.Background(), strings.ReplaceAll(devContainerName, "/", ""), "/usr/bin", []string{"sudo", "chmod", "-R", "700", "/root"}, []string{})
+	out, err := docker.Exec(context.Background(), strings.ReplaceAll(devContainerName, "/", ""), "/usr/bin", []string{"sudo", "chmod", "755", "/home/smartide/.ssh"}, []string{})
+	common.CheckError(err)
+	common.SmartIDELog.Debug(out)
+
+	out, err = docker.Exec(context.Background(), strings.ReplaceAll(devContainerName, "/", ""), "/usr/bin", []string{"sudo", "chmod", "644", "/home/smartide/.ssh/authorized_keys"}, []string{})
+	common.CheckError(err)
+	common.SmartIDELog.Debug(out)
+
+	out, err = docker.Exec(context.Background(), strings.ReplaceAll(devContainerName, "/", ""), "/usr/bin", []string{"sudo", "chmod", "644", "/home/smartide/.ssh/id_rsa.pub"}, []string{})
+	common.CheckError(err)
+	common.SmartIDELog.Debug(out)
+
+	out, err = docker.Exec(context.Background(), strings.ReplaceAll(devContainerName, "/", ""), "/usr/bin", []string{"sudo", "chmod", "600", "/home/smartide/.ssh/id_rsa"}, []string{})
 	common.CheckError(err)
 	common.SmartIDELog.Debug(out)
 
@@ -119,25 +156,25 @@ func ExecuteStartCmd(workspace dal.WorkspaceInfo, endPostExecuteFun func(dockerC
 	if hasChanged {
 		common.SmartIDELog.Info(i18nInstance.Start.Info_workspace_saving)
 		//5.1.
-		workspace.Name = devContainerName
-		workspace.TempDockerCompose = tempDockerCompose
-		workspace.TempDockerComposeFilePath = dockeComposeTempYamlFilePath
+		workspaceInfo.Name = devContainerName
+		workspaceInfo.TempDockerCompose = tempDockerCompose
 		//5.2.
-		workspaceId, err := dal.InsertOrUpdateWorkspace(workspace)
+		workspaceId, err := dal.InsertOrUpdateWorkspace(workspaceInfo)
 		common.CheckError(err)
 		common.SmartIDELog.InfoF(i18nInstance.Start.Info_workspace_saved, workspaceId)
 	}
 
 	//6. 执行函数内容
-	yamlExecuteFun(yamlFileCongfig)
+	yamlExecuteFun(*currentConfig)
 	endPostExecuteFun(dockerContainerName, docker)
 
 	//7. 使用浏览器打开web ide
 	common.SmartIDELog.Info(i18nInstance.Start.Info_running_openbrower)
 	// vscode启动时候默认打开文件夹处理
 	var url string
-	if yamlFileCongfig.Workspace.DevContainer.IdeType == "vscode" {
-		url = fmt.Sprintf("http://localhost:%v/?folder=vscode-remote://localhost:%v/home/project/%v", ideBindingPort, ideBindingPort, workspace.ProjectName)
+	if currentConfig.Workspace.DevContainer.IdeType == "vscode" {
+		url = fmt.Sprintf("http://localhost:%v/?folder=vscode-remote://localhost:%v/home/project/%v",
+			ideBindingPort, ideBindingPort, workspaceInfo.GetProjectDirctoryName())
 	} else {
 		url = fmt.Sprintf(`http://localhost:%v`, ideBindingPort)
 	}
@@ -154,9 +191,19 @@ func ExecuteStartCmd(workspace dal.WorkspaceInfo, endPostExecuteFun func(dockerC
 	//99. 结束
 	common.SmartIDELog.Info(i18nInstance.Start.Info_end)
 
-	// tunnel， 死循环，不结束
+	// tunnel
+	sshPassword := workspaceInfo.TempDockerCompose.GetSSHPassword(currentConfig.Workspace.DevContainer.ServiceName)
+	sshRemote, err := common.NewSSHRemote("localhost", sshBindingPort, model.CONST_DEV_CONTAINER_CUSTOM_USER, sshPassword)
+	common.CheckError(err)
+	options := tunnel.AutoTunnelMultipleOptions{}
+	for _, portMap := range workspaceInfo.Extend.Ports {
+		options.AppendPortMapping(tunnel.PortMapTypeEnum(portMap.PortMapType), portMap.OriginLocalPort, portMap.CurrentLocalPort,
+			portMap.LocalPortDesc, portMap.ContainerPort)
+	}
+	tunnel.AutoTunnel(sshRemote.Connection, options)
+
+	// 死循环，不结束
 	for {
-		tunnel.AutoTunnelMultiple(fmt.Sprintf("localhost:%v", sshBindingPort), "root", "root123", tempDockerCompose.GetLocalBindingPorts(), yamlFileCongfig.GetPortLabelMap())
 		time.Sleep(time.Second * 10)
 	}
 }
