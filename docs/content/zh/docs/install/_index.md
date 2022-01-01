@@ -48,6 +48,7 @@ SmartIDE 通过调用docker和docker-compose来实现容器化环境的管理，
 # 再次执行此命令即可更新版本
 curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/releases/$(curl -L -s https://smartidedl.blob.core.chinacloudapi.cn/releases/stable.txt)/smartide" \
 && mv -f smartide /usr/local/bin/smartide \
+&& ln -s -f /usr/local/bin/smartide /usr/local/bin/se \
 && chmod +x /usr/local/bin/smartide
 ```
 {{% /tab %}}
@@ -80,6 +81,7 @@ SmartIDE CI/CD 流水线每晚8点（GMT+8 Beijing) 会自动将当天提交到s
 # 再次执行此命令即可更新版本
 curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/builds/$(curl -L -s https://smartidedl.blob.core.chinacloudapi.cn/builds/stable.txt)/smartide" \
 && mv -f smartide /usr/local/bin/smartide \
+&& ln -s -f /usr/local/bin/smartide /usr/local/bin/se \
 && chmod +x /usr/local/bin/smartide
 ```
 {{% /tab %}}
