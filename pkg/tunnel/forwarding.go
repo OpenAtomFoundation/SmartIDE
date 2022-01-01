@@ -151,7 +151,7 @@ func scanServerPorts(clientConn *ssh.Client) []int {
 	//common.SmartIDELog.Debug(outContent)
 	netstatInfoArray := parseCmdOutput(outContent)
 	for _, netstatInfo := range netstatInfoArray {
-		if netstatInfo.Port != model.CONST_Container_WebIDEPort &&
+		if netstatInfo.Port != model.CONST_Container_WebIDEPort && netstatInfo.Port != model.CONST_Container_JetBrainsIDEPort &&
 			netstatInfo.Host != "127.0.0.1" &&
 			netstatInfo.Port != model.CONST_Container_SSHPort &&
 			netstatInfo.PID != "" &&

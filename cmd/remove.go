@@ -9,6 +9,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -28,7 +29,7 @@ import (
 
 var removeCmdFlag struct {
 	// 是否仅删除本地的工作区
-	IsOnlyRemoveLocalWorkspace bool
+	IsOnlyRemoveWorkspaceDataRecord bool
 
 	// 是否仅删除远程的容器
 	IsOnlyRemoveContainer bool
@@ -39,18 +40,31 @@ var removeCmdFlag struct {
 	// 是否删除远程主机上的文件夹
 	IsRemoveRemoteDirectory bool
 
+	// 强制删除
+	IsForce bool
+
 	// 删除compose对应的所有镜像
 	IsRemoveAllComposeImages bool
 }
 
+// 删除的模式
+type RemoveMode string
+
+const (
+	RemoteMode_None                          RemoveMode = "none"
+	RemoteMode_OnlyRemoveContainer           RemoveMode = "only_container"
+	RemoteMode_OnlyRemoveWorkspaceDataRecord RemoveMode = "only_data_record"
+)
+
 // removeCmd represents the remove command
 var removeCmd = &cobra.Command{
-	Use:   "remove",
-	Short: i18nInstance.Remove.Info_help_short,
-	Long:  i18nInstance.Remove.Info_help_long,
+	Use:     "remove",
+	Short:   i18nInstance.Remove.Info_help_short,
+	Long:    i18nInstance.Remove.Info_help_long,
+	Aliases: []string{"rm"},
 	Example: `
-	smartide remove [--workspaceid] {workspaceid} [-y] [-s] [-i] 
-	smartide remove [--workspaceid] {workspaceid} [-y] [-f] [-c] [-i]`,
+	smartide remove [--workspaceid] {workspaceid} [-y] [-w] [-i] [-f] 
+	smartide remove [--workspaceid] {workspaceid} [-y] [-s] [-c] [-i] [-f]`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		common.SmartIDELog.Info(i18nInstance.Remove.Info_start)
@@ -60,11 +74,19 @@ var removeCmd = &cobra.Command{
 		workspaceInfo := loadWorkspaceWithDb(cmd, args)
 
 		// 验证
-		if removeCmdFlag.IsOnlyRemoveContainer && removeCmdFlag.IsOnlyRemoveLocalWorkspace {
+		if removeCmdFlag.IsOnlyRemoveContainer && removeCmdFlag.IsOnlyRemoveWorkspaceDataRecord { // 仅删除容器 和 仅删除工作区，不能同时存在
 			common.SmartIDELog.Error(i18nInstance.Remove.Err_flag_workspace_container)
 		}
-		if workspaceInfo.Mode == workspace.WorkingMode_Local && removeCmdFlag.IsOnlyRemoveContainer {
+		if workspaceInfo.Mode == workspace.WorkingMode_Local && removeCmdFlag.IsOnlyRemoveContainer { // 本地模式下，
 			common.SmartIDELog.Error(i18nInstance.Remove.Err_flag_container_valid)
+		}
+
+		//
+		var removeMode RemoveMode = RemoteMode_None
+		if removeCmdFlag.IsOnlyRemoveContainer {
+			removeMode = RemoteMode_OnlyRemoveContainer
+		} else if removeCmdFlag.IsOnlyRemoveWorkspaceDataRecord {
+			removeMode = RemoteMode_OnlyRemoveWorkspaceDataRecord
 		}
 
 		// 提示 是否确认删除
@@ -81,17 +103,19 @@ var removeCmd = &cobra.Command{
 		if workspaceInfo.IsNil() {
 			common.SmartIDELog.Error(i18nInstance.Main.Err_workspace_none)
 		}
-		if !removeCmdFlag.IsOnlyRemoveLocalWorkspace { // 仅删除容器的话，就不去远程主机上进行操作
+		if removeMode == RemoteMode_None || removeMode == RemoteMode_OnlyRemoveContainer { // 仅删除容器的话，就不去远程主机上进行操作
 			if workspaceInfo.Mode == workspace.WorkingMode_Local {
-				removeLocalMode(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages)
+				err := removeLocalMode(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsForce)
+				common.CheckError(err)
 			} else {
-				removeRemoteMode(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsRemoveRemoteDirectory)
+				err := removeRemoteMode(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsRemoveRemoteDirectory, removeCmdFlag.IsForce)
+				common.CheckError(err)
 			}
 
 		}
 
 		// remote workspace in db
-		if !removeCmdFlag.IsOnlyRemoveContainer { // 在仅删除容器的模式下，不删除工作区
+		if removeMode == RemoteMode_None || removeMode == RemoteMode_OnlyRemoveWorkspaceDataRecord { // 在仅删除容器的模式下，不删除工作区
 			common.SmartIDELog.Info(i18nInstance.Remove.Info_workspace_removing)
 
 			err := dal.RemoveWorkspace(workspaceInfo.ID)
@@ -141,10 +165,20 @@ func loadWorkspaceWithDb(cmd *cobra.Command, args []string) workspace.WorkspaceI
 }
 
 // 本地删除工作去对应的环境
-func removeLocalMode(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeImages bool) error {
+func removeLocalMode(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeImages bool, isForce bool) error {
 	// 校验是否能正常执行docker
 	err := start.CheckLocalEnv()
 	common.CheckError(err)
+
+	if !common.IsExit(workspaceInfo.WorkingDirectoryPath) {
+		if isForce {
+			common.SmartIDELog.Importance(i18nInstance.Remove.Warn_workspace_dir_not_exit)
+			// 中断，不再执行后续的步骤
+			return nil
+		} else {
+			return errors.New(i18nInstance.Remove.Err_workspace_dir_not_exit)
+		}
+	}
 
 	// 保存临时文件
 	if !common.IsExit(workspaceInfo.TempDockerComposeFilePath) || !common.IsExit(workspaceInfo.ConfigFilePath) {
@@ -180,7 +214,11 @@ func removeLocalMode(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeIm
 			if (service.Image != compose.Image{}) && service.Image.Name != "" { // 镜像信息不为空
 				imageNameAndTag := fmt.Sprintf("%v:%v", service.Image.Name, service.Image.Tag)
 
-				removeImagesCmd := exec.Command("docker", "rmi", imageNameAndTag)
+				force := ""
+				if isForce {
+					force = "-f"
+				}
+				removeImagesCmd := exec.Command("docker", "rmi", force, imageNameAndTag)
 				removeImagesCmd.Stdout = os.Stdout
 				removeImagesCmd.Stderr = os.Stderr
 				if removeImagesCmdErr := removeImagesCmd.Run(); removeImagesCmdErr != nil {
@@ -197,7 +235,7 @@ func removeLocalMode(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeIm
 }
 
 // 在远程主机上运行删除命令
-func removeRemoteMode(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeImages bool, isRemoveRemoteDirectory bool) {
+func removeRemoteMode(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeImages bool, isRemoveRemoteDirectory bool, isForce bool) error {
 	// ssh 连接
 	common.SmartIDELog.Info(i18nInstance.Remove.Info_sshremote_connection_creating)
 	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password)
@@ -212,10 +250,10 @@ func removeRemoteMode(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeI
 			common.SmartIDELog.Console(i18nInstance.Remove.Info_ssh_timeout_confirm_skip)
 			fmt.Scanln(&isSkip)
 			if strings.ToLower(isSkip) != "y" {
-				return // 退出当前远程主机上的相关操作
+				return nil // 退出当前远程主机上的相关操作
 			} else {
 				common.CheckError(err)
-				return
+				return nil
 			}
 		} else {
 			common.CheckError(err)
@@ -255,10 +293,16 @@ func removeRemoteMode(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeI
 	if isRemoveAllComposeImages {
 		common.SmartIDELog.Info(i18nInstance.Remove.Info_docker_rmi_removing)
 
+		force := ""
+		if isForce {
+			force = "-f"
+		}
+
 		for _, service := range workspaceInfo.TempDockerCompose.Services {
 			if (service.Image != compose.Image{}) && service.Image.Name != "" { // 镜像信息不为空
 				imageNameAndTag := fmt.Sprintf("%v:%v", service.Image.Name, service.Image.Tag)
-				_, err = sshRemote.ExeSSHCommand("docker rmi " + imageNameAndTag)
+				command := fmt.Sprintf("docker rmi %v %v", force, imageNameAndTag)
+				_, err = sshRemote.ExeSSHCommand(command)
 				if err != nil {
 					common.SmartIDELog.Importance(err.Error())
 				} else {
@@ -280,16 +324,18 @@ func removeRemoteMode(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeI
 		common.SmartIDELog.InfoF(i18nInstance.Remove.Info_project_dir_removed, workingDirectoryPath)
 	}
 
+	return nil
 }
 
 // 初始化
 func init() {
-	removeCmd.Flags().Int32P("workspaceid", "w", 0, i18nInstance.Remove.Info_flag_workspaceid)
-
 	removeCmd.Flags().BoolVarP(&removeCmdFlag.IsContinue, "yes", "y", false, i18nInstance.Remove.Info_flag_yes)
-	removeCmd.Flags().BoolVarP(&removeCmdFlag.IsRemoveRemoteDirectory, "force", "f", false, i18nInstance.Remove.Info_flag_force)
-	removeCmd.Flags().BoolVarP(&removeCmdFlag.IsOnlyRemoveLocalWorkspace, "workspace", "s", false, i18nInstance.Remove.Info_flag_workspace)
+
+	removeCmd.Flags().BoolVarP(&removeCmdFlag.IsOnlyRemoveWorkspaceDataRecord, "workspace", "w", false, i18nInstance.Remove.Info_flag_workspace)
 	removeCmd.Flags().BoolVarP(&removeCmdFlag.IsOnlyRemoveContainer, "container", "c", false, i18nInstance.Remove.Info_flag_container)
+
+	removeCmd.Flags().BoolVarP(&removeCmdFlag.IsRemoveRemoteDirectory, "project", "p", false, i18nInstance.Remove.Info_flag_project)
 	removeCmd.Flags().BoolVarP(&removeCmdFlag.IsRemoveAllComposeImages, "image", "i", false, i18nInstance.Remove.Info_flag_image)
 
+	removeCmd.Flags().BoolVarP(&removeCmdFlag.IsForce, "force", "f", false, i18nInstance.Remove.Info_flag_force)
 }

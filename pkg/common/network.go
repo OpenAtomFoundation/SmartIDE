@@ -10,6 +10,8 @@ package common
 import (
 	"fmt"
 	"net"
+	"os/exec"
+	"runtime"
 )
 
 // 获取可用端口
@@ -35,23 +37,52 @@ func GetAvailablePort() (int, error) {
 // 判断端口是否可以（未被占用）
 func IsPortAvailable(port int) bool {
 
-	address := fmt.Sprintf("%s:%d", "localhost", port)
-	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", "localhost", port))
-	if err != nil {
-		SmartIDELog.Debug(fmt.Sprintf("tcp port %s is taken: %s", address, err))
-		return false
+	var command *exec.Cmd
+	switch runtime.GOOS {
+	case "linux":
+		command = exec.Command("sh", "-c", fmt.Sprintf("lsof -i tcp:%d", port))
+	case "windows":
+		command = exec.Command("cmd", "/c", fmt.Sprintf("netstat -aon|findstr \":%d\"", port))
+	case "darwin":
+		command = exec.Command("sh", "-c", fmt.Sprintf("lsof -i tcp:%d", port))
+		/* default:
+		err = fmt.Errorf("unsupported platform") */
 	}
-	defer listener.Close()
 
-	address = fmt.Sprintf("%s:%d", "0.0.0.0", port)
-	conn, err := net.Listen("tcp", address)
-	if err != nil {
-		SmartIDELog.Debug(fmt.Sprintf("tcp port %s is taken: %s", address, err))
+	output, _ := command.CombinedOutput()
+	if len(output) > 0 {
 		return false
 	}
-	defer conn.Close()
 
 	return true
+
+	/* 	address := fmt.Sprintf(":%d", port)
+	   	ln, err := net.Listen("tcp", address)
+	   	if err != nil {
+	   		return false
+	   	}
+
+	   	defer ln.Close()
+	   	return true */
+
+	/*
+		address := fmt.Sprintf("%s:%d", "localhost", port)
+		listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", "localhost", port))
+		if err != nil {
+			SmartIDELog.Debug(fmt.Sprintf("tcp port %s is taken: %s", address, err))
+			return false
+		}
+		defer listener.Close()
+
+		address = fmt.Sprintf("%s:%d", "0.0.0.0", port)
+		conn, err := net.Listen("tcp", address)
+		if err != nil {
+			SmartIDELog.Debug(fmt.Sprintf("tcp port %s is taken: %s", address, err))
+			return false
+		}
+		defer conn.Close()
+	*/
+
 }
 
 // 检查当前端口是否被占用，并返回一个可用端口

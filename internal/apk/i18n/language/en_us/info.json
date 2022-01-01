@@ -16,7 +16,7 @@
         "err_config_devcontainer_servicename_none": "[配置文件] 工作区开发容器服务名 （Workspace.DevContainer.ServiceName）不能为空！",
         "err_config_devcontainer_services_not_exit": "[配置文件] Workspace.Servcies 中不包含 “%v”！",
         "err_config_devcontainer_idetype_none": "[配置文件] 工作区开发容器WebIDE 类型（Workspace.DevContainer.IdeType） 不能为空！",
-        "err_config_devcontainer_idetype_valid": "[配置文件] 目前WebIDE类型仅支持 vscode 、theia，其他类型的webide正在适配中，敬请等待！",
+        "err_config_devcontainer_idetype_valid": "[配置文件] 目前WebIDE类型仅支持 vscode、theia、jb-projector，其他类型的webide正在适配中，敬请等待！",
         "err_config_devcontainer_ports_port_reqeat": "[配置文件] 工作区端口描述信息中，端口 “%v” 重复",
         "err_config_devcontainer_ports_label_reqeat": "[配置文件] 工作区端口描述信息中，端口描述 “%v” 重复"
     },
@@ -44,7 +44,8 @@
         "err_env_git_check": "Please check whether the GIT of the current environment is normal",
         "err_env_docker": "Please check whether Docker is installed in the current environment",
         "err_env_dockerps": "Please check whether Docker in the current environment works normally",
-        "err_env_docker_compose": "Please check whether Docker-Compose in the current environment works normally"
+        "err_env_docker_compose": "Please check whether Docker-Compose in the current environment works normally",
+        "err_git_clone_folder_exist": "[Git] The folder '%v' already exist. Please choose another working directory or remove it first."
     },
     "start": {
         "info_help_short": "Run SmartIDE dev environment",
@@ -63,12 +64,12 @@
         "info_docker_compose_filepath": "[Docker-Compose] Using docker-compose file from : %v",
         "info_ssh_tunnel": "[SSH] Port forwarding : %v",
         "info_create_network": "[Docker] Creating network %v",
-        "info_open_in_brower": "[WebIDE] You can now open your browser to access the WebIDE : ",
         "info_workspace_saving": "[Workspace] Save workspace record ...",
         "info_workspace_saved": "[Worksapce] Saved successfully. Open your Workspace using WorkspaceId (smartide start %v) to quickly resume your work.",
         "info_workspace_record_load": "从工作区（%v）中读取数据",
         "info_workspace_changed": "工作区配置改变！",
         "info_workspace_create": "新增工作区！",
+        "info_git_clone": "[Git] Running git clone on your RepoUrl ...",
         "err_docker_compose_save": "Error saving Docker-Compose file : ",
         "warn_docker_container_started": "The container has been started!",
         "warn_docker_container_getnone": "没有获取到容器列表！"
@@ -104,11 +105,12 @@
         "info_help_short": "Remove the SmartIDE dev environment completely",
         "info_help_long": "Remove the SmartIDE dev environment completely",
         "info_flag_workspaceid": "Use this Id to specify the workspace to be removed.",
-        "info_flag_yes": "Force remove.",
-        "info_flag_force": "强制删除远程服务器上的文件夹",
+        "info_flag_yes": "不出现删除提示",
+        "info_flag_force": "强制删除",
         "info_flag_workspace": "仅删除本地的工作区，不涉及远程主机上的容器 和 文件夹",
         "info_flag_container": "仅删除远程主机上的容器，不涉及本地的工作区信息",
         "info_flag_image": "删除compose文件关联的所有的镜像",
+        "info_flag_project": "删除远程主机上的项目工作目录",
         "info_start": "Deleting environment ...",
         "info_end": "SmartIDE dev environment deleted",
         "info_is_confirm_remove": "Are you sure to delete? (y | n)",
@@ -120,9 +122,11 @@
         "info_docker_rmi_image_removed": "镜像 %v 已经删除！",
         "info_project_dir_removed": "文件夹 %v 已删除",
         "info_ssh_timeout_confirm_skip": "ssh 连接连接超时，是否跳过在远程主机上的操作（删除容器、文件夹、镜像等等）？（y｜n）",
+        "warn_workspace_dir_not_exit":"本地工作目录已经被删除！",
         "err_flag_workspace_container": "参数 workspace 和 container 不能同时存在！",
         "err_workspace_not_exit": "No workspace found in the Working Dir.",
-        "err_flag_container_valid": "在远程主机模式下，container 参数无效！"
+        "err_flag_container_valid": "在远程主机模式下，container 参数无效！",
+        "err_workspace_dir_not_exit":"本地工作目录已经被删除！可通过 smartide remove -y -f 强制删除本地工作区数据。"
     },
     "new": {
         "info_help_short": "Create new SmartIDE workspace",
@@ -178,7 +182,17 @@
         "info_host_table_header": "Id\tAddress\tPort\tCreate Time",
         "info_host_detail_template": "Id: \t%v\nAddress: \t%v\nAuth Mode: \t%v\nUser: \t%v\nCreate Time: \t%v\n",
         "info_help_flag_hostid": "HostId",
-        "err_host_data_not_exit": "No host record found"
+        "err_host_data_not_exit": "No host record found",
+        "info_help_host_add_short": "Add host",
+        "info_help_host_add_long": "Add host",
+        "info_help_host_remove_short": "Remove host",
+        "info_help_host_remove_long": "Remove host",
+        "err_host_add_addr_required": "Host address is required.",
+        "err_host_add_username_required": "Host username is required.",
+        "info_host_add_success": "Add/update host %v success, host id: %v.",
+        "add_start": "Start adding host ...",
+        "remove_start": "Start removing host ...",
+        "info_host_remove_success": "Remove host %v success."
     },
     "common": {
         "debug_key_public": "Local public key:",
@@ -202,7 +216,7 @@
         "info_temp_created_docker_compose": "Create docker-compose in .temp folder : %v",
         "info_temp_created_config": "Create SmartIDE config file in .temp folder: %v",
         "info_table_header_containers": "Service\tState\tImage\tPorts\t",
-        "err_sshremote_param_repourl_none": "repoUrl is required.",
+        "err_sshremote_param_repourl_none": "repourl is required.",
         "err_password_none": "Password is required.",
         "err_dal_record_repeat": "Duplicated Worksapce records.",
         "err_dal_update_fail": "Updating Workspace record failed.",

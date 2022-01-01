@@ -91,6 +91,8 @@ func (c *DockerComposeYml) ToYaml() (result string, err error) {
 	common.CheckError(err)
 	result = string(d)
 
+	result = strings.ReplaceAll(result, "\\'", "'")
+
 	//result = strings.ReplaceAll(result, "\"", "\\\"") // 文本中包含双引号
 	return result, nil
 }

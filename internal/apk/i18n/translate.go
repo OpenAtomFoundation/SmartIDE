@@ -67,6 +67,7 @@ type I18nSource struct {
 		Err_env_docker                               string `json:"err_env_docker"`
 		Err_env_DockerPs                             string `json:"err_env_dockerps"`
 		Err_env_Docker_Compose                       string `json:"err_env_docker_compose"`
+		Err_git_clone_folder_exist                   string `json:"err_git_clone_folder_exist"`
 	} `json:"main"`
 
 	Help struct {
@@ -113,6 +114,7 @@ type I18nSource struct {
 		Info_help_flag_repourl  string `json:"info_help_flag_repourl"`
 		Info_help_flag_branch   string `json:"info_help_flag_branch"`
 		Info_help_flag_filepath string `json:"info_help_flag_filepath"`
+		Info_help_flag_k8s      string `json:"info_help_flag_k8s"`
 
 		Info_start                   string `json:"info_start"`
 		Info_end                     string `json:"info_end"`
@@ -121,12 +123,12 @@ type I18nSource struct {
 		Info_docker_compose_filepath string `json:"info_docker_compose_filepath"`
 		Info_ssh_tunnel              string `json:"info_ssh_tunnel"`
 		Info_create_network          string `json:"info_create_network"`
-		Info_open_in_brower          string `json:"info_open_in_brower"`
 		Info_workspace_saving        string `json:"info_workspace_saving"`
 		Info_workspace_saved         string `json:"info_workspace_saved"`
 		Info_workspace_record_load   string `json:"info_workspace_record_load"`
 		Info_workspace_changed       string `json:"info_workspace_changed"`
 		Info_workspace_create        string `json:"info_workspace_create"`
+		Info_git_clone               string `json:"info_git_clone"`
 
 		Err_Docker_compose_save string `json:"err_docker_compose_save"`
 
@@ -181,6 +183,7 @@ type I18nSource struct {
 		Info_flag_workspace   string `json:"info_flag_workspace"`
 		Info_flag_container   string `json:"info_flag_container"`
 		Info_flag_image       string `json:"info_flag_image"`
+		Info_flag_project     string `json:"info_flag_project"`
 
 		Info_sshremote_connection_creating string `json:"info_sshremote_connection_creating"`
 		Info_docker_removing               string `json:"info_docker_removing"`
@@ -193,9 +196,12 @@ type I18nSource struct {
 		Info_project_dir_removed      string `json:"info_project_dir_removed"`
 		Info_ssh_timeout_confirm_skip string `json:"info_ssh_timeout_confirm_skip"`
 
+		Warn_workspace_dir_not_exit string `json:"warn_workspace_dir_not_exit"`
+
 		Err_workspace_not_exit       string `json:"err_workspace_not_exit"`
 		Err_flag_workspace_container string `json:"err_flag_workspace_container"`
 		Err_flag_container_valid     string `json:"err_flag_container_valid"`
+		Err_workspace_dir_not_exit   string `json:"err_workspace_dir_not_exit"`
 	} `json:"remove"`
 
 	New struct {
@@ -227,6 +233,18 @@ type I18nSource struct {
 		Info_host_detail_template string `json:"info_host_detail_template"`
 
 		Err_host_data_not_exit string `json:"err_host_data_not_exit"`
+
+		Info_help_host_add_short    string `json:"info_help_host_add_short"`
+		Info_help_host_add_long     string `json:"info_help_host_add_long"`
+		Info_help_host_remove_short string `json:"info_help_host_remove_short"`
+		Info_help_host_remove_long  string `json:"info_help_host_remove_long"`
+
+		Err_host_add_addr_required     string `json:"err_host_add_addr_required"`
+		Err_host_add_username_required string `json:"err_host_add_username_required"`
+		Info_host_add_success          string `json:"info_host_add_success"`
+		Add_start                      string `json:"add_start"`
+		Remove_start                   string `json:"remove_start"`
+		Info_host_remove_success       string `json:"info_host_remove_success"`
 	} `json:"host"`
 
 	Common struct {

@@ -18,7 +18,9 @@ var hostCmd = &cobra.Command{
 	Short: i18nInstance.Host.Info_help_short,
 	Long:  i18nInstance.Host.Info_help_long,
 	Example: `  smartide host list
-  smartide host get <hostid>`,
+  smartide host get <hostid>
+  smartide host add <host> --username <username> --password <password> --port <port>
+  smartide host remove <hostid>`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 	},
@@ -27,5 +29,6 @@ var hostCmd = &cobra.Command{
 func init() {
 	hostCmd.AddCommand(host.HostGetCmd)
 	hostCmd.AddCommand(host.HostListCmd)
-
+	hostCmd.AddCommand(host.HostAddCmd)
+	hostCmd.AddCommand(host.HostRemoveCmd)
 }

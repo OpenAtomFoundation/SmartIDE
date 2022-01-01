@@ -40,7 +40,7 @@ func (workspace *WorkspaceInfo) GetWorkspaceExtend() WorkspaceExtend {
 			}
 
 			// webide 端口
-			portWebide := fmt.Sprintf("%v:%v", model.CONST_Local_Default_BindingPort_WebIDE, model.CONST_Container_WebIDEPort)
+			portWebide := fmt.Sprintf("%v:%v", model.CONST_Local_Default_BindingPort_WebIDE, workspace.ConfigYaml.GetContainerWebIDEPort())
 			if !common.Contains(originServicePorts, portWebide) {
 				originServicePorts = append(originServicePorts, portWebide)
 			}

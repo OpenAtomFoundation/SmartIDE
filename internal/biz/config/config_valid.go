@@ -60,7 +60,7 @@ func (c SmartIdeConfig) Valid() error {
 		return errors.New(i18nInstance.Config.Err_config_devcontainer_idetype_none)
 
 	} else {
-		if c.Workspace.DevContainer.IdeType != "vscode" && c.Workspace.DevContainer.IdeType != "theia" {
+		if c.Workspace.DevContainer.IdeType != "vscode" && c.Workspace.DevContainer.IdeType != "theia" && c.Workspace.DevContainer.IdeType != "jb-projector" {
 			return errors.New(i18nInstance.Config.Err_config_devcontainer_idetype_valid)
 
 		}

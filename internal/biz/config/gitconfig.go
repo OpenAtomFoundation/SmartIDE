@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2021-10-13 15:31:52
  * @LastEditors: kenan
- * @LastEditTime: 2021-12-09 15:34:06
+ * @LastEditTime: 2021-12-20 12:02:00
  * @Description: file content
  */
 
@@ -71,7 +71,7 @@ func SSHVolumesConfig(sshKey string, isVmCommand bool, service compose.Service, 
 	if sshKey == "true" {
 		// volumes
 		if runtime.GOOS == "windows" && !isVmCommand {
-			configPaths = []string{fmt.Sprint(os.Getenv("USERPROFILE"), "/.ssh:/home/smartide/.ssh")}
+			configPaths = []string{fmt.Sprintf("\\'%v\\.ssh:/home/smartide/.ssh\\'", os.Getenv("USERPROFILE"))}
 		} else {
 			configPaths = []string{"$HOME/.ssh:/home/smartide/.ssh"}
 		}
@@ -155,4 +155,26 @@ func CheckLocalGitEnv() error {
 	}
 
 	return nil
+}
+
+func LocalContainerGitSet(docker common.Docker, dockerContainerName string) {
+	out, err := docker.Exec(context.Background(), dockerContainerName, "/usr/bin", []string{"sudo", "chown", "-R", "smartide:smartide", "/home/smartide/.ssh"}, []string{})
+	common.CheckError(err)
+	common.SmartIDELog.Debug(out)
+
+	out, err = docker.Exec(context.Background(), dockerContainerName, "/usr/bin", []string{"sudo", "chmod", "755", "/home/smartide/.ssh"}, []string{})
+	common.CheckError(err)
+	common.SmartIDELog.Debug(out)
+
+	out, err = docker.Exec(context.Background(), dockerContainerName, "/usr/bin", []string{"sudo", "chmod", "644", "/home/smartide/.ssh/authorized_keys"}, []string{})
+	common.CheckError(err)
+	common.SmartIDELog.Debug(out)
+
+	out, err = docker.Exec(context.Background(), dockerContainerName, "/usr/bin", []string{"sudo", "chmod", "644", "/home/smartide/.ssh/id_rsa.pub"}, []string{})
+	common.CheckError(err)
+	common.SmartIDELog.Debug(out)
+
+	out, err = docker.Exec(context.Background(), dockerContainerName, "/usr/bin", []string{"sudo", "chmod", "600", "/home/smartide/.ssh/id_rsa"}, []string{})
+	common.CheckError(err)
+	common.SmartIDELog.Debug(out)
 }

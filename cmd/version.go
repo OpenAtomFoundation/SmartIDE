@@ -17,9 +17,10 @@ import (
 
 // initCmd represents the init command
 var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: i18nInstance.Version.Info_help_short,
-	Long:  i18nInstance.Version.Info_help_long,
+	Use:     "version",
+	Short:   i18nInstance.Version.Info_help_short,
+	Long:    i18nInstance.Version.Info_help_long,
+	Aliases: []string{"v"},
 	Run: func(cmd *cobra.Command, args []string) {
 
 		common.SmartIDELog.Console(Version.ConvertToJson())

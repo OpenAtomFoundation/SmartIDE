@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors:
- * @LastEditTime:
+ * @LastEditors: kenan
+ * @LastEditTime: 2021-12-28 18:37:58
  */
 package cmd
 
@@ -41,12 +41,18 @@ var configYamlFileRelativePath string = model.CONST_Default_ConfigRelativeFilePa
 
 // startCmd represents the start command
 var startCmd = &cobra.Command{
-	Use:   "start",
-	Short: i18nInstance.Start.Info_help_short,
-	Long:  i18nInstance.Start.Info_help_long,
-	Example: `  smartide start --host <host> --username <username> --password <password> --repourl <git clone url> --branch <branch name> --filepath <config file path>
+	Use:     "start",
+	Short:   i18nInstance.Start.Info_help_short,
+	Long:    i18nInstance.Start.Info_help_long,
+	Aliases: []string{"up"},
+	Example: `  smartide start
   smartide start --workspaceid {workspaceid}
-  smartide get {workspaceid}`,
+  smartide start <workspaceid>
+  smartide start <git clone url>
+  smartide start --host <host> --username <username> --password <password> --repourl <git clone url> --branch <branch name> --filepath <config file path>
+  smartide start --host <host> <git clone url>
+  smartide start --k8s <context> --namespace <namespace> --repoUrl <git clone url> --branch master
+  smartide start --k8s <context> --namespace <namespace> <git clone url>`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		//0. 提示文本
 		common.SmartIDELog.Info(i18nInstance.Start.Info_start)
@@ -79,6 +85,23 @@ var startCmd = &cobra.Command{
 			}
 
 			start.ExecuteStartCmd(worksapceInfo, func(v string, d common.Docker) {}, executeStartCmdFunc)
+		} else if worksapceInfo.Mode == workspace.WorkingMode_K8s {
+			executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
+				var imageNames string
+				for image := range yamlConfig.Workspace.Servcies {
+					tag := yamlConfig.Workspace.Servcies[image].Image.Tag
+					imageName := yamlConfig.Workspace.Servcies[image].Image.Name
+					if tag == "" {
+						imageNames = imageNames + imageName + ","
+					} else {
+						imageNames = imageNames + imageName + ":" + tag + ","
+					}
+				}
+				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(worksapceInfo.Mode), imageNames)
+			}
+
+			start.ExecuteK8sStartCmd(worksapceInfo, executeStartCmdFunc)
+
 		} else {
 			executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
 				var imageNames string
@@ -155,8 +178,10 @@ func getWorkspaceIdFromFlagsAndArgs(cmd *cobra.Command, args []string) int {
 // 从start command的flag、args中获取workspace
 func getWorkspace4Start(cmd *cobra.Command, args []string) (workspaceInfo workspace.WorkspaceInfo, err error) {
 	fflags := cmd.Flags()
+	//从args或flags中获取workspaceid，如 : smartide start 1
 	workspaceId := getWorkspaceIdFromFlagsAndArgs(cmd, args)
-
+	//从args或flags中获取giturl，如 : smartide start https://github.com/idcf-boat-house/boathouse-calculator.git
+	gitUrl := getGitUrlFromArgs(cmd, args)
 	//1. 加载workspace
 	workspaceInfo = workspace.WorkspaceInfo{}
 	//1.1. 指定了从workspaceid，从sqlite中读取
@@ -191,7 +216,11 @@ func getWorkspace4Start(cmd *cobra.Command, args []string) (workspaceInfo worksp
 			}
 
 			workspaceInfo.Remote = hostInfo
-			workspaceInfo.GitCloneRepoUrl = getFlagValue(fflags, flag_repourl)
+			if gitUrl != "" {
+				workspaceInfo.GitCloneRepoUrl = gitUrl
+			} else {
+				workspaceInfo.GitCloneRepoUrl = getFlagValue(fflags, flag_repourl)
+			}
 			if strings.Index(workspaceInfo.GitCloneRepoUrl, "git") == 0 {
 				workspaceInfo.GitRepoAuthType = workspace.GitRepoAuthType_SSH
 			} else if strings.Index(workspaceInfo.GitCloneRepoUrl, "https") == 0 {
@@ -204,13 +233,30 @@ func getWorkspace4Start(cmd *cobra.Command, args []string) (workspaceInfo worksp
 			repoWorkspaceDir := filepath.Join("~", REMOTE_REPO_ROOT, repoName)
 			workspaceInfo.WorkingDirectoryPath = repoWorkspaceDir
 
+		} else if fflags.Changed("k8s") {
+			if gitUrl != "" {
+				workspaceInfo.GitCloneRepoUrl = gitUrl
+			} else {
+				workspaceInfo.GitCloneRepoUrl = getFlagValue(fflags, flag_repourl)
+			}
+			workingMode = workspace.WorkingMode_K8s
+
 		} else { //1.2.2. 本地模式
 			// 本地模式下，不需要录入git库的克隆地址、分支
 			checkFlagUnnecessary(fflags, flag_repourl, "mode=local")
 			checkFlagUnnecessary(fflags, flag_branch, "mode=local")
-
-			workspaceInfo.WorkingDirectoryPath = pwd
-			workspaceInfo.GitCloneRepoUrl, _ = getLocalGitRepoUrl() // 获取本地关联的repo url
+			//本地模式下需要clone repo的情况：smartide start https://gitee.com/idcf-boat-house/boathouse-calculator.git
+			if gitUrl != "" {
+				common.SmartIDELog.Info(i18nInstance.Start.Info_git_clone)
+				var clonedRepoDir = cloneRepo(pwd, gitUrl)
+				common.SmartIDELog.Info(i18nInstance.Common.Info_gitrepo_clone_done)
+				workspaceInfo.WorkingDirectoryPath = clonedRepoDir
+				workspaceInfo.GitCloneRepoUrl, _ = getLocalGitRepoUrl(clonedRepoDir) // 获取本地关联的repo url
+				os.Chdir(clonedRepoDir)
+			} else {
+				workspaceInfo.WorkingDirectoryPath = pwd
+				workspaceInfo.GitCloneRepoUrl, _ = getLocalGitRepoUrl(pwd) // 获取本地关联的repo url
+			}
 		}
 
 		// 运行模式
@@ -224,8 +270,11 @@ func getWorkspace4Start(cmd *cobra.Command, args []string) (workspaceInfo worksp
 			workspaceInfo = workspaceInfoDb
 
 		} else {
-			// docker-compose 文件路径
-			workspaceInfo.TempDockerComposeFilePath = workspaceInfo.GetTempDockerComposeFilePath()
+			if workspaceInfo.Mode != workspace.WorkingMode_K8s {
+				// docker-compose 文件路径
+				workspaceInfo.TempDockerComposeFilePath = workspaceInfo.GetTempDockerComposeFilePath()
+			}
+
 		}
 	}
 
@@ -282,10 +331,8 @@ func getWorkspace4Start(cmd *cobra.Command, args []string) (workspaceInfo worksp
 }
 
 //
-func getLocalGitRepoUrl() (gitRemmoteUrl, pathName string) {
+func getLocalGitRepoUrl(pwd string) (gitRemmoteUrl, pathName string) {
 	// current directory
-	pwd, err := os.Getwd()
-	common.CheckError(err)
 	fileInfo, err := os.Stat(pwd)
 	common.CheckError(err)
 	pathName = fileInfo.Name()
@@ -435,6 +482,7 @@ func init() {
 
 	startCmd.Flags().StringVarP(&configYamlFileRelativePath, "filepath", "f", "", i18nInstance.Start.Info_help_flag_filepath)
 	startCmd.Flags().StringP("branch", "b", "", i18nInstance.Start.Info_help_flag_branch)
+	startCmd.Flags().StringP("k8s", "k", "", i18nInstance.Start.Info_help_flag_k8s)
 
 }
 
@@ -443,4 +491,36 @@ func getRepoName(repoUrl string) string {
 
 	index := strings.LastIndex(repoUrl, "/")
 	return strings.Replace(repoUrl[index+1:], ".git", "", -1)
+}
+
+// 获取参数gitUrl
+func getGitUrlFromArgs(cmd *cobra.Command, args []string) string {
+	// 从args中获取值
+	var gitUrl string = ""
+	if len(args) > 0 { // 从args中加载
+		str := args[0]
+		if strings.Index(str, "git@") == 0 || strings.Index(str, "http://") == 0 || strings.Index(str, "https://") == 0 {
+			gitUrl = str
+		}
+	}
+	return gitUrl
+}
+
+func cloneRepo(rootDir string, gitUrl string) string {
+	repoName := getRepoName(gitUrl)
+	repoPath := filepath.Join(rootDir, repoName)
+	options := &git.CloneOptions{
+		URL:      gitUrl,
+		Progress: os.Stdout,
+	}
+	_, err := git.PlainClone(repoPath, false, options)
+	if err != nil {
+		if err.Error() == "repository already exists" {
+			message := fmt.Sprintf(i18nInstance.Main.Err_git_clone_folder_exist, repoName)
+			common.SmartIDELog.Error(message)
+		} else {
+			common.CheckError(err)
+		}
+	}
+	return repoPath
 }

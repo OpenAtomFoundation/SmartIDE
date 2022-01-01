@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors:
- * @LastEditTime:
+ * @LastEditors: kenan
+ * @LastEditTime: 2021-12-20 18:40:09
  */
 package common
 
@@ -181,7 +181,7 @@ func (instance *SSHRemote) IsCloned(workSpaceDir string) bool {
 // 文件是否存在
 func (instance *SSHRemote) IsExit(filepath string) bool {
 
-	filepath = instance.convertFilePath(filepath)
+	filepath = instance.ConvertFilePath(filepath)
 
 	command := fmt.Sprintf(`[[ -f "%v" ]] && echo "1" || echo "0"`, filepath)
 	outContent, err := instance.ExeSSHCommand(command)
@@ -193,7 +193,7 @@ func (instance *SSHRemote) IsExit(filepath string) bool {
 // 获取文件内容
 func (instance *SSHRemote) GetContent(filepath string) string {
 
-	filepath = instance.convertFilePath(filepath)
+	filepath = instance.ConvertFilePath(filepath)
 
 	command := fmt.Sprintf(`cat "%v"`, filepath)
 	outContent, err := instance.ExeSSHCommand(command)
@@ -205,7 +205,7 @@ func (instance *SSHRemote) GetContent(filepath string) string {
 // 创建文件，如果存在就附加内容
 func (sshRemote *SSHRemote) CreateFileByEcho(filepath string, content string) error {
 
-	filepath = sshRemote.convertFilePath(filepath)
+	filepath = sshRemote.ConvertFilePath(filepath)
 
 	/* 	// 检查并创建文件夹
 	   	dir := path.Dir(filepath)
@@ -223,7 +223,7 @@ func (sshRemote *SSHRemote) CreateFileByEcho(filepath string, content string) er
 
 // 检查并创建文件夹
 func (sshRemote *SSHRemote) CheckAndCreateDir(dir string) error {
-	dir = sshRemote.convertFilePath(dir)
+	dir = sshRemote.ConvertFilePath(dir)
 
 	command := fmt.Sprintf("[[ -f \"%v\" ]] && echo \"1\" || mkdir -p \"%v\"", dir, dir)
 	_, err := sshRemote.ExeSSHCommand(command)
@@ -232,7 +232,7 @@ func (sshRemote *SSHRemote) CheckAndCreateDir(dir string) error {
 }
 
 // 转换文件路径为远程主机支持的
-func (instance *SSHRemote) convertFilePath(filepath string) (newFilepath string) {
+func (instance *SSHRemote) ConvertFilePath(filepath string) (newFilepath string) {
 	newFilepath = filepath
 
 	newFilepath = strings.ReplaceAll(filepath, "\\", "/")
@@ -312,6 +312,7 @@ func (instance *SSHRemote) GitClone(gitRepoUrl string, workSpaceDir string) erro
 
 				// 执行私钥文件复制
 				command := fmt.Sprintf(`mkdir -p .ssh
+			chmod 700 -R ~/.ssh
 			rm -rf ~/.ssh/id_rsa
 			echo "%v" >> ~/.ssh/id_rsa
 			chmod 600 ~/.ssh/id_rsa

@@ -49,7 +49,6 @@ func (sLog *smartIDELogStruct) Error(err interface{}, headers ...string) (reErr 
 
 		// 前缀
 		prefix := getPrefix(zapcore.ErrorLevel)
-		contents = append([]string{prefix}, contents...)
 		contents = RemoveDuplicatesAndEmpty(contents)
 
 		// 堆栈
@@ -59,9 +58,9 @@ func (sLog *smartIDELogStruct) Error(err interface{}, headers ...string) (reErr 
 
 		// 调试模式时向控制台输出堆栈
 		if isDebugLevel {
-			fmt.Println(strings.Join(fullContents, "; "))
+			fmt.Println(prefix, strings.Join(fullContents, "; "))
 		} else {
-			fmt.Println(strings.Join(contents, "; "))
+			fmt.Println(prefix, strings.Join(contents, "; "))
 		}
 
 		// 日志中一定输出完整的日志

@@ -202,9 +202,13 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fun
 	//8. 打开浏览器
 	var url string
 	//vscode启动时候默认打开文件夹处理
-	if currentConfig.Workspace.DevContainer.IdeType == "vscode" {
-		url = fmt.Sprintf("http://localhost:%v/?folder=vscode-remote://localhost:%v/home/project/%v", unusedLocalPort4IdeBindingPort, unusedLocalPort4IdeBindingPort, workspaceInfo.GetProjectDirctoryName())
-	} else {
+	switch strings.ToLower(currentConfig.Workspace.DevContainer.IdeType) {
+	case "vscode":
+		url = fmt.Sprintf("http://localhost:%v/?folder=vscode-remote://localhost:%v%v",
+			unusedLocalPort4IdeBindingPort, unusedLocalPort4IdeBindingPort, workspaceInfo.GetContainerWorkingPathWithVolumes())
+	case "jb-projector":
+		url = fmt.Sprintf(`http://localhost:%v`, unusedLocalPort4IdeBindingPort)
+	default:
 		url = fmt.Sprintf(`http://localhost:%v`, unusedLocalPort4IdeBindingPort)
 	}
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_warting_for_webide)

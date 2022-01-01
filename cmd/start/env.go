@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors:
- * @LastEditTime:
+ * @LastEditors: kenan
+ * @LastEditTime: 2021-12-20 16:55:10
  */
 package start
 
@@ -93,7 +93,7 @@ func CheckRemoveEnv(sshRemote common.SSHRemote) error {
 	sshConfig, err := sshRemote.ExeSSHCommand("[[ -f \".ssh/config\" ]] && cat ~/.ssh/config || echo \"\"")
 	common.CheckError(err)
 	if !strings.Contains(sshConfig, "StrictHostKeyChecking no") { // 不包含就添加
-		command := "echo -e \"StrictHostKeyChecking no\n\" >> ~/.ssh/config"
+		command := "if [ ! -d ～/.ssh ]; then mkdir -p ~/.ssh; fi && echo -e \"StrictHostKeyChecking no\n\" >> ~/.ssh/config"
 		_, err := sshRemote.ExeSSHCommand(command)
 		common.CheckError(err)
 	}

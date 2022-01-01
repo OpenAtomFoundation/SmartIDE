@@ -87,12 +87,12 @@ var resetCmd = &cobra.Command{
 					//1.1. 删除远程主机的工作区
 					if workspaceInfo.Mode == workspace.WorkingMode_Local { // 本地模式
 						// 删除对应的容器\镜像
-						removeLocalMode(workspaceInfo, resetCmdFalgs.IsRemoveAllComposeImages || resetCmdFalgs.IsAll)
+						removeLocalMode(workspaceInfo, resetCmdFalgs.IsRemoveAllComposeImages || resetCmdFalgs.IsAll, resetCmdFalgs.IsAll)
 
 					} else if workspaceInfo.Mode == workspace.WorkingMode_Remote { // 远程模式
 						// 删除对应的容器\镜像\工作目录
 						removeRemoteMode(workspaceInfo,
-							resetCmdFalgs.IsRemoveAllComposeImages || resetCmdFalgs.IsAll, resetCmdFalgs.IsRemoveDirectory || resetCmdFalgs.IsAll)
+							resetCmdFalgs.IsRemoveAllComposeImages || resetCmdFalgs.IsAll, resetCmdFalgs.IsRemoveDirectory || resetCmdFalgs.IsAll, resetCmdFalgs.IsAll)
 
 					}
 
@@ -131,12 +131,12 @@ var resetCmd = &cobra.Command{
 			configFilePath := filepath.Join(dirname, ".ide/.ide.config")
 			err = os.Remove(configFilePath)
 			common.CheckError(err)
-			common.SmartIDELog.InfoF(i18nInstance.Reset.Info_template_remove, configFilePath)
+			common.SmartIDELog.InfoF(i18nInstance.Reset.Info_config_remove, configFilePath)
 
 			// 删除配置文件
 			templatesDirctoryPath := filepath.Join(dirname, ".ide/templates")
 			os.RemoveAll(templatesDirctoryPath)
-			common.SmartIDELog.InfoF(i18nInstance.Reset.Info_config_remove, templatesDirctoryPath)
+			common.SmartIDELog.InfoF(i18nInstance.Reset.Info_template_remove, templatesDirctoryPath)
 		}
 
 		// end

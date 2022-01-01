@@ -7,7 +7,12 @@
  */
 package config
 
-import "github.com/leansoftX/smartide-cli/pkg/docker/compose"
+import (
+	"strings"
+
+	"github.com/leansoftX/smartide-cli/internal/model"
+	"github.com/leansoftX/smartide-cli/pkg/docker/compose"
+)
 
 // smartide 的配置
 // docker-compose.yaml https://docs.docker.com/compose/compose-file/
@@ -108,5 +113,17 @@ func (w SmartIdeConfig) GetConfigRelativeFilePath() string {
 // 工作目录
 func (w SmartIdeConfig) GetWorkingDirectoryPath() string {
 	return w.Workspace.DevContainer.workingDirectoryPath
+
+}
+//返回容器内IDE端口，web ide的默认端口：3000，JetBrains IDE的默认端口：8887
+func (w SmartIdeConfig) GetContainerWebIDEPort() int {
+	switch strings.ToLower(w.Workspace.DevContainer.IdeType) {
+	case "vscode":
+		return model.CONST_Container_WebIDEPort
+	case "jb-projector":
+		return model.CONST_Container_JetBrainsIDEPort
+	default:
+		return model.CONST_Container_WebIDEPort
+	}
 
 }

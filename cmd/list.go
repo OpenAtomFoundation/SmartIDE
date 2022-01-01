@@ -24,6 +24,7 @@ var listCmd = &cobra.Command{
 	Use:     "list",
 	Short:   i18nInstance.List.Info_help_short,
 	Long:    i18nInstance.List.Info_help_long,
+	Aliases: []string{"ls"},
 	Example: `  smartide list`,
 	Run: func(cmd *cobra.Command, args []string) {
 

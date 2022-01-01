@@ -3,6 +3,9 @@ package model
 // 容器内部的web ide的默认端口
 const CONST_Container_WebIDEPort int = 3000
 
+// 容器内部的JetBrains IDE的默认端口
+const CONST_Container_JetBrainsIDEPort int = 8887
+
 // 容器内部的ssh端口
 const CONST_Container_SSHPort int = 22
 

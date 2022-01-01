@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2021-12-14 10:08:22
+ * @LastEditTime: 2021-12-20 11:58:59
  */
 package start
 
@@ -136,21 +136,7 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo,
 	config.GitConfig(gitconfig, false, devContainerName, cli, compose.Service{}, common.SSHRemote{})
 	docker := *common.NewDocker(cli)
 	dockerContainerName := strings.ReplaceAll(devContainerName, "/", "")
-	out, err := docker.Exec(context.Background(), strings.ReplaceAll(devContainerName, "/", ""), "/usr/bin", []string{"sudo", "chmod", "755", "/home/smartide/.ssh"}, []string{})
-	common.CheckError(err)
-	common.SmartIDELog.Debug(out)
-
-	out, err = docker.Exec(context.Background(), strings.ReplaceAll(devContainerName, "/", ""), "/usr/bin", []string{"sudo", "chmod", "644", "/home/smartide/.ssh/authorized_keys"}, []string{})
-	common.CheckError(err)
-	common.SmartIDELog.Debug(out)
-
-	out, err = docker.Exec(context.Background(), strings.ReplaceAll(devContainerName, "/", ""), "/usr/bin", []string{"sudo", "chmod", "644", "/home/smartide/.ssh/id_rsa.pub"}, []string{})
-	common.CheckError(err)
-	common.SmartIDELog.Debug(out)
-
-	out, err = docker.Exec(context.Background(), strings.ReplaceAll(devContainerName, "/", ""), "/usr/bin", []string{"sudo", "chmod", "600", "/home/smartide/.ssh/id_rsa"}, []string{})
-	common.CheckError(err)
-	common.SmartIDELog.Debug(out)
+	config.LocalContainerGitSet(docker, dockerContainerName)
 
 	//5. 保存 workspace
 	if hasChanged {
@@ -172,19 +158,24 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo,
 	common.SmartIDELog.Info(i18nInstance.Start.Info_running_openbrower)
 	// vscode启动时候默认打开文件夹处理
 	var url string
-	if currentConfig.Workspace.DevContainer.IdeType == "vscode" {
-		url = fmt.Sprintf("http://localhost:%v/?folder=vscode-remote://localhost:%v/home/project/%v",
-			ideBindingPort, ideBindingPort, workspaceInfo.GetProjectDirctoryName())
-	} else {
+	switch strings.ToLower(currentConfig.Workspace.DevContainer.IdeType) {
+	case "vscode":
+		url = fmt.Sprintf("http://localhost:%v/?folder=vscode-remote://localhost:%v%v",
+			ideBindingPort, ideBindingPort, workspaceInfo.GetContainerWorkingPathWithVolumes())
+	case "jb-projector":
+		url = fmt.Sprintf(`http://localhost:%v`, ideBindingPort)
+	default:
 		url = fmt.Sprintf(`http://localhost:%v`, ideBindingPort)
 	}
-	common.SmartIDELog.Info(i18nInstance.Start.Info_open_in_brower, url)
+
+	common.SmartIDELog.Info(i18nInstance.VmStart.Info_warting_for_webide)
 	isUrlReady := false
 	for !isUrlReady {
 		resp, err := http.Get(url)
 		if (err == nil) && (resp.StatusCode == 200) {
 			isUrlReady = true
 			common.OpenBrowser(url)
+			common.SmartIDELog.InfoF(i18nInstance.VmStart.Info_open_brower, url)
 		}
 	}
 

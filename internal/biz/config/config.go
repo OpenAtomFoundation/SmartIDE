@@ -1,14 +1,16 @@
 /*
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
- * @Description:
+ * @Description: config
  * @Date: 2021-11
- * @LastEditors:
+ * @LastEditors: jasonchen
  * @LastEditTime:
  */
 package config
 
 import (
 	"fmt"
+	"os"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -29,6 +31,8 @@ func (yamlFileConfig SmartIdeConfig) ToYaml() (result string, err error) {
 		return result, err
 	}
 	result = string(bytes)
+
+	result = strings.ReplaceAll(result, "\\'", "'")
 
 	return result, err
 }
@@ -76,7 +80,7 @@ func (yamlFileConfig *SmartIdeConfig) LoadDockerComposeFromTempFile(sshRemote co
 			continue
 		}
 		for _, port := range service.Ports {
-			if strings.Contains(port, ":"+strconv.Itoa(model.CONST_Container_WebIDEPort)) { // webide 端口
+			if strings.Contains(port, ":"+strconv.Itoa(yamlFileConfig.GetContainerWebIDEPort())) { // webide 端口
 				index := strings.Index(port, ":")
 				if index > 0 {
 					ideBindingPort, _ = strconv.Atoi(port[:index])
@@ -191,7 +195,6 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 
 	//3. 转换为docker compose - 端口绑定
 	if isRemoteMode { //3.1. vm 命令模式下，即remote远程主机，只需要自动绑定ide端口，但不需要绑定22
-
 		// 端口映射
 		for serviceName, service := range dockerCompose.Services {
 			if serviceName == yamlFileConfig.Workspace.DevContainer.ServiceName {
@@ -201,10 +204,10 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 					if newIdeBindingPort != ideBindingPort {
 						ideBindingPort = newIdeBindingPort
 					}
-					yamlFileConfig.setPort4Label(model.CONST_Container_WebIDEPort, ideBindingPort, newIdeBindingPort, serviceName)
+					yamlFileConfig.setPort4Label(yamlFileConfig.GetContainerWebIDEPort(), ideBindingPort, newIdeBindingPort, serviceName)
 				}
+				service.AppendPort(strconv.Itoa(ideBindingPort) + ":" + strconv.Itoa(yamlFileConfig.GetContainerWebIDEPort()))
 
-				service.AppendPort(strconv.Itoa(ideBindingPort) + ":" + strconv.Itoa(model.CONST_Container_WebIDEPort))
 				dockerCompose.Services[serviceName] = service
 			}
 
@@ -251,11 +254,12 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 						ideBindingPort = newIdeBindingPort
 
 					}
-					yamlFileConfig.setPort4Label(model.CONST_Container_WebIDEPort, ideBindingPort, newIdeBindingPort, serviceName)
+
+					yamlFileConfig.setPort4Label(yamlFileConfig.GetContainerWebIDEPort(), ideBindingPort, newIdeBindingPort, serviceName)
 				}
 
+				service.AppendPort(strconv.Itoa(ideBindingPort) + ":" + strconv.Itoa(yamlFileConfig.GetContainerWebIDEPort()))
 				service.AppendPort(strconv.Itoa(sshBindingPort) + ":" + strconv.Itoa(model.CONST_Container_SSHPort))
-				service.AppendPort(strconv.Itoa(ideBindingPort) + ":" + strconv.Itoa(model.CONST_Container_WebIDEPort))
 
 				dockerCompose.Services[serviceName] = service
 			}
@@ -322,54 +326,98 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 	//5. 项目目录 volume
 	for serviceName, service := range dockerCompose.Services {
 		if serviceName == yamlFileConfig.Workspace.DevContainer.ServiceName {
+
+			// 查找目录映射的volume
+			indexProjectVolume := -1
+			volumeProject := ""
 			for indexVolume, volume := range service.Volumes {
 				if strings.Contains(volume, "/home/project") {
-					service.Volumes[indexVolume] = strings.Replace(volume, "/home/project", "/home/project/"+projectName, -1)
+					indexProjectVolume = indexVolume
+					volumeProject = volume
 				}
 			}
-			dockerCompose.Services[serviceName] = service
+
+			// 当前工作目录
+			twd, err := os.Getwd()
+			if isRemoteMode {
+				twd = sshRemote.ConvertFilePath(yamlFileConfig.GetWorkingDirectoryPath())
+			}
+			common.CheckError(err)
+
+			// 设置目录映射值
+			isWindows := runtime.GOOS == "windows"
+			if indexProjectVolume > -1 { // 当存在配置时，需要吧把 “.” 替换为当前目录
+				// 本地模式下，把“.”替换为当前目录
+				if strings.Index(volumeProject, ".") == 0 {
+					if isWindows && !isRemoteMode {
+						service.Volumes[indexProjectVolume] = "\\'" + twd + volumeProject[1:] + "\\'"
+					} else {
+						service.Volumes[indexProjectVolume] = twd + volumeProject[1:]
+					}
+
+					// 重置
+					dockerCompose.Services[serviceName] = service
+				}
+
+			} else { // insert default project volume
+				if isWindows && !isRemoteMode {
+					service.Volumes[indexProjectVolume] = fmt.Sprintf("\\'%v:%v\\'", twd, "/home/project/"+projectName)
+				} else {
+					service.Volumes[indexProjectVolume] = fmt.Sprintf("%v:%v", twd, "/home/project/"+projectName)
+				}
+
+				// 重置
+				dockerCompose.Services[serviceName] = service
+
+			}
+
 			break
 		}
 	}
 
-	//6.替换images地址
-	for serviceName, service := range dockerCompose.Services {
-		if service.Image.Name != "" {
-			if strings.Index(service.Image.Name, "registry.cn-hangzhou.aliyuncs.com") < 0 {
-				service.Image.Name = fmt.Sprintf("%v/%v", GlobalSmartIdeConfig.ImagesRegistry, service.Image.Name)
-			} else {
-				imageName := strings.Split(service.Image.Name, "registry.cn-hangzhou.aliyuncs.com")
-				service.Image.Name = fmt.Sprintf("%v%v", GlobalSmartIdeConfig.ImagesRegistry, imageName[1])
-			}
-		}
-		dockerCompose.Services[serviceName] = service
-	}
+	//6.替换images地址，功能暂时注释，待完善
+	// for serviceName, service := range dockerCompose.Services {
+	// 	if service.Image.Name != "" {
+	// 		if strings.Index(service.Image.Name, "registry.cn-hangzhou.aliyuncs.com") < 0 {
+	// 			service.Image.Name = fmt.Sprintf("%v/%v", GlobalSmartIdeConfig.ImagesRegistry, service.Image.Name)
+	// 		} else {
+	// 			imageName := strings.Split(service.Image.Name, "registry.cn-hangzhou.aliyuncs.com")
+	// 			service.Image.Name = fmt.Sprintf("%v%v", GlobalSmartIdeConfig.ImagesRegistry, imageName[1])
+	// 		}
+	// 	}
+	// 	dockerCompose.Services[serviceName] = service
+	// }
 
 	//7.获取uid,gid设置到环境变量
 	for serviceName, service := range dockerCompose.Services {
-		service.Environment = map[string]string{}
 
 		if service.Environment == nil {
 			service.Environment = map[string]string{}
-		}
-
-		if service.Environment == nil {
-			service.Environment = map[string]string{}
-		}
-
-		if isRemoteMode {
-			uid, gid := sshRemote.GetRemoteUserInfo()
-			service.Environment[model.CONST_LOCAL_USER_UID] = uid
-			service.Environment[model.CONST_LOCAL_USER_GID] = gid
 		} else {
-			localuser := user.GetUserInfo()
-			service.Environment[model.CONST_LOCAL_USER_UID] = localuser.Uid
-			service.Environment[model.CONST_LOCAL_USER_GID] = localuser.Gid
+			for k, v := range service.Environment {
+				common.SmartIDELog.DebugF("ENV---%v-----%v: %v", serviceName, k, v)
+				service.Environment[k] = v
+			}
+		}
+		// 只有IDE容器需要动态赋值uid,gid
+		if serviceName == yamlFileConfig.Workspace.DevContainer.ServiceName {
+
+			if isRemoteMode {
+				uid, gid := sshRemote.GetRemoteUserInfo()
+				service.Environment[model.CONST_LOCAL_USER_UID] = uid
+				service.Environment[model.CONST_LOCAL_USER_GID] = gid
+			} else {
+				localuser := user.GetUserInfo()
+				service.Environment[model.CONST_LOCAL_USER_UID] = localuser.Uid
+				service.Environment[model.CONST_LOCAL_USER_GID] = localuser.Gid
+			}
+
+			if service.Environment[model.CONST_ENV_NAME_LoalUserPassword] == "" {
+				service.Environment[model.CONST_ENV_NAME_LoalUserPassword] = model.CONST_DEV_CONTAINER_USER_DEFAULT_PASSWORD //smartide123.@IDE
+			}
+
 		}
 
-		if service.Environment[model.CONST_ENV_NAME_LoalUserPassword] == "" {
-			service.Environment[model.CONST_ENV_NAME_LoalUserPassword] = model.CONST_DEV_CONTAINER_USER_DEFAULT_PASSWORD //smartide123.@IDE
-		}
 		dockerCompose.Services[serviceName] = service
 	}
 

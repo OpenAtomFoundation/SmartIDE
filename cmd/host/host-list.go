@@ -20,13 +20,13 @@ import (
 
 // initCmd represents the init command
 var HostListCmd = &cobra.Command{
-	Use:   "list",
-	Short: i18nInstance.Host.Info_help_list_short,
-	Long:  i18nInstance.Host.Info_help_list_long,
+	Use:     "list",
+	Short:   i18nInstance.Host.Info_help_list_short,
+	Long:    i18nInstance.Host.Info_help_list_long,
+	Aliases: []string{"ls"},
 	Example: `
   smartide host list`,
 	Run: func(cmd *cobra.Command, args []string) {
-
 		list, err := dal.GetRemoteList()
 		common.CheckError(err)
 		printRemotes(list)

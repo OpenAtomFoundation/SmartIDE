@@ -27,6 +27,7 @@ type WorkingMode string
 const (
 	WorkingMode_Remote WorkingMode = "remote"
 	WorkingMode_Local  WorkingMode = "local"
+	WorkingMode_K8s    WorkingMode = "k8s"
 )
 
 // 远程连接的类型
@@ -152,6 +153,23 @@ func (w WorkspaceInfo) GetProjectDirctoryName() string {
 	}
 
 	return w.projectDirctoryName
+}
+
+// 从 volumes 中获取容器工作目录
+func (c *WorkspaceInfo) GetContainerWorkingPathWithVolumes() string {
+	projectPath := ""
+
+	service := c.TempDockerCompose.Services[c.ConfigYaml.Workspace.DevContainer.ServiceName]
+	for _, volume := range service.Volumes {
+		if strings.Contains(volume, ":/home/project") {
+			tmp := strings.ReplaceAll(volume, "\\'", "")
+			index := strings.Index(tmp, ":/home/project")
+			projectPath = tmp[index+1:]
+			break
+		}
+	}
+
+	return projectPath
 }
 
 // get repo name
