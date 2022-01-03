@@ -21,7 +21,11 @@ description: >
 
 请参考 <a href="/zh/docs/install/" target="_blank">安装手册</a> 完成 SmartIDE 工具的安装。
 
-## 1. 一键启动
+## 本地模式
+
+本地模式允许用户在已经安装了Docker Desktop的本地开发机上，运行并管理运行在容器中的开发调试环境。这种模式下SmartIDE会根据代码库中预置的配置文件（位于 .ide/.ide.yaml）完成拉取开发容器镜像，启动容器，代码目录映射以及WebIDE的启动。
+
+### 1. 一键启动
 
 运行以下脚本一键启动 **Boathouse计算器** 应用的 **集成开发环境(IDE)** 。
 
@@ -29,17 +33,13 @@ description: >
 {{% tab name="MacOS" %}}
 ```shell
 # 在 MacOS 上打开 终端应用(Terminal) 并复制粘贴本段脚本
-git clone https://gitee.com/idcf-boat-house/boathouse-calculator.git 
-cd boathouse-calculator 
-smartide start
+smartide start https://gitee.com/idcf-boat-house/boathouse-calculator.git 
 ```
 {{% /tab %}}
 {{% tab name="Windows" %}}
 ```powershell
 # 在 Windows 上打开 PowerShell 并复制粘贴本段脚本
-git clone https://gitee.com/idcf-boat-house/boathouse-calculator.git 
-cd boathouse-calculator 
-smartide start
+smartide start https://gitee.com/idcf-boat-house/boathouse-calculator.git 
 ```
 {{% /tab %}}
 {{< /tabs >}}
@@ -47,7 +47,7 @@ smartide start
 运行后的效果如下：
 ![smartide start](images/smartide-start.png)
 
-## 2. 编码调试
+### 2. 编码调试
 
 SmartIDE会自动启动内置的WebIDE，你会看到一个类似vscode的IDE窗口在你的默认浏览器中出现。
 
@@ -66,6 +66,49 @@ SmartIDE会自动启动内置的WebIDE，你会看到一个类似vscode的IDE窗
 ![调试状态](images/smartide-debugging.png)
 
 到这里，你已经完成了 [Boathouse计算器示例应用](/zh/docs/examples/boathouse-calculator/) 的开发调试过程，一切的操作就像在本地使用vscode一样的顺畅。
+
+## 远程模式
+
+远程模式允许用户通过SSH调度远程linux主机，并在远程主机上根据预置在代码库中的配置文件（文件位置：.ide/.ide.yaml）完成拉取开发容器镜像，启动容器，代码映射和启动容器内的WebIDE的一系列动作；在开发容器启动成功后，SmartIDE CLI（命令行工具）会作为驻守程序监听远程容器中开发的端口并将这些端口通过SSH隧道的方式转发到本地开发机上，允许用户通过localhost访问，达到“远程开发，本地体验”的目录。
+
+使用远程模式也非常简单，只需要2个步骤
+
+### 1. 准备远程主机
+
+按照 [Docker & Docker-Compose 安装手册 (Linux服务器)](/zh/docs/install/docker-install-linux) 准备远程linux主机
+
+### 2. 启动环境
+
+使用以下命令添加主机记录并启动SmartIDE环境
+
+{{< tabs name="start_script_remote" >}}
+{{% tab name="MacOS" %}}
+```shell
+# 在 MacOS 上打开 终端应用(Terminal) 并复制粘贴本段脚本
+## 添加远程主机
+smartide host add <ip地址> --username <用户名> --password <密码> --port 22
+## 获取远程主机ID
+smartide host list 
+## 使用远程主机ID和git库地址启动SmartIDE远程开发环境
+smartide start --host <远程主机ID> https://gitee.com/idcf-boat-house/boathouse-calculator.git 
+```
+{{% /tab %}}
+{{% tab name="Windows" %}}
+```powershell
+# 在 Windows 上打开 PowerShell 并复制粘贴本段脚本
+## 添加远程主机
+smartide host add <ip地址> --username <用户名> --password <密码> --port 22
+## 获取远程主机ID
+smartide host list 
+## 使用远程主机ID和git库地址启动SmartIDE远程开发环境
+smartide start --host <远程主机ID> https://gitee.com/idcf-boat-house/boathouse-calculator.git 
+```
+{{% /tab %}}
+{{< /tabs >}}
+
+
+
+远程模式启动后的使用体验与本地模式保持一致。
 
 ## 下一步
 

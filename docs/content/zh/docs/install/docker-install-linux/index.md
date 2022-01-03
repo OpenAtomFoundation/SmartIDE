@@ -47,7 +47,7 @@ vim /etc/sudoers
 在 /etc/sudoers 文件中添加如下内容
 
 ```shell
-leixu   ALL=(ALL) NOPASSWD: ALL
+smartide   ALL=(ALL) NOPASSWD: ALL
 ```
 
 同时修改开头为 %sudo 的行为以下内容
@@ -81,4 +81,4 @@ docker-compose -version
 
 ![验证docker和docker-compose安装正确](images/docker-install-linux001.png)
 
-完成以上2项设置之后，你就可以继续按照 [快速启动](/zh/docs/quickstart/) 中 **远程主机** 部分的说明继续体验SmartIDE的功能了。
+完成以上2项设置之后，你就可以继续按照 [快速启动](/zh/docs/quickstart/) 中 **远程模式** 部分的说明继续体验SmartIDE的功能了。
