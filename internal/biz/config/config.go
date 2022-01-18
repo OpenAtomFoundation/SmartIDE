@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description: config
  * @Date: 2021-11
- * @LastEditors: jasonchen
- * @LastEditTime:
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-01-18 10:50:09
  */
 package config
 
@@ -20,6 +20,7 @@ import (
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/docker/compose"
+	"github.com/leansoftX/smartide-cli/pkg/kubectl"
 	"gopkg.in/yaml.v2"
 )
 
@@ -173,18 +174,21 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 
 	} else {
 		// 确保不会有引用类型的问题
-		configContentBytes, err := yaml.Marshal(yamlFileConfig)
+		configContent, err := yamlFileConfig.ToYaml()
 		common.CheckError(err)
 		var notReferenceConfig SmartIdeConfig
-		yaml.Unmarshal(configContentBytes, &notReferenceConfig)
+		yaml.Unmarshal([]byte(configContent), &notReferenceConfig)
 
 		// 使用新对象赋值
 		dockerCompose.Version = notReferenceConfig.Orchestrator.Version
-		dockerCompose.Services = notReferenceConfig.Workspace.Servcies
+		dockerCompose.Services = make(map[string]compose.Service)
+		for serviceName, service := range notReferenceConfig.Workspace.Servcies {
+			s := service
+			dockerCompose.Services[serviceName] = s
+		}
 		dockerCompose.Networks = notReferenceConfig.Workspace.Networks
 		dockerCompose.Volumes = notReferenceConfig.Workspace.Volumes
 		dockerCompose.Secrets = notReferenceConfig.Workspace.Secrets
-
 	}
 
 	//2.2. 检查devContainer中定义的service时候存在于services中
@@ -242,14 +246,16 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 		for serviceName, service := range dockerCompose.Services {
 			if serviceName == yamlFileConfig.Workspace.DevContainer.ServiceName {
 				if isCheckUnuesedPorts {
-					newSshBindingPort := common.CheckAndGetAvailableLocalPort(sshBindingPort, 100) //
+					newSshBindingPort, err := common.CheckAndGetAvailableLocalPort(sshBindingPort, 100) //
+					common.CheckError(err)
 					if newSshBindingPort != sshBindingPort {
 						sshBindingPort = newSshBindingPort
 
 					}
 					yamlFileConfig.setPort4Label(model.CONST_Container_SSHPort, sshBindingPort, newSshBindingPort, serviceName)
 
-					newIdeBindingPort := common.CheckAndGetAvailableLocalPort(ideBindingPort, 10) //
+					newIdeBindingPort, err := common.CheckAndGetAvailableLocalPort(ideBindingPort, 10) //
+					common.CheckError(err)
 					if newIdeBindingPort != ideBindingPort {
 						ideBindingPort = newIdeBindingPort
 
@@ -276,7 +282,8 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 					common.CheckError(err)
 
 					// 获取到一个可用的端口
-					bindingPortNew := common.CheckAndGetAvailableLocalPort(bindingPortOld, 10)
+					bindingPortNew, err := common.CheckAndGetAvailableLocalPort(bindingPortOld, 10)
+					common.CheckError(err)
 					if bindingPortOld != bindingPortNew {
 						service.Ports[index] = fmt.Sprintf("%v:%v", bindingPortNew, binding[1])
 						common.SmartIDELog.InfoF("%v -> %v", portMap, service.Ports[index])
@@ -316,8 +323,11 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 	gitconfig := yamlFileConfig.Workspace.DevContainer.Volumes.GitConfig
 	for serviceName, service := range dockerCompose.Services {
 		if serviceName == yamlFileConfig.Workspace.DevContainer.ServiceName {
-			service = SSHVolumesConfig(sshKey, isRemoteMode, service, sshRemote)
-			service = GitConfig(gitconfig, isRemoteMode, "", nil, service, sshRemote)
+
+			SSHVolumesConfig(sshKey, isRemoteMode, &service, sshRemote)
+
+			GitConfig(gitconfig, isRemoteMode, "", nil, &service, sshRemote, kubectl.ExecInPodRequest{})
+
 			dockerCompose.Services[serviceName] = service
 
 		}
@@ -361,9 +371,9 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 
 			} else { // insert default project volume
 				if isWindows && !isRemoteMode {
-					service.Volumes[indexProjectVolume] = fmt.Sprintf("\\'%v:%v\\'", twd, "/home/project/"+projectName)
+					service.Volumes = append(service.Volumes, fmt.Sprintf("\\'%v:%v\\'", twd, "/home/project/"+projectName))
 				} else {
-					service.Volumes[indexProjectVolume] = fmt.Sprintf("%v:%v", twd, "/home/project/"+projectName)
+					service.Volumes = append(service.Volumes, fmt.Sprintf("%v:%v", twd, "/home/project/"+projectName))
 				}
 
 				// 重置

@@ -41,13 +41,14 @@ type I18nSource struct {
 	} `json:"config"`
 
 	Main struct {
-		Info_Info_help_short      string `json:"info_help_short"`
-		Info_Info_help_long       string `json:"info_help_long"`
-		Info_Info_help_flag_debug string `json:"info_help_flag_debug"`
-		Info_Usage_template       string `json:"info_usage_template"`
-		Info_workspace_loading    string `json:"info_workspace_loading"`
-		Info_ssh_connect_check    string `json:"info_ssh_connect_check"`
-		Info_version_local        string `json:"info_version_local"`
+		Info_help_short        string `json:"info_help_short"`
+		Info_help_long         string `json:"info_help_long"`
+		Info_help_flag_debug   string `json:"info_help_flag_debug"`
+		Info_Usage_template    string `json:"info_usage_template"`
+		Info_workspace_loading string `json:"info_workspace_loading"`
+		Info_ssh_connect_check string `json:"info_ssh_connect_check"`
+		Info_version_local     string `json:"info_version_local"`
+		Info_help_flag_mode    string `json:"info_help_flag_mode"`
 
 		Err_file_not_exit       string `json:"err_file_not_exit"`
 		Err_file_not_exit2      string `json:"err_file_not_exit2"`
@@ -86,6 +87,7 @@ type I18nSource struct {
 		Info_warting_for_webide    string `json:"info_warting_for_webide"`
 		Info_open_brower           string `json:"info_open_brower"`
 		Info_git_cloned            string `json:"info_git_cloned"`
+		Info_tunnel_waiting        string `json:"info_tunnel_waiting"`
 	} `json:"vm_start"`
 
 	Version struct {
@@ -105,16 +107,17 @@ type I18nSource struct {
 	} `json:"update"`
 
 	Start struct {
-		Info_help_short         string `json:"info_help_short"`
-		Info_help_long          string `json:"info_help_long"`
-		Info_help_flag_host     string `json:"info_help_flag_host"`
-		Info_help_flag_port     string `json:"info_help_flag_port"`
-		Info_help_flag_username string `json:"info_help_flag_username"`
-		Info_help_flag_password string `json:"info_help_flag_pasword"`
-		Info_help_flag_repourl  string `json:"info_help_flag_repourl"`
-		Info_help_flag_branch   string `json:"info_help_flag_branch"`
-		Info_help_flag_filepath string `json:"info_help_flag_filepath"`
-		Info_help_flag_k8s      string `json:"info_help_flag_k8s"`
+		Info_help_short              string `json:"info_help_short"`
+		Info_help_long               string `json:"info_help_long"`
+		Info_help_flag_host          string `json:"info_help_flag_host"`
+		Info_help_flag_port          string `json:"info_help_flag_port"`
+		Info_help_flag_username      string `json:"info_help_flag_username"`
+		Info_help_flag_password      string `json:"info_help_flag_pasword"`
+		Info_help_flag_repourl       string `json:"info_help_flag_repourl"`
+		Info_help_flag_branch        string `json:"info_help_flag_branch"`
+		Info_help_flag_filepath      string `json:"info_help_flag_filepath"`
+		Info_help_flag_k8s           string `json:"info_help_flag_k8s"`
+		Info_help_flag_k8s_namespace string `json:"info_help_flag_k8s_namespace"`
 
 		Info_start                   string `json:"info_start"`
 		Info_end                     string `json:"info_end"`
@@ -129,8 +132,15 @@ type I18nSource struct {
 		Info_workspace_changed       string `json:"info_workspace_changed"`
 		Info_workspace_create        string `json:"info_workspace_create"`
 		Info_git_clone               string `json:"info_git_clone"`
-
-		Err_Docker_compose_save string `json:"err_docker_compose_save"`
+		Info_k8s_init                string `json:"info_k8s_init"`
+		Info_k8s_inited              string `json:"info_k8s_inited"`
+		Info_k8s_creating            string `json:"info_k8s_creating"`
+		Info_k8s_created             string `json:"info_k8s_created"`
+		Info_k8s_updating            string `json:"info_k8s_updating"`
+		Info_k8s_updated             string `json:"info_k8s_updated"`
+		Info_k8s_port_forward_start  string `json:"info_k8s_port_forward_start"`
+		Info_k8s_port_forward_end    string `json:"info_k8s_port_forward_end"`
+		Err_Docker_compose_save      string `json:"err_docker_compose_save"`
 
 		Warn_docker_container_started string `json:"warn_docker_container_started"`
 		Warn_docker_container_getnone string `json:"warn_docker_container_getnone"`

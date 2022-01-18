@@ -3,15 +3,19 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2021-12-28 18:37:58
+ * @LastEditTime: 2022-01-11 14:40:00
  */
 package cmd
 
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
+	"os/user"
+	"path"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -25,9 +29,12 @@ import (
 	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+
+	ssh2 "golang.org/x/crypto/ssh"
 )
 
 // 远程服务器上的根目录
@@ -71,50 +78,32 @@ var startCmd = &cobra.Command{
 		// 执行命令
 		if worksapceInfo.Mode == workspace.WorkingMode_Local {
 			executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
-				var imageNames string
-				for image := range yamlConfig.Workspace.Servcies {
-					tag := yamlConfig.Workspace.Servcies[image].Image.Tag
-					imageName := yamlConfig.Workspace.Servcies[image].Image.Name
-					if tag == "" {
-						imageNames = imageNames + imageName + ","
-					} else {
-						imageNames = imageNames + imageName + ":" + tag + ","
-					}
+				var imageNames []string
+				for _, service := range yamlConfig.Workspace.Servcies {
+					imageNames = append(imageNames, service.Image)
 				}
-				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(worksapceInfo.Mode), imageNames)
+				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(worksapceInfo.Mode), strings.Join(imageNames, ","))
 			}
 
 			start.ExecuteStartCmd(worksapceInfo, func(v string, d common.Docker) {}, executeStartCmdFunc)
 		} else if worksapceInfo.Mode == workspace.WorkingMode_K8s {
 			executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
-				var imageNames string
-				for image := range yamlConfig.Workspace.Servcies {
-					tag := yamlConfig.Workspace.Servcies[image].Image.Tag
-					imageName := yamlConfig.Workspace.Servcies[image].Image.Name
-					if tag == "" {
-						imageNames = imageNames + imageName + ","
-					} else {
-						imageNames = imageNames + imageName + ":" + tag + ","
-					}
+				var imageNames []string
+				for _, service := range yamlConfig.Workspace.Servcies {
+					imageNames = append(imageNames, service.Image)
 				}
-				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(worksapceInfo.Mode), imageNames)
+				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(worksapceInfo.Mode), strings.Join(imageNames, ","))
 			}
 
 			start.ExecuteK8sStartCmd(worksapceInfo, executeStartCmdFunc)
 
 		} else {
 			executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
-				var imageNames string
-				for image := range yamlConfig.Workspace.Servcies {
-					tag := yamlConfig.Workspace.Servcies[image].Image.Tag
-					imageName := yamlConfig.Workspace.Servcies[image].Image.Name
-					if tag == "" {
-						imageNames = imageNames + imageName + ","
-					} else {
-						imageNames = imageNames + imageName + ":" + tag + ","
-					}
+				var imageNames []string
+				for _, service := range yamlConfig.Workspace.Servcies {
+					imageNames = append(imageNames, service.Image)
 				}
-				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(worksapceInfo.Mode), imageNames)
+				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(worksapceInfo.Mode), strings.Join(imageNames, ","))
 			}
 
 			start.ExecuteVmStartCmd(worksapceInfo, executeStartCmdFunc)
@@ -148,6 +137,8 @@ var (
 	flag_filepath    = "filepath"
 	flag_repourl     = "repourl"
 	flag_branch      = "branch"
+	flag_k8s         = "k8s"
+	flag_namespace   = "namespace"
 )
 
 // 获取工作区id
@@ -234,12 +225,19 @@ func getWorkspace4Start(cmd *cobra.Command, args []string) (workspaceInfo worksp
 			workspaceInfo.WorkingDirectoryPath = repoWorkspaceDir
 
 		} else if fflags.Changed("k8s") {
+			workspaceInfo.GitCloneRepoUrl = getFlagValue(fflags, flag_repourl)
 			if gitUrl != "" {
 				workspaceInfo.GitCloneRepoUrl = gitUrl
 			} else {
 				workspaceInfo.GitCloneRepoUrl = getFlagValue(fflags, flag_repourl)
 			}
+
 			workingMode = workspace.WorkingMode_K8s
+			workspaceInfo.K8sInfo.Namespace = getFlagValue(fflags, flag_namespace)
+			if workspaceInfo.K8sInfo.Namespace == "" {
+				workspaceInfo.K8sInfo.Namespace = "default"
+			}
+			workspaceInfo.K8sInfo.Context = getFlagValue(fflags, flag_k8s)
 
 		} else { //1.2.2. 本地模式
 			// 本地模式下，不需要录入git库的克隆地址、分支
@@ -248,8 +246,9 @@ func getWorkspace4Start(cmd *cobra.Command, args []string) (workspaceInfo worksp
 			//本地模式下需要clone repo的情况：smartide start https://gitee.com/idcf-boat-house/boathouse-calculator.git
 			if gitUrl != "" {
 				common.SmartIDELog.Info(i18nInstance.Start.Info_git_clone)
-				var clonedRepoDir = cloneRepo(pwd, gitUrl)
+				var clonedRepoDir = cloneRepo4Local(pwd, gitUrl)
 				common.SmartIDELog.Info(i18nInstance.Common.Info_gitrepo_clone_done)
+
 				workspaceInfo.WorkingDirectoryPath = clonedRepoDir
 				workspaceInfo.GitCloneRepoUrl, _ = getLocalGitRepoUrl(clonedRepoDir) // 获取本地关联的repo url
 				os.Chdir(clonedRepoDir)
@@ -483,6 +482,7 @@ func init() {
 	startCmd.Flags().StringVarP(&configYamlFileRelativePath, "filepath", "f", "", i18nInstance.Start.Info_help_flag_filepath)
 	startCmd.Flags().StringP("branch", "b", "", i18nInstance.Start.Info_help_flag_branch)
 	startCmd.Flags().StringP("k8s", "k", "", i18nInstance.Start.Info_help_flag_k8s)
+	startCmd.Flags().StringP("namespace", "n", "", i18nInstance.Start.Info_help_flag_k8s_namespace)
 
 }
 
@@ -506,12 +506,38 @@ func getGitUrlFromArgs(cmd *cobra.Command, args []string) string {
 	return gitUrl
 }
 
-func cloneRepo(rootDir string, gitUrl string) string {
+// clone repos for local mode
+func cloneRepo4Local(rootDir string, gitUrl string) string {
 	repoName := getRepoName(gitUrl)
 	repoPath := filepath.Join(rootDir, repoName)
 	options := &git.CloneOptions{
 		URL:      gitUrl,
 		Progress: os.Stdout,
+	}
+	if strings.Index(gitUrl, "git@") == 0 {
+		var publicKey *ssh.PublicKeys
+
+		// current user directory -> id_rsa file path
+		currentUser, err := user.Current()
+		if err != nil {
+			log.Fatalf(err.Error())
+		}
+		homeDirectory := currentUser.HomeDir
+		idRsaFilePath := ""
+		if runtime.GOOS == "windows" {
+			idRsaFilePath = path.Join(homeDirectory, "\\.ssh\\id_rsa")
+		} else {
+			idRsaFilePath = path.Join(homeDirectory, "/.ssh/id_rsa")
+		}
+
+		//
+		publicKey, keyError := ssh.NewPublicKeysFromFile("git", idRsaFilePath, "")
+		if keyError != nil {
+			common.CheckError(keyError)
+		}
+		//ignore known_hosts check to fix gitee.com known_hosts lack issue
+		publicKey.HostKeyCallback = ssh2.InsecureIgnoreHostKey()
+		options.Auth = publicKey
 	}
 	_, err := git.PlainClone(repoPath, false, options)
 	if err != nil {

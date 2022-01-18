@@ -29,6 +29,7 @@ import (
 
 	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
+	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
 
@@ -43,8 +44,8 @@ var instanceI18nMain = i18n.GetInstance().Main
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "smartide",
-	Short: instanceI18nMain.Info_Info_help_short,
-	Long:  instanceI18nMain.Info_Info_help_long, // logo only show in init
+	Short: instanceI18nMain.Info_help_short,
+	Long:  instanceI18nMain.Info_help_long, // logo only show in init
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		if cmd.Use == "start" || cmd.Use == "new" {
 
@@ -90,7 +91,8 @@ func init() {
 
 	// help command short
 	rootCmd.Flags().BoolP("help", "h", false, i18n.GetInstance().Help.Info_help_short)
-	rootCmd.PersistentFlags().BoolVarP(&isDebug, "debug", "d", false, i18n.GetInstance().Main.Info_Info_help_flag_debug)
+	rootCmd.PersistentFlags().BoolVarP(&isDebug, "debug", "d", false, i18n.GetInstance().Main.Info_help_flag_debug)
+	rootCmd.PersistentFlags().StringP("mode", "m", string(model.RuntimeModeEnum_Client), i18n.GetInstance().Main.Info_help_flag_mode)
 
 	// disable completion command
 	rootCmd.CompletionOptions.DisableDefaultCmd = true

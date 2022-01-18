@@ -55,6 +55,15 @@ CREATE TABLE IF NOT EXISTS "workspace" (
 	"w_created" TIMESTAMP default (datetime('now', 'localtime')),
 	FOREIGN KEY (r_id) REFERENCES remote(r_id)
  );
+ CREATE TABLE IF NOT EXISTS "k8s" (
+	"k_id" INTEGER PRIMARY KEY AUTOINCREMENT,
+	"k_context" VARCHAR(50) NULL,
+	"k_namespace" VARCHAR(50) NULL,
+	"k_deployment" VARCHAR(50) NULL,
+	"k_pvc" VARCHAR(50) NULL,
+	"k_is_del" BIT default (0),
+	"k_created" TIMESTAMP default (datetime('now', 'localtime')) 
+ );
 
  `
 
@@ -71,6 +80,7 @@ CREATE TABLE IF NOT EXISTS "workspace" (
 	db.Exec("ALTER TABLE workspace ADD COLUMN w_config_content text NULL;")
 	db.Exec("ALTER TABLE workspace ADD COLUMN w_link_compose_content text NULL;")
 	db.Exec("ALTER TABLE workspace ADD COLUMN w_temp_compose_content text NULL;")
+	db.Exec("ALTER TABLE workspace ADD COLUMN k_id INTEGER NULL;")
 
 	defer db.Close()
 

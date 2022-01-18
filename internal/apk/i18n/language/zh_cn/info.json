@@ -25,9 +25,10 @@
         "info_help_long": "SmartIDE - 开发从未如此简单！\n- SmartIDE 可以帮助开发人员快速搭建开发环境，包括本地以及云端环境。",
         "info_usage_template": "使用:{{if .Runnable}}\n  {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}\n  {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}\nAliases:\n  {{.NameAndAliases}}{{end}}{{if .HasExample}}\n示例:\n{{.Example}}{{end}}{{if .HasAvailableSubCommands}}\n命令:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name \"help\"))}}\n  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}\n标记:\n{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}\nGlobal Flags:\n{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasHelpSubCommands}}\nAdditional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}\n  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}\n使用 \"{{.CommandPath}} [command] --help\" 可以看到命令的详细帮助信息.{{end}}\n",
         "info_help_flag_debug": "是否开启Debug模式，在该模式下将显示更多的日志信息",
+        "info_help_flag_mode":"smartide 的运行模式，是在服务端（server）还是客户端（client）",
         "info_workspace_loading": "读取工作区信息 ...",
         "info_ssh_connect_check": "检查ssh连接是否正常 %v:%v ...",
-        "info_version_local": "本地构建版本 - %v",
+        "info_version_local": "本地构建版本 - %v",        
         "err_file_not_exit": "配置文件不存在，请创建 SmartIDE 配置文件 “.ide/.ide.yaml” ！",
         "err_file_not_exit2": "配置文件 '（%v）' 不存在！",
         "err_version_not_build": "请通过流水线生成版本号！",
@@ -53,6 +54,16 @@
         "info_start": "SmartIDE启动中 ...",
         "info_help_flag_host": "可以指定 host 的 IP地址、域名，或者 hostId",
         "info_help_flag_k8s": "可以指定 k8s 的 context",
+        "info_help_flag_k8s_namespace": "可以指定 k8s 的 info_help_flag_namespace",
+        "info_k8s_init": "初始化环境，包括k8s 配置文件校验、.ide.yaml 文件获取...",
+        "info_k8s_inited": "环境初始化结束...",
+        "info_k8s_creating": "k8s deployment 创建中... ",
+        "info_k8s_created": "k8s deployment 创建结束... ",
+        "info_k8s_updating": "k8s deployment 更新中... ",
+        "info_k8s_updated": "k8s deployment 更新结束... ",
+        "Info_k8s_port_forward_start": "[%v]  k8s 端口转发开始... ",
+        "Info_k8s_port_forward_end": "k8s 端口转发结束... ",
+
         "info_help_flag_port": "SSH 端口，默认为22",
         "info_help_flag_username": "SSH 登录用户名",
         "info_help_flag_pasword": "SSH 登录用户密码",
@@ -163,7 +174,8 @@
         "info_compose_up": "[Docker-Compose] 运行 docker-compose up ...",
         "info_warting_for_webide": "[WebIDE] 等待 WebIDE 启动 ...",
         "info_open_brower": "[WebIDE] 打开浏览器访问WebIDE : %v ",
-        "info_git_cloned": "[Git]当前工作区中已经完成代码克隆，不再执行 git checkout。"
+        "info_git_cloned": "[Git]当前工作区中已经完成代码克隆，不再执行 git checkout。",
+        "info_tunnel_waiting":"端口转发中..."
     },
     "update": {
         "info_help_short": "自动升级 或者 更新到指定的版本",

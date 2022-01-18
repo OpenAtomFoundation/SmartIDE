@@ -97,7 +97,10 @@ func AutoTunnel(clientConn *ssh.Client, options AutoTunnelMultipleOptions) {
 				// 如果没有在compose文件中定义，那么就是要映射端口
 				if !hasMappingWithCompose {
 					dynamicContainerPort := scanContainerPort // 动态的端口
-					localPort := common.CheckAndGetAvailableLocalPort(scanContainerPort, 100)
+					localPort, err := common.CheckAndGetAvailableLocalPort(scanContainerPort, 100)
+					if err != nil {
+						common.SmartIDELog.Warning(err.Error())
+					}
 
 					if localPort != dynamicContainerPort {
 						common.SmartIDELog.InfoF(i18n.GetInstance().Common.Info_port_binding_result2, localPortStr, localPort, dynamicContainerPort)
@@ -262,8 +265,11 @@ type NetstatInfo struct {
 }
 
 // 转发指定SSH服务器的多个端口 到本地（Localhost）
-//
 func TunnelMultiple(clientConn *ssh.Client, mapping map[string]string) error {
+
+	if len(mapping) <= 0 {
+		return nil
+	}
 
 	pipe := func(writer, reader net.Conn) {
 		defer writer.Close()

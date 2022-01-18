@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2021-12-20 11:58:59
+ * @LastEditTime: 2022-01-18 10:51:34
  */
 package start
 
@@ -22,6 +22,7 @@ import (
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/docker/compose"
+	"github.com/leansoftX/smartide-cli/pkg/kubectl"
 	"github.com/leansoftX/smartide-cli/pkg/tunnel"
 	"gopkg.in/yaml.v2"
 
@@ -125,7 +126,7 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo,
 		composeCmd.Stdout = os.Stdout
 		composeCmd.Stderr = os.Stderr
 		if composeCmdErr := composeCmd.Run(); composeCmdErr != nil {
-			common.SmartIDELog.Fatal(composeCmdErr)
+			common.CheckError(composeCmdErr)
 		}
 	}
 
@@ -133,7 +134,7 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo,
 	dockerComposeContainers := GetLocalContainersWithServices(ctx, cli, currentConfig.GetServiceNames())
 	devContainerName := getDevContainerName(dockerComposeContainers, currentConfig.Workspace.DevContainer.ServiceName)
 	gitconfig := currentConfig.Workspace.DevContainer.Volumes.GitConfig
-	config.GitConfig(gitconfig, false, devContainerName, cli, compose.Service{}, common.SSHRemote{})
+	config.GitConfig(gitconfig, false, devContainerName, cli, &compose.Service{}, common.SSHRemote{}, kubectl.ExecInPodRequest{})
 	docker := *common.NewDocker(cli)
 	dockerContainerName := strings.ReplaceAll(devContainerName, "/", "")
 	config.LocalContainerGitSet(docker, dockerContainerName)

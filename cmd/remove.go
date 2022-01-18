@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors:
- * @LastEditTime:
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-01-12 21:08:22
  */
 package cmd
 
@@ -19,10 +19,10 @@ import (
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/dal"
 	"github.com/leansoftX/smartide-cli/pkg/common"
-	"github.com/leansoftX/smartide-cli/pkg/docker/compose"
-
+	"github.com/leansoftX/smartide-cli/pkg/kubectl"
 	"github.com/spf13/cobra"
 	"gopkg.in/src-d/go-git.v4"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/leansoftX/smartide-cli/cmd/start"
 )
@@ -107,8 +107,11 @@ var removeCmd = &cobra.Command{
 			if workspaceInfo.Mode == workspace.WorkingMode_Local {
 				err := removeLocalMode(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsForce)
 				common.CheckError(err)
-			} else {
+			} else if workspaceInfo.Mode == workspace.WorkingMode_Remote {
 				err := removeRemoteMode(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsRemoveRemoteDirectory, removeCmdFlag.IsForce)
+				common.CheckError(err)
+			} else {
+				err := removeK8sMode(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsForce)
 				common.CheckError(err)
 			}
 
@@ -211,24 +214,63 @@ func removeLocalMode(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeIm
 		common.SmartIDELog.Info(i18nInstance.Remove.Info_docker_rmi_removing)
 
 		for _, service := range workspaceInfo.TempDockerCompose.Services {
-			if (service.Image != compose.Image{}) && service.Image.Name != "" { // 镜像信息不为空
-				imageNameAndTag := fmt.Sprintf("%v:%v", service.Image.Name, service.Image.Tag)
+			if service.Image != "" { // 镜像信息不为空
+				//imageNameAndTag := fmt.Sprintf("%v:%v", service.Image.Name, service.Image.Tag)
 
 				force := ""
 				if isForce {
 					force = "-f"
 				}
-				removeImagesCmd := exec.Command("docker", "rmi", force, imageNameAndTag)
+				removeImagesCmd := exec.Command("docker", "rmi", force, service.Image)
 				removeImagesCmd.Stdout = os.Stdout
 				removeImagesCmd.Stderr = os.Stderr
 				if removeImagesCmdErr := removeImagesCmd.Run(); removeImagesCmdErr != nil {
 					common.SmartIDELog.Importance(removeImagesCmdErr.Error())
 				} else {
-					common.SmartIDELog.InfoF(i18nInstance.Remove.Info_docker_rmi_image_removed, imageNameAndTag)
+					common.SmartIDELog.InfoF(i18nInstance.Remove.Info_docker_rmi_image_removed, service.Image)
 				}
 
 			}
 		}
+	}
+
+	return nil
+}
+
+func removeK8sMode(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeImages bool, isForce bool) error {
+	if !common.IsExit(workspaceInfo.WorkingDirectoryPath) {
+		if isForce {
+			common.SmartIDELog.Importance(i18nInstance.Remove.Warn_workspace_dir_not_exit)
+			// 中断，不再执行后续的步骤
+			return nil
+		} else {
+			return errors.New(i18nInstance.Remove.Err_workspace_dir_not_exit)
+		}
+	}
+
+	// 保存临时文件
+	if !common.IsExit(workspaceInfo.TempDockerComposeFilePath) || !common.IsExit(workspaceInfo.ConfigFilePath) {
+		workspaceInfo.SaveTempFiles()
+
+	}
+
+	// 关联的容器
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	common.CheckError(err)
+	containers := start.GetLocalContainersWithServices(ctx, cli, workspaceInfo.ConfigYaml.GetServiceNames())
+	if len(containers) <= 0 {
+		common.SmartIDELog.Importance(i18nInstance.Start.Warn_docker_container_getnone)
+	}
+
+	// 删除deployment
+	if workspaceInfo.K8sInfo.DeploymentName != "" {
+		kubeConfig, err := kubectl.InitKubeConfig(false, workspaceInfo.K8sInfo.Context)
+		common.CheckError(err)
+		clientset, err := kubectl.NewClientSet(kubeConfig)
+		deploymentsClient := clientset.AppsV1().Deployments(workspaceInfo.K8sInfo.Namespace)
+		err = deploymentsClient.Delete(context.TODO(), workspaceInfo.K8sInfo.DeploymentName, metav1.DeleteOptions{})
+		return err
 	}
 
 	return nil
@@ -299,14 +341,14 @@ func removeRemoteMode(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeI
 		}
 
 		for _, service := range workspaceInfo.TempDockerCompose.Services {
-			if (service.Image != compose.Image{}) && service.Image.Name != "" { // 镜像信息不为空
-				imageNameAndTag := fmt.Sprintf("%v:%v", service.Image.Name, service.Image.Tag)
-				command := fmt.Sprintf("docker rmi %v %v", force, imageNameAndTag)
+			if service.Image != "" { // 镜像信息不为空
+				//imageNameAndTag := fmt.Sprintf("%v:%v", service.Image.Name, service.Image.Tag)
+				command := fmt.Sprintf("docker rmi %v %v", force, service.Image)
 				_, err = sshRemote.ExeSSHCommand(command)
 				if err != nil {
 					common.SmartIDELog.Importance(err.Error())
 				} else {
-					common.SmartIDELog.InfoF(i18nInstance.Remove.Info_docker_rmi_image_removed, imageNameAndTag)
+					common.SmartIDELog.InfoF(i18nInstance.Remove.Info_docker_rmi_image_removed, service.Image)
 				}
 			}
 		}

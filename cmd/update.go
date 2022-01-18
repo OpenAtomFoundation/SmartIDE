@@ -24,9 +24,10 @@ import (
 
 // initCmd represents the init command
 var udpateCmd = &cobra.Command{
-	Use:   "update",
-	Short: i18n.GetInstance().Update.Info_help_short,
-	Long:  i18n.GetInstance().Update.Info_help_long,
+	Use:     "update",
+	Short:   i18n.GetInstance().Update.Info_help_short,
+	Long:    i18n.GetInstance().Update.Info_help_long,
+	Aliases: []string{"up"},
 	Run: func(cmd *cobra.Command, args []string) {
 
 		common.SmartIDELog.Info("update ...")
@@ -103,15 +104,30 @@ var udpateCmd = &cobra.Command{
 			if isBuild {
 				command = fmt.Sprintf(`curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/builds/%v/smartide" \
 				&& mv -f smartide /usr/local/bin/smartide \
+				&& ln -s -f /usr/local/bin/smartide /usr/local/bin/se \
 				&& chmod +x /usr/local/bin/smartide`, version)
 			} else {
 				command = fmt.Sprintf(`curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/releases/%v/smartide" \
 				&& mv -f smartide /usr/local/bin/smartide \
+				&& ln -s -f /usr/local/bin/smartide /usr/local/bin/se \
+				&& chmod +x /usr/local/bin/smartide`, version)
+			}
+			execCommand = exec.Command("bash", "-c", command)
+		case "linux":
+			if isBuild {
+				command = fmt.Sprintf(`curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/builds/%v/smartide-linux" \
+				&& sudo mv -f smartide /usr/local/bin/smartide \
+				&& sudo ln -s -f /usr/local/bin/smartide /usr/local/bin/se \
+				&& chmod +x /usr/local/bin/smartide`, version)
+			} else {
+				command = fmt.Sprintf(`curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/releases/%v/smartide-linux" \
+				&& sudo mv -f smartide /usr/local/bin/smartide \
+				&& sudo ln -s -f /usr/local/bin/smartide /usr/local/bin/se \
 				&& chmod +x /usr/local/bin/smartide`, version)
 			}
 			execCommand = exec.Command("bash", "-c", command)
 		default:
-			common.SmartIDELog.Error("")
+			common.SmartIDELog.Error("can not support current os")
 		}
 
 		// run

@@ -14,8 +14,10 @@ import (
 func (workspace *WorkspaceInfo) GetWorkspaceExtend() WorkspaceExtend {
 
 	var extend WorkspaceExtend
-	if workspace.TempDockerCompose.IsNil() || workspace.ConfigYaml.IsNil() {
-		return extend
+	if workspace.Mode != WorkingMode_K8s {
+		if workspace.TempDockerCompose.IsNil() || workspace.ConfigYaml.IsNil() {
+			return extend
+		}
 	}
 
 	// 兼容链接docker-compose 和 不链接docker-compose 两种方式
@@ -32,7 +34,7 @@ func (workspace *WorkspaceInfo) GetWorkspaceExtend() WorkspaceExtend {
 		originServicePorts := originService.Ports
 		if isDevService {
 			// ssh 端口
-			if workspace.Mode == WorkingMode_Local {
+			if workspace.Mode == WorkingMode_Local || workspace.Mode == WorkingMode_K8s {
 				portSSH := fmt.Sprintf("%v:%v", model.CONST_Local_Default_BindingPort_SSH, model.CONST_Container_SSHPort)
 				if !common.Contains(originServicePorts, portSSH) {
 					originServicePorts = append(originServicePorts, portSSH)

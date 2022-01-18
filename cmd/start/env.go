@@ -43,18 +43,27 @@ func CheckLocalEnv() error {
 	dockerErr := exec.Command("docker", "-v").Run()
 	dockerpsErr := exec.Command("docker", "ps").Run()
 	if dockerErr != nil || dockerpsErr != nil {
+		if dockerErr != nil {
+			common.SmartIDELog.Debug(dockerErr.Error())
+		}
+		if dockerpsErr != nil {
+			common.SmartIDELog.Debug(dockerpsErr.Error())
+		}
+
 		errMsgArray = append(errMsgArray, i18n.GetInstance().Main.Err_env_DockerPs)
 	}
 
 	//0.2. 校验是否能正常执行 docker-compose
 	dockercomposeErr := exec.Command("docker-compose", "version").Run()
 	if dockercomposeErr != nil {
+		common.SmartIDELog.Debug(dockercomposeErr.Error())
 		errMsgArray = append(errMsgArray, i18n.GetInstance().Main.Err_env_Docker_Compose)
 	}
 
 	// 错误判断
 	if len(errMsgArray) > 0 {
-		return errors.New(strings.Join(errMsgArray, "; "))
+		tmps := common.RemoveEmptyItem(errMsgArray)
+		return errors.New(strings.Join(tmps, "; "))
 	}
 
 	return nil
@@ -66,15 +75,26 @@ func CheckRemoveEnv(sshRemote common.SSHRemote) error {
 
 	// 环境监测
 	output, err := sshRemote.ExeSSHCommand("git version")
-	if err != nil || strings.Contains(output, "error:") {
+	if err != nil || strings.Contains(strings.ToLower(output), "error:") {
+		if err != nil {
+			common.SmartIDELog.Debug(err.Error(), output)
+		}
 		msg = append(msg, i18nInstance.Main.Err_env_git_check)
 	}
 	output, err = sshRemote.ExeSSHCommand("docker version")
-	if err != nil || strings.Contains(output, "error:") {
+	if err != nil || strings.Contains(strings.ToLower(output), "error:") {
+		if err != nil {
+			common.SmartIDELog.Debug(err.Error(), output)
+		}
 		msg = append(msg, i18nInstance.Main.Err_env_docker)
 	}
 	output, err = sshRemote.ExeSSHCommand("docker-compose version")
-	if err != nil || !strings.Contains(output, "docker-compose version") || strings.Contains(output, "error:") {
+	if err != nil ||
+		(!strings.Contains(strings.ToLower(output), "docker-compose version") && !strings.Contains(strings.ToLower(output), "docker compose version")) ||
+		strings.Contains(strings.ToLower(output), "error:") {
+		if err != nil {
+			common.SmartIDELog.Debug(err.Error(), output)
+		}
 		msg = append(msg, i18nInstance.Main.Err_env_Docker_Compose)
 	}
 

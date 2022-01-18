@@ -140,7 +140,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fun
 		commandCreateDockerComposeFile := fmt.Sprintf("docker-compose -f %v --project-directory %v up -d",
 			workspaceInfo.TempDockerComposeFilePath, workspaceInfo.WorkingDirectoryPath)
 		fmt.Println() // 避免向前覆盖
-		err = sshRemote.ExecSSHCommandRealTimeFunc(commandCreateDockerComposeFile, func(output string) error {
+		fun1 := func(output string) error {
 			if strings.Contains(output, ":error") || strings.Contains(output, ":fatal") {
 				common.SmartIDELog.Error(output)
 
@@ -152,20 +152,25 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fun
 			}
 
 			return nil
-		})
+		}
+		err = sshRemote.ExecSSHCommandRealTimeFunc(commandCreateDockerComposeFile, fun1)
 		fmt.Println()
 		common.CheckError(err, commandCreateDockerComposeFile)
 
 	}
 
 	//6. 当前主机绑定到远程端口
+	common.SmartIDELog.Info(i18nInstance.VmStart.Info_tunnel_waiting) // log
 	var addrMapping map[string]string = map[string]string{}
 	remotePortBindings := tempDockerCompose.GetPortBindings()
 	unusedLocalPort4IdeBindingPort := ideBindingPort // 未使用的本地端口，与ide端口对应
 	//6.1. 查找所有远程主机的端口
 	for remoteBindingPort, containerPort := range remotePortBindings {
 		remoteBindingPortInt, _ := strconv.Atoi(remoteBindingPort)
-		unusedLocalPort := common.CheckAndGetAvailableLocalPort(remoteBindingPortInt, 100) // 得到一个未被占用的本地端口
+		unusedLocalPort, err := common.CheckAndGetAvailableLocalPort(remoteBindingPortInt, 100) // 得到一个未被占用的本地端口
+		if err != nil {
+			common.SmartIDELog.Warning(err.Error())
+		}
 		if remoteBindingPortInt == ideBindingPort && unusedLocalPort != ideBindingPort {
 			unusedLocalPort4IdeBindingPort = unusedLocalPort
 		}
@@ -178,7 +183,8 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fun
 		if label != "" {
 			unusedLocalPortStr += fmt.Sprintf("(%v)", label)
 		}
-		msg := fmt.Sprintf("localhost:%v -> %v:%v -> container:%v", unusedLocalPortStr, workspaceInfo.Remote.Addr, remoteBindingPort, containerPort)
+		msg := fmt.Sprintf("localhost:%v -> %v:%v -> container:%v",
+			unusedLocalPortStr, workspaceInfo.Remote.Addr, remoteBindingPort, containerPort)
 		common.SmartIDELog.Info(msg)
 	}
 	//6.2. 执行绑定
@@ -186,6 +192,8 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fun
 
 	//7. 保存数据
 	if hasChanged {
+		common.SmartIDELog.InfoF(i18nInstance.Start.Info_workspace_saving) // log
+
 		remoteDockerComposeContainers, err := GetRemoteContainersWithServices(sshRemote, currentConfig.GetServiceNames())
 		common.CheckError(err)
 		//7.1. 补充数据
@@ -202,6 +210,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fun
 	//8. 打开浏览器
 	var url string
 	//vscode启动时候默认打开文件夹处理
+	common.SmartIDELog.Info(i18nInstance.VmStart.Info_warting_for_webide)
 	switch strings.ToLower(currentConfig.Workspace.DevContainer.IdeType) {
 	case "vscode":
 		url = fmt.Sprintf("http://localhost:%v/?folder=vscode-remote://localhost:%v%v",
@@ -211,7 +220,6 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fun
 	default:
 		url = fmt.Sprintf(`http://localhost:%v`, unusedLocalPort4IdeBindingPort)
 	}
-	common.SmartIDELog.Info(i18nInstance.VmStart.Info_warting_for_webide)
 	go func(checkUrl string) {
 		isUrlReady := false
 		for !isUrlReady {
@@ -235,7 +243,7 @@ func printServices(services map[string]compose.Service) {
 	w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
 	fmt.Fprintln(w, "Service\tImage\tPorts\t")
 	for serviceName, service := range services {
-		line := fmt.Sprintf("%v\t%v\t%v\t", serviceName, service.Image.Name+":"+service.Image.Tag, strings.Join(service.Ports, ";"))
+		line := fmt.Sprintf("%v\t%v\t%v\t", serviceName, service.Image, strings.Join(service.Ports, ";"))
 		fmt.Fprintln(w, line)
 	}
 	w.Flush()

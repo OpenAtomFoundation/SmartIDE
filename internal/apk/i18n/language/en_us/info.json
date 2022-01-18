@@ -25,6 +25,7 @@
         "info_help_long": "SmartIDE allows you to create local and remote dev environment with integrated WebIDE.",
         "info_usage_template": "Usage:{{if .Runnable}}\n  {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}\n  {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}\nAliases:\n  {{.NameAndAliases}}{{end}}{{if .HasExample}}\nExamples:\n{{.Example}}{{end}}{{if .HasAvailableSubCommands}}\nAvailable Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name \"help\"))}}\n  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}\nFlags:\n{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}\nGlobal Flags:\n{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasHelpSubCommands}}\nAdditional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}\n  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}\nUse \"{{.CommandPath}} [command] --help\" for more information about a command.{{end}}\n",
         "info_help_flag_debug": "Enable Debug mode will generate more detailed log messages",
+        "info_help_flag_mode":"smartide 的运行模式，是在服务端（server）还是客户端（client）",
         "info_workspace_loading": "Loading workspace ...",
         "info_ssh_connect_check": "Checking SSH connection %v:%v ...",
         "info_version_local": "本地构建版本 - %v",
@@ -51,6 +52,14 @@
         "info_help_short": "Run SmartIDE dev environment",
         "info_help_long": "Run SmartIDE dev environment",
         "info_start": "SmartIDE is starting up ...",
+        "info_k8s_init": "init env include validating k8s config and get .ide.yaml...",
+        "info_k8s_inited": "env inited ...",
+        "info_k8s_creating": "Creating deployment... ",
+        "info_k8s_created": "Created deployment... ",
+        "info_k8s_updating": "Updating deployment... ",
+        "Info_k8s_port_forward_start": "[%v] k8s port-forward starting... ",
+        "Info_k8s_port_forward_end": "k8s port-forward end... ",
+        "info_k8s_updated": "Updated deployment... ",
         "info_help_flag_host": "Host IP / DNS name or hostId",
         "info_help_flag_port": "SSH port，default to 22",
         "info_help_flag_username": "SSH username",
@@ -162,7 +171,8 @@
         "info_compose_up": "[Docker-Compose] Runing docker-compose up command ...",
         "info_warting_for_webide": "[WebIDE] Waiting for WebIDE to start ...",
         "info_open_brower": "[WebIDE] You can now open your browser to access the WebIDE : %v ",
-        "info_git_cloned": "[Git] Workspace is already exist, code is already cloned, no need to run git checkout."
+        "info_git_cloned": "[Git] Workspace is already exist, code is already cloned, no need to run git checkout.",
+        "info_tunnel_waiting":"端口转发中..."
     },
     "update": {
         "info_help_short": "Automatically upgrade to a specified version",

@@ -32,3 +32,4 @@ __debug_bin
 .ide/.temp/
 smartide-linux
 -linux--x64-origin
+.profile

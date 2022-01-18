@@ -135,7 +135,8 @@ func (workspace WorkspaceInfo) SaveTempFilesForRemote(sshRemote common.SSHRemote
 
 	// create docker-compose file
 	common.SmartIDELog.InfoF(i18nInstance.Common.Info_temp_created_docker_compose, tempRemoteDockerComposeFilePath)
-	dCompose, err := yaml.Marshal(&workspace.TempDockerCompose)
+
+	dCompose, err := workspace.TempDockerCompose.ToYaml()
 	if err != nil {
 		common.SmartIDELog.Fatal(err)
 	}

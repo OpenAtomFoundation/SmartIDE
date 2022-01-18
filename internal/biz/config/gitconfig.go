@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2021-10-13 15:31:52
  * @LastEditors: kenan
- * @LastEditTime: 2021-12-20 12:02:00
+ * @LastEditTime: 2022-01-18 18:35:44
  * @Description: file content
  */
 
@@ -23,6 +23,7 @@ import (
 	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/docker/compose"
+	"github.com/leansoftX/smartide-cli/pkg/kubectl"
 )
 
 var PassPhrase string
@@ -66,7 +67,8 @@ func ConfigGitByDockerExec() {
 
 }
 
-func SSHVolumesConfig(sshKey string, isVmCommand bool, service compose.Service, sshRemote common.SSHRemote) (ser compose.Service) {
+func SSHVolumesConfig(sshKey string, isVmCommand bool, service *compose.Service, sshRemote common.SSHRemote) {
+
 	var configPaths []string
 	if sshKey == "true" {
 		// volumes
@@ -79,10 +81,13 @@ func SSHVolumesConfig(sshKey string, isVmCommand bool, service compose.Service, 
 			service.Volumes = append(service.Volumes, configPaths...)
 		}
 	}
-	return service
+
+	return
 }
 
-func GitConfig(configGit string, isVmCommand bool, containerName string, cli *client.Client, service compose.Service, sshRemote common.SSHRemote) (ser compose.Service) {
+func GitConfig(configGit string, isVmCommand bool, containerName string, cli *client.Client,
+	service *compose.Service, sshRemote common.SSHRemote, execRquest kubectl.ExecInPodRequest) {
+
 	// 获取本机git config 内容
 	// git config --list --show-origin
 	if configGit == "true" {
@@ -100,12 +105,14 @@ func GitConfig(configGit string, isVmCommand bool, containerName string, cli *cl
 		}
 
 		if configStr == "" {
+			common.SmartIDELog.Error("local git config is null")
 			return
 		}
 		// git config 默认设置
 
 		gitconfigs := strings.ReplaceAll(configStr, "file:", "")
 		s := bufio.NewScanner(strings.NewReader(gitconfigs))
+
 		for s.Scan() {
 			//以=分割,前面为key,后面为value
 			var str = s.Text()
@@ -124,9 +131,24 @@ func GitConfig(configGit string, isVmCommand bool, containerName string, cli *cl
 					out, err = docker.Exec(context.Background(), strings.ReplaceAll(containerName, "/", ""), "/bin", []string{"git", "config", "--global", "--replace-all", key, value}, []string{})
 					common.CheckError(err)
 					common.SmartIDELog.Debug(out)
+				} else if execRquest.ContainerName != "" {
+
+					gitConfigCmd := fmt.Sprint("git config --global --replace-all ", key, " ", "\"", value, "\"")
+					execRquest.Command = gitConfigCmd
+					kubectl.ExecInPod(execRquest)
+
 				}
 			}
 
+		}
+		//git config --global core.filemode false
+
+		if cli != nil {
+			docker := *common.NewDocker(cli)
+			out := ""
+			out, err = docker.Exec(context.Background(), strings.ReplaceAll(containerName, "/", ""), "/bin", []string{"git", "config", "--global", "--replace-all", "core.filemode", "false"}, []string{})
+			common.CheckError(err)
+			common.SmartIDELog.Debug(out)
 		}
 		if isConfig {
 			configPaths := []string{"$HOME/.gitconfig:/home/smartide/.gitconfig"}
@@ -136,7 +158,8 @@ func GitConfig(configGit string, isVmCommand bool, containerName string, cli *cl
 		}
 
 	}
-	return service
+
+	return
 }
 
 // 检查本地环境，是否安装git
@@ -162,7 +185,11 @@ func LocalContainerGitSet(docker common.Docker, dockerContainerName string) {
 	common.CheckError(err)
 	common.SmartIDELog.Debug(out)
 
-	out, err = docker.Exec(context.Background(), dockerContainerName, "/usr/bin", []string{"sudo", "chmod", "755", "/home/smartide/.ssh"}, []string{})
+	out, err = docker.Exec(context.Background(), dockerContainerName, "/usr/bin", []string{"sudo", "chmod", "-R", "755", "/home/smartide/.ssh"}, []string{})
+	common.CheckError(err)
+	common.SmartIDELog.Debug(out)
+
+	out, err = docker.Exec(context.Background(), dockerContainerName, "/usr/bin", []string{"sudo", "chmod", "600", "/home/smartide/.ssh/id_rsa"}, []string{})
 	common.CheckError(err)
 	common.SmartIDELog.Debug(out)
 
@@ -174,7 +201,4 @@ func LocalContainerGitSet(docker common.Docker, dockerContainerName string) {
 	common.CheckError(err)
 	common.SmartIDELog.Debug(out)
 
-	out, err = docker.Exec(context.Background(), dockerContainerName, "/usr/bin", []string{"sudo", "chmod", "600", "/home/smartide/.ssh/id_rsa"}, []string{})
-	common.CheckError(err)
-	common.SmartIDELog.Debug(out)
 }

@@ -8,6 +8,7 @@
 package common
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"os/exec"
@@ -35,7 +36,7 @@ func GetAvailablePort() (int, error) {
 }
 
 // 判断端口是否可以（未被占用）
-func IsPortAvailable(port int) bool {
+func IsPortAvailable(port int) (result bool, err error) {
 
 	var command *exec.Cmd
 	switch runtime.GOOS {
@@ -45,16 +46,21 @@ func IsPortAvailable(port int) bool {
 		command = exec.Command("cmd", "/c", fmt.Sprintf("netstat -aon|findstr \":%d\"", port))
 	case "darwin":
 		command = exec.Command("sh", "-c", fmt.Sprintf("lsof -i tcp:%d", port))
-		/* default:
-		err = fmt.Errorf("unsupported platform") */
+	default:
+		err = errors.New("unsupported platform")
+		return
 	}
 
-	output, _ := command.CombinedOutput()
-	if len(output) > 0 {
-		return false
+	output, err := command.CombinedOutput()
+	// 排除exitError
+	if _, ok := err.(*exec.ExitError); ok {
+		err = nil
+	}
+	if len(output) <= 0 {
+		result = true
 	}
 
-	return true
+	return
 
 	/* 	address := fmt.Sprintf(":%d", port)
 	   	ln, err := net.Listen("tcp", address)
@@ -86,7 +92,7 @@ func IsPortAvailable(port int) bool {
 }
 
 // 检查当前端口是否被占用，并返回一个可用端口
-func CheckAndGetAvailableLocalPort(checkPort int, step int) (usablePort int) {
+func CheckAndGetAvailableLocalPort(checkPort int, step int) (usablePort int, err error) {
 	if step <= 0 {
 		step = 100
 	}
@@ -94,13 +100,14 @@ func CheckAndGetAvailableLocalPort(checkPort int, step int) (usablePort int) {
 
 	isPortUnable := false
 	for !isPortUnable {
-
-		if !IsPortAvailable(usablePort) {
+		isPortAvailable, err0 := IsPortAvailable(usablePort)
+		err = err0
+		if !isPortAvailable {
 			usablePort += 100
 		} else {
 			isPortUnable = true
 		}
 	}
 
-	return usablePort
+	return
 }

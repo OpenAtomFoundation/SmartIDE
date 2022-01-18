@@ -47,7 +47,7 @@ type Service struct {
 	GroupAdd    []string               `mapstructure:"group_add" yaml:"group_add,omitempty" json:"group_add,omitempty"`
 	Hostname    string                 `yaml:",omitempty" json:"hostname,omitempty"`
 	HealthCheck map[string]interface{} `yaml:"healthcheck,omitempty"` // 健康检查
-	Image       Image                  `yaml:"image"`                 // 容器启动的镜像
+	Image       string                 `yaml:"image"`                 // 容器启动的镜像
 	Init        *bool                  `yaml:",omitempty" json:"init,omitempty"`
 	Ipc         string                 `yaml:",omitempty" json:"ipc,omitempty"`
 	Isolation   string                 `mapstructure:"isolation" yaml:"isolation,omitempty" json:"isolation,omitempty"`

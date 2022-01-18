@@ -148,17 +148,11 @@ var newCmd = &cobra.Command{
 						}
 					}
 				}, func(yamlConfig config.SmartIdeConfig) {
-					var imageNames string
-					for image := range yamlConfig.Workspace.Servcies {
-						tag := yamlConfig.Workspace.Servcies[image].Image.Tag
-						imageName := yamlConfig.Workspace.Servcies[image].Image.Name
-						if tag == "" {
-							imageNames = imageNames + imageName + ","
-						} else {
-							imageNames = imageNames + imageName + ":" + tag + ","
-						}
+					var imageNames []string
+					for _, service := range yamlConfig.Workspace.Servcies {
+						imageNames = append(imageNames, service.Image)
 					}
-					appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(worksapceInfo.Mode), imageNames)
+					appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(worksapceInfo.Mode), strings.Join(imageNames, ","))
 				})
 			}
 		}

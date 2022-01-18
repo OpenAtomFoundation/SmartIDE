@@ -41,6 +41,7 @@ type workspaceDo struct {
 	w_git_auth_type            string
 	w_branch                   string
 	r_id                       sql.NullInt32
+	k_id                       sql.NullInt32
 	w_is_del                   bool
 
 	w_json sql.NullString
@@ -85,7 +86,7 @@ func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId in
 	if workspaceInfo.ConfigYaml.IsNil() {
 		return -1, errors.New("配置文件数据为空！") //TODO
 	}
-	if workspaceInfo.TempDockerCompose.IsNil() {
+	if workspaceInfo.TempDockerCompose.IsNil() && workspaceInfo.Mode != workspace.WorkingMode_K8s {
 		return -1, errors.New("生成docker-compose数据为空！") //TODO
 	}
 
@@ -93,13 +94,26 @@ func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId in
 	linkComposeStr, _ := workspaceInfo.LinkDockerCompose.ToYaml()
 	tempComposeStr, _ := workspaceInfo.TempDockerCompose.ToYaml()
 	if !isExit { // insert
-		//3.1. 插入到remote表中
 		remoteId := sql.NullInt32{} // 可能是个空值
-		if (workspaceInfo.Remote != workspace.RemoteInfo{}) {
-			tmpId, err := InsertOrUpdateRemote(workspaceInfo.Remote)
+		k8sId := sql.NullInt32{}    // 可能是个空值
+
+		//3.1. 插入到remote表中
+		if workspaceInfo.Mode != workspace.WorkingMode_K8s {
+			if (workspaceInfo.Remote != workspace.RemoteInfo{}) {
+				tmpId, err := InsertOrUpdateRemote(workspaceInfo.Remote)
+				common.CheckError(err)
+				if tmpId > 0 {
+					remoteId = sql.NullInt32{
+						Int32: int32(tmpId),
+						Valid: true,
+					}
+				}
+			}
+		} else {
+			tmpId, err := InsertOrUpdateK8sInfo(workspaceInfo.K8sInfo)
 			common.CheckError(err)
 			if tmpId > 0 {
-				remoteId = sql.NullInt32{
+				k8sId = sql.NullInt32{
 					Int32: int32(tmpId),
 					Valid: true,
 				}
@@ -107,15 +121,15 @@ func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId in
 		}
 
 		//3.2.
-		stmt, err := db.Prepare(`INSERT INTO workspace(w_name, w_workingdir, w_docker_compose_file_path, w_config_file, r_id,
+		stmt, err := db.Prepare(`INSERT INTO workspace(w_name, w_workingdir, w_docker_compose_file_path, w_config_file, r_id,k_id,
 												w_mode, w_git_clone_repo_url, w_git_auth_type, w_branch,
 												w_json, w_config_content, w_link_compose_content, w_temp_compose_content)  
-						VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+						VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 		if err != nil {
 			return -1, err
 		}
 
-		res, err := stmt.Exec(workspaceInfo.Name, workspaceInfo.WorkingDirectoryPath, workspaceInfo.TempDockerComposeFilePath, workspaceInfo.ConfigFilePath, remoteId,
+		res, err := stmt.Exec(workspaceInfo.Name, workspaceInfo.WorkingDirectoryPath, workspaceInfo.TempDockerComposeFilePath, workspaceInfo.ConfigFilePath, remoteId, k8sId,
 			workspaceInfo.Mode, workspaceInfo.GitCloneRepoUrl, workspaceInfo.GitRepoAuthType, workspaceInfo.Branch,
 			string(jsonBytes), configStr, linkComposeStr, tempComposeStr)
 		if err != nil {
@@ -296,6 +310,8 @@ func workspaceDataMap(workspaceInfo *workspace.WorkspaceInfo, do workspaceDo) er
 		workspaceInfo.Mode = workspace.WorkingMode_Local
 	} else if do.w_mode == string(workspace.WorkingMode_Remote) {
 		workspaceInfo.Mode = workspace.WorkingMode_Remote
+	} else if do.w_mode == string(workspace.WorkingMode_K8s) {
+		workspaceInfo.Mode = workspace.WorkingMode_K8s
 	} else {
 		panic("w_mode != string(WorkingMode_Local)")
 	}
@@ -316,6 +332,10 @@ func workspaceDataMap(workspaceInfo *workspace.WorkspaceInfo, do workspaceDo) er
 	if rid >= 0 {
 		workspaceInfo.Remote, _ = GetRemoteById(rid)
 	}
+	kid := int(do.k_id.Int32)
+	if int(kid) >= 0 {
+		workspaceInfo.K8sInfo, _ = GetK8sInfoById(kid)
+	}
 
 	// 其他
 	workspaceInfo.CreatedTime = do.w_created
@@ -331,13 +351,13 @@ func GetSingleWorkspace(workspaceid int) (workspaceInfo workspace.WorkspaceInfo,
 
 	do := workspaceDo{}
 	row := db.QueryRow(`select w_id, w_name, w_workingdir, w_docker_compose_file_path, w_mode, w_config_file, 
-								w_git_clone_repo_url, w_git_auth_type, w_branch, r_id, 
+								w_git_clone_repo_url, w_git_auth_type, w_branch, r_id, k_id,
 								w_json, w_config_content, w_link_compose_content, w_temp_compose_content, 
 								w_created 
 					    from workspace 
 						where w_id=? and w_is_del = 0`, workspaceid)
 	switch err := row.Scan(&do.w_id, &do.w_name, &do.w_workingdir, &do.w_docker_compose_file_path, &do.w_mode, &do.w_config_file,
-		&do.w_git_clone_repo_url, &do.w_git_auth_type, &do.w_branch, &do.r_id,
+		&do.w_git_clone_repo_url, &do.w_git_auth_type, &do.w_branch, &do.r_id, &do.k_id,
 		&do.w_json, &do.w_config_content, &do.w_link_compose_content, &do.w_temp_compose_content,
 		&do.w_created); err {
 	case sql.ErrNoRows:

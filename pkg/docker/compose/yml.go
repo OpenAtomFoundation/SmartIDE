@@ -87,6 +87,8 @@ func (c *DockerComposeYml) ToYaml() (result string, err error) {
 		return "", nil
 	}
 
+	//fmt.Println(c)
+
 	d, err := yaml.Marshal(&c)
 	common.CheckError(err)
 	result = string(d)

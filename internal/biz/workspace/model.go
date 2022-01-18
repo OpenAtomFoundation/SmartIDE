@@ -71,6 +71,8 @@ type WorkspaceInfo struct {
 	// 配置文件
 	ConfigYaml config.SmartIdeConfig
 
+	K8sInfo K8sInfo
+
 	// 临时的docker-compose文件
 	TempDockerCompose compose.DockerComposeYml
 
@@ -274,6 +276,15 @@ type RemoteInfo struct {
 	Password    string
 	SSHPort     int
 	CreatedTime time.Time
+}
+
+type K8sInfo struct {
+	ID             int
+	CreatedTime    time.Time
+	Context        string
+	Namespace      string
+	DeploymentName string
+	PVCName        string
 }
 
 //

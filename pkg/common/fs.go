@@ -2,14 +2,17 @@
  * @Author: kenan
  * @Date: 2021-12-29 14:26:42
  * @LastEditors: kenan
- * @LastEditTime: 2021-12-29 15:20:58
+ * @LastEditTime: 2022-01-13 17:46:33
  * @Description: file content
  */
 
 package common
 
 import (
+	"bufio"
+	"bytes"
 	"os"
+	"strconv"
 )
 
 // fileName:文件名字(带全路径)
@@ -27,4 +30,37 @@ func AppendToFile(fileName string, content string) error {
 	}
 	defer f.Close()
 	return err
+}
+
+var totalSize float64
+
+func CheckFileContainsStr(path, str string) (bool, error) {
+	b := false
+	cmp := []byte(str)
+	// log.Println(cmp)
+	f, err := os.Open(path)
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
+	input := bufio.NewScanner(f)
+	for input.Scan() {
+		//log.Println(input.Bytes())
+		info := input.Bytes()
+		if bytes.Contains(info, cmp) {
+			// log.Println(info)
+			b = true
+			break
+		}
+
+		tokens := bytes.SplitN(input.Bytes(), []byte(" "), 10)
+		//log.Println(tokens)
+		totalSize += float64(len(input.Bytes()))
+		if len(tokens) < 9 {
+			continue
+		}
+		strconv.ParseInt(string(tokens[8]), 10, 0)
+	}
+	totalSize = totalSize / (1 << 20)
+	return b, nil
 }
