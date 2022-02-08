@@ -521,9 +521,10 @@ func (instance *SSHRemote) ExecSSHCommandRealTimeFunc(sshCommand string, yamlExe
 	err = session.RequestPty("xterm", 80, 40, modes)
 	CheckError(err)
 
-	stdoutB := new(bytes.Buffer)
-	session.Stdout = stdoutB
-	in, _ := session.StdinPipe()
+	/* sshStdoutBytes := new(bytes.Buffer)
+	session.Stdout = sshStdoutBytes */
+	sshIn, _ := session.StdinPipe()
+	sshOut, _ := session.StdoutPipe()
 
 	// 函数
 	if yamlExecuteFun == nil {
@@ -539,9 +540,9 @@ func (instance *SSHRemote) ExecSSHCommandRealTimeFunc(sshCommand string, yamlExe
 
 	var exit chan bool = make(chan bool)
 
-	go func(in io.Writer, out *bytes.Buffer, exit chan bool) {
+	go func(in io.Writer, out io.Reader, exit chan bool) {
 
-		var t int = 0
+		//var t int = 0
 		for {
 
 			isExit := false
@@ -550,25 +551,31 @@ func (instance *SSHRemote) ExecSSHCommandRealTimeFunc(sshCommand string, yamlExe
 				isExit = true
 			default:
 			}
-			if isExit || out == nil { // 退出
+
+			if isExit { // 退出
 				break
 			}
 
-			originMsg := out.String()
-			if originMsg == "" || t > len(originMsg) {
+			// https://gist.github.com/hivefans/ffeaf3964924c943dd7ed83b406bbdea#file-shell_output-go-L22
+			buf := make([]byte, 1000)
+			n, err := out.Read(buf)
+			if err != nil {
+				SmartIDELog.Debug(err.Error())
+			}
+			originMsg := string(buf[:n])
+
+			if originMsg == "" { //|| t > len(originMsg) {
 				continue
 			}
-			msg := originMsg[t:] // 获取 当前的字符串
-			t = len(originMsg)   // 为 下一次获取字符串做准备
+			//	msg := originMsg[t:] // 获取 当前的字符串
+			//	t = len(originMsg)   // 为 下一次获取字符串做准备
 
 			//msg = strings.ReplaceAll(msg, "\x00", "") // ??
-			if msg == "" {
+			if originMsg == "" {
 				continue
 			}
 
-			//yamlExecuteFun(msg)
-
-			array := strings.Split(msg, "\r\n")
+			array := strings.Split(originMsg, "\r\n")
 			for _, sub := range array {
 				if len(sub) == 0 || sub == "\r\n" { //|| sub == "\r"
 					continue
@@ -579,7 +586,7 @@ func (instance *SSHRemote) ExecSSHCommandRealTimeFunc(sshCommand string, yamlExe
 			}
 
 		}
-	}(in, stdoutB, exit)
+	}(sshIn, sshOut, exit)
 
 	err = session.Run(sshCommand)
 	exit <- true

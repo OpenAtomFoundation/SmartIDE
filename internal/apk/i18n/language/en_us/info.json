@@ -234,6 +234,7 @@
         "err_ernum_error": "Cannot found value in enum type.",
         "err_ssh_password_required": "Password is required.",
         "err_ssh_dial_none": "需要和远程主机创建连接！",
+        "err_dal_remote_reference_by_workspace":"当前host已经被其他工作区引用，不能被删除！",
         "warn_dal_record_not_exit_condition": "No data found with query（%v）",
         "warn_dal_record_not_exit": "No data found",
         "warn_param_is_null": " '%v' is empty"

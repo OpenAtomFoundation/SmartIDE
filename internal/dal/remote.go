@@ -89,25 +89,30 @@ func RemoveRemote(remoteId int, host string) error {
 	defer db.Close()
 
 	// 数据校验
-	var count int
+	var exitCount, referenceCount int
 	var row *sql.Row
 	if len(host) > 0 {
-		row = db.QueryRow("select count(1) from remote where r_addr=? and r_is_del = 0", host)
+		row = db.QueryRow("select count(1) exitCount,(select count(1) from workspace where w_is_del = 0 and r_id = remote.r_id) referenceCount from remote where r_addr=? and r_is_del = 0", host)
 	} else if remoteId > 0 {
-		row = db.QueryRow("select count(1) from remote where r_id=? and r_is_del = 0", remoteId)
+		row = db.QueryRow("select count(1) exitCount,(select count(1) from workspace where w_is_del = 0 and r_id = remote.r_id) referenceCount from remote where r_id=? and r_is_del = 0", remoteId)
 	}
-	switch err := row.Scan(&count); err {
+	switch err := row.Scan(&exitCount, &referenceCount); err {
 	case sql.ErrNoRows:
 		msg := fmt.Sprintf("remote （%v | %v）", remoteId, host)
 		common.SmartIDELog.WarningF(i18nInstance.Common.Warn_dal_record_not_exit_condition, msg) // 没有查询到数据
 	case nil:
-		if count <= 0 {
+		if exitCount <= 0 { // 没有找到相关的记录
 			return errors.New(i18nInstance.Common.Warn_dal_record_not_exit)
-		} else if count > 1 {
+		} else if exitCount > 1 { // 存在多条记录
 			return errors.New(i18nInstance.Common.Err_dal_record_repeat)
 		}
 	default:
-		panic(err)
+		return err
+	}
+
+	// 是否被其他的workspace引用
+	if referenceCount > 0 {
+		return errors.New(i18nInstance.Common.Err_dal_remote_reference_by_workspace)
 	}
 
 	//

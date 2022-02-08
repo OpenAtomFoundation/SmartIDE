@@ -202,15 +202,39 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 		// 端口映射
 		for serviceName, service := range dockerCompose.Services {
 			if serviceName == yamlFileConfig.Workspace.DevContainer.ServiceName {
-				// 是否检查端口被占用
-				if isCheckUnuesedPorts {
-					newIdeBindingPort := sshRemote.CheckAndGetAvailableRemotePort(ideBindingPort, 10) // 在远程主机上获取一个未被占用的端口
-					if newIdeBindingPort != ideBindingPort {
-						ideBindingPort = newIdeBindingPort
+
+				// webide port
+				if !service.ContainContainerPort(yamlFileConfig.GetContainerWebIDEPort()) {
+					// 是否检查端口被占用
+					if isCheckUnuesedPorts {
+						// webide port
+						newIdeBindingPort := sshRemote.CheckAndGetAvailableRemotePort(ideBindingPort, 10) // 在远程主机上获取一个未被占用的端口
+						if newIdeBindingPort != ideBindingPort {
+							ideBindingPort = newIdeBindingPort
+						}
+						yamlFileConfig.setPort4Label(yamlFileConfig.GetContainerWebIDEPort(), ideBindingPort, newIdeBindingPort, serviceName)
 					}
-					yamlFileConfig.setPort4Label(yamlFileConfig.GetContainerWebIDEPort(), ideBindingPort, newIdeBindingPort, serviceName)
+
+					//
+					service.AppendPort(strconv.Itoa(ideBindingPort) + ":" + strconv.Itoa(yamlFileConfig.GetContainerWebIDEPort()))
 				}
-				service.AppendPort(strconv.Itoa(ideBindingPort) + ":" + strconv.Itoa(yamlFileConfig.GetContainerWebIDEPort()))
+
+				// ssh port
+				if !service.ContainContainerPort(model.CONST_Container_SSHPort) {
+					// 是否检查端口被占用
+					if isCheckUnuesedPorts {
+						// ssh port
+						newSshBindingPort, err := common.CheckAndGetAvailableLocalPort(sshBindingPort, 100) //
+						common.CheckError(err)
+						if newSshBindingPort != sshBindingPort {
+							sshBindingPort = newSshBindingPort
+						}
+						yamlFileConfig.setPort4Label(model.CONST_Container_SSHPort, sshBindingPort, newSshBindingPort, serviceName)
+					}
+
+					//
+					service.AppendPort(strconv.Itoa(sshBindingPort) + ":" + strconv.Itoa(model.CONST_Container_SSHPort))
+				}
 
 				dockerCompose.Services[serviceName] = service
 			}
@@ -234,6 +258,7 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 
 					}
 					yamlFileConfig.setPort4Label(containerPort, bindingPortOld, bindingPortNew, serviceName)
+
 				}
 				if hasChange {
 					dockerCompose.Services[serviceName] = service
@@ -245,27 +270,34 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 		// 端口映射
 		for serviceName, service := range dockerCompose.Services {
 			if serviceName == yamlFileConfig.Workspace.DevContainer.ServiceName {
-				if isCheckUnuesedPorts {
-					newSshBindingPort, err := common.CheckAndGetAvailableLocalPort(sshBindingPort, 100) //
-					common.CheckError(err)
-					if newSshBindingPort != sshBindingPort {
-						sshBindingPort = newSshBindingPort
+				// webide port
+				if !service.ContainContainerPort(yamlFileConfig.GetContainerWebIDEPort()) {
+					if isCheckUnuesedPorts {
+						newIdeBindingPort, err := common.CheckAndGetAvailableLocalPort(ideBindingPort, 10) //
+						common.CheckError(err)
+						if newIdeBindingPort != ideBindingPort {
+							ideBindingPort = newIdeBindingPort
 
-					}
-					yamlFileConfig.setPort4Label(model.CONST_Container_SSHPort, sshBindingPort, newSshBindingPort, serviceName)
-
-					newIdeBindingPort, err := common.CheckAndGetAvailableLocalPort(ideBindingPort, 10) //
-					common.CheckError(err)
-					if newIdeBindingPort != ideBindingPort {
-						ideBindingPort = newIdeBindingPort
-
+						}
+						yamlFileConfig.setPort4Label(yamlFileConfig.GetContainerWebIDEPort(), ideBindingPort, newIdeBindingPort, serviceName)
 					}
 
-					yamlFileConfig.setPort4Label(yamlFileConfig.GetContainerWebIDEPort(), ideBindingPort, newIdeBindingPort, serviceName)
+					service.AppendPort(strconv.Itoa(ideBindingPort) + ":" + strconv.Itoa(yamlFileConfig.GetContainerWebIDEPort()))
 				}
 
-				service.AppendPort(strconv.Itoa(ideBindingPort) + ":" + strconv.Itoa(yamlFileConfig.GetContainerWebIDEPort()))
-				service.AppendPort(strconv.Itoa(sshBindingPort) + ":" + strconv.Itoa(model.CONST_Container_SSHPort))
+				// ssh port
+				if !service.ContainContainerPort(model.CONST_Container_SSHPort) {
+					if isCheckUnuesedPorts {
+						newSshBindingPort, err := common.CheckAndGetAvailableLocalPort(sshBindingPort, 100) //
+						common.CheckError(err)
+						if newSshBindingPort != sshBindingPort {
+							sshBindingPort = newSshBindingPort
+						}
+						yamlFileConfig.setPort4Label(model.CONST_Container_SSHPort, sshBindingPort, newSshBindingPort, serviceName)
+					}
+
+					service.AppendPort(strconv.Itoa(sshBindingPort) + ":" + strconv.Itoa(model.CONST_Container_SSHPort))
+				}
 
 				dockerCompose.Services[serviceName] = service
 			}

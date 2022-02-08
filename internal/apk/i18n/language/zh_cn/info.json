@@ -193,7 +193,7 @@
         "info_help_list_short": "获取远程主机列表",
         "info_help_list_long": "获取远程主机列表",
         "info_help_flag_hostid": "远程主机Id",
-        "info_host_table_header": "Id\tHost\tPort\tCrete Time",
+        "info_host_table_header": "Id\tHost\tPort\tCreate Time",
         "info_host_detail_template": "      Id：\t%v\n地    址：\t%v\n验证模式：\t%v\n用    户：\t%v\n创建时间：\t%v\n",
         "err_host_data_not_exit": "没有查找到关联的远程主机信息",
         "info_help_host_add_short": "新增远程主机",
@@ -237,6 +237,7 @@
         "err_ernum_error": "在枚举中找不到对应的值",
         "err_ssh_password_required": "密码不能为空！",
         "err_ssh_dial_none": "需要和远程主机创建连接！",
+        "err_dal_remote_reference_by_workspace":"当前host已经被其他工作区引用，不能被删除！",
         "warn_dal_record_not_exit_condition": "根据（%v）没有查询到对应的数据",
         "warn_dal_record_not_exit": "没有查询到对应的数据",
         "warn_param_is_null": "参数 %v 为空"

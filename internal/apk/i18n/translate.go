@@ -263,14 +263,15 @@ type I18nSource struct {
 		Debug_auto_connect_gitrepo string `json:"debug_auto_connect_gitrepo"`
 		Debug_empty_error          string `json:"debug_empty_error"`
 
-		Err_sshremote_param_repourl_none string `json:"err_sshremote_param_repourl_none"`
-		Err_password_none                string `json:"err_password_none"`
-		Err_dal_record_repeat            string `json:"err_dal_record_repeat"`
-		Err_dal_update_fail              string `json:"err_dal_update_fail"`
-		Err_dal_update_count_too_much    string `json:"err_dal_update_count_too_much"`
-		Err_enum_error                   string `json:"err_ernum_error"`
-		Err_ssh_password_required        string `json:"err_ssh_password_required"`
-		Err_ssh_dial_none                string `json:"err_ssh_dial_none"`
+		Err_sshremote_param_repourl_none      string `json:"err_sshremote_param_repourl_none"`
+		Err_password_none                     string `json:"err_password_none"`
+		Err_dal_record_repeat                 string `json:"err_dal_record_repeat"`
+		Err_dal_update_fail                   string `json:"err_dal_update_fail"`
+		Err_dal_update_count_too_much         string `json:"err_dal_update_count_too_much"`
+		Err_enum_error                        string `json:"err_ernum_error"`
+		Err_ssh_password_required             string `json:"err_ssh_password_required"`
+		Err_ssh_dial_none                     string `json:"err_ssh_dial_none"`
+		Err_dal_remote_reference_by_workspace string `json:"err_dal_remote_reference_by_workspace"`
 
 		Info_privatekey_is_overwrite      string `json:"info_privatekey_is_overwrite"`
 		Info_whether_overwrite            string `json:"info_whether_overwrite"`

@@ -164,6 +164,9 @@ func convertOriginContainer(containers []types.Container, dockerComposeServices 
 			if container.Labels["com.docker.compose.service"] == serviceName {
 				var ports []string
 				for _, port := range container.Ports {
+					if port.PublicPort <= 0 {
+						continue
+					}
 					str := fmt.Sprintf("%v:%v", port.PublicPort, port.PrivatePort)
 					if !common.Contains(ports, str) { // 限制重复的端口绑定信息
 						ports = append(ports, str)

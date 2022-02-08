@@ -1,5 +1,10 @@
 package compose
 
+import (
+	"strconv"
+	"strings"
+)
+
 type ShellCommand []string
 
 // 服务配置
@@ -101,4 +106,17 @@ type Service struct {
 
 func (service *Service) AppendPort(port string) {
 	service.Ports = append(service.Ports, port)
+}
+
+// 是否包含某个容器端口的映射
+func (service *Service) ContainContainerPort(port int) bool {
+	originPort := strconv.Itoa(port)
+	for _, portStr := range service.Ports {
+		array := strings.Split(portStr, ":")
+		if array[1] == originPort {
+			return true
+		}
+	}
+
+	return false
 }

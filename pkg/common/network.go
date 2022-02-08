@@ -43,7 +43,7 @@ func IsPortAvailable(port int) (result bool, err error) {
 	case "linux":
 		command = exec.Command("sh", "-c", fmt.Sprintf("lsof -i tcp:%d", port))
 	case "windows":
-		command = exec.Command("cmd", "/c", fmt.Sprintf("netstat -aon|findstr \":%d\"", port))
+		command = exec.Command("powershell", "/c", fmt.Sprintf("netstat -aon|findstr \":%d\"", port))
 	case "darwin":
 		command = exec.Command("sh", "-c", fmt.Sprintf("lsof -i tcp:%d", port))
 	default:
