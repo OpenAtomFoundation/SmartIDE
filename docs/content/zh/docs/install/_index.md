@@ -36,6 +36,7 @@ SmartIDE 通过调用docker和docker-compose来实现容器化环境的管理，
 
 | 版本号      | 构建编号 | 发布日期      |   简要说明   |
 | ----------- | ----------- | ----------- | ----------- |
+| v0.1.11     | 2035 | 2022.02.08 | 修复若干bug，启动Server版开发集成       |
 | v0.1.10     | 1829 | 2022.01.18 | 简化版指令集，k8s start可用，开源项目gin-vue-admin适配       |
 | [v0.1.9](/zh/blog/2022-0104-sprint9/)          | 1753 | 2022.01.01 | 稳定性和体验性加强，k8s Start, Image V2 体系开发，JetBrain体系WebIDE支持       |
 | [v0.1.7](/zh/blog/2021-1203-state-management/)          | 1456 | 2021.12.02 | 公开发布，状态管理，远程模式稳定性，项目模板       |
@@ -109,11 +110,11 @@ Invoke-WebRequest -Uri ("https://smartidedl.blob.core.chinacloudapi.cn/builds/"+
 # 键入以下命令获取当前版本
 smartide version
 # 输出如下
-v0.1.6.992
-Version number: v0.1.6.992
-Build number: 20211113.2_992_release-6_Schedule
-Commit record: 783718398ed96d9d07714715fede2709fc405485
-Company: leansoftX.com
+v0.1.11.2035
+版本号: v0.1.11.2035
+构建号: 20220208.2_2035_main_IndividualCI
+编译时间: 2022-02-08 01:15:49
+提交记录: 2030b4ab1492c7afcc13f918a782b06c36f11a6d
 ```
 
 说明：
