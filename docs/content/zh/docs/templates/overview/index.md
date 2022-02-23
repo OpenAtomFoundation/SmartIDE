@@ -1,7 +1,7 @@
 ---
 title: "概述"
 linkTitle: "概述"
-weight: 10
+weight: 75
 description: >
   镜像和模版概述
 ---

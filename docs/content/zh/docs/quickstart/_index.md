@@ -110,7 +110,7 @@ smartide start --host <远程主机ID> https://gitee.com/idcf-boat-house/boathou
 
 远程模式启动后的使用体验与本地模式保持一致。
 
-## 下一步：用SmartIDE开发容器创建新项目
+## 用SmartIDE开发容器创建新项目
 
 Boathouse计算器 是一个已经适配好 SmartIDE 开发环境的应用，如果你希望了解如何使用 SmartIDE 从头创建一个全新的项目，我们还为你准备了一系列针对不同开发技术栈的快速启动教程：
 
@@ -122,7 +122,7 @@ Boathouse计算器 是一个已经适配好 SmartIDE 开发环境的应用，如
 - PHP 
 - c/c++
 
-## 项目开发案例
+## 开源项目项目SmartIDE适配
 
 我们还对很多 *开源项目* 进行了SmartIDE适配，你可以通过 [示例应用](/zh/docs/examples/) 获取更多示例应用的体验文档，示例部分所展示的全部都是真实项目的开发场景，包括 SmartIDE 本身其实都是使用 SmartIDE 开发环境进行开发的。
 
@@ -138,3 +138,7 @@ Boathouse计算器 是一个已经适配好 SmartIDE 开发环境的应用，如
 - iTop
 
 *更多示例会持续更新* 
+
+## 已有私有项目SmartIDE适配
+
+如果是自己或团队内的私有项目，也可以使用SmartIDE提供的开发容器进行开发。适配的方式与新项目使用SmartIDE类似，执行 对应语言的new 命令即可：`smartide new <语言> -t <IDE名称>`。具体可参考：[nodejs](./new-node/) 和 [镜像与模板-概述](../templates/overview/)

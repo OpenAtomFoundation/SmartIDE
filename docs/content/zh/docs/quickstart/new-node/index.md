@@ -35,7 +35,7 @@ smartide new node -t vscode 或者 se new node -t vscode
 # 可以复制所有脚本一键执行，如果需要分布执行，请删除结尾处的单引号
 mkdir node-quickstart 
 cd node-quickstart 
-smartide new node -t vscode
+smartide new node -t vscode 或者 se new node -t vscode
 ```
 {{% /tab %}}
 {{< /tabs >}}
@@ -210,22 +210,61 @@ smartide start https://gitee.com/smartide/smartide-quickstart
 
 是不是很爽！
 
-###  7. 使用本地VSCode客户端进行远程开发
-
-以上几步采用的是WebIDE，且WebIDE已经集成至开发容器中。如果想要用地已装好的VSCode进行远程开发，可以参考 [这篇文章](../../)
 
 ## 使用Node WebStorm 开发镜像
 
+###  1. 新建node WebStorm 本地WebIDE模式容器开发环境
+
+运行以下命令创建node开发环境：
+
+{{< tabs name="new_node" >}}
+{{% tab name="MacOS" %}}
+```shell
+# 在 MacOS 上打开 终端（Terminal）应用，复制粘贴以下脚本
+# 可以复制所有脚本一键执行，如果需要分布执行，请删除结尾处的反斜杠
+mkdir node-quickstart 
+cd node-quickstart 
+smartide new node -t webstorm 或者 se new node -t webstorm
+```
+{{% /tab %}}
+{{% tab name="Windows" %}}
+```powershell
+# 在 Windows 上打开 PowerShell 应用，复制粘贴以下脚本
+# 可以复制所有脚本一键执行，如果需要分布执行，请删除结尾处的单引号
+mkdir node-quickstart 
+cd node-quickstart 
+smartide new node -t webstorm 或者 se new node -t webstorm
+```
+{{% /tab %}}
+{{< /tabs >}}
+
+运行后的效果如下，你可以通过命令窗口中的日志详细了解 SmartIDE 的启动过程，当 SmartIDE 启动完毕之后，会自动打开浏览器窗口并导航 WebIDE 界面。
+
+###  2. 创建项目结构及后续操作
+
+使用 WebStorm 进行NodejS开发，与上一节的 VSCode类似，JetBrains提供的种语言的IDE已经集成了基本的IDE插件，运行起来后开箱即用，调试、编写代码此处不再赘述。
+
+## 使用本地IDE客户端进行远程开发
+
+上一节步采用的是WebIDE，且WebIDE已经集成至开发容器中。如果想要用本机已装好的VSCode，或者是JetBrans的WebStorm、IDEA进行远程开发，可以参考 [这篇文章](../../ide/remote/)
+
+gateway 模式? TODO
+
+
 ##  使用 SmartIDE 远程模式启动开发环境
 
-SmartIDE支持三种运行方式：     
-    - 本地模式：**即本节内容采用的模式**
-    - 远程模式：*开发容器及WebIDE运行在远程服务器上*
-    - k8s模式： 开发容器及WebIDE运行在k8s集群中
+SmartIDE支持三种运行方式：   
+ 
+- 本地模式：**即本篇前两节采用的模式**
+
+- 远程模式：*开发容器及WebIDE运行在远程服务器上*
+
+- k8s模式： 开发容器及WebIDE运行在k8s集群中
+
 
 远程模式启动也非常简单，可以使用下面的命令一键启动上文中提交的项目：
 ```bash
 smartide start --host <HostID>  https://gitee.com/smartide/smartide-quickstart
 ```
 
-**三种模式的详细介绍可以参考[这篇文档](../../overview/)**
+**三种模式的详细介绍可以参考 [这篇文档](../../overview/)**
