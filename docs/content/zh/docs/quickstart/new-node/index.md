@@ -12,7 +12,7 @@ SmartIDE内置了node.js开发环境模板，你可以通过一个简单的指�
 
 > 说明：SmartIDE的命令行工具可以在Windows和MacOS操作系统上运行，对大多数命令来说，操作是完全一致的。本文档中虽然使用的是MacOS上的截图，但是Windows环境的所有日志和工作状态完全一致。对于脚本格式有区别的地方，我们会同时提供2套脚本。
 
-## 1. 新建node开发环境
+## 1. 新建node vscode 本地模式容器开发环境
 
 运行以下命令创建node开发环境：
 
@@ -23,7 +23,7 @@ SmartIDE内置了node.js开发环境模板，你可以通过一个简单的指�
 # 可以复制所有脚本一键执行，如果需要分布执行，请删除结尾处的反斜杠
 mkdir node-quickstart 
 cd node-quickstart 
-smartide new node
+smartide new node -t vscode 或者 se new node -t vscode
 ```
 {{% /tab %}}
 {{% tab name="Windows" %}}
@@ -32,7 +32,7 @@ smartide new node
 # 可以复制所有脚本一键执行，如果需要分布执行，请删除结尾处的单引号
 mkdir node-quickstart 
 cd node-quickstart 
-smartide new node
+smartide new node -t vscode
 ```
 {{% /tab %}}
 {{< /tabs >}}
@@ -195,12 +195,28 @@ SmartIDE 环境中已经内置了 Git 的支持，你可以点击 **菜单栏左
 
 至此，我们已经使用 SmartIDE 完成了一个 Node Express 应用从环境搭建，创建基础代码结构，配置调试环境，完成编码开发到提交代码的全过程。
 
+## 6. 将创建好的基础项目分享给团队成员，一键启动
+
 **现在可以将你的代码库发送给其他的小伙伴，让他通过以下指令一键启动你的应用的应用。**
 
 ```shell
-git clone https://gitee.com/smartide/smartide-quickstart
+mkdir smartide-quickstart
 cd smartide-quickstart
-smartide start
+smartide start https://gitee.com/smartide/smartide-quickstart
 ```
 
 是不是很爽！
+
+## 7. 使用 SmartIDE 远程模式启动开发环境
+
+SmartIDE支持三种运行方式：     
+    - 本地模式：**即本节内容采用的模式**
+    - 远程模式：*开发容器及WebIDE运行在远程服务器上*
+    - k8s模式： 开发容器及WebIDE运行在k8s集群中
+
+远程模式启动也非常简单，可以使用下面的命令一键启动：
+```bash
+smartide start --host <HostID>  https://gitee.com/smartide/smartide-quickstart
+```
+
+三种模式的详细介绍可以参考[这篇文档](../../overview/)
