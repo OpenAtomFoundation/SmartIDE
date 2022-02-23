@@ -110,7 +110,7 @@ smartide start --host <远程主机ID> https://gitee.com/idcf-boat-house/boathou
 
 远程模式启动后的使用体验与本地模式保持一致。
 
-## 下一步
+## 下一步：用SmartIDE开发容器创建新项目
 
 Boathouse计算器 是一个已经适配好 SmartIDE 开发环境的应用，如果你希望了解如何使用 SmartIDE 从头创建一个全新的项目，我们还为你准备了一系列针对不同开发技术栈的快速启动教程：
 
