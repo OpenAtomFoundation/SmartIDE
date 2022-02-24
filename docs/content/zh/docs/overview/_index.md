@@ -100,9 +100,10 @@ IDE即代码(IDE as Code)的思路是解决开发环境标准化的终极思路�
 Boathouse计算器应用是我们为社区提供的一个全功能的node.js示例程序，你可以通过以下方式迅速启动这个应用进行体验。
 
 ```shell
-git clone https://github.com/idcf-boat-house/boathouse-calculator.git
-cd boathouse-calculator
-smartide start
+## 完整指令
+smartide start https://gitee.com/idcf-boat-house/boathouse-calculator.git
+## 简化版指令
+se up https://gitee.com/idcf-boat-house/boathouse-calculator.git
 ```
 
 然后就可以进行开发和调试，是不是很爽？
