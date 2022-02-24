@@ -13,9 +13,9 @@ SmartIDE内置了node.js开发环境模板，你可以通过一个简单的指�
 > 说明：SmartIDE的命令行工具可以在Windows和MacOS操作系统上运行，对大多数命令来说，操作是完全一致的。本文档中虽然使用的是MacOS上的截图，但是Windows环境的所有日志和工作状态完全一致。对于脚本格式有区别的地方，我们会同时提供2套脚本。
 
 
-## 使用Node VSCode 开发镜像
+## Node VSCode
 
-###  1. 新建node vscode 本地WebIDE模式容器开发环境
+###  1. 创建开发环境
 
 运行以下命令创建node开发环境：
 
@@ -198,7 +198,7 @@ SmartIDE 环境中已经内置了 Git 的支持，你可以点击 **菜单栏左
 
 至此，我们已经使用 SmartIDE 完成了一个 Node Express 应用从环境搭建，创建基础代码结构，配置调试环境，完成编码开发到提交代码的全过程。
 
-###  6. 将创建好的基础项目分享给团队成员，一键启动
+###  6. 一键启动
 
 **现在可以将你的代码库发送给其他的小伙伴，让他通过以下指令一键启动你的应用的应用。**
 
@@ -210,10 +210,14 @@ smartide start https://gitee.com/smartide/smartide-quickstart
 
 是不是很爽！
 
+### 7. Hybrid模式启动
 
-## 使用Node WebStorm 开发镜像
+前面采用的是WebIDE，WebIDE已经集成至开发容器中。如果想要用本机已装好的VSCode联接SmartIDE提供的远程工作区，可以参考 [这篇文章](../../ide/remote/)
 
-###  1. 新建node WebStorm 本地WebIDE模式容器开发环境
+
+## Node JetBrains WebStorm 
+
+###  1. 新建开发环境
 
 运行以下命令创建node开发环境：
 
@@ -240,18 +244,104 @@ smartide new node -t webstorm 或者 se new node -t webstorm
 
 运行后的效果如下，你可以通过命令窗口中的日志详细了解 SmartIDE 的启动过程，当 SmartIDE 启动完毕之后，会自动打开浏览器窗口并导航 WebIDE 界面。
 
-###  2. 创建项目结构及后续操作
+![node quickstart](images/quickstart-node-webstorm01.png)
 
-使用 WebStorm 进行NodejS开发，与上一节的 VSCode类似，JetBrains提供的种语言的IDE已经集成了基本的IDE插件，运行起来后开箱即用，调试、编写代码此处不再赘述。
-
-## 使用本地IDE客户端进行远程开发
-
-上一节步采用的是WebIDE，且WebIDE已经集成至开发容器中。如果想要用本机已装好的VSCode，或者是JetBrans的WebStorm、IDEA进行远程开发，可以参考 [这篇文章](../../ide/remote/)
-
-gateway 模式? TODO
+![node quickstart](images/quickstart-node-webstorm02.png)
 
 
-##  使用 SmartIDE 远程模式启动开发环境
+###  2. 创建项目结构
+
+- 点击创建项目
+
+![node quickstart](images/quickstart-node-webstorm03.png)
+
+这里我们选择创建一个React 前端项目，注意修改项目默认**保存的路径**和**Node版本**
+
+![node quickstart](images/quickstart-node-webstorm04.png)
+
+点击创建后，WebStorm 会自动下载依赖包，等待下载完。
+
+![node quickstart](images/quickstart-node-webstorm05.png)
+
+国内环境有可能会下载失败，可能需要修改npm registry 为国内淘宝源。
+
+**启动WebIDE内置的Terminal**
+
+后续的操作我们会通过 WebIDE 内置的 Terminal 来完成，点击窗口底部的 Terminal 即可打开命令行窗口
+
+> 注意：如果没有特别提示，后续的命令都是在这个 Web Terminal 中运行的。
+
+运行以下命令将 node 包管理器 npm 的源地址设置到国内淘宝镜像，这样可以明显改善后续的操作流畅性。
+
+```shell
+npm config set registry https://registry.npmmirror.com
+npm config get registry
+```
+
+![node quickstart](images/quickstart-node-webstorm06.png)
+
+如果项目初始完成后，可以看到以下内容，这时可以启动项目进行预览了。启动前，先打开文件`app.tsx`，添加一段代码:`Hello SmartIDE!`
+
+![node quickstart](images/quickstart-node-webstorm07.png)
+
+###  3. 启动项目
+
+然后在Terminal输入启动命令：`PORT=3001 npm start`
+
+![node quickstart](images/quickstart-node-webstorm08.png)
+
+
+等启动后，可以看到以下内容，在本机浏览器输入：[http://localhost:3001/](http://localhost:3001/) , 即可查看Web应用
+
+![node quickstart](images/quickstart-node-webstorm09.png)
+
+
+
+###  4. 提交代码
+
+先初始化git仓库
+
+![初始化Git库](images/quickstart-node-webstorm10.png)
+
+![Commit](images/quickstart-node-webstorm11.png)
+
+在 **提交注释** 中填写 **使用SmartIDE创建**，然后点击 **提交按钮** 
+
+![Commit](images/quickstart-node-webstorm12.png)
+
+添加一个远端 Git库 地址。SmartIDE 支持任何Git服务，包括：GitHub, Gitlab, Azure DevOps, Gitee 等等。
+
+![Commit](images/quickstart-node-webstorm13.png)
+
+![Commit](images/quickstart-node-webstorm14.png)
+
+最后推送代码
+
+![Commit](images/quickstart-node-webstorm15.png)
+
+> 为了方便大家查看本演示所创建的代码，我已经将这份代码推送到了Gitee上，代码库地址如下
+> https://gitee.com/liminany-lxm/smartide-webstorm-react-app-demo
+
+至此，我们已经使用 SmartIDE 完成了一个React前端 应用从环境搭建，创建基础代码结构，完成编码开发到提交代码的全过程。
+
+###  5. 一键启动
+
+**现在可以将你的代码库发送给其他的小伙伴，让他通过以下指令一键启动你的应用的应用。**
+
+```shell
+mkdir smartide-quickstart
+cd smartide-quickstart
+smartide start https://gitee.com/liminany-lxm/smartide-webstorm-react-app-demo
+```
+
+是不是很爽！
+
+### 6. Hybrid模式启动
+
+前面采用的是WebIDE，WebIDE已经集成至开发容器中。如果想要用本机已装好的VSCode联接SmartIDE提供的远程工作区，可以参考 [这篇文章](../../ide/remote/)
+
+
+##  远程模式
 
 SmartIDE支持三种运行方式：   
  
@@ -264,7 +354,7 @@ SmartIDE支持三种运行方式：
 
 远程模式启动也非常简单，可以使用下面的命令一键启动上文中提交的项目：
 ```bash
-smartide start --host <HostID>  https://gitee.com/smartide/smartide-quickstart
+smartide start --host <HostID> https://gitee.com/smartide/smartide-quickstart
 ```
 
 **三种模式的详细介绍可以参考 [这篇文档](../../overview/)**
