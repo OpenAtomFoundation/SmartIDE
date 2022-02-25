@@ -3,7 +3,7 @@ title: "概述"
 linkTitle: "概述"
 weight: 10
 description: >
-  什么是SmartIDE，它能帮你做些什么？
+  产品定位，用户价值，使用场景，主要概念和技术架构。
 ---
 
 ## 我们为什么要开发SmartIDE？

@@ -13,32 +13,19 @@ SmartIDE内置了node.js开发环境模板，你可以通过一个简单的指�
 > 说明：SmartIDE的命令行工具可以在Windows和MacOS操作系统上运行，对大多数命令来说，操作是完全一致的。本文档中虽然使用的是MacOS上的截图，但是Windows环境的所有日志和工作状态完全一致。对于脚本格式有区别的地方，我们会同时提供2套脚本。
 
 
-## Node VSCode
+## VSCode
 
 ###  1. 创建开发环境
 
 运行以下命令创建node开发环境：
 
-{{< tabs name="new_node" >}}
-{{% tab name="MacOS" %}}
 ```shell
-# 在 MacOS 上打开 终端（Terminal）应用，复制粘贴以下脚本
-# 可以复制所有脚本一键执行，如果需要分布执行，请删除结尾处的反斜杠
-mkdir node-quickstart 
-cd node-quickstart 
-smartide new node -t vscode 或者 se new node -t vscode
+# 在 MacOS/Windows 上打开 终端（Terminal）或者 PowerShell 应用
+# 执行以下命令
+mkdir sample-vscode-node 
+cd sample-vscode-node  
+smartide new node -t vscode
 ```
-{{% /tab %}}
-{{% tab name="Windows" %}}
-```powershell
-# 在 Windows 上打开 PowerShell 应用，复制粘贴以下脚本
-# 可以复制所有脚本一键执行，如果需要分布执行，请删除结尾处的单引号
-mkdir node-quickstart 
-cd node-quickstart 
-smartide new node -t vscode 或者 se new node -t vscode
-```
-{{% /tab %}}
-{{< /tabs >}}
 
 运行后的效果如下，你可以通过命令窗口中的日志详细了解 SmartIDE 的启动过程，当 SmartIDE 启动完毕之后，会自动打开浏览器窗口并导航 WebIDE 界面。
 
@@ -54,7 +41,7 @@ Web Terminal 开启后如下图所示：
 
 ![打开WebTerminal](images/quickstart-node003.png)
 
-###  2. 创建项目结构
+###  2. 创建并配置项目
 
 > 注意：如果没有特别提示，后续的命令都是在这个 Web Terminal 中运行的。
 
@@ -74,8 +61,6 @@ express --view=pug myapp
 执行完毕后的效果如下，左侧文件管理器里面已经出现了 newapp 文件夹，并在其中创建了 node express 应用的基础代码结构，右侧 Terminal 窗口中列出了创建过程的日志信息。
 
 ![Node Express Generator](images/quickstart-node004.png)
-
-###  3. 配置项目
 
 使用以下内容对 **/newapp/package.json** 文件进行全文替换，这里我们设置了几个关键配置
 
@@ -138,7 +123,7 @@ npm install
 
 ![npm install ready](images/quickstart-node005.png)
 
-###  4. 启动调试
+###  3. 开发调试
 
 完成以上配置之后，你的代码已经完全准备好，可以开始进行编码调试了。
 
@@ -179,7 +164,7 @@ npm install
 
 **至此，我们已经使用 SmartIDE 完成了一个 Node Express 应用程序的创建，配置和编码调试过程。**
 
-###  5. 提交代码
+###  4. 提交并分享
 
 SmartIDE 环境中已经内置了 Git 的支持，你可以点击 **菜单栏左侧 ｜ 源代码管理 ｜ 点击 Initialize Repository 按钮** 将当前工作区初始化成一个 Git代码库。
 
@@ -198,24 +183,15 @@ SmartIDE 环境中已经内置了 Git 的支持，你可以点击 **菜单栏左
 
 至此，我们已经使用 SmartIDE 完成了一个 Node Express 应用从环境搭建，创建基础代码结构，配置调试环境，完成编码开发到提交代码的全过程。
 
-###  6. 一键启动
-
 **现在可以将你的代码库发送给其他的小伙伴，让他通过以下指令一键启动你的应用的应用。**
 
 ```shell
-mkdir smartide-quickstart
-cd smartide-quickstart
 smartide start https://gitee.com/smartide/smartide-quickstart
 ```
 
 是不是很爽！
 
-### 7. Hybrid模式启动
-
-前面采用的是WebIDE，WebIDE已经集成至开发容器中。如果想要用本机已装好的VSCode联接SmartIDE提供的远程工作区，可以参考 [这篇文章](../../ide/remote/)
-
-
-## Node JetBrains WebStorm 
+## JetBrains WebStorm 
 
 ###  1. 新建开发环境
 
@@ -341,20 +317,16 @@ smartide start https://gitee.com/liminany-lxm/smartide-webstorm-react-app-demo
 前面采用的是WebIDE，WebIDE已经集成至开发容器中。如果想要用本机已装好的VSCode联接SmartIDE提供的远程工作区，可以参考 [这篇文章](../../ide/remote/)
 
 
-##  远程模式
+## 远程开发
 
-SmartIDE支持三种运行方式：   
- 
-- 本地模式：**即本篇前两节采用的模式**
+上面我们已经使用SmartIDE的本地工作区模式完成了一个应用的创建和开发过程，这个过程和你所熟悉的开发模式有2个区别，1）我们使用了VSCode WebIDE；2）开发环境全部通过容器获取并运行。
 
-- 远程模式：*开发容器及WebIDE运行在远程服务器上*
+在这个过程中你的项目代码也已经具备了远程开发的能力，你可以按照以下文档中的说明使用任意一种远程工作区来开发调试你的应用
 
-- k8s模式： 开发容器及WebIDE运行在k8s集群中
+- [远程主机工作区](/zh/docs/overview/workspace/#远程主机工作区)
+- [k8s工作区](/zh/docs/overview/workspace/#k8s工作区)
+- [Server工作区](/zh/docs/overview/workspace/#server工作区)
 
+另外，你也可以通过VSCode或者JetBrains内置的远程开发模式进行Hybird模式的远程开发，具体请参考
 
-远程模式启动也非常简单，可以使用下面的命令一键启动上文中提交的项目：
-```bash
-smartide start --host <HostID> https://gitee.com/smartide/smartide-quickstart
-```
-
-**三种模式的详细介绍可以参考 [这篇文档](../../overview/)**
+- [IDE远程开发操作手册](/zh/docs/manual/ide-remote/)

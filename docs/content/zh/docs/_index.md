@@ -8,10 +8,5 @@ menu:
     weight: 20
 ---
 
-{{% pageinfo %}}
-SmartIDE 操作手册，为您提供详细的单步操作指引。
-{{% /pageinfo %}}
-
-
 
 

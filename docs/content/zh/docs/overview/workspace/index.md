@@ -1,7 +1,7 @@
 ---
-title: "SmartIDE工作区"
+title: "工作区"
 linkTitle: "工作区"
-weight: 10
+weight: 50
 description: >
   工作区(Workspace)是SmartIDE中的最重要的概念，SmartIDE的所有功能都是围绕工作区展开的。SmartIDE支持3种工作区运行模式，本地模式、远程模式和k8s模式。
 ---
@@ -68,4 +68,8 @@ smartide start --k8s <实例名称> --namespace <命令空间名称> <代码库U
 ```
 
 ## Server工作区
+
+SmartIDE Server为用户管理工作区提供可视化的网页操作，但是Server工作区本质上仍然是运行在远程linux主机上的远程主机工作区或者运行在k8s集群中的k8s工作区。SmartIDE Server允许用户讲自己的linux主机或者k8s集群注册到资源列表，并通过 工作区管理 页面创建server工作区。
+
+在用户使用Server工作区的过程中，需要使用SmartIDE CLI执行 `smartide connect` 指令允许cli监听正在运行的Server工作区列表并建立 **SSH隧道** 以便用户可以继续使用 `localhost:port` 的方式访问工作区资源。
 
