@@ -9,7 +9,7 @@
       ports: # 申明端口
         tools-webide-vscode: 6800
         tools-ssh: 6822
-        apps-hugo-docs: 3001
+        apps-hugo-docs: 1313
       ide-type: vscode
       volumes: 
         git-config: true
@@ -28,10 +28,10 @@
         volumes:
           - .:/home/project
           - /var/run/docker.sock:/var/run/docker.sock
-        expose:
-          - 1313
         ports:
           - 1313:1313
+          - 6800:3000
+          - 6822:22
         networks:
           - smartide-network
 
