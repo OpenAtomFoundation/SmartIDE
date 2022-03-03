@@ -6,7 +6,10 @@
   workspace:
     dev-container:
       service-name: smartide-docs
-      webide-port: 6800
+      ports: # 申明端口
+        tools-webide-vscode: 6800
+        tools-ssh: 6822
+        apps-hugo-docs: 3001
       ide-type: vscode
       volumes: 
         git-config: true
