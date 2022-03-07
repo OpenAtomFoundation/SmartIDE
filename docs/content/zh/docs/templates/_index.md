@@ -29,8 +29,20 @@ SmartIDE所提供的开发者容器镜像中已经针对开发调试和测试场
 
 为了方便开发者使用我们所提供的开发者镜像，我们在 SmartIDE CLI 中内置了环境模版功能，开发者可以使用 `smartide new` 指令获取所有可用的模版，这些模版与以上的开发者镜像一一对应，可以用来一键创建标准化的开发环境。
 
+SmartIDE模版库本身是开源的，地址为
 
-简单操作示例如下：
+- 国内Gitee: https://gitee.com/smartide/smartide-templates
+- 国外GitHub: https://github.com/smartide/smartide-templates
+
+完整的指令列表如下
+```shell
+## 完整技术栈和IDE匹配列表
+smartide new node|java|golang|dotnet|python|php|cpp [-t vscode|(webstorm|idea|rider|goland|pycharm｜phpstorm|clion)]
+```
+
+各个技术栈相关的模版启动指令如下：
+
+### Node/JavaScript/前端
 
 ```shell
 #########################################
@@ -43,37 +55,103 @@ smartide new node
 smartide new node -t vscode
 ## 创建带有node全版本sdk的开发容器，使用JetBrains WebStorm WebIDE
 smartide new node -t webstorm
+```
 
+### Java语言
+
+```shell
 #########################################
-# Java 技术栈
+# Java语言
 #########################################
 
 ## 创建带有JDK的开发容器，无IDE，可通过VSCode SSH Remote或者JetBrains Gateway接入
 smartide new java
-## 创建带有node全版本sdk的开发容器，使用VSCode WebIDE
+## 创建带有JDK开发容器，使用VSCode WebIDE
 smartide new java -t vscode
-## 创建带有node全版本sdk的开发容器，使用JetBrains IntelliJ IDEA WebIDE
+## 创建带有JDK开发容器，使用JetBrains IntelliJ IDEA WebIDE
 smartide new java -t idea
 ```
 
-完整的指令列表如下
+### Go语言
 
 ```shell
-## 完整技术栈和IDE匹配列表
-smartide new node|java|dotnet|python|php|cpp [-t vscode|(webstorm|idea|rider|pycharm｜phpstorm|clion)]
+#########################################
+# Go语言
+#########################################
+
+## 创建带有Go的开发容器，无IDE，可通过VSCode SSH Remote或者JetBrains Gateway接入
+smartide new golang
+## 创建带有Go开发容器，使用VSCode WebIDE
+smartide new golang -t vscode
+## 创建带有Go开发容器，使用JetBrains Goland WebIDE
+smartide new golang -t goland
 ```
 
-SmartIDE模版库本身是开源的，地址为
+### DotNet (跨平台版本)
 
-- 国内Gitee: https://gitee.com/smartide/smartide-templates
-- 国外GitHub: https://github.com/smartide/smartide-templates
+```shell
+#########################################
+# DotNet (跨平台版本)
+#########################################
 
+## 创建带有.Net的开发容器，无IDE，可通过VSCode SSH Remote或者JetBrains Gateway接入
+smartide new dotnet
+## 创建带有.Net开发容器，使用VSCode WebIDE
+smartide new dotnet -t vscode
+## 创建带有.Net开发容器，使用JetBrains Rider WebIDE
+smartide new dotnet -t rider
+```
+
+### Python
+
+```shell
+#########################################
+# Python
+#########################################
+
+## 创建带有Python的开发容器，无IDE，可通过VSCode SSH Remote或者JetBrains Gateway接入
+smartide new python
+## 创建带有Python开发容器，使用VSCode WebIDE
+smartide new python -t vscode
+## 创建带有Python开发容器，使用JetBrains PyCharm WebIDE
+smartide new python -t pycharm
+```
+
+### PHP
+
+```shell
+#########################################
+# PHP
+#########################################
+
+## 创建带有PHP的开发容器，无IDE，可通过VSCode SSH Remote或者JetBrains Gateway接入
+smartide new php
+## 创建带有PHP开发容器，使用VSCode WebIDE
+smartide new php -t vscode
+## 创建带有PHP开发容器，使用JetBrains PhpStorm WebIDE
+smartide new php -t phpstorm
+```
+
+### C/C++
+
+```shell
+#########################################
+# C/C++
+#########################################
+
+## 创建带有C/C++的开发容器，无IDE，可通过VSCode SSH Remote或者JetBrains Gateway接入
+smartide new cpp
+## 创建带有C/C++开发容器，使用VSCode WebIDE
+smartide new cpp -t vscode
+## 创建带有C/C++开发容器，使用JetBrains Clion WebIDE
+smartide new cpp -t clion
+```
 
 ## 镜像和模版指令列表
 
-为了方便开发者使用我们的镜像，当前所有公开镜像的地址公布如下并会持续更新。
+为了方便开发者使用我们的镜像，当前所有公开镜像的地址公布如下并会持续更新。有关以下镜像体系的详细说明，请参考 [SmartIDE Sprint 9 (v0.1.9）发布说明](/zh/blog/2022-0104-sprint9/#smartide-image-v2)
 
-SmartIDE开发者镜像分成3层提供，分别提供不同的能能力。
+SmartIDE开发者镜像分成3层提供，分别提供不同的能力。
 
 ### L0 - 基础镜像
 
