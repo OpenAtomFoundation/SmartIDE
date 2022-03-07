@@ -2,6 +2,7 @@
 title: "工作区"
 linkTitle: "工作区"
 weight: 50
+draft: false
 description: >
   工作区(Workspace)是SmartIDE中的最重要的概念，SmartIDE的所有功能都是围绕工作区展开的。SmartIDE支持3种工作区运行模式，本地模式、远程模式和k8s模式。
 ---
