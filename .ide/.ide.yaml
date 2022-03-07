@@ -6,10 +6,10 @@
   workspace:
     dev-container:
       service-name: smartide-docs
-      ports:
-        webide: 6800
-        ssh: 6822
-        hugo: 1313
+      ports: # 申明端口
+        tools-webide-vscode: 6800
+        tools-ssh: 6822
+        apps-hugo-docs: 1313
       ide-type: vscode
       volumes: 
         git-config: true
@@ -30,8 +30,8 @@
           - /var/run/docker.sock:/var/run/docker.sock
         ports:
           - 1313:1313
-          - 6822:22
           - 6800:3000
+          - 6822:22
         networks:
           - smartide-network
 
