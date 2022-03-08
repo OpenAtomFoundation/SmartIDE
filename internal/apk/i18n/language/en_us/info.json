@@ -25,7 +25,12 @@
         "info_help_long": "SmartIDE allows you to create local and remote dev environment with integrated WebIDE.",
         "info_usage_template": "Usage:{{if .Runnable}}\n  {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}\n  {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}\nAliases:\n  {{.NameAndAliases}}{{end}}{{if .HasExample}}\nExamples:\n{{.Example}}{{end}}{{if .HasAvailableSubCommands}}\nAvailable Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name \"help\"))}}\n  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}\nFlags:\n{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}\nGlobal Flags:\n{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasHelpSubCommands}}\nAdditional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}\n  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}\nUse \"{{.CommandPath}} [command] --help\" for more information about a command.{{end}}\n",
         "info_help_flag_debug": "Enable Debug mode will generate more detailed log messages",
-        "info_help_flag_mode":"smartide 的运行模式，是在服务端（server）还是客户端（client）",
+        "info_help_flag_mode": "smartide 的运行模式，是在服务端（server）还是客户端（client）",
+        "info_help_flag_server_workspace_id": "smartide server工作区ID",
+        "info_help_flag_server_token": "smartide server的token",
+        "info_help_flag_server_username": "smartide server登录账号",
+        "info_help_flag_server_userguid": "smartide server登录账号对应的guid",
+        "info_help_flag_server_feedback": "smartide server反馈信息的url",
         "info_workspace_loading": "Loading workspace ...",
         "info_ssh_connect_check": "Checking SSH connection %v:%v ...",
         "info_version_local": "本地构建版本 - %v",
@@ -131,11 +136,11 @@
         "info_docker_rmi_image_removed": "镜像 %v 已经删除！",
         "info_project_dir_removed": "文件夹 %v 已删除",
         "info_ssh_timeout_confirm_skip": "ssh 连接连接超时，是否跳过在远程主机上的操作（删除容器、文件夹、镜像等等）？（y｜n）",
-        "warn_workspace_dir_not_exit":"本地工作目录已经被删除！",
+        "warn_workspace_dir_not_exit": "本地工作目录已经被删除！",
         "err_flag_workspace_container": "参数 workspace 和 container 不能同时存在！",
         "err_workspace_not_exit": "No workspace found in the Working Dir.",
         "err_flag_container_valid": "在远程主机模式下，container 参数无效！",
-        "err_workspace_dir_not_exit":"本地工作目录已经被删除！可通过 smartide remove -y -f 强制删除本地工作区数据。"
+        "err_workspace_dir_not_exit": "本地工作目录已经被删除！可通过 smartide remove -y -f 强制删除本地工作区数据。"
     },
     "new": {
         "info_help_short": "Create new SmartIDE workspace",
@@ -156,6 +161,10 @@
         "info_help_short": "SmartIDE help",
         "info_help_long": "Use this command to get help."
     },
+    "connect": {
+        "info_help_short": "连接远程工作区，自动转发端口",
+        "info_help_long": "连接远程工作区，自动转发端口"
+    },
     "version": {
         "info_help_short": "SmartIDE version ",
         "info_help_long": "SmartIDE version ",
@@ -172,7 +181,7 @@
         "info_warting_for_webide": "[WebIDE] Waiting for WebIDE to start ...",
         "info_open_brower": "[WebIDE] You can now open your browser to access the WebIDE : %v ",
         "info_git_cloned": "[Git] Workspace is already exist, code is already cloned, no need to run git checkout.",
-        "info_tunnel_waiting":"端口转发中..."
+        "info_tunnel_waiting": "端口转发中..."
     },
     "update": {
         "info_help_short": "Automatically upgrade to a specified version",
@@ -234,7 +243,7 @@
         "err_ernum_error": "Cannot found value in enum type.",
         "err_ssh_password_required": "Password is required.",
         "err_ssh_dial_none": "需要和远程主机创建连接！",
-        "err_dal_remote_reference_by_workspace":"当前host已经被其他工作区引用，不能被删除！",
+        "err_dal_remote_reference_by_workspace": "当前host已经被其他工作区引用，不能被删除！",
         "warn_dal_record_not_exit_condition": "No data found with query（%v）",
         "warn_dal_record_not_exit": "No data found",
         "warn_param_is_null": " '%v' is empty"
@@ -254,5 +263,14 @@
         "info_help_flag_floder": "删除工作区的对应的工作目录",
         "info_help_flag_all": "删除工作区对应的镜像、工作目录",
         "warn_confirm_all_remove": "重置后当前所有工作区将无法恢复，是否确认重置当前环境？（y｜n）"
+    },
+    "login": {
+        "info_help_short": "SmartIDE login ",
+        "info_help_long": "SmartIDE login ",
+        "info_help_login_success": "SmartIDE login success",
+        "info_help_login_fail": "SmartIDE login fail",
+        "info_help_flag_username": "SmartIDE server username",
+        "info_help_flag_pasword": "SmartIDE server password",
+        "info_help_flag_loginurl": "SmartIDE server loginurl"
     }
 }

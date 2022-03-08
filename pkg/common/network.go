@@ -57,7 +57,9 @@ func IsPortAvailable(port int) (result bool, err error) {
 		err = nil
 	}
 	if len(output) <= 0 {
-		result = true
+		result = true // 端口未被占用
+	} else {
+		SmartIDELog.Debug(fmt.Sprintf("%v used，"+string(output), port))
 	}
 
 	return

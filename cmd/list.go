@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors:
- * @LastEditTime:
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-02-18 16:22:24
  */
 package cmd
 
@@ -15,6 +15,7 @@ import (
 
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/dal"
+	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
 )
@@ -39,6 +40,18 @@ func printWorkspaces() {
 	workspaces, err := dal.GetWorkspaceList()
 	common.CheckError(err)
 
+	auth, err := workspace.GetCurrentUser()
+	common.CheckError(err)
+	if auth != (model.Auth{}) && auth.Token != "" {
+		// 从api 获取workspace
+		serverWorkSpace, err := workspace.GetServerWorkspaceList(auth)
+
+		if err != nil { // 有错误仅给警告
+			common.SmartIDELog.Importance("从服务器获取工作区列表失败，" + err.Error())
+		} else { //
+			workspaces = append(workspaces, serverWorkSpace...)
+		}
+	}
 	if len(workspaces) <= 0 {
 		common.SmartIDELog.Info(i18nInstance.List.Info_dal_none)
 		return

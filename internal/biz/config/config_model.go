@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors:
- * @LastEditTime:
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-02-21 15:00:08
  */
 package config
 
@@ -72,12 +72,15 @@ type SmartIdeConfig struct {
 
 // 端口映射信息
 type PortMapInfo struct {
-	ServiceName      string
-	OriginLocalPort  int
-	CurrentLocalPort int
-	LocalPortDesc    string
-	ContainerPort    int
-	PortMapType      PortMapTypeEnum
+	ServiceName     string          `json:"ServiceName"`
+	OriginHostPort  int             `json:"OriginLocalPort"`
+	CurrentHostPort int             `json:"CurrentLocalPort"`
+	HostPortDesc    string          `json:"LocalPortDesc"`
+	ContainerPort   int             `json:"ContainerPort"`
+	PortMapType     PortMapTypeEnum `json:"PortMapType"`
+
+	ClientPort    int `json:"ClientPort"`
+	OldClientPort int `json:"OldClientPort"`
 }
 
 //
@@ -93,12 +96,12 @@ const (
 func NewPortMap(
 	mapType PortMapTypeEnum, orginLocalPort int, currentLocalPort int, localPortDesc string, containerPort int, serviceName string) *PortMapInfo {
 	result := &PortMapInfo{
-		ServiceName:      serviceName,
-		OriginLocalPort:  orginLocalPort,
-		CurrentLocalPort: currentLocalPort,
-		LocalPortDesc:    localPortDesc,
-		ContainerPort:    containerPort,
-		PortMapType:      mapType,
+		ServiceName:     serviceName,
+		OriginHostPort:  orginLocalPort,
+		CurrentHostPort: currentLocalPort,
+		HostPortDesc:    localPortDesc,
+		ContainerPort:   containerPort,
+		PortMapType:     mapType,
 	}
 
 	return result
@@ -115,6 +118,7 @@ func (w SmartIdeConfig) GetWorkingDirectoryPath() string {
 	return w.Workspace.DevContainer.workingDirectoryPath
 
 }
+
 //返回容器内IDE端口，web ide的默认端口：3000，JetBrains IDE的默认端口：8887
 func (w SmartIdeConfig) GetContainerWebIDEPort() int {
 	switch strings.ToLower(w.Workspace.DevContainer.IdeType) {

@@ -295,8 +295,14 @@ func TunnelMultiple(clientConn *ssh.Client, mapping map[string]string) error {
 				if err != nil {
 					common.SmartIDELog.Warning("failed to dial to remote: ", err.Error())
 				}
+				if here == nil {
+					common.SmartIDELog.Importance("本地连接失败" + local)
+				}
 				go func(here net.Conn) {
 					there, err := clientConn.Dial("tcp", remote)
+					if there == nil {
+						common.SmartIDELog.Importance("ssh 连接失败，请确保相应端口已打开 " + remote)
+					}
 					if err != nil {
 						common.SmartIDELog.Warning(err.Error())
 					}

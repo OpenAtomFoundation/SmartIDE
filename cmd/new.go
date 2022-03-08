@@ -105,12 +105,18 @@ var newCmd = &cobra.Command{
 			folderPath, _ := os.Getwd()
 			isEmpty, _ := folderEmpty(folderPath)
 			if !isEmpty {
-				var s string
-				fmt.Print(i18nInstance.New.Info_noempty_is_comfirm)
-				fmt.Scanln(&s)
-				if s != "y" {
-					return nil
+				isContinue, _ := cmd.Flags().GetBool("yes")
+				if !isContinue { // 如果没有设置yes，那么就要给出提示
+					var s string
+					common.SmartIDELog.Importance(i18nInstance.New.Info_noempty_is_comfirm)
+					fmt.Scanln(&s)
+					if s != "y" {
+						return nil
+					}
+				} else {
+					common.SmartIDELog.Importance("当前文件夹不为空，当前文件夹内数据将被重置。")
 				}
+
 			}
 			//复制templates下到当前文件夹
 			copyTemplate(args[0], newProjectType)
@@ -124,7 +130,7 @@ var newCmd = &cobra.Command{
 			//0.1. 从坂数中获坖结构体，并坚基本的数杮有效性校验
 			common.SmartIDELog.Info(i18nInstance.Main.Info_workspace_loading)
 
-			worksapceInfo, err := getWorkspace4Start(cmd, args)
+			worksapceInfo, err := getWorkspaceFromCmd(cmd, args)
 			common.CheckError(err)
 
 			//ai记录
@@ -370,6 +376,8 @@ func loadTemplatesJson() {
 
 func init() {
 	newCmd.Flags().StringVarP(&newProjectType, "type", "t", "", i18nInstance.New.Info_help_flag_type)
+
+	newCmd.Flags().BoolVarP(&removeCmdFlag.IsContinue, "yes", "y", false, "确认")
 }
 
 type NewType struct {

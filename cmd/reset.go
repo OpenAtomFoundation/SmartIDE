@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors:
- * @LastEditTime:
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-02-16 10:21:08
  */
 package cmd
 
@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
@@ -95,9 +96,10 @@ var resetCmd = &cobra.Command{
 							resetCmdFalgs.IsRemoveAllComposeImages || resetCmdFalgs.IsAll, resetCmdFalgs.IsRemoveDirectory || resetCmdFalgs.IsAll, resetCmdFalgs.IsAll)
 
 					}
-
+					i, err := strconv.Atoi(workspaceInfo.ID)
+					common.CheckError(err)
 					//1.2. 删除数据
-					dal.RemoveWorkspace(workspaceInfo.ID)
+					dal.RemoveWorkspace(i)
 
 				},
 				Catch: func(e common.Exception) {

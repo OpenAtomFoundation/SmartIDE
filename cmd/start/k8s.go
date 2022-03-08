@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2021-12-23 15:08:31
  * @LastEditors: kenan
- * @LastEditTime: 2022-01-18 10:50:35
+ * @LastEditTime: 2022-02-17 09:36:17
  * @Description: file content
  */
 package start
@@ -273,7 +273,7 @@ func ExecuteK8sStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fu
 				// PortForward the pod specified from its port 9090 to the local port
 				// 8080
 				// readyCh communicate when the port forward is ready to get traffic
-				workspaceInfo.Extend.Ports[i].OriginLocalPort, err = common.CheckAndGetAvailableLocalPort(v.OriginLocalPort, 100)
+				workspaceInfo.Extend.Ports[i].OriginHostPort, err = common.CheckAndGetAvailableLocalPort(v.OriginHostPort, 100)
 				common.CheckError(err)
 				common.SmartIDELog.InfoF(i18nInstance.Start.Info_k8s_port_forward_start, v.ContainerPort)
 				err := kubectl.PortForwardAPod(kubectl.PortForwardAPodRequest{
@@ -284,14 +284,14 @@ func ExecuteK8sStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fu
 							Namespace: workspaceInfo.K8sInfo.Namespace,
 						},
 					},
-					LocalPort: workspaceInfo.Extend.Ports[i].OriginLocalPort,
+					LocalPort: workspaceInfo.Extend.Ports[i].OriginHostPort,
 					PodPort:   v.ContainerPort,
 					Streams:   stream,
 					StopCh:    stopCh,
 					ReadyCh:   readyCh,
 				})
 				common.CheckError(err)
-				common.SmartIDELog.Info(fmt.Sprint(v.LocalPortDesc, ": ", workspaceInfo.Extend.Ports[i].OriginLocalPort))
+				common.SmartIDELog.Info(fmt.Sprint(v.HostPortDesc, ": ", workspaceInfo.Extend.Ports[i].OriginHostPort))
 
 			}(v)
 			select {
@@ -413,8 +413,8 @@ func getIDEYML(repoDir string, repoName string, sshPath string, workspaceInfo *w
 func getWebIDEUrl(currentConfig *config.SmartIdeConfig, workspaceInfo workspace.WorkspaceInfo) string {
 	webidePord := 6800
 	for _, v := range workspaceInfo.Extend.Ports {
-		if v.LocalPortDesc == "webide" {
-			webidePord = v.OriginLocalPort
+		if v.HostPortDesc == "webide" {
+			webidePord = v.OriginHostPort
 		}
 	}
 	var url string

@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
+	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/docker/compose"
 	"gopkg.in/src-d/go-git.v4"
@@ -28,6 +29,7 @@ const (
 	WorkingMode_Remote WorkingMode = "remote"
 	WorkingMode_Local  WorkingMode = "local"
 	WorkingMode_K8s    WorkingMode = "k8s"
+	WorkingMode_Server WorkingMode = "server"
 )
 
 // 远程连接的类型
@@ -47,8 +49,15 @@ const (
 	GitRepoAuthType_HTTP  GitRepoAuthType = "http"
 )
 
+type WorkspaceType string
+
+const (
+	WorkspaceType_Server GitRepoAuthType = "server"
+	WorkspaceType_Local  GitRepoAuthType = "local"
+)
+
 type WorkspaceInfo struct {
-	ID                   int
+	ID                   string
 	Name                 string
 	WorkingDirectoryPath string
 	// 配置文件路径
@@ -65,6 +74,7 @@ type WorkspaceInfo struct {
 	projectDirctoryName string
 	// git 库的认证方式
 	GitRepoAuthType GitRepoAuthType
+
 	// 指定的分支
 	Branch string
 
@@ -84,11 +94,63 @@ type WorkspaceInfo struct {
 
 	// 创建时间
 	CreatedTime time.Time
+
+	// 关联的服务端workspace
+	ServerWorkSpace model.ServerWorkspace
+}
+
+//
+func CreateWorkspaceInfo(serverWorkSpace model.ServerWorkspace) (WorkspaceInfo, error) {
+	workspaceInfo := WorkspaceInfo{
+		ID:              serverWorkSpace.NO,
+		Name:            serverWorkSpace.Name,
+		ConfigFilePath:  serverWorkSpace.ConfigFilePath,
+		GitCloneRepoUrl: serverWorkSpace.GitRepoUrl,
+		Branch:          serverWorkSpace.Branch,
+		Mode:            WorkingMode_Server,
+		CreatedTime:     serverWorkSpace.CreatedAt,
+		Remote: RemoteInfo{
+			Addr:     serverWorkSpace.Resource.IP,
+			UserName: serverWorkSpace.Resource.SSHUserName,
+			Password: serverWorkSpace.Resource.SSHPassword,
+			SSHPort:  model.CONST_Container_SSHPort,
+		},
+	}
+	workspaceInfo.ServerWorkSpace = serverWorkSpace
+	if serverWorkSpace.Extend != "" {
+		err := json.Unmarshal([]byte(serverWorkSpace.Extend), &workspaceInfo.Extend)
+		if err != nil {
+			return WorkspaceInfo{}, err
+		}
+	}
+	if serverWorkSpace.LinkDockerCompose != "" {
+		err := yaml.Unmarshal([]byte(serverWorkSpace.LinkDockerCompose), &workspaceInfo.LinkDockerCompose)
+		if err != nil {
+			return WorkspaceInfo{}, err
+		}
+	}
+	if serverWorkSpace.TempDockerComposeContent != "" {
+		err := yaml.Unmarshal([]byte(serverWorkSpace.TempDockerComposeContent), &workspaceInfo.TempDockerCompose)
+		if err != nil {
+			return WorkspaceInfo{}, err
+		}
+	}
+	if serverWorkSpace.ConfigFileContent != "" {
+		err := yaml.Unmarshal([]byte(serverWorkSpace.ConfigFileContent), &workspaceInfo.ConfigYaml)
+		if err != nil {
+			return WorkspaceInfo{}, err
+		}
+	}
+
+	workspaceInfo.ServerWorkSpace = serverWorkSpace
+
+	return workspaceInfo, nil
 }
 
 // 工作区数据为空
 func (w WorkspaceInfo) IsNil() bool {
-	return w.ID <= 0 || w.WorkingDirectoryPath == "" || w.ConfigFilePath == "" || w.Name == "" || w.Mode == "" // || w.ProjectName == "" len(w.Extend.Ports) == 0 ||
+
+	return w.ID == "" || w.WorkingDirectoryPath == "" || w.ConfigFilePath == "" || w.Name == "" || w.Mode == "" // || w.ProjectName == "" len(w.Extend.Ports) == 0 ||
 }
 
 // 工作区数据不为空
@@ -132,6 +194,12 @@ func (w WorkspaceInfo) Valid() error {
 func (w WorkspaceInfo) GetProjectDirctoryName() string {
 	if w.projectDirctoryName == "" {
 		if w.Mode == WorkingMode_Remote { // 远程模式
+			if w.GitCloneRepoUrl == "" { // 当前模式下，不可能git库为空
+				common.SmartIDELog.Error(i18nInstance.Common.Err_sshremote_param_repourl_none)
+			}
+
+			w.projectDirctoryName = getRepoName(w.GitCloneRepoUrl)
+		} else if w.Mode == WorkingMode_Server {
 			if w.GitCloneRepoUrl == "" { // 当前模式下，不可能git库为空
 				common.SmartIDELog.Error(i18nInstance.Common.Err_sshremote_param_repourl_none)
 			}
@@ -263,7 +331,8 @@ func (instance *WorkspaceExtend) IsNil() bool {
 
 // 工作区扩展字段
 type WorkspaceExtend struct {
-	Ports []config.PortMapInfo
+	// 端口映射情况
+	Ports []config.PortMapInfo `json:"Ports"`
 }
 
 // 远程主机信息

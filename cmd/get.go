@@ -52,7 +52,7 @@ var getCmd = &cobra.Command{
 				fmt.Fprintln(w, "Service\t| Label\t| Current Local Port\t| Local Port\t| Container Port")
 				for _, portInfo := range workspaceInfo.Extend.Ports {
 					line := fmt.Sprintf("%v\t| %v\t| %v\t| %v\t| %v",
-						portInfo.ServiceName, portInfo.LocalPortDesc, portInfo.CurrentLocalPort, portInfo.OriginLocalPort, portInfo.ContainerPort)
+						portInfo.ServiceName, portInfo.HostPortDesc, portInfo.CurrentHostPort, portInfo.OriginHostPort, portInfo.ContainerPort)
 					fmt.Fprintln(w, line)
 				}
 				fmt.Fprintln(w)

@@ -204,6 +204,42 @@ func (sLog *smartIDELogStruct) Importance(infos ...string) (err error) {
 	return nil
 }
 
+var lastMsg string = ""
+
+type LogConfig struct {
+	// 重复的间隔
+	RepeatDependSecond int
+}
+
+// 一些重要的信息，已warning的形式输出到控制台
+func (sLog *smartIDELogStruct) ImportanceWithConfig(config LogConfig, infos ...string) (err error) {
+	// msg
+	msg := strings.Join(infos, " ")
+	if len(msg) <= 0 {
+		return nil
+	}
+
+	// 重复
+	if msg == lastMsg {
+		if (config != LogConfig{}) {
+			if config.RepeatDependSecond == -1 { // 为-1时代表不重复
+				return
+			}
+		}
+	} else {
+		lastMsg = msg
+	}
+
+	// 前缀
+	prefix := getPrefix(zapcore.WarnLevel)
+	fmt.Println(prefix, msg)
+
+	//
+	sugarLogger.Warn(msg)
+
+	return nil
+}
+
 //
 func (sLog *smartIDELogStruct) Warning(warning ...string) (err error) {
 

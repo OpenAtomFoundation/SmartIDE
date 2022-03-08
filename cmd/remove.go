@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2022-01-12 21:08:22
+ * @LastEditTime: 2022-02-16 10:20:03
  */
 package cmd
 
@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 
 	"github.com/docker/docker/client"
@@ -120,8 +121,9 @@ var removeCmd = &cobra.Command{
 		// remote workspace in db
 		if removeMode == RemoteMode_None || removeMode == RemoteMode_OnlyRemoveWorkspaceDataRecord { // 在仅删除容器的模式下，不删除工作区
 			common.SmartIDELog.Info(i18nInstance.Remove.Info_workspace_removing)
-
-			err := dal.RemoveWorkspace(workspaceInfo.ID)
+			i, err := strconv.Atoi(workspaceInfo.ID)
+			common.CheckError(err)
+			err = dal.RemoveWorkspace(i)
 			common.CheckError(err)
 		}
 

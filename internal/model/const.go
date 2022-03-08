@@ -1,3 +1,13 @@
+/*
+ * @Author: kenan
+ * @Date: 2021-12-30 19:48:33
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-02-18 16:13:41
+ * @FilePath: /smartide-cli/internal/model/const.go
+ * @Description:
+ *
+ * Copyright (c) 2022 by kenanlu@leansoftx.com, All Rights Reserved.
+ */
 package model
 
 // 容器内部的web ide的默认端口
@@ -41,3 +51,6 @@ const CONST_DEV_CONTAINER_CUSTOM_USER = "smartide"
 
 //容器ssh账号默认密码
 const CONST_DEV_CONTAINER_USER_DEFAULT_PASSWORD = "smartide123.@IDE"
+
+//默认登录地址
+const CONST_LOGIN_URL = "https://dev.smartide.cn"

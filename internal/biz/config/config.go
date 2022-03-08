@@ -144,52 +144,9 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 	}
 
 	//2. 转换为docker-compose - 基本转换
-	//2.1. 链接 docker-compose 文件
-	if yamlFileConfig.Workspace.DockerComposeFile != "" {
-		var dockerComposeFileBytes []byte // docker-compose文件的流信息
-		var err error
-
-		if isRemoteMode {
-			// 获取docker-compose文件在远程主机上的路径
-			remoteDockerComposeFilePath := common.FilePahtJoin(common.OS_Linux, remoteConfigDir, yamlFileConfig.Workspace.DockerComposeFile)
-			common.SmartIDELog.InfoF(i18nInstance.Config.Info_read_docker_compose, remoteDockerComposeFilePath)
-
-			// 在远程主机上加载docker-compose文件
-			command := fmt.Sprintf(`cat %v`, remoteDockerComposeFilePath)
-			output, err := sshRemote.ExeSSHCommand(command)
-			common.CheckError(err, output)
-			dockerComposeFileBytes = []byte(output)
-
-		} else {
-			// read and parse
-			common.SmartIDELog.InfoF(i18nInstance.Config.Info_read_docker_compose, yamlFileConfig.Workspace.DockerComposeFile)
-			linkDockerComposeFilePath, _ := yamlFileConfig.GetLocalLinkDockerComposeFile()
-			dockerComposeFileBytes, err = ioutil.ReadFile(linkDockerComposeFilePath)
-			common.CheckError(err)
-
-		}
-
-		err = yaml.Unmarshal([]byte(dockerComposeFileBytes), &dockerCompose) // 为dockerCompose赋值
-		common.CheckError(err)
-
-	} else {
-		// 确保不会有引用类型的问题
-		configContent, err := yamlFileConfig.ToYaml()
-		common.CheckError(err)
-		var notReferenceConfig SmartIdeConfig
-		yaml.Unmarshal([]byte(configContent), &notReferenceConfig)
-
-		// 使用新对象赋值
-		dockerCompose.Version = notReferenceConfig.Orchestrator.Version
-		dockerCompose.Services = make(map[string]compose.Service)
-		for serviceName, service := range notReferenceConfig.Workspace.Servcies {
-			s := service
-			dockerCompose.Services[serviceName] = s
-		}
-		dockerCompose.Networks = notReferenceConfig.Workspace.Networks
-		dockerCompose.Volumes = notReferenceConfig.Workspace.Volumes
-		dockerCompose.Secrets = notReferenceConfig.Workspace.Secrets
-	}
+	//2.1.
+	dockerCompose, err := yamlFileConfig.getDockerCompose(sshRemote, remoteConfigDir)
+	common.CheckError(err)
 
 	//2.2. 检查devContainer中定义的service时候存在于services中
 	if _, ok := dockerCompose.Services[yamlFileConfig.Workspace.DevContainer.ServiceName]; !ok { // 是否定义了devContainer节点对应的service
@@ -198,146 +155,95 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 	}
 
 	//3. 转换为docker compose - 端口绑定
-	if isRemoteMode { //3.1. vm 命令模式下，即remote远程主机，只需要自动绑定ide端口，但不需要绑定22
-		// 端口映射
-		for serviceName, service := range dockerCompose.Services {
-			if serviceName == yamlFileConfig.Workspace.DevContainer.ServiceName {
+	//3.1. 端口映射
+	for serviceName, service := range dockerCompose.Services {
 
-				// webide port
-				if !service.ContainContainerPort(yamlFileConfig.GetContainerWebIDEPort()) {
-					// 是否检查端口被占用
-					if isCheckUnuesedPorts {
-						// webide port
-						newIdeBindingPort := sshRemote.CheckAndGetAvailableRemotePort(ideBindingPort, 10) // 在远程主机上获取一个未被占用的端口
-						if newIdeBindingPort != ideBindingPort {
-							ideBindingPort = newIdeBindingPort
+		// 绑定端口被占用的问题
+		if isCheckUnuesedPorts {
+			hasChange := false
+			for index, port := range service.Ports {
+				binding := strings.Split(port, ":")
+				bindingPortOld, err := strconv.Atoi(binding[0])
+				common.CheckError(err)
+
+				containerPort, err := strconv.Atoi(binding[1])
+				common.CheckError(err)
+
+				bindingPortNew, err := checkAndGetAvailableRemotePort(sshRemote, bindingPortOld, 10) // 检测端口是否被占用
+				common.CheckError(err)
+				if bindingPortOld != bindingPortNew {
+					service.Ports[index] = fmt.Sprintf("%v:%v", bindingPortNew, containerPort)
+					common.SmartIDELog.InfoF("%v -> %v", port, service.Ports[index])
+					hasChange = true
+
+					// ide、ssh端口更新
+					if serviceName == yamlFileConfig.Workspace.DevContainer.ServiceName {
+						if containerPort == yamlFileConfig.GetContainerWebIDEPort() {
+							ideBindingPort = bindingPortNew
+						} else if containerPort == model.CONST_Container_SSHPort {
+							sshBindingPort = bindingPortNew
 						}
-						yamlFileConfig.setPort4Label(yamlFileConfig.GetContainerWebIDEPort(), ideBindingPort, newIdeBindingPort, serviceName)
 					}
-
-					//
-					service.AppendPort(strconv.Itoa(ideBindingPort) + ":" + strconv.Itoa(yamlFileConfig.GetContainerWebIDEPort()))
 				}
-
-				// ssh port
-				if !service.ContainContainerPort(model.CONST_Container_SSHPort) {
-					// 是否检查端口被占用
-					if isCheckUnuesedPorts {
-						// ssh port
-						newSshBindingPort, err := common.CheckAndGetAvailableLocalPort(sshBindingPort, 100) //
-						common.CheckError(err)
-						if newSshBindingPort != sshBindingPort {
-							sshBindingPort = newSshBindingPort
-						}
-						yamlFileConfig.setPort4Label(model.CONST_Container_SSHPort, sshBindingPort, newSshBindingPort, serviceName)
-					}
-
-					//
-					service.AppendPort(strconv.Itoa(sshBindingPort) + ":" + strconv.Itoa(model.CONST_Container_SSHPort))
-				}
-
-				dockerCompose.Services[serviceName] = service
+				yamlFileConfig.setPort4Label(containerPort, bindingPortOld, bindingPortNew, serviceName)
 			}
-
-			// 绑定端口被占用的问题
-			if isCheckUnuesedPorts {
-				hasChange := false
-				for index, port := range service.Ports {
-					binding := strings.Split(port, ":")
-					bindingPortOld, err := strconv.Atoi(binding[0])
-					common.CheckError(err)
-
-					containerPort, err := strconv.Atoi(binding[1])
-					common.CheckError(err)
-
-					bindingPortNew := sshRemote.CheckAndGetAvailableRemotePort(bindingPortOld, 10) // 在远程主机上检测端口是否被占用
-					if bindingPortOld != bindingPortNew {
-						service.Ports[index] = fmt.Sprintf("%v:%v", bindingPortNew, binding[1])
-						common.SmartIDELog.InfoF("%v -> %v", port, service.Ports[index])
-						hasChange = true
-
-					}
-					yamlFileConfig.setPort4Label(containerPort, bindingPortOld, bindingPortNew, serviceName)
-
-				}
-				if hasChange {
-					dockerCompose.Services[serviceName] = service
-				}
+			if hasChange {
+				dockerCompose.Services[serviceName] = service
 			}
 		}
-	} else { //3.2. 本地模式（非远程模式下），需要ide端口、22端口的绑定
 
-		// 端口映射
-		for serviceName, service := range dockerCompose.Services {
-			if serviceName == yamlFileConfig.Workspace.DevContainer.ServiceName {
-				// webide port
-				if !service.ContainContainerPort(yamlFileConfig.GetContainerWebIDEPort()) {
-					if isCheckUnuesedPorts {
-						newIdeBindingPort, err := common.CheckAndGetAvailableLocalPort(ideBindingPort, 10) //
-						common.CheckError(err)
-						if newIdeBindingPort != ideBindingPort {
-							ideBindingPort = newIdeBindingPort
+		// 注入webide、ssh端口，确保存在两个必要的端口
+		if serviceName == yamlFileConfig.Workspace.DevContainer.ServiceName {
 
-						}
-						yamlFileConfig.setPort4Label(yamlFileConfig.GetContainerWebIDEPort(), ideBindingPort, newIdeBindingPort, serviceName)
+			// webide port
+			if !service.ContainContainerPort(yamlFileConfig.GetContainerWebIDEPort()) {
+				// 是否检查端口被占用
+				if isCheckUnuesedPorts {
+					// webide port
+					originIdeBindingPort := ideBindingPort
+					newIdeBindingPort, err0 := checkAndGetAvailableRemotePort(sshRemote, originIdeBindingPort, 100) // 检测端口是否被占用
+					common.CheckError(err0)
+
+					yamlFileConfig.setPort4Label(yamlFileConfig.GetContainerWebIDEPort(), originIdeBindingPort, newIdeBindingPort, serviceName)
+
+					if newIdeBindingPort != originIdeBindingPort {
+						ideBindingPort = newIdeBindingPort
 					}
-
-					service.AppendPort(strconv.Itoa(ideBindingPort) + ":" + strconv.Itoa(yamlFileConfig.GetContainerWebIDEPort()))
 				}
 
-				// ssh port
-				if !service.ContainContainerPort(model.CONST_Container_SSHPort) {
-					if isCheckUnuesedPorts {
-						newSshBindingPort, err := common.CheckAndGetAvailableLocalPort(sshBindingPort, 100) //
-						common.CheckError(err)
-						if newSshBindingPort != sshBindingPort {
-							sshBindingPort = newSshBindingPort
-						}
-						yamlFileConfig.setPort4Label(model.CONST_Container_SSHPort, sshBindingPort, newSshBindingPort, serviceName)
-					}
-
-					service.AppendPort(strconv.Itoa(sshBindingPort) + ":" + strconv.Itoa(model.CONST_Container_SSHPort))
-				}
-
-				dockerCompose.Services[serviceName] = service
+				//
+				service.AppendPort(strconv.Itoa(ideBindingPort) + ":" + strconv.Itoa(yamlFileConfig.GetContainerWebIDEPort()))
 			}
 
-			// 绑定端口被占用的问题
-			if isCheckUnuesedPorts {
-				hasChange := false
-				for index, portMap := range service.Ports {
-					binding := strings.Split(portMap, ":")
-					bindingPortOld, err := strconv.Atoi(binding[0])
-					common.CheckError(err)
+			// ssh port
+			if !service.ContainContainerPort(model.CONST_Container_SSHPort) {
+				// 是否检查端口被占用
+				if isCheckUnuesedPorts {
+					// ssh port
+					originSshBindingPort := sshBindingPort
+					newSshBindingPort, err0 := checkAndGetAvailableRemotePort(sshRemote, originSshBindingPort, 100) // 检测端口是否被占用
+					common.CheckError(err0)
 
-					containerPort, err := strconv.Atoi(binding[1])
-					common.CheckError(err)
+					yamlFileConfig.setPort4Label(model.CONST_Container_SSHPort, originSshBindingPort, newSshBindingPort, serviceName)
 
-					// 获取到一个可用的端口
-					bindingPortNew, err := common.CheckAndGetAvailableLocalPort(bindingPortOld, 10)
-					common.CheckError(err)
-					if bindingPortOld != bindingPortNew {
-						service.Ports[index] = fmt.Sprintf("%v:%v", bindingPortNew, binding[1])
-						common.SmartIDELog.InfoF("%v -> %v", portMap, service.Ports[index])
-						hasChange = true
-
+					if newSshBindingPort != originSshBindingPort {
+						sshBindingPort = newSshBindingPort
 					}
-					yamlFileConfig.setPort4Label(containerPort, bindingPortOld, bindingPortNew, serviceName)
+				}
 
-				}
-				if hasChange {
-					dockerCompose.Services[serviceName] = service
-				}
+				//
+				service.AppendPort(strconv.Itoa(sshBindingPort) + ":" + strconv.Itoa(model.CONST_Container_SSHPort))
 			}
 
+			dockerCompose.Services[serviceName] = service
 		}
 	}
-	//3.1. 遍历端口描述，添加遗漏的端口
+	//3.2. 遍历端口描述，添加遗漏的端口
 	for label, port := range yamlFileConfig.Workspace.DevContainer.Ports {
 
 		hasContain := false
 		for _, item := range yamlFileConfig.Workspace.DevContainer.bindingPorts {
-			if item.OriginLocalPort == port {
+			if item.OriginHostPort == port {
 				hasContain = true
 				break
 			}
@@ -464,4 +370,80 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 	}
 
 	return dockerCompose, ideBindingPort, sshBindingPort
+}
+
+func checkAndGetAvailableRemotePort(sshRemote common.SSHRemote, bindingPortOld int, step int) (bindingPortNew int, err error) {
+	isRemoteMode := sshRemote != common.SSHRemote{}
+	if isRemoteMode {
+		bindingPortNew = sshRemote.CheckAndGetAvailableRemotePort(bindingPortOld, step) // 在远程主机上检测端口是否被占用
+	} else {
+		bindingPortNew, err = common.CheckAndGetAvailableLocalPort(bindingPortOld, step) // 在本地主机上检测端口是否被占用
+	}
+	return
+}
+
+// 获取docker compose
+func (yamlFileConfig SmartIdeConfig) getDockerCompose(sshRemote common.SSHRemote, remoteConfigDir string) (
+	dockerCompose compose.DockerComposeYml, err error) {
+	isRemoteMode := false // 是否为 vm 命令模式，比如smartide vm start
+	if (sshRemote != common.SSHRemote{}) {
+		isRemoteMode = true
+	}
+
+	//2.1. 链接 docker-compose 文件
+	if yamlFileConfig.Workspace.DockerComposeFile != "" {
+		var dockerComposeFileBytes []byte // docker-compose文件的流信息
+		//	var err error
+
+		if isRemoteMode {
+			// 获取docker-compose文件在远程主机上的路径
+			remoteDockerComposeFilePath := common.FilePahtJoin(common.OS_Linux, remoteConfigDir, yamlFileConfig.Workspace.DockerComposeFile)
+			common.SmartIDELog.InfoF(i18nInstance.Config.Info_read_docker_compose, remoteDockerComposeFilePath)
+
+			// 在远程主机上加载docker-compose文件
+			command := fmt.Sprintf(`cat %v`, remoteDockerComposeFilePath)
+			output, err := sshRemote.ExeSSHCommand(command)
+			if err != nil {
+				return dockerCompose, err
+			}
+			dockerComposeFileBytes = []byte(output)
+
+		} else {
+			// read and parse
+			common.SmartIDELog.InfoF(i18nInstance.Config.Info_read_docker_compose, yamlFileConfig.Workspace.DockerComposeFile)
+			linkDockerComposeFilePath, _ := yamlFileConfig.GetLocalLinkDockerComposeFile()
+			dockerComposeFileBytes, err = ioutil.ReadFile(linkDockerComposeFilePath)
+			if err != nil {
+				return dockerCompose, err
+			}
+
+		}
+
+		err = yaml.Unmarshal([]byte(dockerComposeFileBytes), &dockerCompose) // 为dockerCompose赋值
+		if err != nil {
+			return dockerCompose, err
+		}
+
+	} else {
+		// 确保不会有引用类型的问题
+		configContent, err := yamlFileConfig.ToYaml()
+		if err != nil {
+			return dockerCompose, err
+		}
+		var notReferenceConfig SmartIdeConfig
+		yaml.Unmarshal([]byte(configContent), &notReferenceConfig)
+
+		// 使用新对象赋值
+		dockerCompose.Version = notReferenceConfig.Orchestrator.Version
+		dockerCompose.Services = make(map[string]compose.Service)
+		for serviceName, service := range notReferenceConfig.Workspace.Servcies {
+			s := service
+			dockerCompose.Services[serviceName] = s
+		}
+		dockerCompose.Networks = notReferenceConfig.Workspace.Networks
+		dockerCompose.Volumes = notReferenceConfig.Workspace.Volumes
+		dockerCompose.Secrets = notReferenceConfig.Workspace.Secrets
+	}
+
+	return dockerCompose, err
 }

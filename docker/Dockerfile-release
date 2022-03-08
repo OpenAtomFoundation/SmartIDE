@@ -1,0 +1,33 @@
+FROM ubuntu:20.04
+
+# 所有操作都是非交互式的
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ Asia/Shanghai
+#git中文乱码问题
+ENV LESSCHARSET=utf-8
+
+
+# sshd
+RUN mkdir /var/run/sshd && \
+    apt-get update && \
+    apt-get -y install --no-install-recommends openssh-server lsof curl wget git sudo && \
+    apt-get clean && \
+    apt-get autoremove -y && \
+    rm -rf /tmp/* /var/lib/apt/lists/* /var/tmp/*
+
+EXPOSE 22
+
+# install smartide (build version)
+RUN wget --no-check-certificate https://smartidedl.blob.core.chinacloudapi.cn/releases/stable.txt && \
+    version=$(cat stable.txt) && \
+    url="https://smartidedl.blob.core.chinacloudapi.cn/releases/$version/smartide-linux" && \
+    wget --no-check-certificate "$url" -O /usr/local/bin/smartide 
+# COPY smartide-linux /usr/local/bin/smartide
+RUN cp /usr/local/bin/smartide /usr/local/bin/se  && \
+    chmod +x /usr/local/bin/smartide && \
+    chmod +x /usr/local/bin/se
+
+COPY entrypoint_base.sh /idesh/entrypoint_base.sh
+RUN chmod +x /idesh/entrypoint_base.sh
+
+ENTRYPOINT ["/idesh/entrypoint_base.sh"]

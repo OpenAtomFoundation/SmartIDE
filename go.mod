@@ -158,7 +158,9 @@ require (
 )
 
 require (
+	github.com/bitly/go-simplejson v0.5.0
 	github.com/microsoft/ApplicationInsights-Go v0.4.4
+	github.com/thedevsaddam/gojsonq v2.3.0+incompatible
 	k8s.io/api v0.23.1
 	k8s.io/apimachinery v0.23.1
 	k8s.io/cli-runtime v0.23.1

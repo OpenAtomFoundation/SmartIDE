@@ -105,7 +105,7 @@ func GitConfig(configGit string, isVmCommand bool, containerName string, cli *cl
 		}
 
 		if configStr == "" {
-			common.SmartIDELog.Error("local git config is null")
+			common.SmartIDELog.Importance("local git config is null")
 			return
 		}
 		// git config 默认设置

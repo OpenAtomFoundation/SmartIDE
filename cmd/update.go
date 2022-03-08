@@ -102,8 +102,8 @@ var udpateCmd = &cobra.Command{
 			execCommand = exec.Command("powershell", "/c", command)
 		case "darwin":
 			if isBuild {
-				command = fmt.Sprintf(`curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/builds/%v/smartide" \
-				&& mv -f smartide /usr/local/bin/smartide \
+				command = fmt.Sprintf(`curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/builds/%v/smartide-osx" \
+				&& mv -f smartide-osx /usr/local/bin/smartide \
 				&& ln -s -f /usr/local/bin/smartide /usr/local/bin/se \
 				&& chmod +x /usr/local/bin/smartide`, version)
 			} else {
@@ -116,7 +116,7 @@ var udpateCmd = &cobra.Command{
 		case "linux":
 			if isBuild {
 				command = fmt.Sprintf(`curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/builds/%v/smartide-linux" \
-				&& sudo mv -f smartide /usr/local/bin/smartide \
+				&& sudo mv -f smartide-linux /usr/local/bin/smartide \
 				&& sudo ln -s -f /usr/local/bin/smartide /usr/local/bin/se \
 				&& chmod +x /usr/local/bin/smartide`, version)
 			} else {

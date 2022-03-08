@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2022-01-18 10:51:34
+ * @LastEditTime: 2022-02-21 15:48:43
  */
 package start
 
@@ -60,7 +60,7 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo,
 	hasChanged := workspaceInfo.ChangeConfig(configYamlStr, linkComposeFileContent) // 是否改变
 	if hasChanged {                                                                 // 改变包括了初始化
 		// log
-		if workspaceInfo.ID > 0 {
+		if workspaceInfo.ID != "" {
 			common.SmartIDELog.Info(i18nInstance.Start.Info_workspace_changed)
 
 		} else {
@@ -177,6 +177,9 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo,
 			isUrlReady = true
 			common.OpenBrowser(url)
 			common.SmartIDELog.InfoF(i18nInstance.VmStart.Info_open_brower, url)
+		} else {
+			msg := fmt.Sprintf("%v 检测失败", url)
+			common.SmartIDELog.Debug(msg)
 		}
 	}
 
@@ -189,8 +192,8 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo,
 	common.CheckError(err)
 	options := tunnel.AutoTunnelMultipleOptions{}
 	for _, portMap := range workspaceInfo.Extend.Ports {
-		options.AppendPortMapping(tunnel.PortMapTypeEnum(portMap.PortMapType), portMap.OriginLocalPort, portMap.CurrentLocalPort,
-			portMap.LocalPortDesc, portMap.ContainerPort)
+		options.AppendPortMapping(tunnel.PortMapTypeEnum(portMap.PortMapType), portMap.OriginHostPort, portMap.CurrentHostPort,
+			portMap.HostPortDesc, portMap.ContainerPort)
 	}
 	tunnel.AutoTunnel(sshRemote.Connection, options)
 

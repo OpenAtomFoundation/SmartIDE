@@ -11,6 +11,12 @@ import "strings"
 
 // 数组中是否包含
 func CheckError(err error, headers ...string) {
+	errFunc := func(err error) {}
+	CheckErrorFunc(err, errFunc, headers...)
+}
+
+// 数组中是否包含
+func CheckErrorFunc(err error, afterFunc func(err error), headers ...string) {
 	// 是否附加的信息中包含错误
 	hasErrorMsg := false
 	for _, str := range headers {
@@ -20,8 +26,12 @@ func CheckError(err error, headers ...string) {
 		}
 	}
 
+	//
+	afterFunc(err)
+
 	// err对象应该包含错误信息
 	if hasErrorMsg || (err != nil && err.Error() != "") {
 		SmartIDELog.Error(err, headers...)
 	}
+
 }

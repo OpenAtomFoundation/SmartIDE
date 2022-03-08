@@ -48,7 +48,13 @@ type I18nSource struct {
 		Info_workspace_loading string `json:"info_workspace_loading"`
 		Info_ssh_connect_check string `json:"info_ssh_connect_check"`
 		Info_version_local     string `json:"info_version_local"`
-		Info_help_flag_mode    string `json:"info_help_flag_mode"`
+
+		Info_help_flag_mode                string `json:"info_help_flag_mode"`
+		Info_help_flag_server_workspace_id string `json:"info_help_flag_server_workspace_id"`
+		Info_help_flag_server_token        string `json:"info_help_flag_server_token"`
+		Info_help_flag_server_username     string `json:"info_help_flag_server_username"`
+		Info_help_flag_server_userguid     string `json:"info_help_flag_server_userguid"`
+		Info_help_flag_server_feedback     string `json:"info_help_flag_server_feedback"`
 
 		Err_file_not_exit       string `json:"err_file_not_exit"`
 		Err_file_not_exit2      string `json:"err_file_not_exit2"`
@@ -155,6 +161,11 @@ type I18nSource struct {
 		Info_dal_none              string `json:"info_dal_none"`
 		Info_workspace_list_header string `json:"info_workspace_list_header"`
 	} `json:"list"`
+
+	Connect struct {
+		Info_help_short string `json:"info_help_short"`
+		Info_help_long  string `json:"info_help_long"`
+	} `json:"connect"`
 
 	Get struct {
 		Info_help_short            string `json:"info_help_short"`
@@ -315,6 +326,16 @@ type I18nSource struct {
 
 		Warn_confirm_all_remove string `json:"warn_confirm_all_remove"`
 	} `json:"reset"`
+
+	Login struct {
+		Info_help_short         string `json:"info_help_short"`
+		Info_help_long          string `json:"info_help_long"`
+		Info_help_login_success string `json:"info_help_login_success"`
+		Info_help_login_fail    string `json:"info_help_login_fail"`
+		Info_help_flag_username string `json:"info_help_flag_username"`
+		Info_help_flag_password string `json:"info_help_flag_pasword"`
+		Info_help_flag_loginurl string `json:"info_help_flag_loginurl"`
+	} `json:"login"`
 }
 
 var instance *I18nSource

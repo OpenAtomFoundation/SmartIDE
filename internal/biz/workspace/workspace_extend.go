@@ -26,19 +26,17 @@ func (workspace *WorkspaceInfo) GetWorkspaceExtend() WorkspaceExtend {
 		originServices = workspace.LinkDockerCompose.Services
 	}
 
-	//
+	// 遍历 services
 	for serviceName, originService := range originServices {
-		isDevService := serviceName == workspace.ConfigYaml.Workspace.DevContainer.ServiceName
+		isDevService := serviceName == workspace.ConfigYaml.Workspace.DevContainer.ServiceName // 是否开发容器
+		originServicePorts := originService.Ports                                              // 原始端口
 
-		// 原始端口
-		originServicePorts := originService.Ports
+		// 开发容器时
 		if isDevService {
 			// ssh 端口
-			if workspace.Mode == WorkingMode_Local || workspace.Mode == WorkingMode_K8s {
-				portSSH := fmt.Sprintf("%v:%v", model.CONST_Local_Default_BindingPort_SSH, model.CONST_Container_SSHPort)
-				if !common.Contains(originServicePorts, portSSH) {
-					originServicePorts = append(originServicePorts, portSSH)
-				}
+			portSSH := fmt.Sprintf("%v:%v", model.CONST_Local_Default_BindingPort_SSH, model.CONST_Container_SSHPort)
+			if !common.Contains(originServicePorts, portSSH) { // 是否包含
+				originServicePorts = append(originServicePorts, portSSH)
 			}
 
 			// webide 端口
@@ -66,9 +64,13 @@ func (workspace *WorkspaceInfo) GetWorkspaceExtend() WorkspaceExtend {
 			// 如果是默认的端口，直接给描述
 			if isDevService && label == "" {
 				if originLocalPort == model.CONST_Local_Default_BindingPort_WebIDE {
-					label = "WebIDE"
+					if containerPort == model.CONST_Container_JetBrainsIDEPort {
+						label = "tools-webide-jb"
+					} else {
+						label = "tools-webide-vscode"
+					}
 				} else if originLocalPort == model.CONST_Local_Default_BindingPort_SSH {
-					label = "SSH"
+					label = "tools-ssh"
 				}
 			}
 			//TODO 端口绑定存在漏洞，并没有指定是哪个sercie，多个service可能会出现重名的情况
@@ -105,13 +107,13 @@ func (workspace *WorkspaceInfo) GetWorkspaceExtend() WorkspaceExtend {
 
 		hasContain := false
 		for _, item := range extend.Ports {
-			if item.OriginLocalPort == port {
+			if item.OriginHostPort == port {
 				hasContain = true
 				break
 			}
 		}
 
-		if !hasContain {
+		if !hasContain { // 不包含在接口列表中
 			portMap := config.NewPortMap(config.PortMapInfo_OnlyLabel, port, -1, label, -1, "")
 			extend.Ports = append(extend.Ports, *portMap)
 		}

@@ -694,7 +694,7 @@ func connectionDial(sshHost string, sshPort int, sshUserName, sshPassword string
 			Auth: []ssh.AuthMethod{
 				ssh.Password(sshPassword),
 			},
-			Timeout: 30 * time.Second, // 30 秒超时
+			Timeout: 10 * time.Second, // 10 秒超时
 			// 解决 “ssh: must specify HostKeyCallback” 的问题
 			HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 				return nil

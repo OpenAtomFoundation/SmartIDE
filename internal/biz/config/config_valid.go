@@ -10,6 +10,8 @@ package config
 import (
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/leansoftX/smartide-cli/pkg/common"
 )
@@ -86,6 +88,25 @@ func (c SmartIdeConfig) Valid() error {
 				labels = append(labels, label)
 			}
 
+		}
+	}
+
+	// 定义了ports时，必services中有且仅有一个
+	for label, port := range c.Workspace.DevContainer.Ports {
+		count := 0
+		for _, service := range c.Workspace.Servcies {
+			for _, portStr := range service.Ports {
+				array := strings.Split(portStr, ":")
+				if array[0] == strconv.Itoa(port) {
+					count++
+				}
+			}
+		}
+
+		if count == 0 {
+			return fmt.Errorf("没有找到 %v:%v 的端口绑定信息", label, port)
+		} else if count > 1 {
+			return fmt.Errorf("%v:%v 被多个service重复绑定", label, port)
 		}
 	}
 

@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2022-01-11 14:40:00
+ * @LastEditTime: 2022-02-21 15:56:20
  */
 package cmd
 
@@ -12,13 +12,16 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"os/user"
 	"path"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
+	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
 	"github.com/leansoftX/smartide-cli/cmd/start"
 	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
@@ -66,7 +69,20 @@ var startCmd = &cobra.Command{
 
 		//0.1. 从参数中获取结构体，并做基本的数据有效性校验
 		common.SmartIDELog.Info(i18nInstance.Main.Info_workspace_loading)
-		worksapceInfo, err := getWorkspace4Start(cmd, args)
+		worksapceInfo, err := getWorkspaceFromCmd(cmd, args)
+		common.CheckErrorFunc(err, func(err error) {
+			mode, _ := cmd.Flags().GetString("mode")
+			isModeServer := strings.ToLower(mode) == "server"
+			if !isModeServer {
+				return
+			}
+			if err != nil {
+				smartideServer.Feedback(cmd, false, 0, workspace.WorkspaceInfo{}, err.Error())
+			}
+		})
+
+		// 检查是否为服务器端模式
+		err = smartideServer.Check(cmd)
 		common.CheckError(err)
 
 		//ai记录
@@ -76,7 +92,7 @@ var startCmd = &cobra.Command{
 		}
 
 		// 执行命令
-		if worksapceInfo.Mode == workspace.WorkingMode_Local {
+		if worksapceInfo.Mode == workspace.WorkingMode_Local { // 本地模式
 			executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
 				var imageNames []string
 				for _, service := range yamlConfig.Workspace.Servcies {
@@ -86,7 +102,7 @@ var startCmd = &cobra.Command{
 			}
 
 			start.ExecuteStartCmd(worksapceInfo, func(v string, d common.Docker) {}, executeStartCmdFunc)
-		} else if worksapceInfo.Mode == workspace.WorkingMode_K8s {
+		} else if worksapceInfo.Mode == workspace.WorkingMode_K8s { // k8s 模式
 			executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
 				var imageNames []string
 				for _, service := range yamlConfig.Workspace.Servcies {
@@ -97,7 +113,7 @@ var startCmd = &cobra.Command{
 
 			start.ExecuteK8sStartCmd(worksapceInfo, executeStartCmdFunc)
 
-		} else {
+		} else if worksapceInfo.Mode == workspace.WorkingMode_Server { // server vm 模式
 			executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
 				var imageNames []string
 				for _, service := range yamlConfig.Workspace.Servcies {
@@ -106,7 +122,23 @@ var startCmd = &cobra.Command{
 				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(worksapceInfo.Mode), strings.Join(imageNames, ","))
 			}
 
-			start.ExecuteVmStartCmd(worksapceInfo, executeStartCmdFunc)
+			start.ExecuteServerVmStartCmd(worksapceInfo, executeStartCmdFunc)
+
+			//99. 死循环进行驻守
+			for {
+				time.Sleep(500)
+			}
+
+		} else { // vm 模式
+			executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
+				var imageNames []string
+				for _, service := range yamlConfig.Workspace.Servcies {
+					imageNames = append(imageNames, service.Image)
+				}
+				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(worksapceInfo.Mode), strings.Join(imageNames, ","))
+			}
+
+			start.ExecuteVmStartCmd(worksapceInfo, executeStartCmdFunc, cmd)
 		}
 
 		return nil
@@ -139,7 +171,30 @@ var (
 	flag_branch      = "branch"
 	flag_k8s         = "k8s"
 	flag_namespace   = "namespace"
+	flag_loginurl    = "login_url"
 )
+
+// 获取工作区id
+func getWorkspaceStrFromFlagsAndArgs(cmd *cobra.Command, args []string) string {
+	fflags := cmd.Flags()
+
+	// 从args 或者 flag 中获取值
+	var workspaceId string
+	if len(args) > 0 { // 从args中加载
+		workspaceId = args[0]
+
+		checkFlagUnnecessary(fflags, flag_workspaceid, workspaceId)
+	} else if fflags.Changed(flag_workspaceid) { // 从flag中加载
+		fflags.GetString(flag_workspaceid)
+		tmpWorkspaceId, err := fflags.GetString(flag_workspaceid)
+		common.CheckError(err)
+		if tmpWorkspaceId != "" {
+			workspaceId = tmpWorkspaceId
+		}
+	}
+
+	return workspaceId
+}
 
 // 获取工作区id
 func getWorkspaceIdFromFlagsAndArgs(cmd *cobra.Command, args []string) int {
@@ -167,113 +222,135 @@ func getWorkspaceIdFromFlagsAndArgs(cmd *cobra.Command, args []string) int {
 }
 
 // 从start command的flag、args中获取workspace
-func getWorkspace4Start(cmd *cobra.Command, args []string) (workspaceInfo workspace.WorkspaceInfo, err error) {
+func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo workspace.WorkspaceInfo, err error) {
 	fflags := cmd.Flags()
 	//从args或flags中获取workspaceid，如 : smartide start 1
-	workspaceId := getWorkspaceIdFromFlagsAndArgs(cmd, args)
+	workspaceIdStr := getWorkspaceStrFromFlagsAndArgs(cmd, args)
 	//从args或flags中获取giturl，如 : smartide start https://github.com/idcf-boat-house/boathouse-calculator.git
 	gitUrl := getGitUrlFromArgs(cmd, args)
 	//1. 加载workspace
 	workspaceInfo = workspace.WorkspaceInfo{}
-	//1.1. 指定了从workspaceid，从sqlite中读取
-	if workspaceId > 0 {
-		checkFlagUnnecessary(fflags, flag_host, flag_workspaceid)
-		checkFlagUnnecessary(fflags, flag_username, flag_workspaceid)
-		checkFlagUnnecessary(fflags, flag_password, flag_workspaceid)
 
-		workspaceInfo, err = getWorkspaceWithDbAndValid(workspaceId)
-		if err != nil {
-			return workspace.WorkspaceInfo{}, err
-		}
-		if workspaceInfo.IsNil() {
-			return workspace.WorkspaceInfo{}, errors.New(i18nInstance.Main.Err_workspace_none)
-		}
+	// server 模式从api 获取ws
+	if strings.Contains(strings.ToUpper(workspaceIdStr), "SW") {
+		auth := model.Auth{}
+		auth, err = workspace.GetCurrentUser()
+		if auth != (model.Auth{}) && auth.Token != "" {
+			// 从api 获取workspace
+			workspaceInfo, err = workspace.GetWorkspaceFromServer(auth, workspaceIdStr)
+			common.CheckError(err)
 
-	} else { //1.2. 没有指定 workspaceid 的情况
-		workingMode := workspace.WorkingMode_Local
-
-		// 当前目录
-		pwd, err := os.Getwd()
-		if err != nil {
-			return workspace.WorkspaceInfo{}, err
+			// 使用是否关联 server workspace 进行判断
+			if (workspaceInfo.ServerWorkSpace == model.ServerWorkspace{}) {
+				common.SmartIDELog.Error("没有查询到对应的数据！")
+			}
 		}
 
-		// 1.2.1. 远程模式
-		if fflags.Changed(flag_host) {
-			workingMode = workspace.WorkingMode_Remote
-			hostInfo, err := getRemoteAndValid(fflags)
+	} else {
+		workspaceId := getWorkspaceIdFromFlagsAndArgs(cmd, args)
+		common.CheckError(err)
+		//1.1. 指定了从workspaceid，从sqlite中读取
+		if workspaceId > 0 {
+			checkFlagUnnecessary(fflags, flag_host, flag_workspaceid)
+			checkFlagUnnecessary(fflags, flag_username, flag_workspaceid)
+			checkFlagUnnecessary(fflags, flag_password, flag_workspaceid)
+
+			workspaceInfo, err = getWorkspaceWithDbAndValid(workspaceId)
+			if err != nil {
+				return workspace.WorkspaceInfo{}, err
+			}
+			if workspaceInfo.IsNil() {
+				return workspace.WorkspaceInfo{}, errors.New(i18nInstance.Main.Err_workspace_none)
+			}
+
+		} else { //1.2. 没有指定 workspaceid 的情况
+			workingMode := workspace.WorkingMode_Local
+
+			// 当前目录
+			pwd, err := os.Getwd()
 			if err != nil {
 				return workspace.WorkspaceInfo{}, err
 			}
 
-			workspaceInfo.Remote = hostInfo
-			if gitUrl != "" {
-				workspaceInfo.GitCloneRepoUrl = gitUrl
-			} else {
+			// 1.2.1. 远程模式
+			if fflags.Changed(flag_host) {
+				workingMode = workspace.WorkingMode_Remote
+				hostInfo, err := getRemoteAndValid(fflags)
+				if err != nil {
+					return workspace.WorkspaceInfo{}, err
+				}
+
+				workspaceInfo.Remote = hostInfo
+				if gitUrl != "" {
+					workspaceInfo.GitCloneRepoUrl = gitUrl
+				} else {
+					workspaceInfo.GitCloneRepoUrl = getFlagValue(fflags, flag_repourl)
+				}
+				if strings.Index(workspaceInfo.GitCloneRepoUrl, "git") == 0 {
+					workspaceInfo.GitRepoAuthType = workspace.GitRepoAuthType_SSH
+				} else if strings.Index(workspaceInfo.GitCloneRepoUrl, "https") == 0 {
+					workspaceInfo.GitRepoAuthType = workspace.GitRepoAuthType_HTTPS
+				} else if strings.Index(workspaceInfo.GitCloneRepoUrl, "http") == 0 {
+					workspaceInfo.GitRepoAuthType = workspace.GitRepoAuthType_HTTP
+				}
+
+				repoName := getRepoName(workspaceInfo.GitCloneRepoUrl)
+				repoWorkspaceDir := filepath.Join("~", REMOTE_REPO_ROOT, repoName)
+				workspaceInfo.WorkingDirectoryPath = repoWorkspaceDir
+
+			} else if fflags.Changed("k8s") {
 				workspaceInfo.GitCloneRepoUrl = getFlagValue(fflags, flag_repourl)
-			}
-			if strings.Index(workspaceInfo.GitCloneRepoUrl, "git") == 0 {
-				workspaceInfo.GitRepoAuthType = workspace.GitRepoAuthType_SSH
-			} else if strings.Index(workspaceInfo.GitCloneRepoUrl, "https") == 0 {
-				workspaceInfo.GitRepoAuthType = workspace.GitRepoAuthType_HTTPS
-			} else if strings.Index(workspaceInfo.GitCloneRepoUrl, "http") == 0 {
-				workspaceInfo.GitRepoAuthType = workspace.GitRepoAuthType_HTTP
+				if gitUrl != "" {
+					workspaceInfo.GitCloneRepoUrl = gitUrl
+				} else {
+					workspaceInfo.GitCloneRepoUrl = getFlagValue(fflags, flag_repourl)
+				}
+
+				workingMode = workspace.WorkingMode_K8s
+				workspaceInfo.K8sInfo.Namespace = getFlagValue(fflags, flag_namespace)
+				if workspaceInfo.K8sInfo.Namespace == "" {
+					workspaceInfo.K8sInfo.Namespace = "default"
+				}
+				workspaceInfo.K8sInfo.Context = getFlagValue(fflags, flag_k8s)
+
+			} else { //1.2.2. 本地模式
+				// 本地模式下，不需要录入git库的克隆地址、分支
+				checkFlagUnnecessary(fflags, flag_repourl, "mode=local")
+				checkFlagUnnecessary(fflags, flag_branch, "mode=local")
+				//本地模式下需要clone repo的情况：smartide start https://gitee.com/idcf-boat-house/boathouse-calculator.git
+				if gitUrl != "" {
+					common.SmartIDELog.Info(i18nInstance.Start.Info_git_clone)
+					clonedRepoDir, err := cloneRepo4LocalWithCommand(pwd, gitUrl) //cloneRepo4Local(pwd, gitUrl)
+					common.CheckError(err)
+					common.SmartIDELog.Info(i18nInstance.Common.Info_gitrepo_clone_done)
+
+					workspaceInfo.WorkingDirectoryPath = clonedRepoDir
+					workspaceInfo.GitCloneRepoUrl, _ = getLocalGitRepoUrl(clonedRepoDir) // 获取本地关联的repo url
+					os.Chdir(clonedRepoDir)
+				} else {
+					workspaceInfo.WorkingDirectoryPath = pwd
+					workspaceInfo.GitCloneRepoUrl, _ = getLocalGitRepoUrl(pwd) // 获取本地关联的repo url
+				}
 			}
 
-			repoName := getRepoName(workspaceInfo.GitCloneRepoUrl)
-			repoWorkspaceDir := filepath.Join("~", REMOTE_REPO_ROOT, repoName)
-			workspaceInfo.WorkingDirectoryPath = repoWorkspaceDir
+			// 运行模式
+			workspaceInfo.Mode = workingMode
 
-		} else if fflags.Changed("k8s") {
-			workspaceInfo.GitCloneRepoUrl = getFlagValue(fflags, flag_repourl)
-			if gitUrl != "" {
-				workspaceInfo.GitCloneRepoUrl = gitUrl
+			// 从数据库中查找是否存在对应的workspace信息，主要是针对在当前目录再次start的情况
+			workspaceInfoDb, err := dal.GetSingleWorkspaceByParams(workspaceInfo.Mode, workspaceInfo.WorkingDirectoryPath,
+				workspaceInfo.GitCloneRepoUrl, workspaceInfo.Remote.ID, workspaceInfo.Remote.Addr)
+			common.CheckError(err)
+
+			if workspaceInfoDb.ID != "" && workspaceInfoDb.IsNotNil() {
+				workspaceInfo = workspaceInfoDb
+
 			} else {
-				workspaceInfo.GitCloneRepoUrl = getFlagValue(fflags, flag_repourl)
+				if workspaceInfo.Mode != workspace.WorkingMode_K8s {
+					// docker-compose 文件路径
+					workspaceInfo.TempDockerComposeFilePath = workspaceInfo.GetTempDockerComposeFilePath()
+				}
+
 			}
-
-			workingMode = workspace.WorkingMode_K8s
-			workspaceInfo.K8sInfo.Namespace = getFlagValue(fflags, flag_namespace)
-			if workspaceInfo.K8sInfo.Namespace == "" {
-				workspaceInfo.K8sInfo.Namespace = "default"
-			}
-			workspaceInfo.K8sInfo.Context = getFlagValue(fflags, flag_k8s)
-
-		} else { //1.2.2. 本地模式
-			// 本地模式下，不需要录入git库的克隆地址、分支
-			checkFlagUnnecessary(fflags, flag_repourl, "mode=local")
-			checkFlagUnnecessary(fflags, flag_branch, "mode=local")
-			//本地模式下需要clone repo的情况：smartide start https://gitee.com/idcf-boat-house/boathouse-calculator.git
-			if gitUrl != "" {
-				common.SmartIDELog.Info(i18nInstance.Start.Info_git_clone)
-				var clonedRepoDir = cloneRepo4Local(pwd, gitUrl)
-				common.SmartIDELog.Info(i18nInstance.Common.Info_gitrepo_clone_done)
-
-				workspaceInfo.WorkingDirectoryPath = clonedRepoDir
-				workspaceInfo.GitCloneRepoUrl, _ = getLocalGitRepoUrl(clonedRepoDir) // 获取本地关联的repo url
-				os.Chdir(clonedRepoDir)
-			} else {
-				workspaceInfo.WorkingDirectoryPath = pwd
-				workspaceInfo.GitCloneRepoUrl, _ = getLocalGitRepoUrl(pwd) // 获取本地关联的repo url
-			}
-		}
-
-		// 运行模式
-		workspaceInfo.Mode = workingMode
-
-		// 从数据库中查找是否存在对应的workspace信息，主要是针对在当前目录再次start的情况
-		workspaceInfoDb, err := dal.GetSingleWorkspaceByParams(workspaceInfo.Mode, workspaceInfo.WorkingDirectoryPath,
-			workspaceInfo.GitCloneRepoUrl, workspaceInfo.Remote.ID, workspaceInfo.Remote.Addr)
-		common.CheckError(err)
-		if workspaceInfoDb.ID > 0 && workspaceInfoDb.IsNotNil() {
-			workspaceInfo = workspaceInfoDb
-
-		} else {
-			if workspaceInfo.Mode != workspace.WorkingMode_K8s {
-				// docker-compose 文件路径
-				workspaceInfo.TempDockerComposeFilePath = workspaceInfo.GetTempDockerComposeFilePath()
-			}
-
 		}
 	}
 
@@ -321,7 +398,7 @@ func getWorkspace4Start(cmd *cobra.Command, args []string) (workspaceInfo worksp
 	}
 
 	// 提示 加载对应的workspace
-	if workspaceInfo.ID > 0 && workspaceInfo.IsNotNil() {
+	if workspaceInfo.ID != "" && workspaceInfo.IsNotNil() {
 		common.SmartIDELog.InfoF(i18nInstance.Start.Info_workspace_record_load, workspaceInfo.ID)
 
 	}
@@ -504,6 +581,32 @@ func getGitUrlFromArgs(cmd *cobra.Command, args []string) string {
 		}
 	}
 	return gitUrl
+}
+
+// 直接调用git命令进行git clone
+func cloneRepo4LocalWithCommand(rootDir string, gitUrl string) (string, error) {
+	repoName := getRepoName(gitUrl)
+	repoPath := filepath.Join(rootDir, repoName)
+
+	var execCommand *exec.Cmd
+	command := "git clone " + gitUrl
+	switch runtime.GOOS {
+	case "windows":
+		execCommand = exec.Command("powershell", "/c", command)
+	case "darwin":
+		execCommand = exec.Command("bash", "-c", command)
+	case "linux":
+		execCommand = exec.Command("bash", "-c", command)
+	default:
+		common.SmartIDELog.Error("can not support current os")
+	}
+
+	// run
+	execCommand.Stdout = os.Stdout
+	execCommand.Stderr = os.Stderr
+	err := execCommand.Run()
+
+	return repoPath, err
 }
 
 // clone repos for local mode

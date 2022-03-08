@@ -94,6 +94,12 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&isDebug, "debug", "d", false, i18n.GetInstance().Main.Info_help_flag_debug)
 	rootCmd.PersistentFlags().StringP("mode", "m", string(model.RuntimeModeEnum_Client), i18n.GetInstance().Main.Info_help_flag_mode)
 
+	rootCmd.PersistentFlags().StringP("serverworkspaceid", "", "", i18n.GetInstance().Main.Info_help_flag_server_workspace_id)
+	rootCmd.PersistentFlags().StringP("servertoken", "", "", i18n.GetInstance().Main.Info_help_flag_server_token)
+	rootCmd.PersistentFlags().StringP("serverusername", "", "", i18n.GetInstance().Main.Info_help_flag_server_username)
+	rootCmd.PersistentFlags().StringP("serveruserguid", "", "", i18n.GetInstance().Main.Info_help_flag_server_userguid)
+	rootCmd.PersistentFlags().StringP("serverfeedback", "", "", i18n.GetInstance().Main.Info_help_flag_server_feedback)
+
 	// disable completion command
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
@@ -118,6 +124,9 @@ func init() {
 	rootCmd.AddCommand(resetCmd)
 	rootCmd.AddCommand(udpateCmd)
 	rootCmd.AddCommand(configCmd)
+
+	rootCmd.AddCommand(loginCmd)
+	rootCmd.AddCommand(connectCmd)
 
 	// 不允许命令直接按照名称排序
 	cobra.EnableCommandSorting = false

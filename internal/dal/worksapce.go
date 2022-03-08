@@ -67,15 +67,22 @@ func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId in
 		remoteID = workspaceInfo.Remote.ID
 		remoteHost = workspaceInfo.Remote.Addr
 	}
-	if workspaceInfo.ID > 0 { // 用户录入workspaceid的情况
-		affectId = int64(workspaceInfo.ID)
+
+	if workspaceInfo.ID != "" { // 用户录入workspaceid的情况
+		i, err := strconv.Atoi(workspaceInfo.ID)
+		common.CheckError(err)
+		affectId = int64(i)
 		isExit = true
 	} else { // 用户有可能会不输入workspaceid，继续使用原有的参数
 		originWorkspace, err := GetSingleWorkspaceByParams(workspaceInfo.Mode, workspaceInfo.WorkingDirectoryPath, workspaceInfo.GitCloneRepoUrl, remoteID, remoteHost)
 		common.CheckError(err)
+
 		if originWorkspace.IsNotNil() {
-			affectId = int64(originWorkspace.ID)
+			oid, err := strconv.Atoi(originWorkspace.ID)
+			common.CheckError(err)
+			affectId = int64(oid)
 			isExit = true
+
 		}
 	}
 
@@ -268,7 +275,7 @@ func GetSingleWorkspaceByParams(workingMode workspace.WorkingMode, workingDir st
 func workspaceDataMap(workspaceInfo *workspace.WorkspaceInfo, do workspaceDo) error {
 
 	// 基本信息
-	workspaceInfo.ID = do.w_id
+	workspaceInfo.ID = strconv.Itoa(do.w_id)
 	workspaceInfo.Name = do.w_name
 	workspaceInfo.WorkingDirectoryPath = do.w_workingdir.String
 	workspaceInfo.ConfigFilePath = do.w_config_file.String
@@ -280,7 +287,6 @@ func workspaceDataMap(workspaceInfo *workspace.WorkspaceInfo, do workspaceDo) er
 
 	} else {
 		workspaceInfo.ConfigYaml = *config.NewConfig(do.w_workingdir.String, do.w_config_file.String, do.w_config_content.String)
-
 	}
 
 	// 连接的docker-compose文件

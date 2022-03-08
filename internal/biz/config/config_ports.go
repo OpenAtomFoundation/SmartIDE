@@ -64,14 +64,14 @@ func (yamlFileConfig *SmartIdeConfig) setPort4Label(containerPort int, oldPort i
 	}
 
 	if oldPort > 0 && newPort > 0 && containerPort > 0 {
-		label := yamlFileConfig.GetLabelWithPort(oldPort)
+		label := yamlFileConfig.GetLabelWithPort(oldPort, containerPort)
 
 		//
 		isExit := false
 		for index, item := range yamlFileConfig.Workspace.DevContainer.bindingPorts {
-			if item.LocalPortDesc == label && item.OriginLocalPort == oldPort {
-				if item.CurrentLocalPort != newPort {
-					item.CurrentLocalPort = newPort
+			if item.HostPortDesc == label && item.OriginHostPort == oldPort {
+				if item.CurrentHostPort != newPort {
+					item.CurrentHostPort = newPort
 					yamlFileConfig.Workspace.DevContainer.bindingPorts[index] = item
 				}
 
@@ -93,13 +93,13 @@ func (yamlFileConfig *SmartIdeConfig) setPort4Label(containerPort int, oldPort i
 }
 
 // 获取 本地端口 对应的描述
-func (yamlFileConfig *SmartIdeConfig) GetLabelWithPort(localPort int) string {
+func (yamlFileConfig *SmartIdeConfig) GetLabelWithPort(localPort, containerPort int) string {
 	label := ""
 
 	// 先到变更中查找
 	for _, value := range yamlFileConfig.Workspace.DevContainer.bindingPorts {
-		if value.OriginLocalPort == localPort {
-			label = value.LocalPortDesc
+		if value.OriginHostPort == localPort {
+			label = value.HostPortDesc
 			break
 		}
 	}
@@ -115,11 +115,15 @@ func (yamlFileConfig *SmartIdeConfig) GetLabelWithPort(localPort int) string {
 	}
 
 	// 是否为默认的端口，比如ide、ssh
-	if len(label) <= 0 {
+	if label == "" {
 		if localPort == model.CONST_Local_Default_BindingPort_WebIDE {
-			label = "webide"
+			if containerPort == model.CONST_Container_JetBrainsIDEPort {
+				label = "tools-webide-jb"
+			} else {
+				label = "tools-webide-vscode"
+			}
 		} else if localPort == model.CONST_Local_Default_BindingPort_SSH {
-			label = "ssh"
+			label = "tools-ssh"
 		}
 	}
 

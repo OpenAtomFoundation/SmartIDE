@@ -49,6 +49,21 @@ var stopCmd = &cobra.Command{
 	},
 }
 
+// 关闭服务器上的远程工作区，使用server mode的参数
+func stopServerRemoteByParams(serverWorkSpaceId string) {
+	// 直接运行stop
+
+	// 反馈到server
+}
+
+// 关闭服务器上的远程工作区，向server传递ID，由服务端处理stop
+func stopServerRemoteById(serverWorkSpaceId string) {
+	// 1. 请求服务端，触发stop
+
+	// 2. 请求服务端，获取工作区的状态
+
+}
+
 // 停止本地容器
 func stopLocal(workspace workspace.WorkspaceInfo) {
 	// 校验是否能正常执行docker
