@@ -55,6 +55,17 @@ curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/releases/$(curl -L -s h
 && chmod +x /usr/local/bin/smartide
 ```
 {{% /tab %}}
+{{% tab name="Linux" %}}
+```bash
+# SmartIDE 每日构建版通道安装脚本
+# 打开终端窗口，复制粘贴以下脚本即可安装每日构建版SmartIDE CLI应用
+# 再次执行此命令即可更新版本
+curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/releases/$(curl -L -s https://smartidedl.blob.core.chinacloudapi.cn/releases/stable.txt)/smartide-linux" \
+&& sudo mv -f smartide-linux /usr/local/bin/smartide \
+&& sudo ln -s -f /usr/local/bin/smartide /usr/local/bin/se \
+&& sudo chmod +x /usr/local/bin/smartide
+```
+{{% /tab %}}
 {{% tab name="Windows" %}}
 ```powershell
 # SmartIDE 稳定版通道安装脚本
