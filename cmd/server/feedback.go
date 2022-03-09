@@ -14,10 +14,13 @@ import (
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
+	"github.com/thedevsaddam/gojsonq"
 )
 
 //
 type feedbackRequest struct {
+	Command string `json:"command"`
+
 	ServerWorkspaceId string `json:"serverWorkspaceId"`
 	ServerUserName    string `json:"serverUserName"`
 	ServerUserGuid    string `json:"serverUserGuid"`
@@ -92,8 +95,73 @@ func FeeadbackExtend(auth model.Auth, workspaceInfo workspace.WorkspaceInfo) err
 	return nil
 }
 
+// 触发 stop
+func Trigger_Stop(cmd *cobra.Command, host string) error {
+	fflags := cmd.Flags()
+
+	mode, _ := fflags.GetString(Flags_Mode)
+	if strings.ToLower(mode) != "server" {
+		return nil
+	}
+
+	// 验证参数是否有值
+	Check(cmd)
+
+	// 从cmd参数中获取相关信息
+	serverWorkspaceid, _ := fflags.GetString(Flags_ServerWorkspaceid)
+
+	url := host + "/api/smartide//workspace/stop"
+	datas := map[string]string{}
+	datas["id"] = serverWorkspaceid
+	response, err := common.PostJson(url, datas, nil)
+	if err != nil {
+		return err
+	}
+
+	code := gojsonq.New().JSONString(response).Find("code").(float64)
+	if code != 0 {
+		msg := gojsonq.New().JSONString(response).Find("msg")
+		return fmt.Errorf("stop fail: %q", msg)
+	}
+
+	return nil
+}
+
+// 触发 remove
+func Trigger_Remove(host string, cmd *cobra.Command) error {
+	fflags := cmd.Flags()
+
+	mode, _ := fflags.GetString(Flags_Mode)
+	if strings.ToLower(mode) != "server" {
+		return nil
+	}
+
+	// 验证参数是否有值
+	Check(cmd)
+
+	// 从cmd参数中获取相关信息
+	serverWorkspaceid, _ := fflags.GetString(Flags_ServerWorkspaceid)
+
+	url := host + "/api/smartide//workspace/remove"
+	datas := map[string]string{}
+	datas["id"] = serverWorkspaceid
+	response, err := common.PostJson(url, datas, nil)
+	if err != nil {
+		return err
+	}
+
+	code := gojsonq.New().JSONString(response).Find("code").(float64)
+	if code != 0 {
+		msg := gojsonq.New().JSONString(response).Find("msg")
+		return fmt.Errorf("stop fail: %q", msg)
+	}
+
+	return nil
+}
+
 // 反馈server工作区的创建情况
-func Feedback(cmd *cobra.Command, isSuccess bool, webidePort int, workspaceInfo workspace.WorkspaceInfo, message string) error {
+func Feedback_Finish(feedbackCommand FeedbackCommandEnum, cmd *cobra.Command,
+	isSuccess bool, webidePort int, workspaceInfo workspace.WorkspaceInfo, message string) error {
 
 	fflags := cmd.Flags()
 
@@ -116,6 +184,8 @@ func Feedback(cmd *cobra.Command, isSuccess bool, webidePort int, workspaceInfo 
 	linkDockerCompose, _ := workspaceInfo.LinkDockerCompose.ToYaml()
 	extend := workspaceInfo.Extend.ToJson()
 	_feedbackRequest := feedbackRequest{
+		Command: string(feedbackCommand),
+
 		ServerWorkspaceId:        serverWorkspaceid,
 		ServerUserName:           serverUserName,
 		ServerUserGuid:           serverUserGuid,

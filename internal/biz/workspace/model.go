@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -100,15 +101,18 @@ type WorkspaceInfo struct {
 }
 
 //
-func CreateWorkspaceInfo(serverWorkSpace model.ServerWorkspace) (WorkspaceInfo, error) {
+func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (WorkspaceInfo, error) {
+	repoName := getRepoName(serverWorkSpace.GitRepoUrl)
 	workspaceInfo := WorkspaceInfo{
-		ID:              serverWorkSpace.NO,
-		Name:            serverWorkSpace.Name,
-		ConfigFilePath:  serverWorkSpace.ConfigFilePath,
-		GitCloneRepoUrl: serverWorkSpace.GitRepoUrl,
-		Branch:          serverWorkSpace.Branch,
-		Mode:            WorkingMode_Server,
-		CreatedTime:     serverWorkSpace.CreatedAt,
+		ID:                   serverWorkSpace.NO,
+		Name:                 serverWorkSpace.Name,
+		ConfigFilePath:       serverWorkSpace.ConfigFilePath,
+		GitCloneRepoUrl:      serverWorkSpace.GitRepoUrl,
+		Branch:               serverWorkSpace.Branch,
+		Mode:                 WorkingMode_Server,
+		CreatedTime:          serverWorkSpace.CreatedAt,
+		WorkingDirectoryPath: filepath.Join("~", "project", repoName),
+		//TempDockerComposeFilePath: filepath.Join("~", REMOTE_REPO_ROOT, repoName),
 		Remote: RemoteInfo{
 			Addr:     serverWorkSpace.Resource.IP,
 			UserName: serverWorkSpace.Resource.SSHUserName,
@@ -116,6 +120,7 @@ func CreateWorkspaceInfo(serverWorkSpace model.ServerWorkspace) (WorkspaceInfo, 
 			SSHPort:  model.CONST_Container_SSHPort,
 		},
 	}
+	workspaceInfo.TempDockerComposeFilePath = workspaceInfo.GetTempDockerComposeFilePath()
 	workspaceInfo.ServerWorkSpace = serverWorkSpace
 	if serverWorkSpace.Extend != "" {
 		err := json.Unmarshal([]byte(serverWorkSpace.Extend), &workspaceInfo.Extend)

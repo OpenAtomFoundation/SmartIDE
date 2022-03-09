@@ -44,12 +44,12 @@ func printWorkspaces() {
 	common.CheckError(err)
 	if auth != (model.Auth{}) && auth.Token != "" {
 		// 从api 获取workspace
-		serverWorkSpace, err := workspace.GetServerWorkspaceList(auth)
+		serverWorkSpaces, err := workspace.GetServerWorkspaceList(auth)
 
 		if err != nil { // 有错误仅给警告
 			common.SmartIDELog.Importance("从服务器获取工作区列表失败，" + err.Error())
 		} else { //
-			workspaces = append(workspaces, serverWorkSpace...)
+			workspaces = append(workspaces, serverWorkSpaces...)
 		}
 	}
 	if len(workspaces) <= 0 {

@@ -99,6 +99,7 @@ func post(reqUrl string, reqParams map[string]string, contentType string, files 
 		return "", errors.New(resp.Status)
 	}
 	response, err := ioutil.ReadAll(resp.Body)
+	SmartIDELog.Debug(string(response))
 	return string(response), err
 }
 

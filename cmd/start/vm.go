@@ -40,7 +40,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fun
 			return
 		}
 		if err != nil {
-			smartideServer.Feedback(cmd, false, 0, workspace.WorkspaceInfo{}, err.Error())
+			smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_Start, cmd, false, 0, workspace.WorkspaceInfo{}, err.Error())
 		}
 	}
 
@@ -263,7 +263,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fun
 	//9. 反馈给smartide server
 	if isModeServer {
 		common.SmartIDELog.Info("feedback...")
-		err = smartideServer.Feedback(cmd, true, workspaceInfo.ConfigYaml.GetContainerWebIDEPort(), workspaceInfo, "")
+		err = smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_Start, cmd, true, workspaceInfo.ConfigYaml.GetContainerWebIDEPort(), workspaceInfo, "")
 		common.CheckError(err)
 	}
 

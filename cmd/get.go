@@ -10,6 +10,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"text/tabwriter"
 
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
@@ -26,7 +27,8 @@ var getCmd = &cobra.Command{
   smartide get {workspaceid}`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		workspaceId := getWorkspaceIdFromFlagsAndArgs(cmd, args)
+		workspaceIdStr := getWorkspaceIdFromFlagsAndArgs(cmd, args)
+		workspaceId, _ := strconv.Atoi(workspaceIdStr)
 		if workspaceId <= 0 {
 			common.SmartIDELog.Warning(i18nInstance.Get.Warn_flag_workspaceid_none)
 			cmd.Help()

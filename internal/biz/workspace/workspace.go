@@ -46,7 +46,7 @@ func GetServerWorkspaceList(auth model.Auth) (ws []WorkspaceInfo, err error) {
 	if l.Code == 0 && len(l.Data.List) > 0 {
 		{
 			for _, serverWorkSpace := range l.Data.List {
-				workspaceInfo, err := CreateWorkspaceInfo(serverWorkSpace)
+				workspaceInfo, err := CreateWorkspaceInfoFromServer(serverWorkSpace)
 				common.CheckError(err)
 				ws = append(ws, workspaceInfo)
 			}
@@ -81,7 +81,7 @@ func GetWorkspaceFromServer(auth model.Auth, no string) (workspaceInfo Workspace
 		{
 			for _, w := range l.Data.List {
 				if strings.EqualFold(w.NO, no) {
-					workspaceInfo, err = CreateWorkspaceInfo(w)
+					workspaceInfo, err = CreateWorkspaceInfoFromServer(w)
 					break
 				}
 			}

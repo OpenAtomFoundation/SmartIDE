@@ -135,7 +135,8 @@ var removeCmd = &cobra.Command{
 // 从flag、args中获取参数信息，然后再去数据库中读取相关数据
 func loadWorkspaceWithDb(cmd *cobra.Command, args []string) workspace.WorkspaceInfo {
 	workspaceInfo := workspace.WorkspaceInfo{}
-	workspaceId := getWorkspaceIdFromFlagsAndArgs(cmd, args)
+	workspaceIdStr := getWorkspaceIdFromFlagsAndArgs(cmd, args)
+	workspaceId, _ := strconv.Atoi(workspaceIdStr)
 	if workspaceId > 0 { // 从db中获取workspace的信息
 		var err2 error
 		workspaceInfo, err2 = getWorkspaceWithDbAndValid(workspaceId)

@@ -16,6 +16,7 @@ import (
 
 	"github.com/howeyc/gopass"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
+	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
@@ -66,10 +67,30 @@ var loginCmd = &cobra.Command{
 		//TODO: 如果密码错误，可以重新录入再试
 
 		//2. 登录
-		err := login(loginUrl, userName, userPassword)
-		common.CheckError(err)
+		err := login(loginUrl, userName, userPassword) // 使用密码登录
+		if err != nil {
+			// 尝试使用token登录
+			err0 := loginWithToken(loginUrl, userName, userPassword)
+			if err0 != nil {
+				common.CheckError(err)
+			}
+		}
+
 		common.SmartIDELog.Info(loginUrl + " 登录成功！")
 	},
+}
+
+func loginWithToken(loginUrl, userName, token string) error {
+
+	// 请求
+	_, err := workspace.GetServerWorkspaceList(model.Auth{UserName: userName, Token: token, LoginUrl: loginUrl})
+	if err != nil {
+		return err
+	}
+
+	saveToken(loginUrl, userName, token)
+
+	return nil
 }
 
 // 登录
@@ -85,32 +106,35 @@ func login(loginUrl, userName, userPassword string) error {
 		return fmt.Errorf("login fail %q", msg)
 	} else {
 		token := gojsonq.New().JSONString(response).Find("data.token")
-		c := &config.GlobalSmartIdeConfig
-		if !userIsExit(c.Auths, userName, loginUrl) {
-			for i := range c.Auths {
-				c.Auths[i].CurrentUse = false
-			}
-			c.Auths = append(c.Auths, model.Auth{
-				UserName:   userName,
-				Token:      token,
-				LoginUrl:   loginUrl,
-				CurrentUse: true,
-			})
-		} else {
-			for i, a := range c.Auths {
-				if a.UserName == userName && a.LoginUrl == loginUrl {
-					c.Auths[i].Token = token
-					c.Auths[i].CurrentUse = true
-				} else {
-					c.Auths[i].CurrentUse = false
-				}
-			}
-		}
-		c.SaveConfigYaml()
-
+		saveToken(loginUrl, userName, token)
 	}
 
 	return nil
+}
+
+func saveToken(loginUrl, userName string, token interface{}) {
+	c := &config.GlobalSmartIdeConfig
+	if !userIsExit(c.Auths, userName, loginUrl) {
+		for i := range c.Auths {
+			c.Auths[i].CurrentUse = false
+		}
+		c.Auths = append(c.Auths, model.Auth{
+			UserName:   userName,
+			Token:      token,
+			LoginUrl:   loginUrl,
+			CurrentUse: true,
+		})
+	} else {
+		for i, a := range c.Auths {
+			if a.UserName == userName && a.LoginUrl == loginUrl {
+				c.Auths[i].Token = token
+				c.Auths[i].CurrentUse = true
+			} else {
+				c.Auths[i].CurrentUse = false
+			}
+		}
+	}
+	c.SaveConfigYaml()
 }
 
 func init() {

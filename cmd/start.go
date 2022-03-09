@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/leansoftX/smartide-cli/cmd/server"
 	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
 	"github.com/leansoftX/smartide-cli/cmd/start"
 	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
@@ -77,7 +78,7 @@ var startCmd = &cobra.Command{
 				return
 			}
 			if err != nil {
-				smartideServer.Feedback(cmd, false, 0, workspace.WorkspaceInfo{}, err.Error())
+				smartideServer.Feedback_Finish(server.FeedbackCommandEnum_Start, cmd, false, 0, workspace.WorkspaceInfo{}, err.Error())
 			}
 		})
 
@@ -171,11 +172,12 @@ var (
 	flag_branch      = "branch"
 	flag_k8s         = "k8s"
 	flag_namespace   = "namespace"
-	flag_loginurl    = "login_url"
+
+//	flag_loginurl    = "login_url"
 )
 
 // 获取工作区id
-func getWorkspaceStrFromFlagsAndArgs(cmd *cobra.Command, args []string) string {
+func getWorkspaceIdFromFlagsAndArgs(cmd *cobra.Command, args []string) string {
 	fflags := cmd.Flags()
 
 	// 从args 或者 flag 中获取值
@@ -196,7 +198,7 @@ func getWorkspaceStrFromFlagsAndArgs(cmd *cobra.Command, args []string) string {
 	return workspaceId
 }
 
-// 获取工作区id
+/* // 获取工作区id
 func getWorkspaceIdFromFlagsAndArgs(cmd *cobra.Command, args []string) int {
 	fflags := cmd.Flags()
 
@@ -219,13 +221,13 @@ func getWorkspaceIdFromFlagsAndArgs(cmd *cobra.Command, args []string) int {
 	}
 
 	return workspaceId
-}
+} */
 
 // 从start command的flag、args中获取workspace
 func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo workspace.WorkspaceInfo, err error) {
 	fflags := cmd.Flags()
 	//从args或flags中获取workspaceid，如 : smartide start 1
-	workspaceIdStr := getWorkspaceStrFromFlagsAndArgs(cmd, args)
+	workspaceIdStr := getWorkspaceIdFromFlagsAndArgs(cmd, args)
 	//从args或flags中获取giturl，如 : smartide start https://github.com/idcf-boat-house/boathouse-calculator.git
 	gitUrl := getGitUrlFromArgs(cmd, args)
 	//1. 加载workspace
@@ -247,7 +249,7 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 		}
 
 	} else {
-		workspaceId := getWorkspaceIdFromFlagsAndArgs(cmd, args)
+		workspaceId, _ := strconv.Atoi(workspaceIdStr)
 		common.CheckError(err)
 		//1.1. 指定了从workspaceid，从sqlite中读取
 		if workspaceId > 0 {
@@ -272,8 +274,8 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 				return workspace.WorkspaceInfo{}, err
 			}
 
-			// 1.2.1. 远程模式
-			if fflags.Changed(flag_host) {
+			// 模式
+			if fflags.Changed(flag_host) { // vm 模式
 				workingMode = workspace.WorkingMode_Remote
 				hostInfo, err := getRemoteAndValid(fflags)
 				if err != nil {
@@ -298,7 +300,7 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 				repoWorkspaceDir := filepath.Join("~", REMOTE_REPO_ROOT, repoName)
 				workspaceInfo.WorkingDirectoryPath = repoWorkspaceDir
 
-			} else if fflags.Changed("k8s") {
+			} else if fflags.Changed("k8s") { // k8s模式
 				workspaceInfo.GitCloneRepoUrl = getFlagValue(fflags, flag_repourl)
 				if gitUrl != "" {
 					workspaceInfo.GitCloneRepoUrl = gitUrl
@@ -313,7 +315,7 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 				}
 				workspaceInfo.K8sInfo.Context = getFlagValue(fflags, flag_k8s)
 
-			} else { //1.2.2. 本地模式
+			} else { // 本地模式
 				// 本地模式下，不需要录入git库的克隆地址、分支
 				checkFlagUnnecessary(fflags, flag_repourl, "mode=local")
 				checkFlagUnnecessary(fflags, flag_branch, "mode=local")
@@ -392,8 +394,6 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 		if err != nil {
 			return workspaceInfo, err
 		}
-
-	} else {
 
 	}
 
