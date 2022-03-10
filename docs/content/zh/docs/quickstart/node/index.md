@@ -179,14 +179,14 @@ SmartIDE 环境中已经内置了 Git 的支持，你可以点击 **菜单栏左
 ![Commit](images/quickstart-node015.png)
 
 > 为了方便大家查看本演示所创建的代码，我已经将这份代码推送到了Gitee上，代码库地址如下
-> https://gitee.com/smartide/sample-vscode-node
+> https://gitee.com/smartide/sample-node-vscode
 
 至此，我们已经使用 SmartIDE 完成了一个 Node Express 应用从环境搭建，创建基础代码结构，配置调试环境，完成编码开发到提交代码的全过程。
 
 **现在可以将你的代码库发送给其他的小伙伴，让他通过以下指令一键启动你的应用的应用。**
 
 ```shell
-smartide start https://gitee.com/smartide/sample-vscode-node
+smartide start https://gitee.com/smartide/sample-node-vscode
 ```
 
 是不是很爽！
