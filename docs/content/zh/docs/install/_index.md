@@ -49,8 +49,8 @@ SmartIDE 通过调用docker和docker-compose来实现容器化环境的管理，
 # SmartIDE 稳定版通道安装脚本
 # 打开终端窗口，复制粘贴以下脚本即可安装稳定版SmartIDE CLI应用
 # 再次执行此命令即可更新版本
-curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/releases/$(curl -L -s https://smartidedl.blob.core.chinacloudapi.cn/releases/stable.txt)/smartide" \
-&& mv -f smartide /usr/local/bin/smartide \
+curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/releases/$(curl -L -s https://smartidedl.blob.core.chinacloudapi.cn/releases/stable.txt)/smartide-osx" \
+&& mv -f smartide-osx /usr/local/bin/smartide \
 && ln -s -f /usr/local/bin/smartide /usr/local/bin/se \
 && chmod +x /usr/local/bin/smartide
 ```
