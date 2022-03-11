@@ -1,1 +1,1 @@
-registry.cn-hangzhou.aliyuncs.com/smartide/smartide-base-v2:2422
+registry.cn-hangzhou.aliyuncs.com/smartide/smartide-base-v2:2423
