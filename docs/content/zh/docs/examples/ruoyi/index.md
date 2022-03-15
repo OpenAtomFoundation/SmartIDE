@@ -8,6 +8,7 @@ description: >
   若依项目在码云（Gitee.com）最有价值开源项目的WEB应用开发类中排名第二，有28K星，在国内WEB应用开发框架类开源项目非常受开发者欢迎。若依项目采用业界流行的 Vue + Java Springboot 开发框架。提供基于SpringBoot的权限管理系统，易读易懂、界面简洁美观。 核心技术采用Spring、MyBatis、Shiro没有任何其它重度依赖。直接运行即可用。
 
 ---
+---
 ## 使用SmartIDE开发调试若依项目(前端分离版)
 
 SmartIDE是下一代的云原生IDE，可以帮助你一键启动项目的集成开发环境，直接进入编码调试，免除安装SDK、IDE和其他相关工具的麻烦。
@@ -26,10 +27,10 @@ SmartIDE是下一代的云原生IDE，可以帮助你一键启动项目的集成
 
 ## 1. 完整操作视频
 
-为了便于大家更直观的了解使用SmartIDE开发调试RuoYi的过程，我们在B站提上提供了视频供大家参考，视频地址如下：
+为了便于大家更直观的了解使用SmartIDE开发调试RuoYi的过程，我们在B站提上提供了视频供大家参考，视频如下：
 {{< bilibili 851717139 >}}
 
-跳转到B站：<a href="https://www.bilibili.com/video/av851717139" target="_blank">SmartIDE使用IntelliJ IDEA WebIDE开发调试若依管理系统 (Vue + Java Spring)</a>
+跳转到B站：<a href="https://www.bilibili.com/video/av851717139" target="_blank"> ` https://www.bilibili.com/video/av851717139 `</a>
 
 
 ## 2. 本地模式启动项目
@@ -109,7 +110,7 @@ spring:
 
 > 说明：使用SmartIDE运行开发环境的一个好处就是一键启动所有相关环境，我们已经在你的环境中内置了专门用于RuoYi项目开发的MySQL数据库，并且为了方便你的操作，也提供了PhpMyAdmin这个工具方便你进行数据管理操作。
 
-打开SmartIDE内置的PHPMyAdmin工具，地址是：http://localhost:8090 
+打开SmartIDE内置的PHPMyAdmin工具，地址是：` http://localhost:8090 `
 
 - 服务器：ruoyi-db
 - 用户名：root
@@ -184,10 +185,10 @@ npm run dev
 
 其他调试相关的入口如下：
 
-- 容器内项目目录 /home/project
-- WebIDE入口 http://localhost:6800
-- 数据库管理PHPMyAdmin http://localhost:8090
-- 前端应用入口 http://localhost:8000
+- 容器内项目目录 ` /home/project `
+- WebIDE入口 ` http://localhost:6800 `
+- 数据库管理PHPMyAdmin ` http://localhost:8090 `
+- 前端应用入口 ` http://localhost:8000 `
 
 > 注意：如果你本地的以上端口有被占用的情况，SmartIDE会自动在当前端口上增加100，具体转发情况请参考SmartIDE命令的日志输出。
 
@@ -209,12 +210,32 @@ smartide remove <ID> -fypi
 
 ## 6. 相关链接
 
-- <a href="https://gitee.com/SmartIDE/RuoYi-Vue.git" target="_blank">若依项目SmartIDE仓库地址</a>
-- <a href="https://gitee.com/y_project/RuoYi-Vue" target="_blank">若依项目（前后端分离版）</a>
-- <a href="https://gitee.com/y_project/RuoYi-Vue/pulls/432" target="_blank">若依项目SmartIDE PR</a>
+- 若依项目SmartIDE仓库地址：<a href="https://gitee.com/SmartIDE/RuoYi-Vue.git" target="_blank">` https://gitee.com/SmartIDE/RuoYi-Vue.git `</a>
+- 若依项目（前后端分离版）：<a href="https://gitee.com/y_project/RuoYi-Vue" target="_blank">` https://gitee.com/y_project/RuoYi-Vue `</a>
+- 若依项目SmartIDE PR：<a href="https://gitee.com/y_project/RuoYi-Vue/pulls/432" target="_blank">` https://gitee.com/y_project/RuoYi-Vue/pulls/432 `</a>
 
+### 7. 技术支持
+
+**特别说明:** SmartIDE本身是开源产品，并且对独立开发者提供免费使用授权。
+
+大家可以通过以下链接获取SmartIDE的技术支持
+
+- 产品官网 <a href="https://SmartIDE.cn" target="_blank">` https://SmartIDE.cn `</a>
+  - 通过产品官网上的二维码可以加入 [Smart早鸟群] 与其他的 Smart Developer 一起交流
+- 开源首页：SmartIDE采用GitHub和Gitee双通道开源模式（自动同步代码），方便国内开发者访问
+  - <a href="https://githbu.com/SmartIDE" target="_blank">` https://githbu.com/SmartIDE `</a>
+  - <a href="https://gitee.com/SmartIDE" target="_blank">` https://gitee.com/SmartIDE `</a>
+  
+  大家自选以上任意渠道提交Issue，产品组的小伙伴会及时给予反馈。
+
+  > 如果大家喜欢我们的产品，请给予 Star 支持
+
+- B站频道：我们定期组织直播，为大家更新产品开发进展
+  - <a href="https://space.bilibili.com/1001970523" target="_blank">` https://space.bilibili.com/1001970523 `</a>
+
+  > 如果大家喜欢我们的产品和视频，一定要记得 “三连” 
 ---
-**感谢对SmartIDE的支持：Be a Smart Developer，开发从未如此简单。**
+**感谢您对SmartIDE的支持：Be a Smart Developer，开发从未如此简单。**
 
 
 
