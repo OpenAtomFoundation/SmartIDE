@@ -2,8 +2,8 @@
 title: "若依(RuoYi)项目"
 linkTitle: "若依项目"
 weight: 30
-date: 2022-03-10
-draft: true
+date: 2022-03-14
+draft: false
 description: >
   若依项目在码云（Gitee.com）最有价值开源项目的WEB应用开发类中排名第二，有28K星，在国内WEB应用开发框架类开源项目非常受开发者欢迎。若依项目采用业界流行的 Vue + Java Springboot 开发框架。提供基于SpringBoot的权限管理系统，易读易懂、界面简洁美观。 核心技术采用Spring、MyBatis、Shiro没有任何其它重度依赖。直接运行即可用。
 
@@ -28,6 +28,9 @@ SmartIDE是下一代的云原生IDE，可以帮助你一键启动项目的集成
 
 为了便于大家更直观的了解使用SmartIDE开发调试RuoYi的过程，我们在B站提上提供了视频供大家参考，视频地址如下：
 {{< bilibili 851717139 >}}
+
+跳转到B站：<a href="https://www.bilibili.com/video/av851717139" target="_blank">SmartIDE使用IntelliJ IDEA WebIDE开发调试若依管理系统 (Vue + Java Spring)</a>
+
 
 ## 2. 本地模式启动项目
 
@@ -206,9 +209,9 @@ smartide remove <ID> -fypi
 
 ## 6. 相关链接
 
-- 若依项目SmartIDE仓库地址：https://gitee.com/SmartIDE/RuoYi-Vue.git
-- 若依项目（前后端分离版）：https://gitee.com/y_project/RuoYi-Vue
-- 若依项目SmartIDE PR：https://gitee.com/y_project/RuoYi-Vue/pulls/432
+- <a href="https://gitee.com/SmartIDE/RuoYi-Vue.git" target="_blank">若依项目SmartIDE仓库地址</a>
+- <a href="https://gitee.com/y_project/RuoYi-Vue" target="_blank">若依项目（前后端分离版）</a>
+- <a href="https://gitee.com/y_project/RuoYi-Vue/pulls/432" target="_blank">若依项目SmartIDE PR</a>
 
 ---
 **感谢对SmartIDE的支持：Be a Smart Developer，开发从未如此简单。**
