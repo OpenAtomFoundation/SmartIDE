@@ -1,0 +1,1 @@
+registry.cn-hangzhou.aliyuncs.com/smartide/smartide-base-vscode:1732
