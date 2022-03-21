@@ -168,7 +168,7 @@
     "version": {
         "info_help_short": "SmartIDE version ",
         "info_help_long": "SmartIDE version ",
-        "info_template": "Version: %v\n Build: %v\n Build Time: %v\n Commit Hash: %v\n Company: %v"
+        "info_template": "Version: %v\nSystem: %v\nBuild: %v\n Build Time: %v\n Commit Hash: %v\n Company: %v"
     },
     "vm_start": {
         "info_starting": "SmartIDE VM Mode is starting up...",

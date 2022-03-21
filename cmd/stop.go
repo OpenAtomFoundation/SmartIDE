@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors:
- * @LastEditTime:
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-03-16 14:27:23
  */
 package cmd
 
@@ -24,9 +24,10 @@ import (
 ) // stopCmd represents the stop command
 
 var stopCmd = &cobra.Command{
-	Use:   "stop",
-	Short: i18nInstance.Stop.Info_help_short,
-	Long:  i18nInstance.Stop.Info_help_long,
+	Use:     "stop",
+	Short:   i18nInstance.Stop.Info_help_short,
+	Long:    i18nInstance.Stop.Info_help_long,
+	Example: `  smartide stop {workspaceid} `,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		common.SmartIDELog.Info(i18nInstance.Stop.Info_start)
@@ -38,12 +39,15 @@ var stopCmd = &cobra.Command{
 		// 当前登录信息
 		currentAuth, err := workspace.GetCurrentUser()
 		common.CheckError(err)
-		if strings.ToLower(mode) == "server" { // 当mode=server时，从server端反调数据
-			workspaceIdStr := getWorkspaceIdFromFlagsAndArgs(cmd, args)
+		workspaceIdStr := getWorkspaceIdFromFlagsAndArgs(cmd, args)
+		if strings.ToLower(mode) == "server" || strings.Contains(workspaceIdStr, "SWS") { // 当mode=server时，从server端反调数据
+
 			workspaceInfo, err = workspace.GetWorkspaceFromServer(currentAuth, workspaceIdStr)
 
-			if workspaceInfo.ID == "" || workspaceInfo.ServerWorkSpace.NO == "" {
-				err = fmt.Errorf("没有查询到 %v 对应的工作区数据！", workspaceIdStr)
+			if err == nil {
+				if workspaceInfo.ID == "" || workspaceInfo.ServerWorkSpace.NO == "" {
+					err = fmt.Errorf("没有查询到 %v 对应的工作区数据！", workspaceIdStr)
+				}
 			}
 			if err != nil {
 				msg := err.Error()
@@ -64,12 +68,13 @@ var stopCmd = &cobra.Command{
 			}
 
 			// feeadback
-			server.Feedback_Finish(server.FeedbackCommandEnum_Stop, cmd, err == nil, 0, workspaceInfo, msg)
+			common.SmartIDELog.Info("反馈运行结果...")
+			err = server.Feedback_Finish(server.FeedbackCommandEnum_Stop, cmd, err == nil, 0, workspaceInfo, msg)
 			common.CheckError(err)
 
 		} else if workspaceInfo.Mode == workspace.WorkingMode_Server { // 录入的是服务端工作区id
 			// 触发stop
-			err = server.Trigger_Stop(cmd, currentAuth.LoginUrl)
+			err = server.Trigger_Action("stop", workspaceIdStr, currentAuth.LoginUrl, currentAuth, make(map[string]interface{}))
 			common.CheckError(err)
 
 			// 轮询检查工作区状态
@@ -79,7 +84,8 @@ var stopCmd = &cobra.Command{
 				if err != nil {
 					common.SmartIDELog.Importance(err.Error())
 				}
-				if serverWorkSpace.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Stop {
+				if serverWorkSpace.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Stop ||
+					serverWorkSpace.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Error_Stop {
 					isStop = true
 				}
 
@@ -107,24 +113,6 @@ var stopCmd = &cobra.Command{
 		common.SmartIDELog.Info(i18nInstance.Stop.Info_end)
 
 	},
-}
-
-// 关闭服务器上的远程工作区，使用server mode的参数
-func stopServerRemoteByParams(cmd *cobra.Command, args []string) {
-	// 需要时mode=server模式
-
-	// 直接运行stop
-
-	// 反馈到server
-
-}
-
-// 关闭服务器上的远程工作区，向server传递ID，由服务端处理stop
-func stopServerRemoteById(serverWorkSpaceId string) {
-	// 1. 请求服务端，触发stop
-
-	// 2. 请求服务端，获取工作区的状态
-
 }
 
 // 停止本地容器
@@ -182,6 +170,6 @@ func stopRemote(workspaceInfo workspace.WorkspaceInfo) error {
 }
 
 func init() {
-	stopCmd.Flags().StringVarP(&configYamlFileRelativePath, "filepath", "f", "", i18nInstance.Stop.Info_help_flag_filepath)
+	//stopCmd.Flags().StringVarP(&configYamlFileRelativePath, "filepath", "f", "", i18nInstance.Stop.Info_help_flag_filepath)
 
 }

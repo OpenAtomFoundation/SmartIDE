@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2022-02-16 10:20:03
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-03-16 15:42:14
  */
 package cmd
 
@@ -15,16 +15,19 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/docker/docker/client"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/dal"
+	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/kubectl"
 	"github.com/spf13/cobra"
 	"gopkg.in/src-d/go-git.v4"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/leansoftX/smartide-cli/cmd/server"
 	"github.com/leansoftX/smartide-cli/cmd/start"
 )
 
@@ -69,12 +72,38 @@ var removeCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		common.SmartIDELog.Info(i18nInstance.Remove.Info_start)
+		mode, _ := cmd.Flags().GetString("mode")
 
-		// 获取 workspace 信息
-		common.SmartIDELog.Info(i18nInstance.Main.Info_workspace_loading) //
-		workspaceInfo := loadWorkspaceWithDb(cmd, args)
+		//1. 获取 workspace 信息
+		common.SmartIDELog.Info(i18nInstance.Main.Info_workspace_loading) // log
+		var workspaceInfo workspace.WorkspaceInfo                         // defined
+		currentAuth, err := workspace.GetCurrentUser()                    // 当前登录信息
+		common.CheckError(err)
+		workspaceIdStr := getWorkspaceIdFromFlagsAndArgs(cmd, args)
+		if strings.ToLower(mode) == "server" || strings.Contains(workspaceIdStr, "SWS") { // 当mode=server时，从server端反调数据
+			// 从远程服务器上查询工作区信息
+			workspaceInfo, err = workspace.GetWorkspaceFromServer(currentAuth, workspaceIdStr)
+			if err == nil {
+				if workspaceInfo.ID == "" || workspaceInfo.ServerWorkSpace.NO == "" {
+					err = fmt.Errorf("没有查询到 %v 对应的工作区数据！", workspaceIdStr)
+				}
+			}
+			if err != nil { // 有错误，反馈到server
+				msg := err.Error()
+				server.Feedback_Finish(server.FeedbackCommandEnum_Remove, cmd, false, 0, workspaceInfo, msg)
+			}
+			common.CheckError(err)
 
-		// 验证
+		} else {
+			workspaceInfo = loadWorkspaceWithDb(cmd, args)
+			if workspaceInfo.IsNil() {
+				common.SmartIDELog.Error(i18nInstance.Main.Err_workspace_none)
+			}
+
+		}
+
+		//2. 操作类型
+		//2.1. 验证互斥的操作
 		if removeCmdFlag.IsOnlyRemoveContainer && removeCmdFlag.IsOnlyRemoveWorkspaceDataRecord { // 仅删除容器 和 仅删除工作区，不能同时存在
 			common.SmartIDELog.Error(i18nInstance.Remove.Err_flag_workspace_container)
 		}
@@ -82,7 +111,7 @@ var removeCmd = &cobra.Command{
 			common.SmartIDELog.Error(i18nInstance.Remove.Err_flag_container_valid)
 		}
 
-		//
+		//2.2. 操作类型
 		var removeMode RemoveMode = RemoteMode_None
 		if removeCmdFlag.IsOnlyRemoveContainer {
 			removeMode = RemoteMode_OnlyRemoveContainer
@@ -90,7 +119,7 @@ var removeCmd = &cobra.Command{
 			removeMode = RemoteMode_OnlyRemoveWorkspaceDataRecord
 		}
 
-		// 提示 是否确认删除
+		//3. 提示 是否确认删除
 		if !removeCmdFlag.IsContinue { // 如果设置了参数yes，那么默认就是确认删除
 			isEnableRemove := ""
 			common.SmartIDELog.Console(i18nInstance.Remove.Info_is_confirm_remove)
@@ -100,31 +129,82 @@ var removeCmd = &cobra.Command{
 			}
 		}
 
-		// 执行删除动作
-		if workspaceInfo.IsNil() {
-			common.SmartIDELog.Error(i18nInstance.Main.Err_workspace_none)
-		}
-		if removeMode == RemoteMode_None || removeMode == RemoteMode_OnlyRemoveContainer { // 仅删除容器的话，就不去远程主机上进行操作
-			if workspaceInfo.Mode == workspace.WorkingMode_Local {
-				err := removeLocalMode(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsForce)
-				common.CheckError(err)
-			} else if workspaceInfo.Mode == workspace.WorkingMode_Remote {
-				err := removeRemoteMode(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsRemoveRemoteDirectory, removeCmdFlag.IsForce)
-				common.CheckError(err)
-			} else {
-				err := removeK8sMode(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsForce)
-				common.CheckError(err)
+		//4. 执行删除动作
+		if strings.ToLower(mode) == "server" {
+			msg := ""
+			// 远程主机上停止
+			if removeMode == RemoteMode_None || removeMode == RemoteMode_OnlyRemoveContainer { // 仅删除容器的话，就不去远程主机上进行操作
+				if workspaceInfo.Mode == workspace.WorkingMode_Local {
+					err := removeLocalMode(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsForce)
+					common.CheckError(err)
+				} else if workspaceInfo.Mode == workspace.WorkingMode_Remote || workspaceInfo.Mode == workspace.WorkingMode_Server {
+					err := removeRemoteMode(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsRemoveRemoteDirectory, removeCmdFlag.IsForce)
+					common.CheckError(err)
+				} else {
+					err := removeK8sMode(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsForce)
+					common.CheckError(err)
+				}
+
 			}
 
-		}
+			// feeadback
+			common.SmartIDELog.Info("反馈运行结果...")
+			command := server.FeedbackCommandEnum_Remove
+			if removeCmdFlag.IsOnlyRemoveContainer {
+				command = server.FeedbackCommandEnum_RemoveContainer
+			}
+			err = server.Feedback_Finish(command, cmd, err == nil, 0, workspaceInfo, msg)
+			common.CheckError(err)
 
-		// remote workspace in db
-		if removeMode == RemoteMode_None || removeMode == RemoteMode_OnlyRemoveWorkspaceDataRecord { // 在仅删除容器的模式下，不删除工作区
-			common.SmartIDELog.Info(i18nInstance.Remove.Info_workspace_removing)
-			i, err := strconv.Atoi(workspaceInfo.ID)
+		} else if workspaceInfo.Mode == workspace.WorkingMode_Server { // 录入的是服务端工作区id
+			// 触发remove
+			datas := make(map[string]interface{})
+			if removeCmdFlag.IsOnlyRemoveContainer {
+				datas["isOnlyRemoveContainer"] = true
+			}
+			err = server.Trigger_Action("remove", workspaceIdStr, currentAuth.LoginUrl, currentAuth, datas)
 			common.CheckError(err)
-			err = dal.RemoveWorkspace(i)
-			common.CheckError(err)
+
+			// 轮询检查工作区状态
+			isRemove := false
+			for !isRemove {
+				serverWorkSpace, err := workspace.GetWorkspaceFromServer(currentAuth, workspaceInfo.ID)
+				if err != nil {
+					common.SmartIDELog.Importance(err.Error())
+				}
+				if serverWorkSpace.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Remove ||
+					serverWorkSpace.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Error_Remove ||
+					serverWorkSpace.ServerWorkSpace.Status == model.WorkspaceStatusEnum_ContainerRemoved ||
+					serverWorkSpace.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Error_ContainerRemoved {
+					isRemove = true
+				}
+
+				time.Sleep(time.Second * 15)
+			}
+
+		} else { // 普通模式下
+			if removeMode == RemoteMode_None || removeMode == RemoteMode_OnlyRemoveContainer { // 仅删除容器的话，就不去远程主机上进行操作
+				if workspaceInfo.Mode == workspace.WorkingMode_Local {
+					err := removeLocalMode(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsForce)
+					common.CheckError(err)
+				} else if workspaceInfo.Mode == workspace.WorkingMode_Remote {
+					err := removeRemoteMode(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsRemoveRemoteDirectory, removeCmdFlag.IsForce)
+					common.CheckError(err)
+				} else {
+					err := removeK8sMode(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsForce)
+					common.CheckError(err)
+				}
+
+			}
+
+			// remote workspace in db
+			if removeMode == RemoteMode_None || removeMode == RemoteMode_OnlyRemoveWorkspaceDataRecord { // 在仅删除容器的模式下，不删除工作区
+				common.SmartIDELog.Info(i18nInstance.Remove.Info_workspace_removing)
+				i, err := strconv.Atoi(workspaceInfo.ID)
+				common.CheckError(err)
+				err = dal.RemoveWorkspace(i)
+				common.CheckError(err)
+			}
 		}
 
 		// log
@@ -319,20 +399,20 @@ func removeRemoteMode(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeI
 	}
 
 	// 容器列表
-	containers, err := start.GetRemoteContainersWithServices(sshRemote, workspaceInfo.ConfigYaml.GetServiceNames())
+	containers, err := start.GetRemoteContainersWithServices(sshRemote, workspaceInfo.ConfigYaml.GetServiceNames()) // 只能获取到运行中的容器
 	common.CheckError(err)
 	if len(containers) <= 0 {
 		common.SmartIDELog.Importance(i18nInstance.Start.Warn_docker_container_getnone)
 	}
 
 	// 远程主机上执行 docker-compose 删除容器
-	if len(containers) > 0 {
-		common.SmartIDELog.Info(i18nInstance.Remove.Info_docker_removing)
-		command := fmt.Sprintf(`docker-compose -f %v --project-directory %v down -v`,
-			common.FilePahtJoin4Linux(workspaceInfo.TempDockerComposeFilePath), common.FilePahtJoin4Linux(workspaceInfo.WorkingDirectoryPath))
-		err = sshRemote.ExecSSHCommandRealTime(command)
-		common.CheckError(err)
-	}
+	//	if len(containers) > 0 {
+	common.SmartIDELog.Info(i18nInstance.Remove.Info_docker_removing)
+	command := fmt.Sprintf(`docker-compose -f %v --project-directory %v down -v`,
+		common.FilePahtJoin4Linux(workspaceInfo.TempDockerComposeFilePath), common.FilePahtJoin4Linux(workspaceInfo.WorkingDirectoryPath))
+	err = sshRemote.ExecSSHCommandRealTime(command)
+	common.CheckError(err)
+	//	}
 
 	// 删除对应的镜像
 	if isRemoveAllComposeImages {

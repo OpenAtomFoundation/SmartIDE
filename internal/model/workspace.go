@@ -1,8 +1,8 @@
 /*
  * @Author: kenan
  * @Date: 2022-02-15 19:32:44
- * @LastEditors: kenan
- * @LastEditTime: 2022-02-17 14:03:13
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-03-16 15:08:21
  * @FilePath: /smartide-cli/internal/model/workspace.go
  * @Description:
  *
@@ -18,6 +18,14 @@ type WorkspaceListResponse struct {
 	Code int    `json:"code"`
 	Data Data   `json:"data"`
 	Msg  string `json:"msg"`
+}
+
+type WorkspaceResponse struct {
+	Code int `json:"code"`
+	Data struct {
+		ResmartideWorkspace ServerWorkspace `json:"resmartideWorkspaces"`
+	} `json:"data"`
+	Msg string `json:"msg"`
 }
 
 type Data struct {
@@ -107,6 +115,19 @@ const (
 	WorkspaceStatusEnum_Init WorkspaceStatusEnum = 0
 	//
 	WorkspaceStatusEnum_Pending WorkspaceStatusEnum = 101
-	WorkspaceStatusEnum_Start   WorkspaceStatusEnum = 109
-	WorkspaceStatusEnum_Stop    WorkspaceStatusEnum = 201
+	WorkspaceStatusEnum_Start   WorkspaceStatusEnum = 199
+
+	WorkspaceStatusEnum_Stopping WorkspaceStatusEnum = 201
+	WorkspaceStatusEnum_Stop     WorkspaceStatusEnum = 299
+
+	WorkspaceStatusEnum_Removing WorkspaceStatusEnum = 301
+	WorkspaceStatusEnum_Remove   WorkspaceStatusEnum = 399
+
+	WorkspaceStatusEnum_ContainerRemoving WorkspaceStatusEnum = 311
+	WorkspaceStatusEnum_ContainerRemoved  WorkspaceStatusEnum = 319
+
+	WorkspaceStatusEnum_Error_Start            WorkspaceStatusEnum = -100
+	WorkspaceStatusEnum_Error_Stop             WorkspaceStatusEnum = -201
+	WorkspaceStatusEnum_Error_Remove           WorkspaceStatusEnum = -301
+	WorkspaceStatusEnum_Error_ContainerRemoved WorkspaceStatusEnum = -302
 )

@@ -31,8 +31,8 @@ require (
 	github.com/spf13/viper v1.8.1
 	github.com/subosito/gotenv v1.2.0 // indirect
 	golang.org/x/net v0.0.0-20211209124913-491a49abca63 // indirect
-	golang.org/x/sys v0.0.0-20211007075335-d3039528d8ac // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/sys v0.0.0-20220128215802-99c3d69c2c27 // indirect
+	golang.org/x/text v0.3.7
 	google.golang.org/genproto v0.0.0-20210831024726-fe130286e0e2 // indirect
 	google.golang.org/grpc v1.40.0 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
@@ -158,7 +158,6 @@ require (
 )
 
 require (
-	github.com/bitly/go-simplejson v0.5.0
 	github.com/microsoft/ApplicationInsights-Go v0.4.4
 	github.com/thedevsaddam/gojsonq v2.3.0+incompatible
 	k8s.io/api v0.23.1

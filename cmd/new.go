@@ -146,8 +146,7 @@ var newCmd = &cobra.Command{
 						common.SmartIDELog.Info(i18nInstance.New.Info_creating_project)
 						for i := 0; i < len(typeCommand); i++ {
 							workFolder := fmt.Sprintf("/home/project/%v", worksapceInfo.GetProjectDirctoryName())
-							var cmdarr []string
-							cmdarr = strings.Split(typeCommand[i], " ")
+							cmdarr := strings.Split(typeCommand[i], " ")
 							out, err := docker.Exec(context.Background(), dockerContainerName, workFolder, cmdarr, []string{})
 							common.CheckError(err)
 							common.SmartIDELog.Debug(out)
@@ -269,8 +268,7 @@ func templatesClone() {
 
 //强制获取templates
 func forceTemplatesPull(gitFolder string) (errArry []string) {
-	var gitCmd exec.Cmd
-	gitCmd = *exec.Command("git", "fetch", "--all")
+	gitCmd := *exec.Command("git", "fetch", "--all")
 	gitCmd.Dir = gitFolder
 	gitErr := gitCmd.Run()
 	if gitErr != nil {

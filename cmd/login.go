@@ -1,8 +1,8 @@
 /*
  * @Author: kenan
  * @Date: 2022-02-10 16:51:36
- * @LastEditors: kenan
- * @LastEditTime: 2022-02-18 16:11:37
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-03-16 14:32:40
  * @FilePath: /smartide-cli/cmd/login.go
  * @Description:
  *
@@ -96,7 +96,7 @@ func loginWithToken(loginUrl, userName, token string) error {
 // 登录
 func login(loginUrl, userName, userPassword string) error {
 	url := fmt.Sprint(loginUrl, "/api/smartide/base/cliLogin")
-	response, err := common.PostJson(url, map[string]string{"username": userName, "password": userPassword}, map[string]string{"Content-Type": "application/json"})
+	response, err := common.PostJson(url, map[string]interface{}{"username": userName, "password": userPassword}, map[string]string{"Content-Type": "application/json"})
 	if err != nil {
 		return err
 	}

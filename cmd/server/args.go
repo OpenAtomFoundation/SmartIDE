@@ -33,32 +33,35 @@ func Check(cmd *cobra.Command) (err error) {
 		return nil
 	}
 
-	// server workspace id 不能为空；
+	// server workspace id 不能为空
 	err = checkFlagRequired(fflags, Flags_ServerWorkspaceid)
 	if err != nil {
 		return err
 	}
 
-	// token 不能为空；
-	err = checkFlagRequired(fflags, Flags_ServerToken)
-	if err != nil {
-		return err
-	}
+	// 当为start时
+	if strings.EqualFold(cmd.Name(), "start") {
+		// token 不能为空；
+		err = checkFlagRequired(fflags, Flags_ServerToken)
+		if err != nil {
+			return err
+		}
 
-	// username、user guid不能为空；
-	err = checkFlagRequired(fflags, Flags_ServerUsername)
-	if err != nil {
-		return err
-	}
-	err = checkFlagRequired(fflags, Flags_ServerUserGUID)
-	if err != nil {
-		return err
-	}
+		// username、user guid不能为空；
+		err = checkFlagRequired(fflags, Flags_ServerUsername)
+		if err != nil {
+			return err
+		}
+		err = checkFlagRequired(fflags, Flags_ServerUserGUID)
+		if err != nil {
+			return err
+		}
 
-	// feedback 地址不能为空
-	err = checkFlagRequired(fflags, Flags_ServerFeedback)
-	if err != nil {
-		return err
+		// feedback 地址不能为空
+		err = checkFlagRequired(fflags, Flags_ServerFeedback)
+		if err != nil {
+			return err
+		}
 	}
 
 	common.SmartIDELog.Info("Mode server params validation passed.")

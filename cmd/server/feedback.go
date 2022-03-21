@@ -95,57 +95,25 @@ func FeeadbackExtend(auth model.Auth, workspaceInfo workspace.WorkspaceInfo) err
 	return nil
 }
 
-// 触发 stop
-func Trigger_Stop(cmd *cobra.Command, host string) error {
-	fflags := cmd.Flags()
+// 触发 remove
+func Trigger_Action(action string, serverWorkspaceNo string, host string, auth model.Auth, datas map[string]interface{}) error {
 
-	mode, _ := fflags.GetString(Flags_Mode)
-	if strings.ToLower(mode) != "server" {
-		return nil
+	if action != "stop" && action != "remove" {
+		return errors.New("当前方法仅支持stop 或 remove")
 	}
 
-	// 验证参数是否有值
-	Check(cmd)
-
-	// 从cmd参数中获取相关信息
-	serverWorkspaceid, _ := fflags.GetString(Flags_ServerWorkspaceid)
-
-	url := host + "/api/smartide//workspace/stop"
-	datas := map[string]string{}
-	datas["id"] = serverWorkspaceid
-	response, err := common.PostJson(url, datas, nil)
+	url, err := common.UrlJoin(host, "/api/smartide/workspace/", action)
 	if err != nil {
 		return err
 	}
+	datas["no"] = serverWorkspaceNo
 
-	code := gojsonq.New().JSONString(response).Find("code").(float64)
-	if code != 0 {
-		msg := gojsonq.New().JSONString(response).Find("msg")
-		return fmt.Errorf("stop fail: %q", msg)
+	header := map[string]string{
+		"Content-Type": "application/json",
+		"x-token":      auth.Token.(string),
 	}
 
-	return nil
-}
-
-// 触发 remove
-func Trigger_Remove(host string, cmd *cobra.Command) error {
-	fflags := cmd.Flags()
-
-	mode, _ := fflags.GetString(Flags_Mode)
-	if strings.ToLower(mode) != "server" {
-		return nil
-	}
-
-	// 验证参数是否有值
-	Check(cmd)
-
-	// 从cmd参数中获取相关信息
-	serverWorkspaceid, _ := fflags.GetString(Flags_ServerWorkspaceid)
-
-	url := host + "/api/smartide//workspace/remove"
-	datas := map[string]string{}
-	datas["id"] = serverWorkspaceid
-	response, err := common.PostJson(url, datas, nil)
+	response, err := common.Put(url.String(), datas, header)
 	if err != nil {
 		return err
 	}
@@ -167,7 +135,7 @@ func Feedback_Finish(feedbackCommand FeedbackCommandEnum, cmd *cobra.Command,
 
 	mode, _ := cmd.Flags().GetString(Flags_Mode)
 	if strings.ToLower(mode) != "server" {
-		return nil
+		return errors.New("当前仅支持在 mode=server 的模式下运行！")
 	}
 
 	// 验证参数是否有值
@@ -183,29 +151,63 @@ func Feedback_Finish(feedbackCommand FeedbackCommandEnum, cmd *cobra.Command,
 	tempDockerComposeContent, _ := workspaceInfo.TempDockerCompose.ToYaml()
 	linkDockerCompose, _ := workspaceInfo.LinkDockerCompose.ToYaml()
 	extend := workspaceInfo.Extend.ToJson()
-	_feedbackRequest := feedbackRequest{
-		Command: string(feedbackCommand),
+	/* 	_feedbackRequest := feedbackRequest{
+	   		Command: string(feedbackCommand),
 
-		ServerWorkspaceId:        serverWorkspaceid,
-		ServerUserName:           serverUserName,
-		ServerUserGuid:           serverUserGuid,
-		IsSuccess:                isSuccess,
-		WebidePort:               webidePort,
-		Message:                  message,
-		ConfigFileContent:        configFileContent,
-		TempDockerComposeContent: tempDockerComposeContent,
-		LinkDockerCompose:        linkDockerCompose,
-		Extend:                   extend,
+	   		ServerWorkspaceId:        serverWorkspaceid,
+	   		ServerUserName:           serverUserName,
+	   		ServerUserGuid:           serverUserGuid,
+	   		IsSuccess:                isSuccess,
+	   		WebidePort:               webidePort,
+	   		Message:                  message,
+	   		ConfigFileContent:        configFileContent,
+	   		TempDockerComposeContent: tempDockerComposeContent,
+	   		LinkDockerCompose:        linkDockerCompose,
+	   		Extend:                   extend,
+	   	}
+	   	err := _feedbackRequest.Check()
+
+	   	if err != nil {
+	   		return err
+	   	}
+	*/
+
+	if serverUserName == "" {
+		return errors.New("ServerUserName is nil")
 	}
-	err := _feedbackRequest.Check()
-	if err != nil {
-		return err
+	if serverUserGuid == "" {
+		return errors.New("ServerUserGuid is nil")
+	}
+	if serverWorkspaceid == "" {
+		return errors.New("ServerWorkspaceId is nil")
 	}
 	if serverFeedbackUrl == "" {
 		return errors.New("serverFeedbackUrl is nil")
 	}
 
-	// 请求体
+	datas := map[string]interface{}{
+		"serverWorkspaceid": serverWorkspaceid,
+		"serverUserName":    serverUserName,
+		"serverUserGuid":    serverUserGuid,
+		"isSuccess":         isSuccess,
+		"webidePort":        webidePort,
+		"message":           message,
+	}
+	if feedbackCommand == FeedbackCommandEnum_Start { // 只有start的时候，才需要传递文件内容
+		datas["configFileContent"] = configFileContent
+		datas["tempDockerComposeContent"] = tempDockerComposeContent
+		datas["linkDockerCompose"] = linkDockerCompose
+		datas["extend"] = extend
+	}
+	headers := map[string]string{"Content-Type": "application/json", "x-token": serverToken}
+	response, err := common.PostJson(serverFeedbackUrl, datas, headers)
+
+	if err != nil {
+		return err
+	}
+	common.SmartIDELog.Info(response)
+
+	/* // 请求体
 	jsonBytes, err := json.Marshal(_feedbackRequest)
 	if err != nil {
 		return err
@@ -237,7 +239,7 @@ func Feedback_Finish(feedbackCommand FeedbackCommandEnum, cmd *cobra.Command,
 	respBody, _ := ioutil.ReadAll(resp.Body)
 	printRespStr := fmt.Sprintf("response status code: %v, head: %v, body: %s", resp.StatusCode, resp.Header, string(respBody))
 	common.SmartIDELog.Debug(printRespStr)
-	common.SmartIDELog.Info(string(respBody))
+	common.SmartIDELog.Info(string(respBody)) */
 
 	return nil
 }

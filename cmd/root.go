@@ -126,6 +126,7 @@ func init() {
 	rootCmd.AddCommand(configCmd)
 
 	rootCmd.AddCommand(loginCmd)
+	rootCmd.AddCommand(logoutCmd)
 	rootCmd.AddCommand(connectCmd)
 
 	// 不允许命令直接按照名称排序

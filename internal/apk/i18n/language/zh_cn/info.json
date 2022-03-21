@@ -170,7 +170,7 @@
     "version": {
         "info_help_short": "查看版本信息",
         "info_help_long": "查看版本信息",
-        "info_template": "版本号: %v\n构建号: %v\n编译时间: %v\n提交记录: %v\n发行商: %v"
+        "info_template": "版本号: %v\n操作系统: %v\n构建号: %v\n编译时间: %v\n提交记录: %v\n发行商: %v"
     },
     "vm_start": {
         "info_starting": "远程主机模式启动中 ...",

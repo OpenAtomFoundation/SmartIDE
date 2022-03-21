@@ -30,27 +30,34 @@ var connectCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		connectedWorkspaceIds := []string{} // 已启动工作区
 
+		currentAuth, err := checkLogin(cmd)
+		common.CheckError(err)
+		if (currentAuth == model.Auth{}) {
+			common.SmartIDELog.Error("用户登录信息为空！")
+			return
+		}
+		common.SmartIDELog.Info("login for: " + currentAuth.LoginUrl)
+
 		for {
-			connect(cmd, args, &connectedWorkspaceIds)
+			connect(cmd, currentAuth, args, &connectedWorkspaceIds)
 
 			time.Sleep(time.Second * 10)
 		}
 	},
 }
 
-func connect(cmd *cobra.Command, args []string, connectedWorkspaceIds *[]string) {
-	var serverWorkSpaces []workspace.WorkspaceInfo
-
+// 检查并获取当前登录用户的信息
+func checkLogin(cmd *cobra.Command) (currentAuth model.Auth, err error) {
 	// 确保登录
 	isLogged := false
 	for !isLogged {
 		// 查找所有的工作区
-		currentAuth, err := workspace.GetCurrentUser()
+		currentAuth, err = workspace.GetCurrentUser()
 		common.CheckError(err)
 
 		if currentAuth != (model.Auth{}) && currentAuth.Token != "" && currentAuth.Token != nil {
 			// 从api 获取workspace
-			serverWorkSpaces, err = workspace.GetServerWorkspaceList(currentAuth)
+			_, err = workspace.GetServerWorkspaceList(currentAuth)
 			if err != nil {
 				common.SmartIDELog.Importance(err.Error())
 				common.SmartIDELog.Importance("token 已失效，请重新登录！")
@@ -74,8 +81,22 @@ func connect(cmd *cobra.Command, args []string, connectedWorkspaceIds *[]string)
 		}
 	}
 
+	return
+}
+
+func connect(cmd *cobra.Command, currentAuth model.Auth, args []string, connectedWorkspaceIds *[]string) {
+	//
+	serverWorkSpaces, err := workspace.GetServerWorkspaceList(currentAuth)
+	var startedServerWorkspaces []workspace.WorkspaceInfo
+	for _, item := range serverWorkSpaces {
+		if item.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Start {
+			startedServerWorkspaces = append(startedServerWorkspaces, item)
+		}
+	}
+	common.CheckError(err)
+
 	// print
-	if len(serverWorkSpaces) == 0 {
+	if len(startedServerWorkspaces) == 0 {
 		common.SmartIDELog.ImportanceWithConfig(common.LogConfig{RepeatDependSecond: -1}, "请等待server工作区启动！")
 	}
 
@@ -87,7 +108,7 @@ func connect(cmd *cobra.Command, args []string, connectedWorkspaceIds *[]string)
 	}
 
 	// 启动工作区
-	for _, workspaceInfo := range serverWorkSpaces {
+	for _, workspaceInfo := range startedServerWorkspaces {
 		if workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Start &&
 			!common.Contains(*connectedWorkspaceIds, workspaceInfo.ServerWorkSpace.NO) {
 
@@ -104,12 +125,6 @@ func connect(cmd *cobra.Command, args []string, connectedWorkspaceIds *[]string)
 
 			// 加入到已连接数组
 			*connectedWorkspaceIds = append(*connectedWorkspaceIds, workspaceInfo.ServerWorkSpace.NO)
-		} else { // 触发最后更新时间
-
-			/* err = smartideServer.FeeadbackExtend(currentAuth, workspaceInfo)
-			if err != nil {
-				common.SmartIDELog.Importance(err.Error())
-			} */
 		}
 	}
 }

@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2022-02-21 15:48:43
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-03-16 14:13:50
  */
 package start
 
@@ -178,7 +178,7 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo,
 			common.OpenBrowser(url)
 			common.SmartIDELog.InfoF(i18nInstance.VmStart.Info_open_brower, url)
 		} else {
-			msg := fmt.Sprintf("%v 检测失败", url)
+			msg := fmt.Sprintf("%v 等待启动", url)
 			common.SmartIDELog.Debug(msg)
 		}
 	}
