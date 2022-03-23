@@ -1,1 +1,1 @@
-registry.cn-hangzhou.aliyuncs.com/smartide/smartide-golang-v2:1746
+registry.cn-hangzhou.aliyuncs.com/smartide/smartide-golang-v2:2766
