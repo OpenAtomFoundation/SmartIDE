@@ -4,7 +4,7 @@
 # Copyright (C) leansoftX.com
 #################################################
 
-FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-java-v2:2767
+FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-java-v2:2801
 
 USER root
 

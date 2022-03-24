@@ -4,7 +4,7 @@
 # Copyright (C) leansoftX.com
 #################################################
 
-FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-golang-v2:2766
+FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-golang-v2:2800
 
 USER root
 
