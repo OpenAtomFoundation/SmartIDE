@@ -4,7 +4,7 @@
 # Copyright (C) leansoftX.com
 #################################################
 
-FROM #{SMARTIDEBASEVERSION}#
+FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-v2:2782
 
 USER root
 

@@ -46,8 +46,7 @@ RUN chmod 644 $PROJECTOR_DIR/ide/projector-server/lib/*
 
 # -------------配置运行环境
 
-#FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-v2:1725
-FROM #{SMARTIDEBASEVERSION}#
+FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-v2:2782
 
 RUN true \
 # Any command which returns non-zero exit code will cause this shell script to exit immediately:

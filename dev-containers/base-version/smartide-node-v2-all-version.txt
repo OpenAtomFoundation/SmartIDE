@@ -1,1 +1,0 @@
-registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-v2:2782
