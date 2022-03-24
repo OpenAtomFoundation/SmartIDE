@@ -1,6 +1,6 @@
 ---
-title: "SmartIDE Sprint 13 Server版内测 (v0.1.13)"
-linkTitle: "v0.1.13 Server版内测"
+title: "SmartIDE Sprint 14 Server版内测 (v0.1.14)"
+linkTitle: "v0.1.14 Server版内测"
 date: 2022-03-07
 description: >
   Server版内测，cli发布linux版本，开发者镜像开源。

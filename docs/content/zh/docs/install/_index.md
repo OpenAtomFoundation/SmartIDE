@@ -36,6 +36,7 @@ SmartIDE 通过调用docker和docker-compose来实现容器化环境的管理，
 
 | 版本号      | 构建编号 | 发布日期      |   简要说明   |
 | ----------- | ----------- | ----------- | ----------- |
+| [v0.1.14](/zh/blog/2022-0309-sprint14/)     | 2505 | 2022.03.21 | 修复若干bug，Linux 版 SmartIDE CLI 工具发布，完成Server版开发集成       |
 | v0.1.11     | 2035 | 2022.02.08 | 修复若干bug，启动Server版开发集成       |
 | v0.1.10     | 1829 | 2022.01.18 | 简化版指令集，k8s start可用，开源项目gin-vue-admin适配       |
 | [v0.1.9](/zh/blog/2022-0104-sprint9/)          | 1753 | 2022.01.01 | 稳定性和体验性加强，k8s Start, Image V2 体系开发，JetBrain体系WebIDE支持       |

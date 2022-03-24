@@ -62,12 +62,14 @@ smartide   ALL=(ALL) NOPASSWD: ALL
 
 > 使用以上创建的smartide用户或者其他符合要求的非root用户登陆服务器。
 
-使用以下命令在Linux主机上安装docker和docker-compose工具，运行完成之后请从当前终端登出并从新登入以便脚本完成生效。
+使用以下命令在Linux主机上安装docker和docker-compose工具，**运行完成之后请从当前终端登出并从新登入以便脚本完成生效**。
 
 ```bash
 # 通过ssh连接到你的Linux主机，复制并粘贴此命令到终端
-# 注意*不要*使用sudo方式运行此脚本
+# 注意不要使用sudo方式运行此脚本
 curl -o- https://smartidedl.blob.core.chinacloudapi.cn/docker/linux/docker-install.sh | bash
+# 退出当前登录
+exit
 ```
 
 完成以上操作后，请运行以下命令测试 docker 和 docker-compose 正常安装。

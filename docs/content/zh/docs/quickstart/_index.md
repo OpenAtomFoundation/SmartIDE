@@ -115,12 +115,12 @@ smartide start --host <远程主机ID> https://gitee.com/idcf-boat-house/boathou
 Boathouse计算器 是一个已经适配好 SmartIDE 开发环境的应用，如果你希望了解如何使用 SmartIDE 从头创建一个全新的项目，我们还为你准备了一系列针对不同开发技术栈的快速启动教程：
 
 - [Node.JS](/zh/docs/quickstart/node/)
-- Golang 
-- Java 
+- Golang
+- [Java](/zh/docs/quickstart/java/)
 - .NetCore 
 - Python 
 - PHP 
-- c/c++
+- C/C++
 
 ## 开源项目项目SmartIDE适配
 
