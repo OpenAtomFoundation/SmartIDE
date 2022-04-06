@@ -15,6 +15,13 @@ SmartIDE内置了Java开发环境模板，你可以通过一个简单的指令�
 
 ## VSCode
 
+### 完整操作视频
+
+为了便于大家更直观地了解和使用SmartIDE创建Java环境，并开始Spring Web项目的开发和调试，我们在B站提上提供了视频供大家参考，视频如下：
+{{< bilibili 851717139 >}}
+
+跳转到B站：<a href="https://www.bilibili.com/video/BV13L4y1j7X5" target="_blank"> ` https://www.bilibili.com/video/BV13L4y1j7X5 `</a>
+
 ###  1. 创建开发环境
 
 运行以下命令创建Java开发环境：
@@ -22,8 +29,8 @@ SmartIDE内置了Java开发环境模板，你可以通过一个简单的指令�
 ```shell
 # 在 MacOS/Windows 上打开 终端（Terminal）或者 PowerShell 应用
 # 执行以下命令
-mkdir sample-vscode-java 
-cd sample-vscode-java
+mkdir sample-java-vscode 
+cd sample-java-vscode
 smartide new java -t vscode
 ```
 
@@ -256,8 +263,8 @@ smartide start https://gitee.com/smartide/sample-java-vscode
 运行以下命令创建Spring Web项目开发环境：
 
 ```
-mkdir sample-idea-java
-cd sample-idea-java
+mkdir sample-java-idea
+cd sample-java-idea
 smartide new java -t idea
 ```
 
@@ -417,12 +424,12 @@ git add .
 # 提交
 git commit -m "使用SmartIDE创建smartide-java-demo"
 # 添加远端地址
-git remote add origin https://gitee.com/smartide/sample-idea-java
+git remote add origin https://gitee.com/smartide/sample-java-idea
 # 推送到远端
 git push -u origin "master"
 ```
 
-> 这时，我们可以将创建的这份代码推送到了类似Gitee的代码仓库上，代码库地址类似如下 https://gitee.com/smartide/sample-idea-java
+> 这时，我们可以将创建的这份代码推送到了类似Gitee的代码仓库上，代码库地址类似如下 https://gitee.com/smartide/sample-java-idea
 
 至此，我们已经使用 SmartIDE 完成了一个Spring Web 应用从环境搭建，创建基础代码结构，完成编码开发调试到提交代码的全过程。
 
