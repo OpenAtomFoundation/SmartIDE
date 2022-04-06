@@ -18,9 +18,9 @@ SmartIDE内置了Java开发环境模板，你可以通过一个简单的指令�
 ### 完整操作视频
 
 为了便于大家更直观地了解和使用SmartIDE创建Java环境，并开始Spring Web项目的开发和调试，我们在B站提上提供了视频供大家参考，视频如下：
-{{< bilibili 851717139 >}}
+{{< bilibili 852887843 >}}
 
-跳转到B站：<a href="https://www.bilibili.com/video/BV13L4y1j7X5" target="_blank"> ` https://www.bilibili.com/video/BV13L4y1j7X5 `</a>
+跳转到B站：<a href="https://www.bilibili.com/video/av852887843" target="_blank"> ` https://www.bilibili.com/video/av852887843 `</a>
 
 ###  1. 创建开发环境
 
