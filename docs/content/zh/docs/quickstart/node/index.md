@@ -22,8 +22,8 @@ SmartIDE内置了node.js开发环境模板，你可以通过一个简单的指�
 ```shell
 # 在 MacOS/Windows 上打开 终端（Terminal）或者 PowerShell 应用
 # 执行以下命令
-mkdir sample-vscode-node 
-cd sample-vscode-node  
+mkdir sample-node-vscode 
+cd sample-node-vscode  
 smartide new node -t vscode
 ```
 
@@ -58,11 +58,11 @@ npm install -g express-generator
 express --view=pug myapp
 ```
 
-执行完毕后的效果如下，左侧文件管理器里面已经出现了 newapp 文件夹，并在其中创建了 node express 应用的基础代码结构，右侧 Terminal 窗口中列出了创建过程的日志信息。
+执行完毕后的效果如下，左侧文件管理器里面已经出现了 myapp 文件夹，并在其中创建了 node express 应用的基础代码结构，右侧 Terminal 窗口中列出了创建过程的日志信息。
 
 ![Node Express Generator](images/quickstart-node004.png)
 
-使用以下内容对 **/newapp/package.json** 文件进行全文替换，这里我们设置了几个关键配置
+使用以下内容对 **/myapp/package.json** 文件进行全文替换，这里我们设置了几个关键配置
 
 - 设置了 npm start 启动脚本使用 production 环境变量和 3001 端口
 - 设置了 npm run dev 启动脚本使用 development 环境变量、 3001 端口，并且使用 nodemon 工具提供更好的调试体验
@@ -178,12 +178,15 @@ SmartIDE 环境中已经内置了 Git 的支持，你可以点击 **菜单栏左
 
 ![Commit](images/quickstart-node015.png)
 
+> 这时，我们可以将创建的这份代码推送到了类似Gitee的代码仓库上，代码库地址类似如下
+> https://gitee.com/smartide/sample-node-vscode
+
 至此，我们已经使用 SmartIDE 完成了一个 Node Express 应用从环境搭建，创建基础代码结构，配置调试环境，完成编码开发到提交代码的全过程。
 
 **现在可以将你的代码库发送给其他的小伙伴，让他通过以下指令一键启动你的应用。**
 
 ```shell
-smartide start [remote-repository-clone-url]
+smartide start https://gitee.com/smartide/sample-node-vscode
 ```
 
 是不是很爽！
@@ -195,8 +198,8 @@ smartide start [remote-repository-clone-url]
 运行以下命令创建React前端项目开发环境：
 
 ```
-mkdir sample-webstorm-react
-cd sample-webstorm-react
+mkdir sample-node-webstorm
+cd sample-node-webstorm
 smartide new node -t webstorm
 ```
 
@@ -280,12 +283,15 @@ npm config get registry
 
 ![Commit](images/quickstart-node-webstorm15.png)
 
+> 这时，我们可以将创建的这份代码推送到了类似Gitee的代码仓库上，代码库地址类似如下
+> https://gitee.com/smartide/sample-node-webstorm
+
 至此，我们已经使用 SmartIDE 完成了一个React前端 应用从环境搭建，创建基础代码结构，完成编码开发到提交代码的全过程。
 
 **现在可以将你的代码库发送给其他的小伙伴，让他通过以下指令一键启动你的应用。**
 
 ```shell
-smartide start [remote-repository-clone-url]
+smartide start https://gitee.com/smartide/sample-node-webstorm
 ```
 
 是不是很爽！
@@ -301,8 +307,8 @@ smartide start [remote-repository-clone-url]
 ```shell
 # 在 MacOS/Windows 上打开 终端（Terminal）或者 PowerShell 应用
 # 执行以下命令
-mkdir sample-opensumi-node 
-cd sample-opensumi-node  
+mkdir sample-node-opensumi 
+cd sample-node-opensumi 
 smartide new node -t opensumi
 ```
 
@@ -335,11 +341,11 @@ npm install -g express-generator
 express --view=pug myapp
 ```
 
-执行完毕后的效果如下，左侧文件管理器里面已经出现了 newapp 文件夹，并在其中创建了 node express 应用的基础代码结构，右侧 Terminal 窗口中列出了创建过程的日志信息。
+执行完毕后的效果如下，左侧文件管理器里面已经出现了 myapp 文件夹，并在其中创建了 node express 应用的基础代码结构，右侧 Terminal 窗口中列出了创建过程的日志信息。
 
 ![Node Express Generator](images/quickstart-opensumi003.png)
 
-使用以下内容对 **/newapp/package.json** 文件进行全文替换，这里我们设置了几个关键配置
+使用以下内容对 **/myapp/package.json** 文件进行全文替换，这里我们设置了几个关键配置
 
 - 设置了 npm start 启动脚本使用 production 环境变量和 3001 端口
 - 设置了 npm run dev 启动脚本使用 development 环境变量、 3001 端口，并且使用 nodemon 工具提供更好的调试体验
@@ -448,17 +454,20 @@ SmartIDE 环境中已经内置了 Git 的支持，你可以点击 **菜单栏左
 
 至此，我们已经使用 SmartIDE 完成了一个 Node Express 应用从环境搭建，创建基础代码结构，配置调试环境，完成编码开发到提交代码的全过程。
 
+> 这时，我们可以将创建的这份代码推送到了类似Gitee的代码仓库上，代码库地址类似如下
+> https://gitee.com/smartide/sample-node-opensumi
+
 **现在可以将你的代码库发送给其他的小伙伴，让他通过以下指令一键启动你的应用。**
 
 ```shell
-smartide start [remote-repository-clone-url]
+smartide start https://gitee.com/smartide/sample-node-opensumi
 ```
 
 是不是很爽！
 
 ## 远程开发
 
-上面我们已经使用SmartIDE的本地工作区模式完成了一个应用的创建和开发过程，这个过程和你所熟悉的开发模式有2个区别，1）我们使用了VSCode WebIDE；2）开发环境全部通过容器获取并运行。
+上面我们已经使用SmartIDE的本地工作区模式完成了一个应用的创建和开发过程，这个过程和你所熟悉的开发模式有2个区别，1）我们使用了VSCode/Webstorm/OpenSumi WebIDE；2）开发环境全部通过容器获取并运行。
 
 在这个过程中你的项目代码也已经具备了远程开发的能力，你可以按照以下文档中的说明使用任意一种远程工作区来开发调试你的应用
 
