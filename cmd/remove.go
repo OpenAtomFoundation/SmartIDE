@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-03-16 15:42:14
+ * @LastEditTime: 2022-04-06 17:56:32
  */
 package cmd
 
@@ -25,7 +25,8 @@ import (
 	"github.com/leansoftX/smartide-cli/pkg/kubectl"
 	"github.com/spf13/cobra"
 	"gopkg.in/src-d/go-git.v4"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	//metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/leansoftX/smartide-cli/cmd/server"
 	"github.com/leansoftX/smartide-cli/cmd/start"
@@ -71,28 +72,64 @@ var removeCmd = &cobra.Command{
 	smartide remove [--workspaceid] {workspaceid} [-y] [-s] [-c] [-i] [-f]`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		common.SmartIDELog.Info(i18nInstance.Remove.Info_start)
 		mode, _ := cmd.Flags().GetString("mode")
+		workspaceIdStr := getWorkspaceIdFromFlagsAndArgs(cmd, args)
+		if strings.ToLower(mode) == "server" || strings.Contains(workspaceIdStr, "SWS") {
+			serverModeInfo, _ := server.GetServerModeInfo(cmd)
+			if serverModeInfo.ServerHost != "" {
+				wsURL := fmt.Sprint(strings.ReplaceAll(strings.ReplaceAll(serverModeInfo.ServerHost, "https", "ws"), "http", "ws"), "/ws/smartide/ws")
+				action := 0
+				if removeCmdFlag.IsOnlyRemoveContainer {
+					action = 3
+				}
+				if removeCmdFlag.IsRemoveAllComposeImages && removeCmdFlag.IsRemoveRemoteDirectory {
+					action = 4
+				}
+				common.WebsocketStart(wsURL)
+				if action != 0 {
+					if pid, err := workspace.GetParentId(workspaceIdStr, action, serverModeInfo.ServerToken, serverModeInfo.ServerHost); err == nil && pid > 0 {
+						common.SmartIDELog.Ws_id = workspaceIdStr
+						common.SmartIDELog.ParentId = pid
+					}
+				}
+
+			}
+		}
+
+		common.SmartIDELog.Info(i18nInstance.Remove.Info_start)
 
 		//1. 获取 workspace 信息
 		common.SmartIDELog.Info(i18nInstance.Main.Info_workspace_loading) // log
 		var workspaceInfo workspace.WorkspaceInfo                         // defined
-		currentAuth, err := workspace.GetCurrentUser()                    // 当前登录信息
-		common.CheckError(err)
-		workspaceIdStr := getWorkspaceIdFromFlagsAndArgs(cmd, args)
+		var err error = nil
+
+		// 检查错误并feedback
+		var checkErrorFeedback = func(err error) {
+			if err != nil {
+				server.Feedback_Finish(server.FeedbackCommandEnum_Remove, cmd, false, 0, workspaceInfo, err.Error())
+			}
+			common.CheckError(err)
+		}
+		var currentServerAuth model.Auth // 当前服务区用户，在mode server 模式下才会赋值
+
 		if strings.ToLower(mode) == "server" || strings.Contains(workspaceIdStr, "SWS") { // 当mode=server时，从server端反调数据
+			// 当前服务端授权用户信息
+			serverModeInfo, err := server.GetServerModeInfo(cmd)
+			checkErrorFeedback(err)
+			currentServerAuth = model.Auth{
+				UserName: serverModeInfo.ServerUsername,
+				Token:    serverModeInfo.ServerToken,
+				LoginUrl: serverModeInfo.ServerHost,
+			}
+
 			// 从远程服务器上查询工作区信息
-			workspaceInfo, err = workspace.GetWorkspaceFromServer(currentAuth, workspaceIdStr)
-			if err == nil {
+			workspaceInfo, err = workspace.GetWorkspaceFromServer(currentServerAuth, workspaceIdStr)
+			if err == nil { // 检查数据是否为空
 				if workspaceInfo.ID == "" || workspaceInfo.ServerWorkSpace.NO == "" {
 					err = fmt.Errorf("没有查询到 %v 对应的工作区数据！", workspaceIdStr)
 				}
 			}
-			if err != nil { // 有错误，反馈到server
-				msg := err.Error()
-				server.Feedback_Finish(server.FeedbackCommandEnum_Remove, cmd, false, 0, workspaceInfo, msg)
-			}
-			common.CheckError(err)
+			checkErrorFeedback(err)
 
 		} else {
 			workspaceInfo = loadWorkspaceWithDb(cmd, args)
@@ -157,18 +194,19 @@ var removeCmd = &cobra.Command{
 			common.CheckError(err)
 
 		} else if workspaceInfo.Mode == workspace.WorkingMode_Server { // 录入的是服务端工作区id
+
 			// 触发remove
 			datas := make(map[string]interface{})
 			if removeCmdFlag.IsOnlyRemoveContainer {
 				datas["isOnlyRemoveContainer"] = true
 			}
-			err = server.Trigger_Action("remove", workspaceIdStr, currentAuth.LoginUrl, currentAuth, datas)
+			err = server.Trigger_Action("remove", workspaceIdStr, currentServerAuth, datas)
 			common.CheckError(err)
 
 			// 轮询检查工作区状态
-			isRemove := false
-			for !isRemove {
-				serverWorkSpace, err := workspace.GetWorkspaceFromServer(currentAuth, workspaceInfo.ID)
+			isRemoved := false
+			for !isRemoved {
+				serverWorkSpace, err := workspace.GetWorkspaceFromServer(currentServerAuth, workspaceInfo.ID)
 				if err != nil {
 					common.SmartIDELog.Importance(err.Error())
 				}
@@ -176,11 +214,26 @@ var removeCmd = &cobra.Command{
 					serverWorkSpace.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Error_Remove ||
 					serverWorkSpace.ServerWorkSpace.Status == model.WorkspaceStatusEnum_ContainerRemoved ||
 					serverWorkSpace.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Error_ContainerRemoved {
-					isRemove = true
+					isRemoved = true
 				}
 
 				time.Sleep(time.Second * 15)
 			}
+
+		} else if workspaceInfo.Mode == workspace.WorkingMode_K8s { // k8s 模式
+			common.SmartIDELog.Info(i18nInstance.Remove.Info_workspace_removing)
+			common.SmartIDELog.Info("移除k8s资源...")
+			kubernetes, err := kubectl.NewKubernetes(workspaceInfo.K8sInfo.Namespace)
+			common.CheckError(err)
+			output, err := kubernetes.ExecKubectlCommandCombined("delete -f "+workspaceInfo.TempDockerComposeFilePath, "")
+			common.SmartIDELog.Debug(output)
+			common.CheckError(err)
+
+			common.SmartIDELog.Info("删除数据...")
+			i, err := strconv.Atoi(workspaceInfo.ID)
+			common.CheckError(err)
+			err = dal.RemoveWorkspace(i)
+			common.CheckError(err)
 
 		} else { // 普通模式下
 			if removeMode == RemoteMode_None || removeMode == RemoteMode_OnlyRemoveContainer { // 仅删除容器的话，就不去远程主机上进行操作
@@ -348,12 +401,12 @@ func removeK8sMode(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeImag
 
 	// 删除deployment
 	if workspaceInfo.K8sInfo.DeploymentName != "" {
-		kubeConfig, err := kubectl.InitKubeConfig(false, workspaceInfo.K8sInfo.Context)
+		/* kubeConfig, err := kubectl.InitKubeConfig(false, workspaceInfo.K8sInfo.Context)
 		common.CheckError(err)
 		clientset, err := kubectl.NewClientSet(kubeConfig)
 		deploymentsClient := clientset.AppsV1().Deployments(workspaceInfo.K8sInfo.Namespace)
 		err = deploymentsClient.Delete(context.TODO(), workspaceInfo.K8sInfo.DeploymentName, metav1.DeleteOptions{})
-		return err
+		return err */
 	}
 
 	return nil

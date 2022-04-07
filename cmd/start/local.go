@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-03-16 14:13:50
+ * @LastEditTime: 2022-04-06 18:21:01
  */
 package start
 
@@ -156,30 +156,37 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo,
 	endPostExecuteFun(dockerContainerName, docker)
 
 	//7. 使用浏览器打开web ide
-	common.SmartIDELog.Info(i18nInstance.Start.Info_running_openbrower)
-	// vscode启动时候默认打开文件夹处理
-	var url string
-	switch strings.ToLower(currentConfig.Workspace.DevContainer.IdeType) {
-	case "vscode":
-		url = fmt.Sprintf("http://localhost:%v/?folder=vscode-remote://localhost:%v%v",
-			ideBindingPort, ideBindingPort, workspaceInfo.GetContainerWorkingPathWithVolumes())
-	case "jb-projector":
-		url = fmt.Sprintf(`http://localhost:%v`, ideBindingPort)
-	default:
-		url = fmt.Sprintf(`http://localhost:%v`, ideBindingPort)
-	}
+	if currentConfig.Workspace.DevContainer.IdeType != config.IdeTypeEnum_SDKOnly {
+		common.SmartIDELog.Info(i18nInstance.Start.Info_running_openbrower)
+		// vscode启动时候默认打开文件夹处理
+		var url string
+		switch currentConfig.Workspace.DevContainer.IdeType {
+		case config.IdeTypeEnum_VsCode:
+			url = fmt.Sprintf("http://localhost:%v/?folder=vscode-remote://localhost:%v%v",
+				ideBindingPort, ideBindingPort, workspaceInfo.GetContainerWorkingPathWithVolumes())
+		case config.IdeTypeEnum_JbProjector:
+			url = fmt.Sprintf(`http://localhost:%v`, ideBindingPort)
+		case config.IdeTypeEnum_Opensumi:
+			url = fmt.Sprintf(`http://localhost:%v/?workspaceDir=/home/project`, ideBindingPort)
+		default:
+			url = fmt.Sprintf(`http://localhost:%v`, ideBindingPort)
+		}
 
-	common.SmartIDELog.Info(i18nInstance.VmStart.Info_warting_for_webide)
-	isUrlReady := false
-	for !isUrlReady {
-		resp, err := http.Get(url)
-		if (err == nil) && (resp.StatusCode == 200) {
-			isUrlReady = true
-			common.OpenBrowser(url)
-			common.SmartIDELog.InfoF(i18nInstance.VmStart.Info_open_brower, url)
-		} else {
-			msg := fmt.Sprintf("%v 等待启动", url)
-			common.SmartIDELog.Debug(msg)
+		common.SmartIDELog.Info(i18nInstance.VmStart.Info_warting_for_webide)
+		isUrlReady := false
+		for !isUrlReady {
+			resp, err := http.Get(url)
+			if (err == nil) && (resp.StatusCode == 200) {
+				isUrlReady = true
+				err := common.OpenBrowser(url)
+				if err != nil {
+					common.SmartIDELog.Importance(err.Error())
+				}
+				common.SmartIDELog.InfoF(i18nInstance.VmStart.Info_open_brower, url)
+			} else {
+				msg := fmt.Sprintf("%v 等待启动", url)
+				common.SmartIDELog.Debug(msg)
+			}
 		}
 	}
 

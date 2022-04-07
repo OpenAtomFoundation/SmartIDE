@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2022-02-25
- * @LastEditors:
- * @LastEditTime:
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-03-31 20:40:14
  */
 package cmd
 
@@ -97,7 +97,7 @@ func connect(cmd *cobra.Command, currentAuth model.Auth, args []string, connecte
 
 	// print
 	if len(startedServerWorkspaces) == 0 {
-		common.SmartIDELog.ImportanceWithConfig(common.LogConfig{RepeatDependSecond: -1}, "请等待server工作区启动！")
+		common.SmartIDELog.Importance("请等待server工作区启动！")
 	}
 
 	// go routine 启动所有工作区
@@ -119,7 +119,6 @@ func connect(cmd *cobra.Command, currentAuth model.Auth, args []string, connecte
 				}
 				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(workspaceInfo.Mode), strings.Join(imageNames, ","))
 			}
-
 			//
 			start.ExecuteServerVmStartCmd(workspaceInfo, executeStartCmdFunc)
 

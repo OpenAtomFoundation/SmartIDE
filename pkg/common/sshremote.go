@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2021-12-20 18:40:09
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-03-24 18:04:51
  */
 package common
 
@@ -259,7 +259,7 @@ func (instance *SSHRemote) GitClone(gitRepoUrl string, workSpaceDir string) erro
 		SmartIDELog.Error(i18n.GetInstance().Common.Err_sshremote_param_repourl_none)
 	}
 	if workSpaceDir == "" {
-		workSpaceDir = getRepoName(gitRepoUrl)
+		workSpaceDir = GetRepoName(gitRepoUrl)
 	}
 
 	// 检测是否为ssh模式
@@ -451,8 +451,8 @@ func (instance *SSHRemote) sshSaveEmptyPassphrase() {
 	CheckError(err)
 }
 
-// get repo name
-func getRepoName(repoUrl string) string {
+// 从git clone地址中获取repo的名称
+func GetRepoName(repoUrl string) string {
 	index := strings.LastIndex(repoUrl, "/")
 	return strings.Replace(repoUrl[index+1:], ".git", "", -1)
 }

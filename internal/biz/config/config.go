@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description: config
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2022-01-18 10:50:09
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-03-30 00:00:55
  */
 package config
 
@@ -76,32 +76,35 @@ func (yamlFileConfig *SmartIdeConfig) LoadDockerComposeFromTempFile(sshRemote co
 	}
 
 	// 获取 webide 、ssh 绑定端口
-	for serviceName, service := range composeYaml.Services {
-		if serviceName != yamlFileConfig.Workspace.DevContainer.ServiceName {
-			continue
-		}
-		for _, port := range service.Ports {
-			if strings.Contains(port, ":"+strconv.Itoa(yamlFileConfig.GetContainerWebIDEPort())) { // webide 端口
-				index := strings.Index(port, ":")
-				if index > 0 {
-					ideBindingPort, _ = strconv.Atoi(port[:index])
-					if ideBindingPort > 0 {
-						common.SmartIDELog.InfoF(i18nInstance.Common.Info_ssh_webide_host_port, ideBindingPort)
-						continue
+	if yamlFileConfig.Orchestrator.Type == OrchestratorTypeEnum_Compose { // 只有在compose模式下，在会去compose文件中查找端口是否申明
+		for serviceName, service := range composeYaml.Services {
+			if serviceName != yamlFileConfig.Workspace.DevContainer.ServiceName {
+				continue
+			}
+			for _, port := range service.Ports {
+				if strings.Contains(port, ":"+strconv.Itoa(yamlFileConfig.GetContainerWebIDEPort())) { // webide 端口
+					index := strings.Index(port, ":")
+					if index > 0 {
+						ideBindingPort, _ = strconv.Atoi(port[:index])
+						if ideBindingPort > 0 {
+							common.SmartIDELog.InfoF(i18nInstance.Common.Info_ssh_webide_host_port, ideBindingPort)
+							continue
+						}
 					}
-				}
-			} else if strings.Contains(port, ":"+strconv.Itoa(model.CONST_Container_SSHPort)) { // ssh 端口
-				index := strings.Index(port, ":")
-				if index > 0 {
-					sshBindingPort, _ = strconv.Atoi(port[:index])
-					if sshBindingPort > 0 {
-						common.SmartIDELog.InfoF(i18nInstance.Common.Info_ssh_host_port, sshBindingPort)
-						continue
+				} else if strings.Contains(port, ":"+strconv.Itoa(model.CONST_Container_SSHPort)) { // ssh 端口
+					index := strings.Index(port, ":")
+					if index > 0 {
+						sshBindingPort, _ = strconv.Atoi(port[:index])
+						if sshBindingPort > 0 {
+							common.SmartIDELog.InfoF(i18nInstance.Common.Info_ssh_host_port, sshBindingPort)
+							continue
+						}
 					}
 				}
 			}
 		}
 	}
+	//TODO: 在k8s 的yaml文件中查找端口是否申明
 
 	return composeYaml, ideBindingPort, sshBindingPort
 }
@@ -122,7 +125,7 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 	}
 
 	//1.2. 文件格式检查
-	if strings.ToLower(yamlFileConfig.Orchestrator.Type) == "docker-compose" {
+	if yamlFileConfig.Orchestrator.Type == OrchestratorTypeEnum_Compose {
 		if yamlFileConfig.IsLinkDockerComposeFile() { // 链接了 docker-compose 文件
 			if !isRemoteMode {
 				// 检查docker-compose文件是否存在

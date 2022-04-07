@@ -82,6 +82,7 @@ type WorkspaceInfo struct {
 	// 配置文件
 	ConfigYaml config.SmartIdeConfig
 
+	//
 	K8sInfo K8sInfo
 
 	// 临时的docker-compose文件
@@ -100,12 +101,91 @@ type WorkspaceInfo struct {
 	ServerWorkSpace model.ServerWorkspace
 }
 
+func getWorkspaceStatusDesc(workspaceStatus model.WorkspaceStatusEnum) string {
+
+	desc := ""
+	switch workspaceStatus {
+	case model.WorkspaceStatusEnum_Init:
+		desc = "Initialization"
+	case model.WorkspaceStatusEnum_Pending:
+		desc = "Pending"
+	case model.WorkspaceStatusEnum_Remove:
+		desc = "Cleaned"
+	case model.WorkspaceStatusEnum_Removing:
+		desc = "Cleaning"
+	case model.WorkspaceStatusEnum_ContainerRemoving:
+		desc = "Removing"
+	case model.WorkspaceStatusEnum_ContainerRemoved:
+		desc = "Removed"
+	case model.WorkspaceStatusEnum_Stop:
+		desc = "Stopped"
+	case model.WorkspaceStatusEnum_Stopping:
+		desc = "Stopping"
+	case model.WorkspaceStatusEnum_Start:
+		desc = "Running"
+	default:
+		desc = "Pending"
+	}
+	if int(workspaceStatus) < 0 {
+		desc = "Error"
+	}
+
+	return desc
+}
+
+// 获取工作区状态值对应的label
+var _workspaceStatusMap map[int]string
+
+func getWorkspaceStatusDescFromServer(workspaceStatus model.WorkspaceStatusEnum) (string, error) {
+
+	if len(_workspaceStatusMap) == 0 { // 如果缓存中没有，就从服务器去取
+		auth, err := GetCurrentUser()
+		if err != nil {
+			return "", err
+		}
+
+		url, _ := common.UrlJoin(auth.LoginUrl, "/api/sysDictionary/findSysDictionary")
+		headers := map[string]string{
+			"Content-Type": "application/json",
+		}
+		if auth.Token != nil {
+			headers["x-token"] = auth.Token.(string)
+		}
+		response, err := common.Get(url.String(), map[string]string{"type": "smartide_workspace_status"}, headers)
+		if err != nil {
+			return "", err
+		}
+
+		workspaceStatusDictionaryResponse := &model.WorkspaceStatusDictionaryResponse{}
+		err = json.Unmarshal([]byte(response), workspaceStatusDictionaryResponse)
+		if err != nil {
+			return "", err
+		}
+
+		for _, item := range workspaceStatusDictionaryResponse.Data.ResysDictionary.SysDictionaryDetails {
+			if item.Value == int(workspaceStatus) {
+				return item.Label, nil
+			}
+		}
+	}
+
+	if _, ok := _workspaceStatusMap[int(workspaceStatus)]; ok {
+		return _workspaceStatusMap[int(workspaceStatus)], nil
+	}
+
+	return "", nil
+}
+
 //
 func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (WorkspaceInfo, error) {
 	repoName := getRepoName(serverWorkSpace.GitRepoUrl)
+	label := getWorkspaceStatusDesc(serverWorkSpace.Status)
+	/* if err != nil {
+		return WorkspaceInfo{}, err
+	} */
 	workspaceInfo := WorkspaceInfo{
 		ID:                   serverWorkSpace.NO,
-		Name:                 serverWorkSpace.Name,
+		Name:                 serverWorkSpace.Name + fmt.Sprintf(" (%v)", label),
 		ConfigFilePath:       serverWorkSpace.ConfigFilePath,
 		GitCloneRepoUrl:      serverWorkSpace.GitRepoUrl,
 		Branch:               serverWorkSpace.Branch,
@@ -334,10 +414,85 @@ func (instance *WorkspaceExtend) IsNil() bool {
 	return instance == nil || len(instance.Ports) <= 0
 }
 
+type ExtendPorts []config.PortMapInfo
+
 // 工作区扩展字段
 type WorkspaceExtend struct {
 	// 端口映射情况
-	Ports []config.PortMapInfo `json:"Ports"`
+	Ports ExtendPorts `json:"Ports"`
+}
+
+// 在扩展的端口列表中查找
+func (portMaps ExtendPorts) Find(portLabel string) (*config.PortMapInfo, error) {
+	for _, info := range portMaps {
+		if strings.EqualFold(info.HostPortDesc, portLabel) {
+			return &info, nil
+		}
+	}
+	return nil, fmt.Errorf(fmt.Sprintf("没有查找到 %v 对应的端口信息", portLabel))
+}
+
+func (portMaps ExtendPorts) IsExit(portMapInfo *config.PortMapInfo) bool {
+	if portMapInfo == nil {
+		return false
+	}
+
+	isContain := false
+	for _, originPortMapInfo := range portMaps {
+		if portMapInfo.HostPortDesc != "" {
+			if strings.EqualFold(originPortMapInfo.HostPortDesc, portMapInfo.HostPortDesc) {
+				isContain = true
+				break
+			}
+		} else {
+			if originPortMapInfo.ServiceName == portMapInfo.ServiceName && originPortMapInfo.ContainerPort == portMapInfo.ContainerPort {
+				isContain = true
+				break
+			}
+		}
+
+	}
+
+	return isContain
+}
+
+//
+func (portMaps ExtendPorts) AppendOrUpdate(portMapInfo *config.PortMapInfo) ExtendPorts {
+	if portMapInfo == nil {
+		panic("obj is nil")
+	}
+
+	isContain := false
+	for index, originPortMapInfo := range portMaps {
+		if portMapInfo.HostPortDesc != "" {
+			if strings.EqualFold(originPortMapInfo.HostPortDesc, portMapInfo.HostPortDesc) {
+				isContain = true
+				// portMaps[index] = *portMapInfo
+				break
+			}
+		} else {
+			if originPortMapInfo.ServiceName == portMapInfo.ServiceName && originPortMapInfo.ContainerPort == portMapInfo.ContainerPort {
+				isContain = true
+				// portMaps[index] = *portMapInfo
+				break
+			}
+		}
+
+		if isContain {
+			tmp := portMaps[index]
+			tmp.CurrentHostPort = portMapInfo.CurrentHostPort
+			tmp.OriginHostPort = portMapInfo.OriginHostPort
+			tmp.ContainerPort = portMapInfo.ContainerPort
+			portMaps[index] = tmp
+		}
+
+	}
+
+	if !isContain {
+		portMaps = append(portMaps, *portMapInfo)
+	}
+
+	return portMaps
 }
 
 // 远程主机信息
@@ -359,6 +514,11 @@ type K8sInfo struct {
 	Namespace      string
 	DeploymentName string
 	PVCName        string
+
+	// 原始的k8s yaml
+	OriginK8sYaml config.SmartIdeK8SConfig
+	// 增加注入后的 k8s yaml文件
+	TempK8sConfig config.SmartIdeK8SConfig
 }
 
 //

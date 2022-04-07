@@ -1,8 +1,8 @@
 /*
  * @Author: kenan
  * @Date: 2022-02-15 19:32:44
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-03-16 15:08:21
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-04-01 00:22:09
  * @FilePath: /smartide-cli/internal/model/workspace.go
  * @Description:
  *
@@ -14,10 +14,31 @@ import (
 	"time"
 )
 
+type WorkspaceStatusDictionaryResponse struct {
+	Code int `json:"code"`
+	Data struct {
+		ResysDictionary struct {
+			SysDictionaryDetails []struct {
+				Value int    `json:"value"`
+				Label string `json:"label"`
+			} `json:"sysDictionaryDetails"`
+		} `json:"resysDictionary"`
+	} `json:"data"`
+	Msg string `json:"msg"`
+}
+
 type WorkspaceListResponse struct {
 	Code int    `json:"code"`
 	Data Data   `json:"data"`
 	Msg  string `json:"msg"`
+}
+
+type WorkspaceLogResponse struct {
+	Code int `json:"code"`
+	Data struct {
+		ResServerWorkspaceLog ServerWorkspaceLog `json:"rewsLog"`
+	}
+	Msg string `json:"msg"`
 }
 
 type WorkspaceResponse struct {
@@ -30,6 +51,38 @@ type WorkspaceResponse struct {
 
 type Data struct {
 	List []ServerWorkspace `json:"list"`
+}
+
+// {
+//   "code": 0,
+//   "data": {
+//     "list": [
+//       {
+//         "ID": 1,
+//         "CreatedAt": "2022-03-22T06:28:36.596Z",
+//         "UpdatedAt": "2022-03-22T06:28:36.596Z",
+//         "title": "启动工作区",
+//         "parentID": 0,
+//         "content": "启动工作区",
+//         "ws_id": "SWS001",
+//         "level": 0,
+//         "type": 0,
+//         "startAt": "2022-03-22T06:28:36.196Z",
+//         "endAt": "2022-03-22T06:28:36.196Z",
+//         "status": 0
+//       }
+//     ],
+//     "total": 1,
+//     "page": 0,
+//     "pageSize": 0
+//   },
+//   "msg": "获取成功"
+// }
+type LogData struct {
+	List     []ServerWorkspaceLog `json:"list"`
+	Total    int64                `json:"total"`
+	Page     int                  `json:"page"`
+	PageSize int                  `json:"pageSize"`
 }
 
 type GVA_MODEL struct {
@@ -58,6 +111,32 @@ type ServerWorkspace struct {
 
 	OwnerGUID string `json:"ownerGuid" `
 	OwnerName string `json:"ownerName" `
+}
+
+// "ID": 1,
+// "CreatedAt": "2022-03-22T06:28:36.596Z",
+// "UpdatedAt": "2022-03-22T06:28:36.596Z",
+// "title": "启动工作区",
+// "parentID": 0,
+// "content": "启动工作区",
+// "ws_id": "SWS001",
+// "level": 0,
+// "type": 0,
+// "startAt": "2022-03-22T06:28:36.196Z",
+// "endAt": "2022-03-22T06:28:36.196Z",
+// "status": 0
+
+type ServerWorkspaceLog struct {
+	GVA_MODEL
+	Title    string     `json:"title"`
+	ParentId int        `json:"parentID" `
+	Content  string     `json:"content" `
+	Ws_id    string     `json:"ws_id" `
+	Level    int        `json:"level" `
+	Type     int        `json:"type" `
+	StartAt  *time.Time `json:"startAt" `
+	EndAt    *time.Time `json:"endAt" `
+	Status   int        `json:"status" `
 }
 
 // 资源

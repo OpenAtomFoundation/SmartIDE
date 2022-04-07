@@ -1,8 +1,8 @@
 /*
  * @Author: kenan
  * @Date: 2021-10-13 15:31:52
- * @LastEditors: kenan
- * @LastEditTime: 2022-01-18 18:35:44
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-03-30 15:30:46
  * @Description: file content
  */
 
@@ -135,7 +135,7 @@ func GitConfig(configGit string, isVmCommand bool, containerName string, cli *cl
 
 					gitConfigCmd := fmt.Sprint("git config --global --replace-all ", key, " ", "\"", value, "\"")
 					execRquest.Command = gitConfigCmd
-					kubectl.ExecInPod(execRquest)
+					//kubectl.ExecInPod(execRquest)
 
 				}
 			}

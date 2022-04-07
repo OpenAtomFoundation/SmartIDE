@@ -6,7 +6,6 @@ ENV TZ Asia/Shanghai
 #git中文乱码问题
 ENV LESSCHARSET=utf-8
 
-
 # sshd
 RUN mkdir /var/run/sshd && \
     apt-get update && \
@@ -19,6 +18,7 @@ RUN mkdir /var/run/sshd && \
 RUN apt-get -qq update && \
     apt-get -qq install -y --no-install-recommends ca-certificates curl
 
+# 暴露ssh端口
 EXPOSE 22
 
 # install smartide (build version)

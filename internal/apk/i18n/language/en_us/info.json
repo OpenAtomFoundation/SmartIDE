@@ -11,12 +11,12 @@
         "err_devcontainer_not_contains": "The \"%s\" defined in the dev-container node does not exist in services node ",
         "err_gitconfig_not_exit": "Can not found GitConfig in local file system",
         "err_config_orchestrator_type_none": "[配置文件] 编排类型（Orchestrator.Type）不能为空！",
-        "err_config_orchestrator_type_valid": "[配置文件] 目前编排类型（Orchestrator.Type）仅支持docker-compose，其他格式正在开发中，敬请等待！",
+        "err_config_orchestrator_type_valid": "[配置文件] 目前编排类型（Orchestrator.Type）仅支持docker-compose、k8s，其他格式正在开发中，敬请等待！",
         "err_config_orchestrator_version_none": "[配置文件] %v 对应的版本（Orchestrator.Version）不能为空！",
         "err_config_devcontainer_servicename_none": "[配置文件] 工作区开发容器服务名 （Workspace.DevContainer.ServiceName）不能为空！",
         "err_config_devcontainer_services_not_exit": "[配置文件] Workspace.Servcies 中不包含 “%v”！",
         "err_config_devcontainer_idetype_none": "[配置文件] 工作区开发容器WebIDE 类型（Workspace.DevContainer.IdeType） 不能为空！",
-        "err_config_devcontainer_idetype_valid": "[配置文件] 目前WebIDE类型仅支持 vscode、theia、jb-projector，其他类型的webide正在适配中，敬请等待！",
+        "err_config_devcontainer_idetype_valid": "[配置文件] 目前WebIDE类型仅支持 vscode、theia、jb-projector、opensumi、sdk-only，其他类型的webide正在适配中，敬请等待！",
         "err_config_devcontainer_ports_port_reqeat": "[配置文件] 工作区端口描述信息中，端口 “%v” 重复",
         "err_config_devcontainer_ports_label_reqeat": "[配置文件] 工作区端口描述信息中，端口描述 “%v” 重复"
     },
@@ -31,6 +31,8 @@
         "info_help_flag_server_username": "smartide server登录账号",
         "info_help_flag_server_userguid": "smartide server登录账号对应的guid",
         "info_help_flag_server_feedback": "smartide server反馈信息的url",
+        "info_help_flag_server_host": "smartide server 的访问地址",
+
         "info_workspace_loading": "Loading workspace ...",
         "info_ssh_connect_check": "Checking SSH connection %v:%v ...",
         "info_version_local": "本地构建版本 - %v",
@@ -243,7 +245,7 @@
         "err_ernum_error": "Cannot found value in enum type.",
         "err_ssh_password_required": "Password is required.",
         "err_ssh_dial_none": "需要和远程主机创建连接！",
-        "err_dal_remote_reference_by_workspace": "当前host已经被其他工作区引用，不能被删除！",
+        "err_dal_remote_reference_by_workspace":"当前host已经被其他工作区引用，不能被删除！",
         "warn_dal_record_not_exit_condition": "No data found with query（%v）",
         "warn_dal_record_not_exit": "No data found",
         "warn_param_is_null": " '%v' is empty"

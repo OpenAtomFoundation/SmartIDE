@@ -1,3 +1,9 @@
+/*
+ * @Date: 2022-03-08 17:27:09
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-03-23 14:46:13
+ * @FilePath: /smartide-cli/cmd/server/args.go
+ */
 package server
 
 import (
@@ -18,9 +24,28 @@ const (
 	Flags_ServerWorkspaceid = "serverworkspaceid"
 	Flags_ServerToken       = "servertoken"
 	Flags_ServerUsername    = "serverusername"
-	Flags_ServerUserGUID    = "serveruserguid"
-	Flags_ServerFeedback    = "serverfeedback"
+	//Flags_ServerUserGUID    = "serveruserguid"
+	Flags_ServerHost = "serverhost"
 )
+
+// 获取服务器模式下的cmd参数
+func GetServerModeInfo(cmd *cobra.Command) (serverModeInfo ServerModeInfo, err error) {
+	err = Check(cmd)
+	if err != nil {
+		return
+	}
+
+	fflags := cmd.Flags()
+	/* 	idStr, _ := fflags.GetString(Flags_ServerWorkspaceid)
+	   	idInt, _ := strconv.Atoi(idStr) */
+	serverModeInfo.ServerWorkspaceid, _ = fflags.GetString(Flags_ServerWorkspaceid)
+	serverModeInfo.ServerToken, _ = fflags.GetString(Flags_ServerToken)
+	serverModeInfo.ServerUsername, _ = fflags.GetString(Flags_ServerUsername)
+	//serverModeInfo.ServerUserGUID, _ = fflags.GetString(Flags_ServerUserGUID)
+	serverModeInfo.ServerHost, _ = fflags.GetString(Flags_ServerHost)
+
+	return
+}
 
 // 验证server模式下，flag是否有录入
 func Check(cmd *cobra.Command) (err error) {
@@ -52,13 +77,13 @@ func Check(cmd *cobra.Command) (err error) {
 		if err != nil {
 			return err
 		}
-		err = checkFlagRequired(fflags, Flags_ServerUserGUID)
+		/* err = checkFlagRequired(fflags, Flags_ServerUserGUID)
 		if err != nil {
 			return err
-		}
+		} */
 
 		// feedback 地址不能为空
-		err = checkFlagRequired(fflags, Flags_ServerFeedback)
+		err = checkFlagRequired(fflags, Flags_ServerHost)
 		if err != nil {
 			return err
 		}

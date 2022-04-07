@@ -2,14 +2,15 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors:
- * @LastEditTime:
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-03-31 23:54:05
  */
 package config
 
 import (
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -17,20 +18,100 @@ import (
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"gopkg.in/yaml.v2"
+
+	appV1 "k8s.io/api/apps/v1"
+	coreV1 "k8s.io/api/core/v1"
+	networkingV1 "k8s.io/api/networking/v1"
+
+	k8sScheme "k8s.io/client-go/kubernetes/scheme"
 )
 
 // 国际化
 var i18nInstance = i18n.GetInstance()
 
-func NewConfigRemote(localWorkingDir string, configFilePath string, configContent string) (result *SmartIdeConfig) {
+// 远程服务器上的配置
+func NewRemoteConfig(localWorkingDir string, configFilePath string, configContent string) (result *SmartIdeConfig) {
 	return newConfig(localWorkingDir, configFilePath, configContent, true)
 }
 
-// 构造函数
+// 远程服务器上的配置
+func NewK8SConfig(configFileAbsolutePath string, k8sYamlFileAbsolutePaths []string, configContent string, k8sYamlContent string) (result *SmartIdeK8SConfig, err error) {
+
+	localWorkingDir := filepath.Dir(configFileAbsolutePath)
+	fileName := filepath.Base(configFileAbsolutePath)
+	config := newConfig(localWorkingDir, fileName, configContent, false)
+	result = config.ConvertToSmartIdeK8SConfig()
+
+	parseYamlFunc := func(yamlFileContent string) {
+		for _, subYamlFileContent := range strings.Split(yamlFileContent, "---") { // 分割符
+			subYamlFileContent = strings.TrimSpace(subYamlFileContent)
+			if subYamlFileContent == "" {
+				continue
+			}
+
+			// 遍历k8s的yaml文件
+			decode := k8sScheme.Codecs.UniversalDeserializer().Decode
+			obj, groupKindVersion, _ := decode([]byte(subYamlFileContent), nil, nil)
+
+			// example: https://developers.redhat.com/blog/2020/12/16/create-a-kubernetes-operator-in-golang-to-automatically-manage-a-simple-stateful-application#set_the_controller
+			switch groupKindVersion.Kind {
+			case "Deployment":
+				deployment := obj.(*appV1.Deployment)
+				result.Workspace.Deployments = append(result.Workspace.Deployments, *deployment)
+			case "Service":
+				service := obj.(*coreV1.Service)
+				result.Workspace.Services = append(result.Workspace.Services, *service)
+			case "PersistentVolumeClaim":
+				pvc := obj.(*coreV1.PersistentVolumeClaim)
+				result.Workspace.PVCS = append(result.Workspace.PVCS, *pvc)
+			case "NetworkPolicy":
+				networkPolicy := obj.(*networkingV1.NetworkPolicy)
+				result.Workspace.Networks = append(result.Workspace.Networks, *networkPolicy)
+			}
+		}
+	}
+
+	if k8sYamlContent != "" {
+		parseYamlFunc(k8sYamlContent)
+	} else {
+		if len(k8sYamlFileAbsolutePaths) == 0 {
+			dir := path.Dir(configFileAbsolutePath)
+			tempExpression := path.Join(dir, config.Workspace.KubeDeployFiles)
+			files, err := filepath.Glob(tempExpression)
+			if err != nil {
+				return nil, err
+			}
+			k8sYamlFileAbsolutePaths = files
+		}
+
+		for _, k8sYamlFileAbsolutePath := range k8sYamlFileAbsolutePaths {
+
+			yamlFileBytes, err := ioutil.ReadFile(k8sYamlFileAbsolutePath)
+			if err != nil {
+				return nil, err
+			}
+			yamlFileContent := string(yamlFileBytes)
+			parseYamlFunc(yamlFileContent)
+		}
+	}
+
+	// 验证
+	err = result.Valid()
+
+	return result, err
+}
+
+//
+// @Tags
+// @Summary
+// @Param data localWorkingDir string ""
+// @Param data configFilePath string ""
+// @Param data configContent string ""
 func NewConfig(localWorkingDir string, configFilePath string, configContent string) (result *SmartIdeConfig) {
 	return newConfig(localWorkingDir, configFilePath, configContent, false)
 }
 
+//
 func newConfig(localWorkingDir string, configFilePath string, configContent string, isRemote bool) (result *SmartIdeConfig) {
 	result = &SmartIdeConfig{}
 
@@ -51,7 +132,13 @@ func newConfig(localWorkingDir string, configFilePath string, configContent stri
 	// 加载配置
 	if configContent != "" {
 		err := yaml.Unmarshal([]byte(configContent), &result)
-		common.CheckError(err)
+		if err != nil {
+			if result.IsNil() {
+				common.CheckError(err)
+			} else {
+				common.SmartIDELog.Importance(err.Error())
+			}
+		}
 
 	} else {
 		if !isRemote { // 只有本地模式下，才会从本地加载配置文件

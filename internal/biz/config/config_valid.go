@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors:
- * @LastEditTime:
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-04-07 11:23:55
  */
 package config
 
@@ -17,13 +17,53 @@ import (
 )
 
 // 验证配置文件格式是否正确
+func (c SmartIdeK8SConfig) Valid() error {
+	// Workspace.KubeDeployFiles 节点
+	if c.Workspace.KubeDeployFiles == "" {
+		return errors.New("Workspace.KubeDeployFiles 未在配置文件中定义！")
+	}
+
+	// service name 必须在 k8s 部署文件中申明
+	isContainServiceName := false
+	for _, deployment := range c.Workspace.Deployments {
+		for _, container := range deployment.Spec.Template.Spec.Containers {
+			if container.Name == c.Workspace.DevContainer.ServiceName {
+				isContainServiceName = true
+				break
+			}
+		}
+	}
+	if !isContainServiceName {
+		return fmt.Errorf("service (%v) 未在关联 k8s yaml 中定义！", c.Workspace.DevContainer.ServiceName)
+	}
+
+	// 申明的端口是否在service中存在
+	for portLabel, port := range c.Workspace.DevContainer.Ports {
+		isContain := false
+		for _, service := range c.Workspace.Services {
+			for _, specPort := range service.Spec.Ports {
+				if specPort.Port == int32(port) {
+					isContain = true
+					break
+				}
+			}
+		}
+		if !isContain {
+			return fmt.Errorf("端口 (%v:%v) 没有在k8s yaml文件中申明！", portLabel, port)
+		}
+	}
+
+	return nil
+}
+
+// 验证配置文件格式是否正确
 func (c SmartIdeConfig) Valid() error {
 	// 格式不能为空
 	if c.Orchestrator.Type == "" {
 		return errors.New(i18nInstance.Config.Err_config_orchestrator_type_none)
 
 	} else {
-		if c.Orchestrator.Type != "docker-compose" {
+		if c.Orchestrator.Type != OrchestratorTypeEnum_Compose && c.Orchestrator.Type != OrchestratorTypeEnum_K8S {
 			return errors.New(i18nInstance.Config.Err_config_orchestrator_type_valid)
 		}
 	}
@@ -62,9 +102,19 @@ func (c SmartIdeConfig) Valid() error {
 		return errors.New(i18nInstance.Config.Err_config_devcontainer_idetype_none)
 
 	} else {
-		if c.Workspace.DevContainer.IdeType != "vscode" && c.Workspace.DevContainer.IdeType != "theia" && c.Workspace.DevContainer.IdeType != "jb-projector" {
-			return errors.New(i18nInstance.Config.Err_config_devcontainer_idetype_valid)
+		/* 		if c.Workspace.DevContainer.IdeType != IdeTypeEnum_JbProjector &&
+			c.Workspace.DevContainer.IdeType != IdeTypeEnum_Opensumi &&
+			c.Workspace.DevContainer.IdeType != IdeTypeEnum_Theia &&
+			c.Workspace.DevContainer.IdeType != IdeTypeEnum_VsCode &&
+			c.Workspace.DevContainer.IdeType != IdeTypeEnum_SDKOnly {
 
+		} */
+
+		switch c.Workspace.DevContainer.IdeType {
+		case IdeTypeEnum_JbProjector, IdeTypeEnum_Opensumi, IdeTypeEnum_Theia, IdeTypeEnum_VsCode, IdeTypeEnum_SDKOnly:
+			break
+		default:
+			return errors.New(i18nInstance.Config.Err_config_devcontainer_idetype_valid)
 		}
 	}
 
@@ -92,21 +142,23 @@ func (c SmartIdeConfig) Valid() error {
 	}
 
 	// 定义了ports时，必services中有且仅有一个
-	for label, port := range c.Workspace.DevContainer.Ports {
-		count := 0
-		for _, service := range c.Workspace.Servcies {
-			for _, portStr := range service.Ports {
-				array := strings.Split(portStr, ":")
-				if array[0] == strconv.Itoa(port) {
-					count++
+	if c.Orchestrator.Type == OrchestratorTypeEnum_Compose {
+		for label, port := range c.Workspace.DevContainer.Ports {
+			count := 0
+			for _, service := range c.Workspace.Servcies {
+				for _, portStr := range service.Ports {
+					array := strings.Split(portStr, ":")
+					if array[0] == strconv.Itoa(port) {
+						count++
+					}
 				}
 			}
-		}
 
-		if count == 0 {
-			return fmt.Errorf("没有找到 %v:%v 的端口绑定信息", label, port)
-		} else if count > 1 {
-			return fmt.Errorf("%v:%v 被多个service重复绑定", label, port)
+			if count == 0 {
+				return fmt.Errorf("没有找到 %v:%v 的端口绑定信息", label, port)
+			} else if count > 1 {
+				return fmt.Errorf("%v:%v 被多个service重复绑定", label, port)
+			}
 		}
 	}
 

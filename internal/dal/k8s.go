@@ -57,7 +57,7 @@ func GetK8sInfoList() (k8sInfoList []workspace.K8sInfo, err error) {
 }
 
 //
-func GetK8sInfoById(id int) (K8sInfo workspace.K8sInfo, err error) {
+func GetK8sInfoById(id int) (K8sInfo *workspace.K8sInfo, err error) {
 	return GetK8sInfo(id, "")
 }
 
@@ -124,7 +124,7 @@ func RemoveK8s(id int, context string) error {
 
 func InsertOrUpdateK8sInfo(K8sInfo workspace.K8sInfo) (id int, err error) {
 
-	var single workspace.K8sInfo
+	var single *workspace.K8sInfo
 
 	if K8sInfo.ID > 0 {
 		single, err = GetK8sInfoById(K8sInfo.ID)
@@ -143,7 +143,7 @@ func InsertOrUpdateK8sInfo(K8sInfo workspace.K8sInfo) (id int, err error) {
 	defer db.Close()
 
 	//2. insert or update
-	if (single != workspace.K8sInfo{}) { //2.1. update
+	if single != nil { //2.1. update
 		stmt, err := db.Prepare(`update k8s set
 		 k_context=?, k_namespace=?,k_deployment=? ,k_pvc=?  
 		where k_id=? or k_context=?`)
@@ -177,7 +177,7 @@ func InsertOrUpdateK8sInfo(K8sInfo workspace.K8sInfo) (id int, err error) {
 }
 
 //
-func GetK8sInfo(id int, context string) (K8sInfo workspace.K8sInfo, err error) {
+func GetK8sInfo(id int, context string) (K8sInfo *workspace.K8sInfo, err error) {
 
 	db := getDb()
 	defer db.Close()
@@ -198,6 +198,8 @@ func GetK8sInfo(id int, context string) (K8sInfo workspace.K8sInfo, err error) {
 		msg := fmt.Sprintf("deployment (%v | %v)", context, id)
 		common.SmartIDELog.WarningF(i18nInstance.Common.Warn_dal_record_not_exit_condition, msg) // 不存在
 	case nil:
+		tmp := workspace.K8sInfo{}
+		K8sInfo = &tmp
 		K8sInfo.ID = do.k_id
 		K8sInfo.Context = do.k_context
 		K8sInfo.Namespace = do.k_namespace

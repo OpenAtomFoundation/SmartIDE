@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2022-02-21 15:56:20
+ * @LastEditTime: 2022-04-06 10:14:17
  */
 package cmd
 
@@ -37,7 +37,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-
 	ssh2 "golang.org/x/crypto/ssh"
 )
 
@@ -65,6 +64,31 @@ var startCmd = &cobra.Command{
   smartide start --k8s <context> --namespace <namespace> --repoUrl <git clone url> --branch master
   smartide start --k8s <context> --namespace <namespace> <git clone url>`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+
+		if apiHost, _ := cmd.Flags().GetString(server.Flags_ServerHost); apiHost != "" {
+			wsURL := fmt.Sprint(strings.ReplaceAll(strings.ReplaceAll(apiHost, "https", "ws"), "http", "ws"), "/ws/smartide/ws")
+			common.WebsocketStart(wsURL)
+			token, _ := cmd.Flags().GetString(server.Flags_ServerToken)
+			if token != "" {
+				if workspaceIdStr := getWorkspaceIdFromFlagsAndArgs(cmd, args); strings.Contains(workspaceIdStr, "SWS") {
+					if pid, err := workspace.GetParentId(workspaceIdStr, 1, token, apiHost); err == nil && pid > 0 {
+						common.SmartIDELog.Ws_id = workspaceIdStr
+						common.SmartIDELog.ParentId = pid
+					}
+				} else {
+					if workspaceIdStr, _ := cmd.Flags().GetString(server.Flags_ServerWorkspaceid); workspaceIdStr != "" {
+						if no, _ := workspace.GetWorkspaceNo(workspaceIdStr, token, apiHost); no != "" {
+							if pid, err := workspace.GetParentId(no, 1, token, apiHost); err == nil && pid > 0 {
+								common.SmartIDELog.Ws_id = no
+								common.SmartIDELog.ParentId = pid
+							}
+						}
+					}
+
+				}
+			}
+
+		}
 		//0. 提示文本
 		common.SmartIDELog.Info(i18nInstance.Start.Info_start)
 
@@ -101,8 +125,8 @@ var startCmd = &cobra.Command{
 				}
 				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(worksapceInfo.Mode), strings.Join(imageNames, ","))
 			}
-
 			start.ExecuteStartCmd(worksapceInfo, func(v string, d common.Docker) {}, executeStartCmdFunc)
+
 		} else if worksapceInfo.Mode == workspace.WorkingMode_K8s { // k8s 模式
 			executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
 				var imageNames []string
@@ -111,8 +135,12 @@ var startCmd = &cobra.Command{
 				}
 				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(worksapceInfo.Mode), strings.Join(imageNames, ","))
 			}
-
 			start.ExecuteK8sStartCmd(worksapceInfo, executeStartCmdFunc)
+
+			//99. 死循环进行驻守
+			for {
+				time.Sleep(500)
+			}
 
 		} else if worksapceInfo.Mode == workspace.WorkingMode_Server { // server vm 模式
 			executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
@@ -122,7 +150,6 @@ var startCmd = &cobra.Command{
 				}
 				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(worksapceInfo.Mode), strings.Join(imageNames, ","))
 			}
-
 			start.ExecuteServerVmStartCmd(worksapceInfo, executeStartCmdFunc)
 
 			//99. 死循环进行驻守
@@ -138,8 +165,8 @@ var startCmd = &cobra.Command{
 				}
 				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(worksapceInfo.Mode), strings.Join(imageNames, ","))
 			}
-
 			start.ExecuteVmStartCmd(worksapceInfo, executeStartCmdFunc, cmd)
+
 		}
 
 		return nil
@@ -198,31 +225,6 @@ func getWorkspaceIdFromFlagsAndArgs(cmd *cobra.Command, args []string) string {
 	return workspaceId
 }
 
-/* // 获取工作区id
-func getWorkspaceIdFromFlagsAndArgs(cmd *cobra.Command, args []string) int {
-	fflags := cmd.Flags()
-
-	// 从args 或者 flag 中获取值
-	var workspaceId int
-	if len(args) > 0 { // 从args中加载
-		str := args[0]
-		tmpWorkspaceId, err := strconv.Atoi(str)
-		if err == nil && tmpWorkspaceId > 0 {
-			workspaceId = tmpWorkspaceId
-		}
-
-		checkFlagUnnecessary(fflags, flag_workspaceid, strconv.Itoa(tmpWorkspaceId))
-	} else if fflags.Changed(flag_workspaceid) { // 从flag中加载
-		tmpWorkspaceId, err := fflags.GetInt32(flag_workspaceid)
-		common.CheckError(err)
-		if tmpWorkspaceId > 0 {
-			workspaceId = int(tmpWorkspaceId)
-		}
-	}
-
-	return workspaceId
-} */
-
 // 从start command的flag、args中获取workspace
 func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo workspace.WorkspaceInfo, err error) {
 	fflags := cmd.Flags()
@@ -257,7 +259,7 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 			checkFlagUnnecessary(fflags, flag_username, flag_workspaceid)
 			checkFlagUnnecessary(fflags, flag_password, flag_workspaceid)
 
-			workspaceInfo, err = getWorkspaceWithDbAndValid(workspaceId)
+			workspaceInfo, err = getWorkspaceWithDbAndValid(workspaceId) // 从数据库中加载
 			if err != nil {
 				return workspace.WorkspaceInfo{}, err
 			}

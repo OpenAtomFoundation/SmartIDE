@@ -119,6 +119,8 @@ func (yamlFileConfig *SmartIdeConfig) GetLabelWithPort(localPort, containerPort 
 		if localPort == model.CONST_Local_Default_BindingPort_WebIDE {
 			if containerPort == model.CONST_Container_JetBrainsIDEPort {
 				label = "tools-webide-jb"
+			} else if containerPort == model.CONST_Container_OpensumiIDEPort {
+				label = "tools-webide-opensumi"
 			} else {
 				label = "tools-webide-vscode"
 			}

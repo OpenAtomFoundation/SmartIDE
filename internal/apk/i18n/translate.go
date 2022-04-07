@@ -55,6 +55,7 @@ type I18nSource struct {
 		Info_help_flag_server_username     string `json:"info_help_flag_server_username"`
 		Info_help_flag_server_userguid     string `json:"info_help_flag_server_userguid"`
 		Info_help_flag_server_feedback     string `json:"info_help_flag_server_feedback"`
+		Info_help_flag_server_host         string `json:"info_help_flag_server_host"`
 
 		Err_file_not_exit       string `json:"err_file_not_exit"`
 		Err_file_not_exit2      string `json:"err_file_not_exit2"`

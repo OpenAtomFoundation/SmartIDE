@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-03-16 14:27:23
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-04-06 10:14:45
  */
 package cmd
 
@@ -30,57 +30,83 @@ var stopCmd = &cobra.Command{
 	Example: `  smartide stop {workspaceid} `,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		common.SmartIDELog.Info(i18nInstance.Stop.Info_start)
 		mode, _ := cmd.Flags().GetString("mode")
+		workspaceIdStr := getWorkspaceIdFromFlagsAndArgs(cmd, args)
+		if strings.ToLower(mode) == "server" || strings.Contains(workspaceIdStr, "SWS") {
+			serverModeInfo, _ := server.GetServerModeInfo(cmd)
+			if serverModeInfo.ServerHost != "" {
+				wsURL := fmt.Sprint(strings.ReplaceAll(strings.ReplaceAll(serverModeInfo.ServerHost, "https", "ws"), "http", "ws"), "/ws/smartide/ws")
+				common.WebsocketStart(wsURL)
+
+				if pid, err := workspace.GetParentId(workspaceIdStr, 2, serverModeInfo.ServerToken, serverModeInfo.ServerHost); err == nil && pid > 0 {
+					common.SmartIDELog.Ws_id = workspaceIdStr
+					common.SmartIDELog.ParentId = pid
+				}
+
+			}
+		}
+
+		common.SmartIDELog.Info(i18nInstance.Stop.Info_start)
 
 		// 获取 workspace 信息
 		common.SmartIDELog.Info(i18nInstance.Main.Info_workspace_loading)
 		var workspaceInfo workspace.WorkspaceInfo
+
+		// 检查错误并feedback
+		var checkErrorFeedback = func(err error) {
+			if err != nil {
+				server.Feedback_Finish(server.FeedbackCommandEnum_Stop, cmd, false, 0, workspaceInfo, err.Error())
+			}
+			common.CheckError(err)
+		}
+		var currentServerAuth model.Auth // 当前服务区用户，在mode server 模式下才会赋值
+
 		// 当前登录信息
-		currentAuth, err := workspace.GetCurrentUser()
-		common.CheckError(err)
-		workspaceIdStr := getWorkspaceIdFromFlagsAndArgs(cmd, args)
+		/* currentAuth, err := workspace.GetCurrentUser()
+		common.CheckError(err) */
 		if strings.ToLower(mode) == "server" || strings.Contains(workspaceIdStr, "SWS") { // 当mode=server时，从server端反调数据
+			// 当前服务端授权用户信息
+			serverModeInfo, err := server.GetServerModeInfo(cmd)
+			checkErrorFeedback(err)
+			currentServerAuth = model.Auth{
+				UserName: serverModeInfo.ServerUsername,
+				Token:    serverModeInfo.ServerToken,
+				LoginUrl: serverModeInfo.ServerHost,
+			}
 
-			workspaceInfo, err = workspace.GetWorkspaceFromServer(currentAuth, workspaceIdStr)
-
+			// 工作区
+			workspaceInfo, err = workspace.GetWorkspaceFromServer(currentServerAuth, workspaceIdStr)
 			if err == nil {
 				if workspaceInfo.ID == "" || workspaceInfo.ServerWorkSpace.NO == "" {
 					err = fmt.Errorf("没有查询到 %v 对应的工作区数据！", workspaceIdStr)
 				}
 			}
-			if err != nil {
-				msg := err.Error()
-				server.Feedback_Finish(server.FeedbackCommandEnum_Stop, cmd, false, 0, workspaceInfo, msg)
-			}
-			common.CheckError(err)
+			checkErrorFeedback(err)
 
 		} else {
 			workspaceInfo = loadWorkspaceWithDb(cmd, args)
 		}
 
 		if strings.ToLower(mode) == "server" {
-			msg := ""
+			//msg := ""
 			// 远程主机上停止
-			err := stopRemote(workspaceInfo) //todo return error
-			if err != nil {
-				msg = err.Error()
-			}
+			err := stopRemote(workspaceInfo)
+			checkErrorFeedback(err)
 
 			// feeadback
 			common.SmartIDELog.Info("反馈运行结果...")
-			err = server.Feedback_Finish(server.FeedbackCommandEnum_Stop, cmd, err == nil, 0, workspaceInfo, msg)
+			err = server.Feedback_Finish(server.FeedbackCommandEnum_Stop, cmd, err == nil, 0, workspaceInfo, "")
 			common.CheckError(err)
 
 		} else if workspaceInfo.Mode == workspace.WorkingMode_Server { // 录入的是服务端工作区id
 			// 触发stop
-			err = server.Trigger_Action("stop", workspaceIdStr, currentAuth.LoginUrl, currentAuth, make(map[string]interface{}))
+			err := server.Trigger_Action("stop", workspaceIdStr, currentServerAuth, make(map[string]interface{}))
 			common.CheckError(err)
 
 			// 轮询检查工作区状态
 			isStop := false
 			for !isStop {
-				serverWorkSpace, err := workspace.GetWorkspaceFromServer(currentAuth, workspaceInfo.ID)
+				serverWorkSpace, err := workspace.GetWorkspaceFromServer(currentServerAuth, workspaceInfo.ID)
 				if err != nil {
 					common.SmartIDELog.Importance(err.Error())
 				}

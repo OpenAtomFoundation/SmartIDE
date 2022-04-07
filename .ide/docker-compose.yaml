@@ -7,7 +7,7 @@ services:
       ROOT_PASSWORD: root123
     image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-go:latest
     export:
-    - 3000
+      - 3000
     restart: always
     volumes:
-    - .:/home/project
+      - .:/home/project

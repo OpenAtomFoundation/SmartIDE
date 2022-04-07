@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors:
- * @LastEditTime:
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-04-01 23:55:13
  */
 package common
 
@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/gookit/color"
+	"github.com/leansoftX/smartide-cli/internal/model"
 
 	"github.com/natefinch/lumberjack"
 	"go.uber.org/zap"
@@ -25,17 +26,41 @@ import (
 
 //
 type smartIDELogStruct struct {
+	Ws_id    string
+	ParentId int
 }
 
-var SmartIDELog *smartIDELogStruct
+var SmartIDELog = &smartIDELogStruct{Ws_id: "", ParentId: 0}
 
 var isDebugLevel bool = false
+
+type lastMsg struct {
+	Message    string
+	CreateTime time.Time
+	Level      zapcore.Level
+}
+
+var _lastMsg lastMsg
+
+func isRepeat(message string, level zapcore.Level) bool {
+	result := false
+	fmt.Sprintln(time.Since(_lastMsg.CreateTime))
+	if (_lastMsg != lastMsg{}) && message != "" &&
+		message == _lastMsg.Message && time.Since(_lastMsg.CreateTime).Minutes() <= 60 && level == _lastMsg.Level {
+		result = true
+	}
+
+	if !result {
+		_lastMsg = lastMsg{Message: message, CreateTime: time.Now()}
+	}
+
+	return result
+}
 
 func (sLog *smartIDELogStruct) InitLogger(logLevel string) {
 	if strings.ToLower(strings.TrimSpace(logLevel)) == "debug" {
 		isDebugLevel = true
 	}
-
 	initLogger()
 }
 
@@ -55,7 +80,18 @@ func (sLog *smartIDELogStruct) Error(err interface{}, headers ...string) (reErr 
 		stack := string(debug.Stack())
 		fullContents := append(contents, stack)
 		fullContents = RemoveDuplicatesAndEmpty(fullContents)
-
+		if sLog.Ws_id != "" {
+			go SendAndReceive("business", "workspaceLog", "", "", model.WorkspaceLog{
+				Title:    "",
+				ParentId: sLog.ParentId,
+				Content:  strings.Join(fullContents, ";"),
+				Ws_id:    sLog.Ws_id,
+				Level:    4,
+				Type:     1,
+				StartAt:  time.Now(),
+				EndAt:    time.Now(),
+			})
+		}
 		// 调试模式时向控制台输出堆栈
 		if isDebugLevel {
 			fmt.Println(prefix, strings.Join(fullContents, "; "))
@@ -108,10 +144,26 @@ func (sLog *smartIDELogStruct) Info(args ...string) (err error) {
 	}
 
 	msg := strings.Join(args, " ")
+	if isRepeat(msg, zapcore.InfoLevel) { // 是否重复
+		return
+	} else {
+		_lastMsg = lastMsg{Message: msg, CreateTime: time.Now(), Level: zapcore.InfoLevel}
+	}
 
 	prefix := getPrefix(zapcore.InfoLevel)
 	fmt.Println(prefix, msg)
-
+	if sLog.Ws_id != "" {
+		go SendAndReceive("business", "workspaceLog", "", "", model.WorkspaceLog{
+			Title:    "",
+			ParentId: sLog.ParentId,
+			Content:  msg,
+			Ws_id:    sLog.Ws_id,
+			Level:    1,
+			Type:     1,
+			StartAt:  time.Now(),
+			EndAt:    time.Now(),
+		})
+	}
 	sugarLogger.Info(msg)
 
 	return nil
@@ -152,12 +204,28 @@ func (sLog *smartIDELogStruct) Debug(args ...string) (err error) {
 	}
 
 	msg := strings.Join(args, " ")
+	if isRepeat(msg, zapcore.InfoLevel) { // 是否重复
+		return
+	} else {
+		_lastMsg = lastMsg{Message: msg, CreateTime: time.Now(), Level: zapcore.InfoLevel}
+	}
 
 	prefix := getPrefix(zapcore.DebugLevel)
 	if isDebugLevel {
 		fmt.Println(prefix, msg)
 	}
-
+	if sLog.Ws_id != "" {
+		go SendAndReceive("business", "workspaceLog", "", "", model.WorkspaceLog{
+			Title:    "",
+			ParentId: sLog.ParentId,
+			Content:  msg,
+			Ws_id:    sLog.Ws_id,
+			Level:    3,
+			Type:     1,
+			StartAt:  time.Now(),
+			EndAt:    time.Now(),
+		})
+	}
 	sugarLogger.Debug(msg)
 
 	return nil
@@ -171,6 +239,18 @@ func (sLog *smartIDELogStruct) Console(args ...interface{}) (err error) {
 	}
 
 	fmt.Println(args...)
+	sugarLogger.Info(args...)
+
+	return nil
+}
+
+// 输出到控制台，但是不加任何的修饰
+func (sLog *smartIDELogStruct) ConsoleDebug(args ...interface{}) (err error) {
+
+	if len(args) <= 0 {
+		return nil
+	}
+
 	sugarLogger.Info(args...)
 
 	return nil
@@ -196,45 +276,15 @@ func (sLog *smartIDELogStruct) Importance(infos ...string) (err error) {
 		return nil
 	}
 
-	prefix := getPrefix(zapcore.WarnLevel)
-	fmt.Println(prefix, msg)
-
-	sugarLogger.Warn(msg)
-
-	return nil
-}
-
-var lastMsg string = ""
-
-type LogConfig struct {
-	// 重复的间隔
-	RepeatDependSecond int
-}
-
-// 一些重要的信息，已warning的形式输出到控制台
-func (sLog *smartIDELogStruct) ImportanceWithConfig(config LogConfig, infos ...string) (err error) {
-	// msg
-	msg := strings.Join(infos, " ")
-	if len(msg) <= 0 {
-		return nil
-	}
-
-	// 重复
-	if msg == lastMsg {
-		if (config != LogConfig{}) {
-			if config.RepeatDependSecond == -1 { // 为-1时代表不重复
-				return
-			}
-		}
+	if isRepeat(msg, zapcore.WarnLevel) { // 是否重复
+		return
 	} else {
-		lastMsg = msg
+		_lastMsg = lastMsg{Message: msg, CreateTime: time.Now(), Level: zapcore.InfoLevel}
 	}
 
-	// 前缀
 	prefix := getPrefix(zapcore.WarnLevel)
 	fmt.Println(prefix, msg)
 
-	//
 	sugarLogger.Warn(msg)
 
 	return nil
@@ -252,7 +302,18 @@ func (sLog *smartIDELogStruct) Warning(warning ...string) (err error) {
 	if isDebugLevel {
 		fmt.Println(prefix, msg)
 	}
-
+	if sLog.Ws_id != "" {
+		go SendAndReceive("business", "workspaceLog", "", "", model.WorkspaceLog{
+			Title:    "",
+			ParentId: sLog.ParentId,
+			Content:  msg,
+			Ws_id:    sLog.Ws_id,
+			Level:    2,
+			Type:     1,
+			StartAt:  time.Now(),
+			EndAt:    time.Now(),
+		})
+	}
 	sugarLogger.Warn(msg)
 
 	return nil

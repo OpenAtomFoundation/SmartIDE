@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
@@ -68,12 +69,12 @@ func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId in
 		remoteHost = workspaceInfo.Remote.Addr
 	}
 
-	if workspaceInfo.ID != "" { // 用户录入workspaceid的情况
+	if workspaceInfo.ID != "" { //2.1. 用户录入workspaceid的情况
 		i, err := strconv.Atoi(workspaceInfo.ID)
 		common.CheckError(err)
 		affectId = int64(i)
 		isExit = true
-	} else { // 用户有可能会不输入workspaceid，继续使用原有的参数
+	} else { //2.2. 用户有可能会不输入workspaceid，继续使用原有的参数
 		originWorkspace, err := GetSingleWorkspaceByParams(workspaceInfo.Mode, workspaceInfo.WorkingDirectoryPath, workspaceInfo.GitCloneRepoUrl, remoteID, remoteHost)
 		common.CheckError(err)
 
@@ -89,23 +90,44 @@ func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId in
 	//3. insert or update
 	jsonBytes, err := json.Marshal(workspaceInfo.Extend) // 扩展字段序列化
 	common.CheckError(err)
-
-	if workspaceInfo.ConfigYaml.IsNil() {
+	if workspaceInfo.Mode != workspace.WorkingMode_K8s && workspaceInfo.ConfigYaml.IsNil() {
 		return -1, errors.New("配置文件数据为空！") //TODO
 	}
 	if workspaceInfo.TempDockerCompose.IsNil() && workspaceInfo.Mode != workspace.WorkingMode_K8s {
 		return -1, errors.New("生成docker-compose数据为空！") //TODO
 	}
 
-	configStr, _ := workspaceInfo.ConfigYaml.ToYaml()
-	linkComposeStr, _ := workspaceInfo.LinkDockerCompose.ToYaml()
-	tempComposeStr, _ := workspaceInfo.TempDockerCompose.ToYaml()
-	if !isExit { // insert
+	//4. 配置文件 及 关联配置
+	configStr := ""
+	linkComposeStr := ""
+	tempComposeStr := ""
+	//4.1. k8s 时关联文件格式单独指定
+	if workspaceInfo.Mode == workspace.WorkingMode_K8s {
+		configStr, _ = workspaceInfo.K8sInfo.OriginK8sYaml.ConvertToConfigYaml()
+		linkComposeStr, _ = workspaceInfo.K8sInfo.OriginK8sYaml.ConvertToK8sYaml()
+		tempComposeStr, _ = workspaceInfo.K8sInfo.TempK8sConfig.ConvertToK8sYaml()
+	} else {
+		configStr, _ = workspaceInfo.ConfigYaml.ToYaml()
+		linkComposeStr, _ = workspaceInfo.LinkDockerCompose.ToYaml()
+		tempComposeStr, _ = workspaceInfo.TempDockerCompose.ToYaml()
+	}
+	//4.2. 校验
+	if strings.TrimSpace(configStr) == "" {
+		return -1, errors.New("配置文件数据为空！")
+	}
+	if workspaceInfo.Mode == workspace.WorkingMode_K8s && strings.TrimSpace(linkComposeStr) == "" {
+		return -1, errors.New("链接K8S yaml文件为空！")
+	}
+	if strings.TrimSpace(tempComposeStr) == "" {
+		return -1, errors.New("生成临时文件为空！")
+	}
+
+	//5. insert or update
+	if !isExit { //5.1. insert
 		remoteId := sql.NullInt32{} // 可能是个空值
 		k8sId := sql.NullInt32{}    // 可能是个空值
 
-		//3.1. 插入到remote表中
-		if workspaceInfo.Mode != workspace.WorkingMode_K8s {
+		if workspaceInfo.Mode != workspace.WorkingMode_K8s { // 插入到 remote 表中
 			if (workspaceInfo.Remote != workspace.RemoteInfo{}) {
 				tmpId, err := InsertOrUpdateRemote(workspaceInfo.Remote)
 				common.CheckError(err)
@@ -116,7 +138,7 @@ func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId in
 					}
 				}
 			}
-		} else {
+		} else { // 插入到 k8s 表中 //TODO 表结构待定
 			tmpId, err := InsertOrUpdateK8sInfo(workspaceInfo.K8sInfo)
 			common.CheckError(err)
 			if tmpId > 0 {
@@ -127,7 +149,7 @@ func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId in
 			}
 		}
 
-		//3.2.
+		// sql
 		stmt, err := db.Prepare(`INSERT INTO workspace(w_name, w_workingdir, w_docker_compose_file_path, w_config_file, r_id,k_id,
 												w_mode, w_git_clone_repo_url, w_git_auth_type, w_branch,
 												w_json, w_config_content, w_link_compose_content, w_temp_compose_content)  
@@ -144,6 +166,7 @@ func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId in
 		}
 		return res.LastInsertId()
 	} else { // update
+		// exec
 		stmt, err := db.Prepare(`update workspace 
 								set w_name=?, w_workingdir=?, w_docker_compose_file_path=?, w_config_file=?,
 									w_mode=?, w_git_clone_repo_url=?, w_git_auth_type=?, w_branch=?,
@@ -164,7 +187,7 @@ func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId in
 	return affectId, err
 }
 
-//
+// 获取工作区列表
 func GetWorkspaceList() (workspaces []workspace.WorkspaceInfo, err error) {
 	db := getDb()
 	defer db.Close()
@@ -194,7 +217,6 @@ func GetWorkspaceList() (workspaces []workspace.WorkspaceInfo, err error) {
 		default:
 			err = errSql
 		}
-		//   fmt.Println(uid, username, department, created)
 	}
 
 	return workspaces, err
@@ -274,44 +296,14 @@ func GetSingleWorkspaceByParams(workingMode workspace.WorkingMode, workingDir st
 // 赋值
 func workspaceDataMap(workspaceInfo *workspace.WorkspaceInfo, do workspaceDo) error {
 
-	// 基本信息
+	//1. 基本信息
 	workspaceInfo.ID = strconv.Itoa(do.w_id)
 	workspaceInfo.Name = do.w_name
 	workspaceInfo.WorkingDirectoryPath = do.w_workingdir.String
 	workspaceInfo.ConfigFilePath = do.w_config_file.String
 	workspaceInfo.TempDockerComposeFilePath = do.w_docker_compose_file_path.String
 
-	// 初始化配置文件
-	if do.w_mode == string(workspace.WorkingMode_Remote) {
-		workspaceInfo.ConfigYaml = *config.NewConfigRemote(do.w_workingdir.String, do.w_config_file.String, do.w_config_content.String)
-
-	} else {
-		workspaceInfo.ConfigYaml = *config.NewConfig(do.w_workingdir.String, do.w_config_file.String, do.w_config_content.String)
-	}
-
-	// 连接的docker-compose文件
-	if do.w_link_compose_content.String != "" {
-		err := yaml.Unmarshal([]byte(do.w_link_compose_content.String), &workspaceInfo.LinkDockerCompose)
-		if err != nil {
-			return err
-		}
-	}
-
-	// 生成的docker-compose文件
-	if do.w_temp_compose_content.String != "" {
-		err := yaml.Unmarshal([]byte(do.w_temp_compose_content.String), &workspaceInfo.TempDockerCompose)
-		if err != nil {
-			return err
-		}
-	}
-
-	// 扩展属性
-	if do.w_json.String != "" {
-		err := json.Unmarshal([]byte(do.w_json.String), &workspaceInfo.Extend)
-		common.CheckError(err)
-	}
-
-	// 类型
+	//2. 类型
 	if do.w_mode == string(workspace.WorkingMode_Local) {
 		workspaceInfo.Mode = workspace.WorkingMode_Local
 	} else if do.w_mode == string(workspace.WorkingMode_Remote) {
@@ -320,6 +312,49 @@ func workspaceDataMap(workspaceInfo *workspace.WorkspaceInfo, do workspaceDo) er
 		workspaceInfo.Mode = workspace.WorkingMode_K8s
 	} else {
 		panic("w_mode != string(WorkingMode_Local)")
+	}
+
+	//3. 初始化配置文件
+	if do.w_mode == string(workspace.WorkingMode_Remote) {
+		workspaceInfo.ConfigYaml = *config.NewRemoteConfig(do.w_workingdir.String, do.w_config_file.String, do.w_config_content.String)
+
+	} else if do.w_mode == string(workspace.WorkingMode_K8s) {
+		workspaceInfo.ConfigYaml = *config.NewConfig(do.w_workingdir.String, do.w_config_file.String, do.w_config_content.String)
+
+		originK8sYaml, _ := config.NewK8SConfig("", []string{}, do.w_config_content.String, do.w_link_compose_content.String)
+		workspaceInfo.K8sInfo.OriginK8sYaml = *originK8sYaml
+
+	} else {
+		workspaceInfo.ConfigYaml = *config.NewConfig(do.w_workingdir.String, do.w_config_file.String, do.w_config_content.String)
+
+	}
+
+	//4. 关联
+	if !(do.w_mode == string(workspace.WorkingMode_K8s)) {
+		// 连接的docker-compose文件
+		if do.w_link_compose_content.String != "" {
+			err := yaml.Unmarshal([]byte(do.w_link_compose_content.String), &workspaceInfo.LinkDockerCompose)
+			if err != nil {
+				return err
+			}
+		}
+
+		// 生成的docker-compose文件
+		if do.w_temp_compose_content.String != "" {
+			err := yaml.Unmarshal([]byte(do.w_temp_compose_content.String), &workspaceInfo.TempDockerCompose)
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		tempK8sYaml, _ := config.NewK8SConfig(workspaceInfo.ConfigFilePath, []string{}, do.w_config_content.String, do.w_temp_compose_content.String)
+		workspaceInfo.K8sInfo.TempK8sConfig = *tempK8sYaml
+	}
+
+	//5. 扩展属性
+	if do.w_json.String != "" {
+		err := json.Unmarshal([]byte(do.w_json.String), &workspaceInfo.Extend)
+		common.CheckError(err)
 	}
 
 	// git 验证方式
@@ -340,7 +375,12 @@ func workspaceDataMap(workspaceInfo *workspace.WorkspaceInfo, do workspaceDo) er
 	}
 	kid := int(do.k_id.Int32)
 	if int(kid) >= 0 {
-		workspaceInfo.K8sInfo, _ = GetK8sInfoById(kid)
+		temp, _ := GetK8sInfoById(kid)
+		if temp != nil {
+			workspaceInfo.K8sInfo.ID = temp.ID
+			workspaceInfo.K8sInfo.Context = temp.Context
+			workspaceInfo.K8sInfo.Namespace = temp.Namespace
+		}
 	}
 
 	// 其他

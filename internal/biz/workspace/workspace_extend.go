@@ -18,6 +18,8 @@ func (workspace *WorkspaceInfo) GetWorkspaceExtend() WorkspaceExtend {
 		if workspace.TempDockerCompose.IsNil() || workspace.ConfigYaml.IsNil() {
 			return extend
 		}
+	} else {
+
 	}
 
 	// 兼容链接docker-compose 和 不链接docker-compose 两种方式
@@ -66,6 +68,8 @@ func (workspace *WorkspaceInfo) GetWorkspaceExtend() WorkspaceExtend {
 				if originLocalPort == model.CONST_Local_Default_BindingPort_WebIDE {
 					if containerPort == model.CONST_Container_JetBrainsIDEPort {
 						label = "tools-webide-jb"
+					} else if containerPort == model.CONST_Container_OpensumiIDEPort {
+						label = "tools-webide-opensumi"
 					} else {
 						label = "tools-webide-vscode"
 					}

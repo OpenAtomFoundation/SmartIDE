@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors:
- * @LastEditTime:
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-03-28 23:15:56
  */
 package common
 
@@ -63,34 +63,6 @@ func IsPortAvailable(port int) (result bool, err error) {
 	}
 
 	return
-
-	/* 	address := fmt.Sprintf(":%d", port)
-	   	ln, err := net.Listen("tcp", address)
-	   	if err != nil {
-	   		return false
-	   	}
-
-	   	defer ln.Close()
-	   	return true */
-
-	/*
-		address := fmt.Sprintf("%s:%d", "localhost", port)
-		listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", "localhost", port))
-		if err != nil {
-			SmartIDELog.Debug(fmt.Sprintf("tcp port %s is taken: %s", address, err))
-			return false
-		}
-		defer listener.Close()
-
-		address = fmt.Sprintf("%s:%d", "0.0.0.0", port)
-		conn, err := net.Listen("tcp", address)
-		if err != nil {
-			SmartIDELog.Debug(fmt.Sprintf("tcp port %s is taken: %s", address, err))
-			return false
-		}
-		defer conn.Close()
-	*/
-
 }
 
 // 检查当前端口是否被占用，并返回一个可用端口

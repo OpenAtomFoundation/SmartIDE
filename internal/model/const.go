@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2021-12-30 19:48:33
  * @LastEditors: kenan
- * @LastEditTime: 2022-02-18 16:13:41
+ * @LastEditTime: 2022-03-15 17:09:35
  * @FilePath: /smartide-cli/internal/model/const.go
  * @Description:
  *
@@ -15,6 +15,9 @@ const CONST_Container_WebIDEPort int = 3000
 
 // 容器内部的JetBrains IDE的默认端口
 const CONST_Container_JetBrainsIDEPort int = 8887
+
+// 容器内部的Opensumi IDE的默认端口
+const CONST_Container_OpensumiIDEPort int = 8000
 
 // 容器内部的ssh端口
 const CONST_Container_SSHPort int = 22
@@ -54,3 +57,5 @@ const CONST_DEV_CONTAINER_USER_DEFAULT_PASSWORD = "smartide123.@IDE"
 
 //默认登录地址
 const CONST_LOGIN_URL = "https://dev.smartide.cn"
+
+const CONST_WS_URL = "ws://dev.smartide.cn/smartide/ws"

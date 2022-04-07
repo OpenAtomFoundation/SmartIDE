@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-03-16 14:13:54
+ * @LastEditTime: 2022-04-06 18:22:11
  */
 package start
 
@@ -80,7 +80,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fun
 	output, err := sshRemote.ExeSSHCommand(catCommand)
 	common.CheckErrorFunc(err, serverFeedback)
 	configYamlContent := output
-	currentConfig := config.NewConfigRemote(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFilePath, configYamlContent)
+	currentConfig := config.NewRemoteConfig(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFilePath, configYamlContent)
 
 	//3. docker-compose
 	//3.1. 获取 compose 数据
@@ -227,35 +227,39 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fun
 	}
 
 	//8. 打开浏览器
-	var url string
-	//vscode启动时候默认打开文件夹处理
-	common.SmartIDELog.Info(i18nInstance.VmStart.Info_warting_for_webide)
-	switch strings.ToLower(currentConfig.Workspace.DevContainer.IdeType) {
-	case "vscode":
-		url = fmt.Sprintf("http://localhost:%v/?folder=vscode-remote://localhost:%v%v",
-			unusedLocalPort4IdeBindingPort, unusedLocalPort4IdeBindingPort, workspaceInfo.GetContainerWorkingPathWithVolumes())
-	case "jb-projector":
-		url = fmt.Sprintf(`http://localhost:%v`, unusedLocalPort4IdeBindingPort)
-	default:
-		url = fmt.Sprintf(`http://localhost:%v`, unusedLocalPort4IdeBindingPort)
-	}
-	if isModeServer { // mode server 模式下，不打开浏览器
-		common.SmartIDELog.InfoF(i18nInstance.VmStart.Info_open_brower, url)
-	} else {
-		// 检查url是否可以正常打开，可以正常访问代表容器运行正常
-		isUrlReady := false
-		for !isUrlReady {
-			resp, err := http.Get(url)
-			if (err == nil) && (resp.StatusCode == 200) {
-				isUrlReady = true
-				err = common.OpenBrowser(url)
-				if err != nil {
-					common.SmartIDELog.Importance(err.Error())
+	if currentConfig.Workspace.DevContainer.IdeType != config.IdeTypeEnum_SDKOnly {
+		var url string
+		//vscode启动时候默认打开文件夹处理
+		common.SmartIDELog.Info(i18nInstance.VmStart.Info_warting_for_webide)
+		switch currentConfig.Workspace.DevContainer.IdeType {
+		case config.IdeTypeEnum_VsCode:
+			url = fmt.Sprintf("http://localhost:%v/?folder=vscode-remote://localhost:%v%v",
+				unusedLocalPort4IdeBindingPort, unusedLocalPort4IdeBindingPort, workspaceInfo.GetContainerWorkingPathWithVolumes())
+		case config.IdeTypeEnum_JbProjector:
+			url = fmt.Sprintf(`http://localhost:%v`, unusedLocalPort4IdeBindingPort)
+		case config.IdeTypeEnum_Opensumi:
+			url = fmt.Sprintf(`http://localhost:%v/?workspaceDir=/home/project`, unusedLocalPort4IdeBindingPort)
+		default:
+			url = fmt.Sprintf(`http://localhost:%v`, unusedLocalPort4IdeBindingPort)
+		}
+		if isModeServer { // mode server 模式下，不打开浏览器
+			common.SmartIDELog.InfoF(i18nInstance.VmStart.Info_open_brower, url)
+		} else {
+			// 检查url是否可以正常打开，可以正常访问代表容器运行正常
+			isUrlReady := false
+			for !isUrlReady {
+				resp, err := http.Get(url)
+				if (err == nil) && (resp.StatusCode == 200) {
+					isUrlReady = true
+					err = common.OpenBrowser(url)
+					if err != nil {
+						common.SmartIDELog.Importance(err.Error())
+					}
+					common.SmartIDELog.InfoF(i18nInstance.VmStart.Info_open_brower, url)
+				} else {
+					msg := fmt.Sprintf("%v 等待启动", url)
+					common.SmartIDELog.Debug(msg)
 				}
-				common.SmartIDELog.InfoF(i18nInstance.VmStart.Info_open_brower, url)
-			} else {
-				msg := fmt.Sprintf("%v 等待启动", url)
-				common.SmartIDELog.Debug(msg)
 			}
 		}
 	}

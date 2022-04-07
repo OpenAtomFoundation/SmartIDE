@@ -98,7 +98,7 @@ func init() {
 	rootCmd.PersistentFlags().StringP("servertoken", "", "", i18n.GetInstance().Main.Info_help_flag_server_token)
 	rootCmd.PersistentFlags().StringP("serverusername", "", "", i18n.GetInstance().Main.Info_help_flag_server_username)
 	rootCmd.PersistentFlags().StringP("serveruserguid", "", "", i18n.GetInstance().Main.Info_help_flag_server_userguid)
-	rootCmd.PersistentFlags().StringP("serverfeedback", "", "", i18n.GetInstance().Main.Info_help_flag_server_feedback)
+	rootCmd.PersistentFlags().StringP("serverhost", "", "", i18n.GetInstance().Main.Info_help_flag_server_host)
 
 	// disable completion command
 	rootCmd.CompletionOptions.DisableDefaultCmd = true

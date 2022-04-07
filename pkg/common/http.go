@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-10 18:11:42
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-03-17 09:17:38
+ * @LastEditTime: 2022-03-22 15:23:09
  * @FilePath: /smartide-cli/pkg/common/http.go
  * @Description:
  *
@@ -16,6 +16,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -33,11 +34,6 @@ type UploadFile struct {
 	// 文件全路径
 	Filepath string
 }
-
-/* // 请求客户端
-var httpClient = &http.Client{
-	Timeout: 10 * time.Second,
-} */
 
 func Get(reqUrl string, reqParams map[string]string, headers map[string]string) (string, error) {
 	urlParams := url.Values{}
@@ -59,6 +55,10 @@ func Get(reqUrl string, reqParams map[string]string, headers map[string]string) 
 	for k, v := range headers {
 		httpRequest.Header.Add(k, v)
 	}
+
+	// debug
+	SmartIDELog.Debug(formatRequest(httpRequest, nil))
+
 	// 发送请求
 	resp, err := httpClient.Do(httpRequest)
 	if err != nil {
@@ -97,6 +97,10 @@ func Put(reqUrl string, reqParams map[string]interface{}, headers map[string]str
 	for k, v := range headers {
 		httpRequest.Header.Add(k, v)
 	}
+
+	// debug
+	SmartIDELog.Debug(formatRequest(httpRequest, reqParams))
+
 	// 发送请求
 	resp, err := httpClient.Do(httpRequest)
 	if err != nil {
@@ -116,7 +120,7 @@ var timeout time.Duration = 10 * time.Second
 //
 func getClient(url string) *http.Client {
 	_httpClient := &http.Client{
-		Timeout: timeout,
+		Timeout: timeout, // 请求超时时间
 	}
 	if strings.HasPrefix(url, "https") {
 		tr := &http.Transport{
@@ -139,6 +143,10 @@ func post(reqUrl string, reqParams map[string]interface{}, contentType string, f
 	for k, v := range headers {
 		httpRequest.Header.Add(k, v)
 	}
+
+	// debug
+	SmartIDELog.Debug(formatRequest(httpRequest, reqParams))
+
 	// 发送请求
 	resp, err := httpClient.Do(httpRequest)
 	if err != nil {
@@ -195,4 +203,37 @@ func getReader(reqParams map[string]interface{}, contentType string, files []Upl
 		reqBody := urlValues.Encode()
 		return strings.NewReader(reqBody), contentType
 	}
+}
+
+// formatRequest generates ascii representation of a request
+func formatRequest(r *http.Request, reqParams map[string]interface{}) string {
+	// Create return string
+	var request []string
+	// Add the request string
+	url := fmt.Sprintf("%v %v %v", r.Method, r.URL, r.Proto)
+	request = append(request, url)
+	// Add the host
+	request = append(request, fmt.Sprintf("Host: %v", r.Host))
+	// Loop through headers
+	for name, headers := range r.Header {
+		name = strings.ToLower(name)
+		for _, h := range headers {
+			request = append(request, fmt.Sprintf("%v: %v", name, h))
+		}
+	}
+
+	// If this is a POST, add post data
+	if r.Method == "POST" {
+		r.ParseForm()
+		request = append(request, "\n")
+		request = append(request, r.Form.Encode())
+	}
+
+	if reqParams != nil {
+		j, _ := json.Marshal(reqParams)
+		request = append(request, string(j))
+	}
+
+	// Return the request as a string
+	return strings.Join(request, "\n")
 }

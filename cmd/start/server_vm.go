@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-16 17:44:45
  * @LastEditors: kenan
- * @LastEditTime: 2022-02-21 15:37:20
+ * @LastEditTime: 2022-04-02 18:39:40
  * @FilePath: /smartide-cli/cmd/start/server_vm.go
  * @Description:
  *
@@ -26,27 +26,52 @@ import (
 
 // 远程服务器执行 start 命令
 func ExecuteServerVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) {
-	common.SmartIDELog.Info(i18nInstance.VmStart.Info_starting)
+	currentAuth, err := workspace.GetCurrentUser()
+	common.CheckError(err)
+	if currentAuth != (model.Auth{}) && currentAuth.Token != "" && currentAuth.Token != nil {
+		wsURL := fmt.Sprint(strings.ReplaceAll(strings.ReplaceAll(currentAuth.LoginUrl, "https", "ws"), "http", "ws"), "/ws/smartide/ws")
+		common.WebsocketStart(wsURL)
 
+		if pid, err := workspace.GetParentId(workspaceInfo.ServerWorkSpace.NO, 5, currentAuth.Token.(string), currentAuth.LoginUrl); err == nil && pid > 0 {
+			common.SmartIDELog.Ws_id = workspaceInfo.ServerWorkSpace.NO
+			common.SmartIDELog.ParentId = pid
+		} else {
+			if err := workspace.CreateWsLog(workspaceInfo.ServerWorkSpace.NO, currentAuth.Token.(string), currentAuth.LoginUrl, "客户端启动工作区", "客户端启动工作区"); err == nil {
+				if pid, err := workspace.GetParentId(workspaceInfo.ServerWorkSpace.NO, 5, currentAuth.Token.(string), currentAuth.LoginUrl); err == nil && pid > 0 {
+					common.SmartIDELog.Ws_id = workspaceInfo.ServerWorkSpace.NO
+					common.SmartIDELog.ParentId = pid
+				}
+			}
+		}
+
+	}
+	// 从api 获取workspace}
+
+	common.SmartIDELog.Info(i18nInstance.VmStart.Info_starting)
 	// 检查工作区的状态
 	if workspaceInfo.ServerWorkSpace.Status != model.WorkspaceStatusEnum_Start {
 		if workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Pending || workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Init {
 			common.SmartIDELog.Error("当前工作区正在启动中，请等待！")
+
 		} else if workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Stop {
 			common.SmartIDELog.Error("当前工作区已停止！")
+
 		} else {
 			common.SmartIDELog.Error("当前工作区运行异常！")
+
 		}
 	}
 
 	//0. 连接到远程主机
 	msg := fmt.Sprintf(" %v@%v:%v ...", workspaceInfo.Remote.UserName, workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort)
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_connect_remote + msg)
+
 	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password)
 	common.CheckError(err)
 
 	//6. 当前主机绑定到远程端口
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_tunnel_waiting) // log
+
 	var addrMapping map[string]string = map[string]string{}
 	var unusedLocalPort4IdeBindingPort int
 	for i, pmi := range workspaceInfo.Extend.Ports {
@@ -61,6 +86,7 @@ func ExecuteServerVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteF
 		unusedClientPort, err = common.CheckAndGetAvailableLocalPort(pmi.CurrentHostPort, 100)
 		if err != nil {
 			common.SmartIDELog.Importance(err.Error())
+
 		}
 
 		// 更新extend.ports的信息
@@ -85,6 +111,7 @@ func ExecuteServerVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteF
 		msg := fmt.Sprintf("localhost:%v -> %v:%v -> container:%v",
 			unusedClientPortStr, workspaceInfo.Remote.Addr, pmi.OriginHostPort, pmi.ContainerPort)
 		common.SmartIDELog.Info(msg)
+
 	}
 
 	//6.2. 执行绑定
@@ -94,12 +121,14 @@ func ExecuteServerVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteF
 	var checkUrl string
 	//vscode启动时候默认打开文件夹处理
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_warting_for_webide + fmt.Sprintf(`: %v`, unusedLocalPort4IdeBindingPort))
-	switch strings.ToLower(workspaceInfo.ConfigYaml.Workspace.DevContainer.IdeType) {
-	case "vscode":
+	switch workspaceInfo.ConfigYaml.Workspace.DevContainer.IdeType {
+	case config.IdeTypeEnum_VsCode:
 		checkUrl = fmt.Sprintf("http://localhost:%v/?folder=vscode-remote://localhost:%v%v",
 			unusedLocalPort4IdeBindingPort, unusedLocalPort4IdeBindingPort, workspaceInfo.GetContainerWorkingPathWithVolumes())
-	case "jb-projector":
+	case config.IdeTypeEnum_JbProjector:
 		checkUrl = fmt.Sprintf(`http://localhost:%v`, unusedLocalPort4IdeBindingPort)
+	case config.IdeTypeEnum_Opensumi:
+		checkUrl = fmt.Sprintf(`http://localhost:%v/?workspaceDir=/home/project`, unusedLocalPort4IdeBindingPort)
 	default:
 		checkUrl = fmt.Sprintf(`http://localhost:%v`, unusedLocalPort4IdeBindingPort)
 	}
@@ -110,15 +139,16 @@ func ExecuteServerVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteF
 			isUrlReady = true
 			//common.OpenBrowser(checkUrl) // 这里不用打开，从server中点击即可
 			common.SmartIDELog.InfoF(i18nInstance.VmStart.Info_open_brower, checkUrl)
+
 		} else {
 			msg := fmt.Sprintf("%v 检测失败", checkUrl)
 			common.SmartIDELog.Debug(msg)
+
 		}
 	}
 
 	//9. 更新server端的extend字段
-	currentAuth, err := workspace.GetCurrentUser()
-	common.CheckError(err)
+
 	err = smartideServer.FeeadbackExtend(currentAuth, workspaceInfo)
 	if err != nil {
 		common.SmartIDELog.Importance(err.Error())
