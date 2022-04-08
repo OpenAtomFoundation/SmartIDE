@@ -3,7 +3,7 @@
 USER_UID=${LOCAL_USER_UID:-1000}
 USER_GID=${LOCAL_USER_GID:-1000}
 USER_PASS=${LOCAL_USER_PASSWORD:-"smartide123.@IDE"}
-DISABLE_CHOWN=${DISABLE_CHOWN:-1}
+DISABLE_CHOWN=${DISABLE_CHOWN:-0}
 USERNAME=smartide
 
 echo "gosu_entrypoint_node.sh"
@@ -13,7 +13,7 @@ echo "Starting with USER_PASS : $USER_PASS"
 echo "Starting with DISABLE_CHOWN : $DISABLE_CHOWN"
 
 
-if [ $DISABLE_CHOWN == '0' ]; then
+if [ $DISABLE_CHOWN == '1' ]; then
     # 不进行用户授权
     echo "-----disable chown"
 elif [ $USER_UID == '0' ]; then
