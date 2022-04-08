@@ -12,11 +12,7 @@ echo "Starting with USER_GID : $USER_GID"
 echo "Starting with USER_PASS : $USER_PASS"
 echo "Starting with DISABLE_CHOWN : $DISABLE_CHOWN"
 
-
-if [ $DISABLE_CHOWN == '1' ]; then
-    # 不进行用户授权
-    echo "-----disable chown"
-elif [ $USER_UID == '0' ]; then
+if [ $USER_UID == '0' ]; then
     # root运行容器，容器里面一样root运行
     echo "-----root------Starting"
 
