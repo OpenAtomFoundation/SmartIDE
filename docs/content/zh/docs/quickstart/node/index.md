@@ -1,6 +1,6 @@
 ---
 title: "Node 快速启动教程"
-linkTitle: "node"
+linkTitle: "Node"
 weight: 30
 description: >
   本文档描述如何使用SmartIDE完成一个Node Express应用和React前端应用的完整开发，调试和代码提交过程。
@@ -478,3 +478,6 @@ smartide start https://gitee.com/smartide/sample-node-opensumi
 另外，你也可以通过VSCode或者JetBrains内置的远程开发模式进行Hybird模式的远程开发，具体请参考
 
 - [IDE远程开发操作手册](/zh/docs/manual/ide-remote/)
+
+---
+**感谢您对SmartIDE的支持：Be a Smart Developer，开发从未如此简单。**

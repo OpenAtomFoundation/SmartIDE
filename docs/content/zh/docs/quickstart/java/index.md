@@ -464,3 +464,6 @@ smartide new java -t springboot-idea
 另外，你也可以通过VSCode或者JetBrains内置的远程开发模式进行Hybird模式的远程开发，具体请参考
 
 - [IDE远程开发操作手册](/zh/docs/manual/ide-remote/)
+
+---
+**感谢您对SmartIDE的支持：Be a Smart Developer，开发从未如此简单。**
