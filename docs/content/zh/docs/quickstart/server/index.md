@@ -36,6 +36,20 @@ c. 登录后，进入SmartIDE首页：
 
 ![](images/server-005.png)
 
+到这里，我们就完成了SmartIDE Server端登录。
+
+d. CLI客户端登录
+> <i>**说明**：当前，SmartIDE仅支持通过cli建立安全隧道（SSH Tunnel）的方式的方式访问工作区，所以这里我们需要安装并通过CLI客户端完成登录，连接Server。未来我们会提供完全在线的方式，这样就可以通过一个简单的URL来访问你的工作区。<br>CLI具体安装操作见：[客户端安装](../../install)。</i>
+
+![](images/server-020.png)
+
+通过 se connect 命令连接server工作区：
+
+![](images/server-006.png)
+
+这样我们本地计算机就通过CLI客户端与Server的建立起连接了。
+
+
 ###  2. 创建资源
 
 资源是SmartIDE Server用于管理主机和k8s的方式，用户可以将自己的主机或者k8s集群加入到SmartIDE Server中进行统一管理。一旦资源纳入SmartIDE Server的管理，就可以通过以下的工作区管理功能在对应的资源上运行容器化开发环境，并通过WebIDE的方式进行访问。
@@ -63,7 +77,7 @@ b. 创建成功后，列表中，可以看到刚刚添加的记录。
 
 ![](images/server-011.png)
 
-###  3. 创建在线工作区
+###  3. 创建并连接在线工作区，进行编码及调试
 
 工作区是SmartIDE中用于管理开发环境的单元，每个代码版本对应一个工作区。当你完成了资源创建后，就可以通过工作区管理，在这些资源上创建工作区了。
 
@@ -85,28 +99,13 @@ c. 工作区详情中，我们可以看到工作区已经处于部署之中，�
 
 ![](images/server-019.png)
 
-到这里，工作区就已经准备就绪了。
-
-###  4. 通过CLI客户端，连接工作区，完成应用的开发与调试
-当前，SmartIDE仅支持通过cli建立安全隧道（SSH Tunnel）的方式的方式访问工作区。未来我们会提供完全在线的方式，这样就通过一个简单的URL来访问你的工作区。
-
-a. 本地安装客户端，具体操作步骤及安装脚本见：[客户端安装](../../install)。
-
-![](images/server-020.png)
-
-b. 安装完毕后，运行 se connect 命令连接server工作区。
-
-![](images/server-021.png)
-
-c. 返回SmartIDE Server工作区页面，点击IDE图标，如下图：
+d. 点击IDE图标，打开WebIDE界面，如下图：
 
 ![](images/server-023.png)
 
-d. 返回SmartIDE Server工作区页面，点击IDE图标，打开WebIDE界面：
+e. 这时，就可以在打开的WebIDE界面中，像使用本地IDE那样，进行代码的开发以及调试了：
 
 ![](images/server-025.png)
-
-e. 到这里，就可以像本地IDE一样，进行日常代码的开发以及调试了。
 
 > <i>**说明**：有关如何在WebIDE中开发和调试Node.js应用的方法，请参考 [cli快速启动](../../quickstart/cli) 和 [node快速启动](../../quickstart/node) 文档。</i>
 
