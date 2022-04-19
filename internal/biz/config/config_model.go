@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-04-06 18:24:24
+ * @LastEditTime: 2022-04-11 10:36:28
  */
 package config
 
@@ -142,6 +142,8 @@ type SmartIdeK8SConfig struct {
 
 		//
 		Networks []networkingV1.NetworkPolicy
+
+		Others []interface{}
 	} `yaml:"workspace"`
 }
 

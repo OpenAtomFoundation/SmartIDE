@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-10 16:51:36
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-03-16 14:32:40
+ * @LastEditTime: 2022-04-18 09:37:23
  * @FilePath: /smartide-cli/cmd/login.go
  * @Description:
  *
@@ -67,12 +67,12 @@ var loginCmd = &cobra.Command{
 		//TODO: 如果密码错误，可以重新录入再试
 
 		//2. 登录
-		err := login(loginUrl, userName, userPassword) // 使用密码登录
-		if err != nil {
+		errPassword := loginAndSaveToken(loginUrl, userName, userPassword) // 使用密码登录
+		if errPassword != nil {
 			// 尝试使用token登录
-			err0 := loginWithToken(loginUrl, userName, userPassword)
-			if err0 != nil {
-				common.CheckError(err)
+			errToken := loginWithTokenAndSaveToken(loginUrl, userName, userPassword)
+			if errToken != nil { // 如果token 也登录不成功，就返回用户密码登录方式的error
+				common.CheckError(errPassword)
 			}
 		}
 
@@ -80,7 +80,7 @@ var loginCmd = &cobra.Command{
 	},
 }
 
-func loginWithToken(loginUrl, userName, token string) error {
+func loginWithTokenAndSaveToken(loginUrl, userName, token string) error {
 
 	// 请求
 	_, err := workspace.GetServerWorkspaceList(model.Auth{UserName: userName, Token: token, LoginUrl: loginUrl})
@@ -94,7 +94,7 @@ func loginWithToken(loginUrl, userName, token string) error {
 }
 
 // 登录
-func login(loginUrl, userName, userPassword string) error {
+func loginAndSaveToken(loginUrl, userName, userPassword string) error {
 	url := fmt.Sprint(loginUrl, "/api/smartide/base/cliLogin")
 	response, err := common.PostJson(url, map[string]interface{}{"username": userName, "password": userPassword}, map[string]string{"Content-Type": "application/json"})
 	if err != nil {

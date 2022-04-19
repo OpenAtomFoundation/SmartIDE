@@ -3,11 +3,12 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-03-31 23:54:05
+ * @LastEditTime: 2022-04-11 10:37:15
  */
 package config
 
 import (
+	"errors"
 	"io/ioutil"
 	"os"
 	"path"
@@ -42,7 +43,7 @@ func NewK8SConfig(configFileAbsolutePath string, k8sYamlFileAbsolutePaths []stri
 	config := newConfig(localWorkingDir, fileName, configContent, false)
 	result = config.ConvertToSmartIdeK8SConfig()
 
-	parseYamlFunc := func(yamlFileContent string) {
+	parseYamlFunc := func(yamlFileContent string) error {
 		for _, subYamlFileContent := range strings.Split(yamlFileContent, "---") { // 分割符
 			subYamlFileContent = strings.TrimSpace(subYamlFileContent)
 			if subYamlFileContent == "" {
@@ -51,7 +52,13 @@ func NewK8SConfig(configFileAbsolutePath string, k8sYamlFileAbsolutePaths []stri
 
 			// 遍历k8s的yaml文件
 			decode := k8sScheme.Codecs.UniversalDeserializer().Decode
-			obj, groupKindVersion, _ := decode([]byte(subYamlFileContent), nil, nil)
+			obj, groupKindVersion, err := decode([]byte(subYamlFileContent), nil, nil)
+			if err != nil {
+				return err
+			}
+			if obj == nil || groupKindVersion == nil {
+				return errors.New("k8s yaml 文件解析失败！")
+			}
 
 			// example: https://developers.redhat.com/blog/2020/12/16/create-a-kubernetes-operator-in-golang-to-automatically-manage-a-simple-stateful-application#set_the_controller
 			switch groupKindVersion.Kind {
@@ -67,12 +74,19 @@ func NewK8SConfig(configFileAbsolutePath string, k8sYamlFileAbsolutePaths []stri
 			case "NetworkPolicy":
 				networkPolicy := obj.(*networkingV1.NetworkPolicy)
 				result.Workspace.Networks = append(result.Workspace.Networks, *networkPolicy)
+			default:
+				result.Workspace.Others = append(result.Workspace.Others, obj)
 			}
 		}
+
+		return nil
 	}
 
 	if k8sYamlContent != "" {
-		parseYamlFunc(k8sYamlContent)
+		err := parseYamlFunc(k8sYamlContent)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		if len(k8sYamlFileAbsolutePaths) == 0 {
 			dir := path.Dir(configFileAbsolutePath)
@@ -91,7 +105,10 @@ func NewK8SConfig(configFileAbsolutePath string, k8sYamlFileAbsolutePaths []stri
 				return nil, err
 			}
 			yamlFileContent := string(yamlFileBytes)
-			parseYamlFunc(yamlFileContent)
+			err = parseYamlFunc(yamlFileContent)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 

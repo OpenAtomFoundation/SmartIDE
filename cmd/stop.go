@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2022-04-06 10:14:45
+ * @LastEditTime: 2022-04-13 15:26:17
  */
 package cmd
 
@@ -55,7 +55,7 @@ var stopCmd = &cobra.Command{
 		// 检查错误并feedback
 		var checkErrorFeedback = func(err error) {
 			if err != nil {
-				server.Feedback_Finish(server.FeedbackCommandEnum_Stop, cmd, false, 0, workspaceInfo, err.Error())
+				server.Feedback_Finish(server.FeedbackCommandEnum_Stop, cmd, false, 0, workspaceInfo, err.Error(), "")
 			}
 			common.CheckError(err)
 		}
@@ -95,7 +95,7 @@ var stopCmd = &cobra.Command{
 
 			// feeadback
 			common.SmartIDELog.Info("反馈运行结果...")
-			err = server.Feedback_Finish(server.FeedbackCommandEnum_Stop, cmd, err == nil, 0, workspaceInfo, "")
+			err = server.Feedback_Finish(server.FeedbackCommandEnum_Stop, cmd, err == nil, 0, workspaceInfo, "", "")
 			common.CheckError(err)
 
 		} else if workspaceInfo.Mode == workspace.WorkingMode_Server { // 录入的是服务端工作区id

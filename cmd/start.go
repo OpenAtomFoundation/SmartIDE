@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2022-04-06 10:14:17
+ * @LastEditTime: 2022-04-13 15:25:44
  */
 package cmd
 
@@ -102,7 +102,7 @@ var startCmd = &cobra.Command{
 				return
 			}
 			if err != nil {
-				smartideServer.Feedback_Finish(server.FeedbackCommandEnum_Start, cmd, false, 0, workspace.WorkspaceInfo{}, err.Error())
+				smartideServer.Feedback_Finish(server.FeedbackCommandEnum_Start, cmd, false, 0, workspace.WorkspaceInfo{}, err.Error(), "")
 			}
 		})
 

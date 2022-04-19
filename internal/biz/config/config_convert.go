@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-30 23:10:52
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-04-06 17:26:54
+ * @LastEditTime: 2022-04-11 10:37:47
  * @FilePath: /smartide-cli/internal/biz/config/config_convert.go
  */
 
@@ -160,6 +160,8 @@ func (k8sConfig *SmartIdeK8SConfig) SaveK8STempYaml(dir string, repoName string)
 }
 
 func (k8sConfig *SmartIdeK8SConfig) ConvertToK8sYaml() (string, error) {
+
+	// 现转换为json，在转换为yaml格式
 	var func1 = func(obj interface{}) (string, error) {
 		json, err := json.Marshal(obj)
 		if err != nil {
@@ -197,6 +199,13 @@ func (k8sConfig *SmartIdeK8SConfig) ConvertToK8sYaml() (string, error) {
 	}
 	for _, networkPolicy := range k8sConfig.Workspace.Networks {
 		content, err := func1(networkPolicy)
+		if err != nil {
+			return "", err
+		}
+		k8sYamlContent += string(content)
+	}
+	for _, other := range k8sConfig.Workspace.Others {
+		content, err := func1(other)
 		if err != nil {
 			return "", err
 		}

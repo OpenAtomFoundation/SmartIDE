@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-04-06 17:56:32
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-04-13 15:32:48
  */
 package cmd
 
@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -106,7 +107,7 @@ var removeCmd = &cobra.Command{
 		// 检查错误并feedback
 		var checkErrorFeedback = func(err error) {
 			if err != nil {
-				server.Feedback_Finish(server.FeedbackCommandEnum_Remove, cmd, false, 0, workspaceInfo, err.Error())
+				server.Feedback_Finish(server.FeedbackCommandEnum_Remove, cmd, false, 0, workspaceInfo, err.Error(), "")
 			}
 			common.CheckError(err)
 		}
@@ -190,7 +191,7 @@ var removeCmd = &cobra.Command{
 			if removeCmdFlag.IsOnlyRemoveContainer {
 				command = server.FeedbackCommandEnum_RemoveContainer
 			}
-			err = server.Feedback_Finish(command, cmd, err == nil, 0, workspaceInfo, msg)
+			err = server.Feedback_Finish(command, cmd, err == nil, 0, workspaceInfo, msg, "")
 			common.CheckError(err)
 
 		} else if workspaceInfo.Mode == workspace.WorkingMode_Server { // 录入的是服务端工作区id
@@ -222,13 +223,24 @@ var removeCmd = &cobra.Command{
 
 		} else if workspaceInfo.Mode == workspace.WorkingMode_K8s { // k8s 模式
 			common.SmartIDELog.Info(i18nInstance.Remove.Info_workspace_removing)
+
+			// 移除k8s资源
 			common.SmartIDELog.Info("移除k8s资源...")
 			kubernetes, err := kubectl.NewKubernetes(workspaceInfo.K8sInfo.Namespace)
 			common.CheckError(err)
-			output, err := kubernetes.ExecKubectlCommandCombined("delete -f "+workspaceInfo.TempDockerComposeFilePath, "")
+			output, err := kubernetes.ExecKubectlCommandCombined("delete --force -f "+workspaceInfo.TempDockerComposeFilePath, "")
 			common.SmartIDELog.Debug(output)
 			common.CheckError(err)
 
+			// 删除本地.ide目录下的文件
+			common.SmartIDELog.Info("移除本地缓存文件...")
+			home, err := os.UserHomeDir()
+			common.CheckError(err)
+			repoName := common.GetRepoName(workspaceInfo.GitCloneRepoUrl)
+			filePath := path.Join(home, ".ide", repoName)
+			os.RemoveAll(filePath)
+
+			// 删除数据
 			common.SmartIDELog.Info("删除数据...")
 			i, err := strconv.Atoi(workspaceInfo.ID)
 			common.CheckError(err)

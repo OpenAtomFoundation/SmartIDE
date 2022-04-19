@@ -1,8 +1,8 @@
 /*
  * @Author: kenan
  * @Date: 2022-02-15 17:18:27
- * @LastEditors: Please set LastEditors
- * @LastEditTime: 2022-03-15 14:45:18
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-04-18 09:39:58
  * @FilePath: /smartide-cli/internal/biz/workspace/workspace.go
  * @Description:
  *
@@ -42,7 +42,11 @@ func GetServerWorkspaceList(auth model.Auth) (ws []WorkspaceInfo, err error) {
 	l := &model.WorkspaceListResponse{}
 	err = json.Unmarshal([]byte(response), l)
 	common.CheckError(err)
-	if l.Code == 0 && len(l.Data.List) > 0 {
+	if l.Code != 0 {
+		err = errors.New(l.Msg)
+		return
+	}
+	if len(l.Data.List) > 0 {
 		{
 			for _, serverWorkSpace := range l.Data.List {
 				workspaceInfo, err := CreateWorkspaceInfoFromServer(serverWorkSpace)

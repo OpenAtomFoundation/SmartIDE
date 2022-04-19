@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-04-06 18:22:11
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-04-15 13:39:45
  */
 package start
 
@@ -40,7 +40,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fun
 			return
 		}
 		if err != nil {
-			smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_Start, cmd, false, 0, workspace.WorkspaceInfo{}, err.Error())
+			smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_Start, cmd, false, 0, workspace.WorkspaceInfo{}, err.Error(), "")
 		}
 	}
 
@@ -266,8 +266,14 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fun
 
 	//9. 反馈给smartide server
 	if isModeServer {
+		//获取容器id
+
+		containerId, err := sshRemote.ExeSSHCommand(fmt.Sprintf("docker ps  -f 'name=%s' -q", workspaceInfo.Name))
+
+		// smartide-agent install
+		workspace.InstallSmartideAgent(sshRemote, containerId)
 		common.SmartIDELog.Info("feedback...")
-		err = smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_Start, cmd, true, workspaceInfo.ConfigYaml.GetContainerWebIDEPort(), workspaceInfo, "")
+		err = smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_Start, cmd, true, workspaceInfo.ConfigYaml.GetContainerWebIDEPort(), workspaceInfo, "", containerId)
 		common.CheckError(err)
 	}
 

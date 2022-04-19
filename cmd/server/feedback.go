@@ -129,7 +129,7 @@ func Trigger_Action(action string, serverWorkspaceNo string, auth model.Auth, da
 
 // 反馈server工作区的创建情况
 func Feedback_Finish(feedbackCommand FeedbackCommandEnum, cmd *cobra.Command,
-	isSuccess bool, webidePort int, workspaceInfo workspace.WorkspaceInfo, message string) error {
+	isSuccess bool, webidePort int, workspaceInfo workspace.WorkspaceInfo, message string, containerId string) error {
 
 	fflags := cmd.Flags()
 
@@ -171,9 +171,10 @@ func Feedback_Finish(feedbackCommand FeedbackCommandEnum, cmd *cobra.Command,
 		"serverWorkspaceid": serverModeInfo.ServerWorkspaceid,
 		"serverUserName":    serverModeInfo.ServerUsername,
 		//"serverUserGuid":    "",
-		"isSuccess":  isSuccess,
-		"webidePort": webidePort,
-		"message":    message,
+		"isSuccess":   isSuccess,
+		"webidePort":  webidePort,
+		"message":     message,
+		"containerId": containerId,
 	}
 	if feedbackCommand == FeedbackCommandEnum_Start { // 只有start的时候，才需要传递文件内容
 		datas["configFileContent"] = configFileContent

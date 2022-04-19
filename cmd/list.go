@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2022-02-18 16:22:24
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-04-11 09:55:44
  */
 package cmd
 
@@ -12,6 +12,7 @@ import (
 	"os"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/dal"
@@ -81,7 +82,8 @@ func printWorkspaces() {
 		if len(config) <= 0 {
 			config = "-"
 		}
-		createTime := worksapce.CreatedTime.Format("2006-01-02 15:04:05")
+		local, _ := time.LoadLocation("Local")                                      // 北京时区
+		createTime := worksapce.CreatedTime.In(local).Format("2006-01-02 15:04:05") // 格式化输出
 		host := "-"
 		if (worksapce.Remote != workspace.RemoteInfo{}) {
 			host = fmt.Sprint(worksapce.Remote.Addr, ":", worksapce.Remote.SSHPort)
