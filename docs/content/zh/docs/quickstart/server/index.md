@@ -16,6 +16,13 @@ SmartIDE Server 使用容器和云原生技术，可以部署在任何标准的�
 
 对于开发者而言，使用SmartIDE Server可以完全消除开发者搭建环境的技能要求，避免因为环境不一致或者工具/SDK版本，安装配置问题所造成的时间浪费，让开发者将更多的精力投入到更有价值的应用开发中去。对于团队而言，当一个团队成员开始使用SmartIDE以后，其他开发者就可以完全重用这个环境，而不必重新配置；如果一名成员变更了环境配置，其他的成员也可以通过一个简单的git pull就可以获取到这个变更后的开发环境。
 
+## 操作视频
+
+为了便于大家更直观地了解和使用SmartIDE Server，我们在B站提上提供了视频供大家参考，视频如下：
+{{< bilibili 553362128 >}}
+
+跳转到B站：<a href="https://www.bilibili.com/video/av553362128" target="_blank"> ` https://www.bilibili.com/video/av553362128 `</a>
+
 ## 操作手册
 使用SmartIDE你可以在5分钟内完成任何开发语言，任何代码的开发环境搭建。以下，我们以IDCF Boathouse 计算器应用为例，说明如何使用SmartIDE Server进行这个应用的开发和调试过程。
 
