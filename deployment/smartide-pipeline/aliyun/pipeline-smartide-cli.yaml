@@ -1,0 +1,85 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: pipeline-smartide-cli
+spec:
+  params:
+    - name: COMMAND
+      description: smartide command
+      type: string
+      default: 
+    - name: ARGS
+      description: command args
+      type: string
+      default: 
+    - name: HOST
+      description: SSH host
+      type: string
+      default: 
+    - name: SSH_USER_NAME
+      description: ssh login user name
+      type: string
+      default: 
+    - name: SSH_USER_PASSWORD
+      description: ssh login password
+      type: string
+      default: 
+    - name: GIT_CLONE_URL
+      description: git clone url
+      type: string
+      default:       
+
+    - name: SERVER_WORK_SPACE_ID
+      description: 服务端工作区ID
+      type: string
+      default:   
+    - name: SERVER_WORK_SPACE_NO
+      description: 服务端工作区NO
+      type: string
+      default:   
+    - name: SERVER_USER_NAME
+      description: 服务端用户名
+      type: string
+      default:   
+    - name: SERVER_USER_GUID
+      description: 服务端用户GUID
+      type: string
+      default:   
+    - name: SERVER_HOST
+      description: server 登录地址
+      type: string
+      default: 
+    - name: SERVER_TOKEN
+      description: 服务端TOKEN
+      type: string
+      default:   
+
+  tasks:
+    - name: smartide
+      taskRef:
+        name: task-smartide-cli
+
+      params:
+        - name: COMMAND
+          value: $(params.COMMAND)
+        - name: HOST
+          value: $(params.HOST)
+        - name: SSH_USER_NAME
+          value: $(params.SSH_USER_NAME)
+        - name: SSH_USER_PASSWORD
+          value: $(params.SSH_USER_PASSWORD)
+        - name: GIT_CLONE_URL
+          value: $(params.GIT_CLONE_URL)
+
+        - name: SERVER_WORK_SPACE_ID
+          value: $(params.SERVER_WORK_SPACE_ID)
+        - name: SERVER_WORK_SPACE_NO
+          value: $(params.SERVER_WORK_SPACE_NO)
+        - name: SERVER_USER_NAME
+          value: $(params.SERVER_USER_NAME)
+        - name: SERVER_USER_GUID
+          value: $(params.SERVER_USER_GUID)
+        - name: SERVER_HOST
+          value: $(params.SERVER_HOST)
+        - name: SERVER_TOKEN
+          value: $(params.SERVER_TOKEN)
