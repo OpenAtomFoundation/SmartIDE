@@ -1,5 +1,5 @@
 ---
-title: "Server版"
+title: "SmartIDE Server版 快速开始"
 linkTitle: "Server版"
 weight: 28
 description: >
