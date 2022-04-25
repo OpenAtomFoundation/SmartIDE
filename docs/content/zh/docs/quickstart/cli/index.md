@@ -1,5 +1,5 @@
 ---
-title: "CLI"
+title: "SmartIDE CLI 快速开始"
 linkTitle: "CLI"
 weight: 29
 description: >
