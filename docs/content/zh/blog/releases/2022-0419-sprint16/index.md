@@ -10,7 +10,7 @@ description: >
 
 我们将在近期发布更加完善的 Server 版安装部署手册和文档，同时 Server 版 和 CLI 核心代码也将在近期开源。SmartIDE 的核心代码将采用GPL协议开源，允许任何组织和个人免费使用我们的代码搭建自己的云原生IDE环境。
 
-## 来自阿里&蚂蚁的国产IDE - OpenSumi 简介
+## OpenSumi 简介
 
 ![OpenSumi官网](images/opensumi000.png)
 
@@ -42,7 +42,7 @@ IDE 产品的研发一直以来都是一件门槛高、费时费力的事情，O
 
 ![定制化IDE](images/theia-001.gif)
 
-## 如何使用 SmartIDE 启动OpenSumi WebIDE 
+## 使用 SmartIDE 启动 OpenSumi WebIDE 
 
 OpenSumi的定位非常符合SmartIDE对IDE定制化解决方案的需求，因此我们针对OpenSumi进行了适配和集成，开发者可以使用一个非常简单的指令即可在浏览器中启动一个基于OpenSumi WebIDE 的 node.js 开发环境，具体请参考 [Node快速启动](/zh/docs/quickstart/node/#opensumi) 文档
 
@@ -72,6 +72,10 @@ smartide start https://gitee.com/idcf-boat-house/boathouse-calculator.git --file
 - [兼容 VS Code 插件！阿里&蚂蚁联合开源国内首个强定制 IDE 研发框架 OpenSumi](https://mp.weixin.qq.com/s/wVXCOO8WloKs-LWERA2_vA)
 - [云原生架构下蚂蚁 Cloud IDE 的应用实践](https://mp.weixin.qq.com/s?__biz=Mzg2OTYyODU0NQ==&mid=2247485177&idx=1&sn=90b4ccca12fe250d9ac4e86660ccd95f&scene=21#wechat_redirect)
 - [OpenSumi 官网](https://opensumi.com/) 
+- [文档 - 镜像与模版](/zh/docs/templates/)
+- [文档 - SmartIDE Server 版快速开始](/zh/docs/quickstart/server/)
+- [文档 - SmartIDE CLI 快速开始](/zh/docs/quickstart/cli/)
+- [文档 - Node.JS 快速开始](/zh/docs/quickstart/node/#opensumi)
 
 
 
