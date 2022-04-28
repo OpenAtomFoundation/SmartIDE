@@ -1,17 +1,16 @@
 ---
-title: "应用插件市场安装手册"
-linkTitle: "应用插件市场安装手册"
-weight: 24
+title: "SmartIDE插件市场安装说明"
+linkTitle: "插件市场"
+weight: 30
 description: >
-    本文档描述如何部署安装SmartIDE Marketplace。
+    本文档描述如何部署安装SmartIDE插件市场
 ---
-
-
 
 [SmartIDE Marketplace](https://marketplace.smartide.cn) 是基于Eclipse OpenVSX 开源项目搭建的类VSCode插件市场，详细内容请参考 [应用插件市场 Overview](../../overview/marketplace/index.md)。
 此文档旨在描述 SmartIDE Marketplace 的详细部署过程，内容分为简要介绍、组件介绍、部署细节三部分。
 
 ## 1. 简要介绍 
+
 SmartIDE Marketplace服务部署均使用容器化方式进行，Dock-Compose文件见[docker-compose.yaml](https://github.com/SmartIDE/eclipse-openvsx/blob/smartide-marketplace/deployment/openvsx/docker-compose.yaml)，部署的各模块整体架构如下图所示：
 ![结构图](images/marketplaceinstall-01.jpeg)
 

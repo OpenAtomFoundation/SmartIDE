@@ -1,7 +1,7 @@
 ---
-title: "SmartIDE Server版 快速开始"
-linkTitle: "Server版"
-weight: 28
+title: "SmartIDE Server 快速开始"
+linkTitle: "Server"
+weight: 20
 description: >
   本文档描述如何使用SmartIDE Server版。
 ---

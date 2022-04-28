@@ -1,7 +1,7 @@
 ---
-title: "插件同步机制"
-linkTitle: "插件同步机制"
-weight: 44
+title: "配置自动插件同步机制"
+linkTitle: "插件同步"
+weight: 20
 description: >
     本文档描述SmartIDE Marketplace 插件初始化同步机制
 ---
