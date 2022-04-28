@@ -46,4 +46,4 @@ SmartIDE Marketplace 允许用户上传自定制插件并进行下载使用，�
 - ovsx 工具内部调用 [vsce](https://www.npmjs.com/package/vsce) 的功能工作，即运行定义于 packages.json中的 vscode:prepublish 脚本。如果插件代码使用 Yarn 运行脚本，可增加 --yarn 参数。
 
 ## 4. 验证发布效果
-使用 ovsx 工具发布成功后，便可以在 https://marketplace.smartide.cn 站点中找到已发布的插件，也可以在 IDE 中 安装使用，安装使用请参考 [配置连接手册](../config/index.md)。
+使用 ovsx 工具发布成功后，便可以在 https://marketplace.smartide.cn 站点中找到已发布的插件，也可以在 IDE 中 安装使用，安装使用请参考 [配置连接手册](../config)。

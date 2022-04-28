@@ -29,7 +29,7 @@ SmartIDE Marketplace 服务搭建初始化后，默认没有插件存在，需�
 代码库 [eclipse-openvsx/publish-extensions.js](https://github.com/SmartIDE/eclipse-openvsx/blob/smartide-marketplace/publish-extensions/publish-extensions.js) 中包含插件发布的所有逻辑，从 [open-vsx.org API](https://open-vsx.org/api/-/search?offset=0&size=5000&sortBy=relevance&sortOrder=desc) 中获取 open-vsx.org 的所有插件列表，并使用多线程的方式，挨个将下载目录中已下载的插件 vsix文件（其中包含插件的所有内容) 发布至指定服务器。
 
 - 发布逻辑包含插件比对算法，即在发布之前会先进行同命名空间同名称插件的版本比对，对比双方为本地vsix文件解析的信息和 要发布至的服务器的插件信息，本地vsix文件的解析使用了微软的vsce库，服务器上插件的获取调用了marketplace API。
-- 发布至服务器的 Registry URL 和 Publisher Token（生成方式见[Marketplace 使用文档](../usage/index.md)） 均从环境变量传入，环境变量名称为：OVSX_REGISTRY_URL 和 OVSX_PAT。
+- 发布至服务器的 Registry URL 和 Publisher Token（生成方式见[Marketplace 使用文档](../usage)） 均从环境变量传入，环境变量名称为：OVSX_REGISTRY_URL 和 OVSX_PAT。
 **注意：使用适当的账号创建的 OVSX_PAT，因为所有插件的发布者将会变成此PAT的创建者。**
 - 代码下载 npm install 完毕后 ，修改环境变了值，运行 npm run publish 即可开启发布进程。
 

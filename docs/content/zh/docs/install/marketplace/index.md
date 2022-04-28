@@ -6,7 +6,7 @@ description: >
     本文档描述如何部署安装SmartIDE插件市场
 ---
 
-[SmartIDE Marketplace](https://marketplace.smartide.cn) 是基于Eclipse OpenVSX 开源项目搭建的类VSCode插件市场，详细内容请参考 [应用插件市场 Overview](../../overview/marketplace/index.md)。
+[SmartIDE Marketplace](https://marketplace.smartide.cn) 是基于Eclipse OpenVSX 开源项目搭建的类VSCode插件市场，详细内容请参考 [应用插件市场 Overview](../../overview/marketplace)。
 此文档旨在描述 SmartIDE Marketplace 的详细部署过程，内容分为简要介绍、组件介绍、部署细节三部分。
 
 ## 1. 简要介绍 
