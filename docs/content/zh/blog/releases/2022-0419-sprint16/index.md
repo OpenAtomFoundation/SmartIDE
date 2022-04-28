@@ -40,11 +40,15 @@ OpenSumi 当前已经在阿里内部广泛应用在很多场景，具这篇 [云
 
 IDE 产品的研发一直以来都是一件门槛高、费时费力的事情，OpenSumi 通过开源 OpenSumi 帮助对 IDE 有兴趣的开发者更好地了解并掌握 IDE 研发这项技术，让更多的开发者可以以一种低门槛的方式去研发自己的 IDE 产品。OpenSumi 也从几个方面提供了很好发展路线图，比如：高度可定制的UI，完全开放的插件体系，对VSCode API适配的完整计划以及兼容VSCode Extension的特性。这些都将为定制化IDE解决方案提供必要的支撑，比如可以开发出类似下图这样的可视化开发场景。
 
+SmartIDE专注于云原生容器化工作区的管理和调度，我们的目标就是支持各类开发者使用的IDE，OpenSumi符合SmartIDE的IDE生态定位。相信随着SmartIDE和OpenSumi的进一步成熟，会为开发者，特别是中国开发者带来更高效的云原生开发新体验！
+
 ![定制化IDE](images/theia-001.gif)
 
 ## 使用 SmartIDE 启动 OpenSumi WebIDE 
 
-OpenSumi的定位非常符合SmartIDE对IDE定制化解决方案的需求，因此我们针对OpenSumi进行了适配和集成，开发者可以使用一个非常简单的指令即可在浏览器中启动一个基于OpenSumi WebIDE 的 node.js 开发环境，具体请参考 [Node快速启动](/zh/docs/quickstart/node/#opensumi) 文档
+OpenSumi的定位非常符合SmartIDE对IDE定制化解决方案的需求，因此我们针对OpenSumi进行了适配和集成，开发者可以使用一个非常简单的指令即可在浏览器中启动一个基于OpenSumi WebIDE 的 node.js 开发环境，具体请参考 [Node快速启动](/zh/docs/quickstart/node/#opensumi) 文档。SmartIDE支持7种主流技术栈，包括：JavaScript/Node.js，Java ，DotNet，Python ，PHP，Go语言和C/C++，并且支持在Windows/MacOS/Linux上跨平台使用，此次扩展了IDE支持后，将我们所支持的IDE也扩展到3大体系，分别是：VSCode，JetBrains和OpenSumi。
+
+快速启动OpenSumi的Node.js开发环境指令如下 
 
 ```shell
 ## 使用OpenSumi WebIDE开启Node开发环境
