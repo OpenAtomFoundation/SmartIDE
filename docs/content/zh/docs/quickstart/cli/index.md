@@ -1,7 +1,7 @@
 ---
 title: "SmartIDE CLI 快速开始"
 linkTitle: "CLI"
-weight: 29
+weight: 10
 description: >
   本文档描述使用SmartIDE CLI，如何使用SmartIDE本地模式以及远程模式真正实现“一键启动”开发环境，进行开发调试。
 ---
@@ -19,7 +19,7 @@ description: >
 
 ## 准备工作
 
-请参考 <a href="/zh/docs/install/" target="_blank">安装手册</a> 完成 SmartIDE 工具的安装。
+请参考 <a href="/zh/docs/install/cli/" target="_blank">安装手册</a> 完成 SmartIDE 工具的安装。
 
 ## 本地模式
 

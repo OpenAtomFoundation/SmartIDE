@@ -1,13 +1,13 @@
 ---
-title: "配置连接手册"
-linkTitle: "配置连接手册"
-weight: 41
+title: "配置IDE使用SmartIDE插件市场"
+linkTitle: "IDE连接配置"
+weight: 10
 description: >
-    本文档描述如何更新Visual Studio Code以及兼容IDE的配置文件连接到SmartIDE Marketplace，包括：VSCode, Codium, Code Server, OpenVSCode Server和OpenSumi。
+    本文档描述如何更新Visual Studio Code以及兼容IDE的配置文件连接到SmartIDE插件市场，包括：VSCode, Codium, Code Server, OpenVSCode Server和OpenSumi。
 ---
 
 ## 1. 原理
-参考自[Using-Open-VSX-in-VS-Code](https://github.com/eclipse/openvsx/wiki/Using-Open-VSX-in-VS-Code)，通过修改IDE product.json 文件中 extensionsGallery.serviceUrl & extensionsGallery.itemUrl & linkProtectionTrustedDomains 节点的值，让IDE链接应用市场时改变API指向达到链接SmartIDE Marketplace的目的。
+参考自[Using-Open-VSX-in-VS-Code](https://github.com/eclipse/openvsx/wiki/Using-Open-VSX-in-VS-Code)，通过修改IDE product.json 文件中 extensionsGallery.serviceUrl & extensionsGallery.itemUrl & linkProtectionTrustedDomains 节点的值，让IDE链接应用市场时改变API指向达到链接SmartIDE插件市场的目的。
 
     "extensionsGallery": {
         "serviceUrl": "https://marketplace.smartide.cn/vscode/gallery",

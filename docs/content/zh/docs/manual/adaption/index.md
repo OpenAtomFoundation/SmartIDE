@@ -1,7 +1,7 @@
 ---
 title: "项目适配"
 linkTitle: "项目适配"
-weight: 31
+weight: 40
 description: >
   本文档主要描述：SmartIDE核心配置文件示例介绍，以及如何在一个已有项目上完成SmartIDE适配，并快速切换到SmartIDE开发模式。
 ---
