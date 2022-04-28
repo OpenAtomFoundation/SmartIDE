@@ -6,10 +6,13 @@ description: >
     本文档描述如何部署安装SmartIDE Marketplace。
 ---
 
-[SmartIDE Marketplace](https://marketplace.smartide.cn) 是基于Eclipse OpenVSX 开源项目搭建的类VSCode插件市场，此文档旨在描述 SmartIDE Marketplace 的详细部署过程，内容分为简要介绍、组件介绍、部署细节三部分。
+
+
+[SmartIDE Marketplace](https://marketplace.smartide.cn) 是基于Eclipse OpenVSX 开源项目搭建的类VSCode插件市场，详细内容请参考 [应用插件市场 Overview](../../overview/marketplace/index.md)。
+此文档旨在描述 SmartIDE Marketplace 的详细部署过程，内容分为简要介绍、组件介绍、部署细节三部分。
 
 ## 1. 简要介绍 
-SmartIDE Marketplace服务部署均使用容器化方式进行，各模块整体架构如下图所示：
+SmartIDE Marketplace服务部署均使用容器化方式进行，Dock-Compose文件见[docker-compose.yaml](https://github.com/SmartIDE/eclipse-openvsx/blob/smartide-marketplace/deployment/openvsx/docker-compose.yaml)，部署的各模块整体架构如下图所示：
 ![结构图](images/marketplaceinstall-01.jpeg)
 
 - 主体为OpenVSX-Server，spring boot框架的java服务，我们在部署时需要自行添加 application.yml 配置文件，并将其放置对应位置，以便Server启动后加载。
@@ -21,6 +24,7 @@ SmartIDE Marketplace服务部署均使用容器化方式进行，各模块整体
 - 除以上架构图中展现内容外，Marketplace网站需要配置HTTPS证书，这样才服务器的扩展才能够正确被IDE加载，我们使用Nginx进行服务器的部署端口转发。
 
 ## 2. 组件介绍
+本章节将对架构中的各个组件进行逐一介绍。
 ### 2.1 OpenVSX Server
 #### 代码库：
 - [github SmartIDE/eclipse-openvsx/server](https://github.com/SmartIDE/eclipse-openvsx/tree/smartide-marketplace/server)
@@ -167,54 +171,20 @@ SmartIDE Marketplace 需配置为https且certifacate为合规证书，方可被�
             - 443:443
           links:
             - "server:openvsx-server"
-- Nginx.Conf
+- [Nginx.Conf 内容见链接](https://github.com/SmartIDE/eclipse-openvsx/blob/smartide-marketplace/deployment/openvsx/nginx/nginx.conf)
+注意:
 
-      events { }
-
-      http {
-        client_max_body_size 500M;
-        map $http_upgrade $connection_upgrade {
-            default upgrade;
-            ''      close;
-          }
-
-        server {
-        listen 443 ssl;
-        server_name marketplace.smartide.cn;
-        
-        ssl_certificate /ssl/ssl_cert.crt;
-        ssl_certificate_key /ssl/ssl_key.key;
-        
-        access_log /var/log/nginx/data-access.log combined;
-
-        location / {
-            proxy_pass http://openvsx-server:8080;
-            proxy_set_header Host $host;
-            proxy_set_header X-Forwarded-Host $host;
-            proxy_set_header X-Real-IP  $remote_addr;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            }
-        }
-
-        server {
-          listen 80;
-          server_name marketplace.smartide.cn;
-
-          return 301 https://$host$request_uri;
-        }
-      }
-
-注意：   
-
-    proxy_set_header Host $host;
-    proxy_set_header X-Forwarded-Host $host;
-    proxy_set_header X-Real-IP  $remote_addr;
-    proxy_set_header X-Forwarded-Proto $scheme;
-
-四个http request header的设置能够确保 server 进程收到的请求头是正确无误的，这样Server进程才能够正确识别请求并进行正确的转发！
+      proxy_set_header Host $host;
+      proxy_set_header X-Forwarded-Host $host;
+      proxy_set_header X-Real-IP  $remote_addr;
+      proxy_set_header X-Forwarded-Proto $scheme;
+      
+    四个http request header的设置能够确保 server 进程收到的请求头是正确无误的，这样Server进程才能够正确识别请求并进行正确的转发！
 
 ## 3. 部署详细步骤
+本章节将以https://marketplace.smartide.cn 生产环境的部署为例，以Azure 虚拟机做为服务器、Azure Blob Storage 作为插件存储，使用 Github OAuth App 进行用户认证，来描述部署的细节。
 ### 3.1 资源准备
+在执行具体步骤之前，需要准备如生产服务器、插件存储Storage、用户认证 Oauth App等资源。
 #### 3.1.1 Azure Linux VM
 准备一台Azure 虚拟机并做如下设置：
 - 开通如下端口：22, 443, 80, 3000, 8080, 8090, 9000
@@ -239,7 +209,6 @@ SmartIDE Marketplace 需配置为https且certifacate为合规证书，方可被�
 ![](images/marketplaceinstall-05.png)
 
 - 进入Service Endpoint模块，复制保存 Blob Service URL （对应Application.yml中的ovsx.storage.azure.service-endpoint）
-![](images/marketplaceinstall-06.png)
 
 #### 3.1.3 Github OAuth App
 参照 [Creating an OAuth App - GitHub Docs](https://docs.github.com/en/developers/apps/building-oauth-apps/creating-an-oauth-app) 创建 Github OAuth App 提供用户验证机制。创建完毕后获取 Client ID 并生成 Client Secret，复制后存储供后续使用。
@@ -248,89 +217,12 @@ SmartIDE Marketplace 需配置为https且certifacate为合规证书，方可被�
 
 ### 3.2 流水线配置 与 运行部署
 #### 3.2.1 流水线介绍
-生产环境使用GitHub Action进行部署，对应流水线定义文件位置：
+SmartIDE Marketplace生产环境使用GitHub Action进行部署，流水线定义文件位置：
 [eclipse-openvsx/smartide-openvsx-deployment.yml](https://github.com/SmartIDE/eclipse-openvsx/blob/smartide-marketplace/.github/workflows/smartide-openvsx-deployment.yml)
-
-    name: SmartIDE-OpenVSX-Deployment
-
-    on:
-      push:
-        branches:    
-          - smartide-marketplace
-        paths: 
-          - deployment/openvsx/**
-          - .github/workflows/smartide-openvsx-deployment.yml
-
-    jobs:
-
-      build:
-
-        runs-on: ubuntu-latest
-
-        steps:
-        - uses: actions/checkout@v3
-        - uses: cschleiden/replace-tokens@v1
-          with:
-            files: '["deployment/openvsx/configurations/application.yml","deployment/openvsx/docker-compose.yaml"]'
-          env:
-            DATABASE: ${{ secrets.DATABASE }}
-            DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
-            DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
-            OAUTH_CLIENT_ID: ${{ secrets.OAUTH_CLIENT_ID }}
-            OAUTH_CLIENT_SECRET: ${{ secrets.OAUTH_CLIENT_SECRET }}
-            STORAGE_SERVICE_ENDPOINT: ${{ secrets.STORAGE_SERVICE_ENDPOINT }}
-            STORAGE_SAS_TOKEN: ${{ secrets.STORAGE_SAS_TOKEN }}
-            PGADMIN_USERNAME: ${{ secrets.PGADMIN_USERNAME }}
-            PGADMIN_PASSWORD: ${{ secrets.PGADMIN_PASSWORD }}
-        - name: Github deploy scp
-          uses: appleboy/scp-action@master      
-          with:
-            source: deployment/openvsx/*
-            target: ~/openvsx
-            host: ${{ secrets.SERVER_HOST }}
-            username: ${{ secrets.SERVER_SSH_USER }}
-            password: ${{ secrets.SERVER_PASSWORD }}
-        - name: Add Nginx SSL Cert
-          uses: appleboy/ssh-action@master
-          with:
-            host: ${{ secrets.SERVER_HOST }}
-            username: ${{ secrets.SERVER_SSH_USER }}
-            password: ${{ secrets.SERVER_PASSWORD }}
-            script: |
-              mkdir ~/openvsx/deployment/openvsx/nginx/ssl
-              cd ~/openvsx/deployment/openvsx/nginx/ssl
-              output=ssl_cert.crt
-              echo -e "${{ secrets.NGINX_SSL_CERT }}" > $output
-              output=ssl_key.key
-              echo -e "${{ secrets.NGINX_SSL_KEY }}" > $output
-        - name: Create pgadmin-data Gaint Permission
-          uses: appleboy/ssh-action@master
-          with:
-            host: ${{ secrets.SERVER_HOST }}
-            username: ${{ secrets.SERVER_SSH_USER }}
-            password: ${{ secrets.SERVER_PASSWORD }}
-            script: |
-              mkdir ~/openvsx/pgadmin-data
-              sudo chown -R 5050:5050 ~/openvsx/pgadmin-data
-        - name: Deploy Docker-Compose via SSH action
-          uses: appleboy/ssh-action@master
-          with:
-            host: ${{ secrets.SERVER_HOST }}
-            username: ${{ secrets.SERVER_SSH_USER }}
-            password: ${{ secrets.SERVER_PASSWORD }}
-            script: |
-              # Stop all running Docker Containers
-              docker kill $(docker ps -q)
-              # Free up space
-              docker system prune --force
-              # Run docker UI
-              docker run -d -p 9000:9000 --name portainer --restart always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer 
-              cd ~/openvsx/deployment/openvsx
-              # docker-compose up
-              docker-compose -p openvsx up -d
+读者可以参考以上流水线定义的任务执行步骤进行部署准备和执行具体部署过程。
 
 #### 3.2.2 运行前准备
-生产环境部署操作执行之前，需要配置流水线中所使用的项目的secrets，包括 3.1 准备步骤中创建的资源和其余的一些默认如数据库设置等配置，以下图片和列表列出需要修改的Key及其含义：
+SmartIDE Marketplace 生产环境部署操作执行之前，需要配置流水线中所使用的项目的secrets，以便让流水线运行时替换掉对应配置文件（docker-compose.yml & application.yml）中的通配符，包括 3.1 准备步骤中创建的资源和其余的一些默认如数据库设置等配置，以下图片和列表列出需要修改的Key及其含义：
 ![](images/marketplaceinstall-07.png)
 选中要修改的Secret，点击Update 更新
 ![](images/marketplaceinstall-08.png)
