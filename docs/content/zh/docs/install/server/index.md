@@ -4,14 +4,20 @@ linkTitle: "Server"
 date: 2021-09-24
 weight: 30
 description: >
-  本文档介绍如何完成SmartIDE Server的安装。<br>
-  通过对SmartIDE Server的部署安装，可以搭建起一套自服务的开发管理平台。
+  SmartIDE Server为开发团队提供对远程容器化工作区的统一管理，支持开发者自助绑定linux主机或者k8s集群作为工作区运行资源，并通过输入Git代码库地址来一键启动远程容器化工作区。
+  SmartIDE Server的基础功能是开源免费的，任何人都可以在自己的服务器上进行部署，本文档描述如何完成Server的部署过程。
 ---
 
-## 1. Server版部署架构
+## Server版部署架构
+
+SmartIDE Server采用灵活可组合的部署方式，核心组件是 server-web 和 server-api，可以以采用容器的方式部署在任何支持容器的主机或者K8s集群上。Server的底层采用 Tekton流水线任务调用 SmartIDE CLI 完成对工作区的操作，包括：工作区创建、停止、删除容器、清理环境等动作，这部分的能力与 SmartIDE CLI 一致，因此底层使用的就是 CLI 本的能力。因此，SmartIDE Server 需要一个可以运行 Tekton流水线引擎的k8s环境，你可以采用最简单的 minikube 或者正式部署的k8s集群来运行Tekton流水线引擎，只要确保 server-api 可以正常与 Tekton流水线引擎的api节点进行通讯即可。
+
+Server所管理的工作区与CLI一样，可以运行在任何支持容器的主机或者k8s集群上，这些主机和k8s集群不需要与server本身所运行的环境在同一个服务器或者集群中，可以灵活的进行组合和部署。
+
 ![arch](images/arch.png)
 
-上图为SmartIDE Server版部署架构图，主要包括3大主要部分：
+上图为SmartIDE Server版部署架构图，主要包括3大主要部分
+
 1. SmartIDE Server：SmartIDE Server 为开发团队提供对开发环境的统一在线管理和访问能力，企业管理者可以通过SmartIDE Server为开发团队提供统一的一致的开发环境。
     - smartide-server-web：前端容器，主要为界面交互功能。
     - smartide-server-api：API层，主要负责接收Server前端请求以及cli请求，并实现与工作区管理流水线调度平台tekton的通讯，并将数据存储到数据库中。
@@ -21,7 +27,7 @@ description: >
 2. 本地开发机CLI：通过SmartIDE CLI可以建立本地工作区环境并连接远程工作区，开始开发工作。同时，可以登录Server，获取Server管理工作区并建立连接，开始开发工作。
 3. K8S/Host环境资源：作为开发环境的承载环境，同时支持主机以及K8S模式。
 
-## 2. 获取安装介质
+## 获取安装介质
 ### 2.1 安装介质列表
 - Docker
 - Docker-compse
