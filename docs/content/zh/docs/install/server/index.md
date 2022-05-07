@@ -14,7 +14,7 @@ SmartIDE Server采用灵活可组合的部署方式，核心组件是 server-web
 
 Server所管理的工作区与CLI一样，可以运行在任何支持容器的主机或者k8s集群上，这些主机和k8s集群不需要与server本身所运行的环境在同一个服务器或者集群中，可以灵活的进行组合和部署。
 
-![arch](images/server-arch.png)
+![](server-arch.png)
 
 上图为SmartIDE Server版部署架构图，主要包括3大主要部分
 
