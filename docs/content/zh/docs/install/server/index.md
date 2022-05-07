@@ -2,7 +2,6 @@
 title: "Server安装"
 linkTitle: "Server"
 date: 2021-09-24
-draft: true
 weight: 30
 description: >
   本文档介绍如何完成SmartIDE Server的安装。<br>
