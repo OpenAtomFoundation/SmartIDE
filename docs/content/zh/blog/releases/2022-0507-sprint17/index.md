@@ -1,6 +1,6 @@
 ---
 title: "SmartIDE v0.1.17 已经发布 - 模版库远程模式和插件市场公测"
-linkTitle: "v0.1.17 "
+linkTitle: "v0.1.17 模版库和插件市场"
 date: 2022-05-07
 description: >
   模版库支持远程模式并添加到Server版中，SmartIDE插件市场公测
@@ -10,13 +10,21 @@ SmartIDE v0.1.17 已经发布，本次同步更新了CLI (Build XXXX) 的稳定�
 
 - **模板库**：对cli现有的 smartide new 指令进行了增强，支持针对远程主机使用new指令，用户只需要在new指令中增加host参数即可在远程主机上使用模板库创建工作区；在server中增加了模板库的支持，用户可以使用网页的方式选择模版并创建工作区。
 
-- **插件市场**：针对开源项目Eclipse OpenVSX进行了中文汉化和中国本地部署，用户可以通过 https://marketplace.smartide.cn/ 访问位于北京数据中心的插件市场。这个插件市场支持VSCode, VSCodium, Code-Server, OpenVSCode Server 以及 OpenSumi 使用。使用SmartIDE插件市场可以大幅提升以上IDE的插件安装速度（根据你自己的网络情况，至少提高5X以上），并且支持企业内网本地部署，为研发企业内部针对类VSCode的IDE提供安全可控的插件管理机制提供可能。
-
-- **Server版私有部署**：现在用户可以使用我们的部署文档自助完成SmartIDE Server的私有部署，当前针对开放网络的部署稳定已经发布，用户只需要2台虚拟机即可完成部署。针对企业内部（隔离网络）的部署文档也会很快发布。
+- **插件市场**：针对开源项目Eclipse OpenVSX进行了中文汉化和中国本地部署，用户可以通过 https://marketplace.smartide.cn/ 访问位于北京数据中心的插件市场。这个插件市场支持VSCode, VSCodium, Code-Server, OpenVSCode Server, OpenSumi以及Eclipse Theia 使用。SmartIDE插件市场可以大幅提升以上IDE的插件安装速度（根据你自己的网络情况，提高2-5X），并且支持企业内网本地部署，为研发企业内部针对类VSCode的IDE提供安全可控的插件管理机制提供可能。
 
 ## 模板库
 
 SmartIDE CLI 原有的模板库功能允许用户通过一个简单的指令 smartide new 就可以一键创建基于7重技术栈和4种IDE的容器化工作区，这个功能原来只能在开发者本机使用，无法支持远程服务器。在Sprint 17 中我们针对这个功能进行了增强。允许用户直接通过一个HOST在制定的远程服务器上新建工作区，同时将这个功能集成到了 Server 中，允许用户通过网页完成基于模版的工作区创建。
+
+### 在Server中使用模版库
+
+SmartIDE Server 是一款开源的容器化工作区管理工具，你可以在任何可以运行Docker和Kubernetes的环境中自行部署。在Sprint 17中，我们将模板库功能引入到Server中，允许用户通过网页选择模版并一键部署到自己的环境中。
+
+![Server模版库](images/server-template.png)
+
+以下是使用Server版模板库功能创建 若依微服务版本 快速开发框架的演示视频，若依微服务版 的模版包含 vue.js的前端应用，一系列Java Springboot后端服务，Nacos服务注册中心，redis缓存和mysql数据库（配置phpMyAdmin管理工具）以及SonaQube代码检查工具；这是一个相对复杂的工作区，使用server版的模板库开发者可以一键创建以上所有环境，无需关心这些组件之间的配置，所有这些配置都已经预先设置好并保存在 IDE配置文件 中了。
+
+{{< bilibili 256267958 >}}
 
 ### 使用new指令创建远程工作区
 
@@ -68,16 +76,6 @@ smartide new <模版名称> --type <子类型名称>
   - https://github.com/smartide
 
 
-### 在Server中使用模版库
-
-SmartIDE Server 是一款开源的容器化工作区管理工具，你可以在任何可以运行Docker和Kubernetes的环境中自行部署。在Sprint 17中，我们将模板库功能引入到Server中，允许用户通过网页选择模版并一键部署到自己的环境中。
-
-![Server模版库](images/server-template.png)
-
-以下是使用Server版模板库功能创建 若依微服务版本 快速开发框架的演示视频，若依微服务版 的模版包含 vue.js的前端应用，一系列Java Springboot后端服务，Nacos服务注册中心，redis缓存和mysql数据库（配置phpMyAdmin管理工具）以及SonaQube代码检查工具；这是一个相对复杂的工作区，使用server版的模板库开发者可以一键创建以上所有环境，无需关心这些组件之间的配置，所有这些配置都已经预先设置好并保存在 IDE配置文件 中了。
-
-{{< bilibili 256267958 >}}
-
 ## 插件市场
 
 VSCode以及类VSCode IDE都使用国外的插件市场作为数据来源，对于国内的开发者来说很多时候会因为网络原因造成插件安装缓慢或者安装失败的情况。在很多企业内部，开发者也在大量使用VSCode作为自己的主力开发工具，但是由于安全管控的原因，企业内部的开发者往往无法访问外部互联网，很多开发者为了绕过企业的安全性管控会自行下载复制导入未经企业审核的VSCode插件进入企业受管控网络使用，这些做法会对企业的信息安全造成很大的威胁。
@@ -86,7 +84,9 @@ VSCode以及类VSCode IDE都使用国外的插件市场作为数据来源，对�
 
 ![SmartIDE插件市场](images/smartide-marketplace.png)
 
-以下视频是使用VSCode分别从 微软官方Marketplace 和 SmartIDE插件市场下载插件的速度比较。
+以下视频是使用VSCodium分别从 Open-VSX.org 和 SmartIDE插件市场下载插件的速度比较，根据网络状况不同，可以提速2-5倍。
+
+{{< bilibili 341404674 >}}
 
 基于Eclipse OpenVSX的SmartIDE插件市场的代码以及部署文档开源免费提供给社区，并且我们为其企业提供私有部署技术支持服务。相关文档如下：
 
