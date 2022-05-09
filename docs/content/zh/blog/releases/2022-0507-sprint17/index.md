@@ -78,11 +78,27 @@ smartide new <模版名称> --type <子类型名称>
 
 ## 插件市场
 
-VSCode以及类VSCode IDE都使用国外的插件市场作为数据来源，对于国内的开发者来说很多时候会因为网络原因造成插件安装缓慢或者安装失败的情况。在很多企业内部，开发者也在大量使用VSCode作为自己的主力开发工具，但是由于安全管控的原因，企业内部的开发者往往无法访问外部互联网，很多开发者为了绕过企业的安全性管控会自行下载复制导入未经企业审核的VSCode插件进入企业受管控网络使用，这些做法会对企业的信息安全造成很大的威胁。
+VSCode以及类VSCode IDE（包括：VSCodium, Code-Server, OpenSumi 和 Eclipse Theia）都使用国外的插件市场 [open-vsx.org](https://open-vsx.org) 作为数据来源。对于国内的开发者来说，因为网络原因造成插件安装缓慢或者安装失败的情况经常出现。同时，在很多企业内部，开发者也在大量使用VSCode作为自己的主力开发工具，由于安全管控的原因，企业内部的开发者往往无法访问外部互联网，开发者为了绕过企业的安全性管控会自行下载、复制和导入未经企业审核的VSCode插件进入企业受管控网络使用，这些做法会对企业的信息安全造成很大威胁。
 
-为了解决以上这些痛点问题，SmartIDE针对Eclipse OpenVSX进行了汉化并完成了中国本地化部署，现在开发者可以通过 https://marketplace.smartide.cn/ 访问位于北京数据中心的插件市场，并按照以下我们官网文档中的方式修改自己的VSCode中的product.js配置文件，即可使用 SmartIDE插件市场 安装插件，根据我们的测试，通过我们提供的插件市场安装插件可以获取至少5X的速度提升。
+为了解决以上这些痛点问题，SmartIDE针对 [open-vsx.org](https://open-vsx.org) 进行了汉化并进行了中国本地化部署。现在开始，开发者可以访问位于国内数据中心的 **SmartIDE插件市场** ，并按我们官网文档中的方式修改自己 VSCode 中的 `product.js` 配置文件，即可使用 **SmartIDE插件市场** 安装插件，根据我们的测试，通过我们提供的插件市场安装插件可以获取至少2-5X的速度提升。
+
+**SmartIDE 插件市场地址 https://marketplace.smartide.cn/**
 
 ![SmartIDE插件市场](images/smartide-marketplace.png)
+
+`product.js` 文件配置如下，具体请见 [SmartIDE 插件市场文档](/zh/docs/manual/marketplace/config/)
+
+```json
+"extensionsGallery": {
+    "serviceUrl": "https://marketplace.smartide.cn/vscode/gallery",
+    "itemUrl": "https://marketplace.smartide.cn/vscode/item"
+}
+
+"linkProtectionTrustedDomains": [
+    "https://marketplace.smartide.cn"
+]
+
+```
 
 以下视频是使用VSCodium分别从 Open-VSX.org 和 SmartIDE插件市场下载插件的速度比较，根据网络状况不同，可以提速2-5倍。
 
@@ -100,3 +116,16 @@ VSCode以及类VSCode IDE都使用国外的插件市场作为数据来源，对�
 > 说明：[Eclipse OpenVSX](https://open-vsx.org/) 是Eclipse基金会旗下的一款采用EPL-2.0开源授权的开源软件，按照 [Github官网](https://github.com/eclipse/openvsx) 上的说法：OpenVSX提供了一个 [Visual Sutdio Marketplace](https://marketplace.visualstudio.com/) 的替代品，包括可用于管理VSCode插件的数据库以及对用的Web应用，同时提供了一个cli工具用户后台管理。Eclipse OpenVSX出现的原因是微软并不允许类VSCode IDE (VSCode的Fork) 使用官方的插件市场，因此社区需要一个类似的基础设施服务，具体可以参考这个 [Issue](https://github.com/microsoft/vscode/issues/31168) 。
 
 SmartIDE插件市场是OpenVSX的一个fork，我们在OpenVSX的基础上进行一些修改以便适合中国开发者使用，包括：界面的中文汉化，通过GitHub Action自动将 open-vsx.org 上的插件自动同步到国内，针对国内部署进行验证，测试以及服务托管。因此，SmartIDE插件市场是 open-vsx.org 的一个代理服务，目的是方便国内的开发者安装和管理VSCode的插件。当然，我们也欢迎国内的开发者直接将自己的插件发布到我们所运行的 SmartIDE插件市场，如果你有类似的需求，请和我们联系。
+
+## 社区早鸟计划
+
+如果你对云原生开发环境感兴趣，请扫描一下二维码加入我们的 **SmartIDE社区早鸟计划**
+
+<img src="/images/smartide-s-qrcode.png" style="width:120px;height:auto;padding: 1px;"/>
+
+谢谢您对SmartIDE的关注，让我们一起成为云原生时代的 *Smart开发者*, 享受 *开发从未如此简单* 的快乐。
+
+2022年5月9日
+
+
+

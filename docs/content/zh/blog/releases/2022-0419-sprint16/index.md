@@ -69,8 +69,6 @@ smartide start https://gitee.com/idcf-boat-house/boathouse-calculator.git --file
 
 {{< bilibili 641037405 >}}
 
-感谢你对SmartIDE的关注，欢迎从SmartIDE官网下载体验我们的产品，或者加入我们的早鸟群，及时了解SmartIDE的开发进展。
-
 相关链接：
 
 - [兼容 VS Code 插件！阿里&蚂蚁联合开源国内首个强定制 IDE 研发框架 OpenSumi](https://mp.weixin.qq.com/s/wVXCOO8WloKs-LWERA2_vA)
@@ -81,6 +79,12 @@ smartide start https://gitee.com/idcf-boat-house/boathouse-calculator.git --file
 - [文档 - SmartIDE CLI 快速开始](/zh/docs/quickstart/cli/)
 - [文档 - Node.JS 快速开始](/zh/docs/quickstart/node/#opensumi)
 
+## 社区早鸟计划
 
+如果你对云原生开发环境感兴趣，请扫描一下二维码加入我们的 **SmartIDE社区早鸟计划**
 
+<img src="/images/smartide-s-qrcode.png" style="width:120px;height:auto;padding: 1px;"/>
 
+谢谢您对SmartIDE的关注，让我们一起成为云原生时代的 *Smart开发者*, 享受 *开发从未如此简单* 的快乐。
+
+2022年4月19日
