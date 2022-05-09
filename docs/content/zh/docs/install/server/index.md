@@ -1,5 +1,5 @@
 ---
-title: "Server安装"
+title: "Server 安装说明"
 linkTitle: "Server"
 date: 2021-09-24
 weight: 30

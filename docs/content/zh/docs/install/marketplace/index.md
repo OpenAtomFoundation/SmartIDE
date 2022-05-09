@@ -1,5 +1,5 @@
 ---
-title: "SmartIDE插件市场安装说明"
+title: "SmartIDE 插件市场安装说明"
 linkTitle: "插件市场"
 weight: 30
 description: >
