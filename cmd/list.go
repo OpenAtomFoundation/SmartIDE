@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-04-11 09:55:44
+ * @LastEditTime: 2022-05-05 17:40:20
  */
 package cmd
 
@@ -31,13 +31,17 @@ var listCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		common.SmartIDELog.Info(i18nInstance.List.Info_start)
-		printWorkspaces()
+		cliRunningEnv := workspace.CliRunningEnvEnum_Client
+		if value, _ := cmd.Flags().GetString("mode"); strings.ToLower(value) == "server" {
+			cliRunningEnv = workspace.CliRunningEvnEnum_Server
+		}
+		printWorkspaces(cliRunningEnv)
 		common.SmartIDELog.Info(i18nInstance.List.Info_end)
 	},
 }
 
 // 打印 service 列表
-func printWorkspaces() {
+func printWorkspaces(cliRunningEnv workspace.CliRunningEvnEnum) {
 	workspaces, err := dal.GetWorkspaceList()
 	common.CheckError(err)
 
@@ -45,7 +49,7 @@ func printWorkspaces() {
 	common.CheckError(err)
 	if auth != (model.Auth{}) && auth.Token != "" {
 		// 从api 获取workspace
-		serverWorkSpaces, err := workspace.GetServerWorkspaceList(auth)
+		serverWorkSpaces, err := workspace.GetServerWorkspaceList(auth, cliRunningEnv)
 
 		if err != nil { // 有错误仅给警告
 			common.SmartIDELog.Importance("从服务器获取工作区列表失败，" + err.Error())
@@ -78,7 +82,7 @@ func printWorkspaces() {
 		if len(dir) <= 0 {
 			dir = "-"
 		}
-		config := worksapce.ConfigFilePath
+		config := worksapce.ConfigFileRelativePath
 		if len(config) <= 0 {
 			config = "-"
 		}
@@ -88,10 +92,47 @@ func printWorkspaces() {
 		if (worksapce.Remote != workspace.RemoteInfo{}) {
 			host = fmt.Sprint(worksapce.Remote.Addr, ":", worksapce.Remote.SSHPort)
 		}
-		line := fmt.Sprintf("%v\t%v\t%v\t%v\t%v\t%v\t%v", worksapce.ID, worksapce.Name, worksapce.Mode, dir, config, host, createTime)
+		workspaceName := worksapce.Name
+		if worksapce.ServerWorkSpace != nil {
+			label := getWorkspaceStatusDesc(worksapce.ServerWorkSpace.Status)
+			workspaceName = fmt.Sprintf("%v (%v)", workspaceName, label)
+		}
+		line := fmt.Sprintf("%v\t%v\t%v\t%v\t%v\t%v\t%v", worksapce.ID, workspaceName, worksapce.Mode, dir, config, host, createTime)
 		fmt.Fprintln(w, line)
 	}
 	w.Flush()
+}
+
+func getWorkspaceStatusDesc(workspaceStatus model.WorkspaceStatusEnum) string {
+
+	desc := ""
+	switch workspaceStatus {
+	case model.WorkspaceStatusEnum_Init:
+		desc = "Initialization"
+	case model.WorkspaceStatusEnum_Pending:
+		desc = "Pending"
+	case model.WorkspaceStatusEnum_Remove:
+		desc = "Cleaned"
+	case model.WorkspaceStatusEnum_Removing:
+		desc = "Cleaning"
+	case model.WorkspaceStatusEnum_ContainerRemoving:
+		desc = "Removing"
+	case model.WorkspaceStatusEnum_ContainerRemoved:
+		desc = "Removed"
+	case model.WorkspaceStatusEnum_Stop:
+		desc = "Stopped"
+	case model.WorkspaceStatusEnum_Stopping:
+		desc = "Stopping"
+	case model.WorkspaceStatusEnum_Start:
+		desc = "Running"
+	default:
+		desc = "Pending"
+	}
+	if int(workspaceStatus) < 0 {
+		desc = "Error"
+	}
+
+	return desc
 }
 
 func init() {

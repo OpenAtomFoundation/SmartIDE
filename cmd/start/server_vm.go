@@ -1,8 +1,8 @@
 /*
  * @Author: kenan
  * @Date: 2022-02-16 17:44:45
- * @LastEditors: kenan
- * @LastEditTime: 2022-04-02 18:39:40
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-05-07 09:19:58
  * @FilePath: /smartide-cli/cmd/start/server_vm.go
  * @Description:
  *
@@ -11,6 +11,7 @@
 package start
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -25,7 +26,7 @@ import (
 )
 
 // 远程服务器执行 start 命令
-func ExecuteServerVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) {
+func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) error {
 	currentAuth, err := workspace.GetCurrentUser()
 	common.CheckError(err)
 	if currentAuth != (model.Auth{}) && currentAuth.Token != "" && currentAuth.Token != nil {
@@ -45,19 +46,19 @@ func ExecuteServerVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteF
 		}
 
 	}
-	// 从api 获取workspace}
 
+	// 从api 获取workspace
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_starting)
 	// 检查工作区的状态
 	if workspaceInfo.ServerWorkSpace.Status != model.WorkspaceStatusEnum_Start {
 		if workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Pending || workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Init {
-			common.SmartIDELog.Error("当前工作区正在启动中，请等待！")
+			return errors.New("当前工作区正在启动中，请等待！")
 
 		} else if workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Stop {
-			common.SmartIDELog.Error("当前工作区已停止！")
+			return errors.New("当前工作区已停止！")
 
 		} else {
-			common.SmartIDELog.Error("当前工作区运行异常！")
+			return errors.New("当前工作区运行异常！")
 
 		}
 	}
@@ -67,7 +68,9 @@ func ExecuteServerVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteF
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_connect_remote + msg)
 
 	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password)
-	common.CheckError(err)
+	if err != nil {
+		return err
+	}
 
 	//6. 当前主机绑定到远程端口
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_tunnel_waiting) // log
@@ -133,26 +136,29 @@ func ExecuteServerVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteF
 		checkUrl = fmt.Sprintf(`http://localhost:%v`, unusedLocalPort4IdeBindingPort)
 	}
 	isUrlReady := false
-	for !isUrlReady {
-		resp, err := http.Get(checkUrl)
-		if (err == nil) && (resp.StatusCode == 200) {
-			isUrlReady = true
-			//common.OpenBrowser(checkUrl) // 这里不用打开，从server中点击即可
-			common.SmartIDELog.InfoF(i18nInstance.VmStart.Info_open_brower, checkUrl)
+	go func() {
+		// 检测浏览器
+		for !isUrlReady {
+			resp, err := http.Get(checkUrl)
+			if (err == nil) && (resp.StatusCode == 200) {
+				isUrlReady = true
+				//common.OpenBrowser(checkUrl) // 这里不用打开，从server中点击即可
+				common.SmartIDELog.InfoF(i18nInstance.VmStart.Info_open_brower, checkUrl)
 
-		} else {
-			msg := fmt.Sprintf("%v 检测失败", checkUrl)
-			common.SmartIDELog.Debug(msg)
+			} else {
+				msg := fmt.Sprintf("%v 检测失败", checkUrl)
+				common.SmartIDELog.Debug(msg)
 
+			}
 		}
-	}
 
-	//9. 更新server端的extend字段
+		//9. 更新server端的extend字段
+		err = smartideServer.FeeadbackExtend(currentAuth, workspaceInfo)
+		if err != nil {
+			common.SmartIDELog.Importance(err.Error())
+		}
+		common.SmartIDELog.Info("本地端口绑定信息 更新完成！")
+	}()
 
-	err = smartideServer.FeeadbackExtend(currentAuth, workspaceInfo)
-	if err != nil {
-		common.SmartIDELog.Importance(err.Error())
-	}
-	common.SmartIDELog.Info("本地端口绑定信息 更新完成！")
-
+	return nil
 }

@@ -2,22 +2,19 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2021-12-20 16:55:10
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-04-21 10:05:27
  */
 package start
 
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
 	"text/tabwriter"
 
-	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 
 	"github.com/docker/docker/api/types"
@@ -33,92 +30,6 @@ type DockerComposeContainer struct {
 	ImageID string
 	Ports   []string
 	State   string
-}
-
-// 检查本地环境，是否安装docker、docker-compose
-func CheckLocalEnv() error {
-	var errMsgArray []string
-
-	//0.1. 校验是否能正常执行docker
-	dockerErr := exec.Command("docker", "-v").Run()
-	dockerpsErr := exec.Command("docker", "ps").Run()
-	if dockerErr != nil || dockerpsErr != nil {
-		if dockerErr != nil {
-			common.SmartIDELog.Debug(dockerErr.Error())
-		}
-		if dockerpsErr != nil {
-			common.SmartIDELog.Debug(dockerpsErr.Error())
-		}
-
-		errMsgArray = append(errMsgArray, i18n.GetInstance().Main.Err_env_DockerPs)
-	}
-
-	//0.2. 校验是否能正常执行 docker-compose
-	dockercomposeErr := exec.Command("docker-compose", "version").Run()
-	if dockercomposeErr != nil {
-		common.SmartIDELog.Debug(dockercomposeErr.Error())
-		errMsgArray = append(errMsgArray, i18n.GetInstance().Main.Err_env_Docker_Compose)
-	}
-
-	// 错误判断
-	if len(errMsgArray) > 0 {
-		tmps := common.RemoveEmptyItem(errMsgArray)
-		return errors.New(strings.Join(tmps, "; "))
-	}
-
-	return nil
-}
-
-// 检测远程服务器的环境，是否安装docker、docker-compose、git
-func CheckRemoveEnv(sshRemote common.SSHRemote) error {
-	var msg []string
-
-	// 环境监测
-	output, err := sshRemote.ExeSSHCommand("git version")
-	if err != nil || strings.Contains(strings.ToLower(output), "error:") {
-		if err != nil {
-			common.SmartIDELog.Debug(err.Error(), output)
-		}
-		msg = append(msg, i18nInstance.Main.Err_env_git_check)
-	}
-	output, err = sshRemote.ExeSSHCommand("docker version")
-	if err != nil || strings.Contains(strings.ToLower(output), "error:") {
-		if err != nil {
-			common.SmartIDELog.Debug(err.Error(), output)
-		}
-		msg = append(msg, i18nInstance.Main.Err_env_docker)
-	}
-	output, err = sshRemote.ExeSSHCommand("docker-compose version")
-	if err != nil ||
-		(!strings.Contains(strings.ToLower(output), "docker-compose version") && !strings.Contains(strings.ToLower(output), "docker compose version")) ||
-		strings.Contains(strings.ToLower(output), "error:") {
-		if err != nil {
-			common.SmartIDELog.Debug(err.Error(), output)
-		}
-		msg = append(msg, i18nInstance.Main.Err_env_Docker_Compose)
-	}
-
-	// 错误判断
-	if len(msg) > 0 {
-		return errors.New(strings.Join(msg, "; "))
-	}
-
-	// 把当前用户加到docker用户组里面
-	_, err = sshRemote.ExeSSHCommand("sudo usermod -a -G docker " + sshRemote.SSHUserName)
-	if err != nil {
-		common.SmartIDELog.Debug(err.Error())
-	}
-
-	// clone 代码库时，不提示：“are you sure you want to continue connecting (yes/no) ”
-	sshConfig, err := sshRemote.ExeSSHCommand("[[ -f \".ssh/config\" ]] && cat ~/.ssh/config || echo \"\"")
-	common.CheckError(err)
-	if !strings.Contains(sshConfig, "StrictHostKeyChecking no") { // 不包含就添加
-		command := "if [ ! -d ～/.ssh ]; then mkdir -p ~/.ssh; fi && echo -e \"StrictHostKeyChecking no\n\" >> ~/.ssh/config"
-		_, err := sshRemote.ExeSSHCommand(command)
-		common.CheckError(err)
-	}
-
-	return nil
 }
 
 // 获取docker compose运行起来对应的容器

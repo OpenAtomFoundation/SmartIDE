@@ -94,7 +94,7 @@ func (c *SmartIdeConfig) GetServiceNames() (serviceNames []string) {
 }
 
 // 获取yaml配置文件的路径
-func (yamlFileConfig *SmartIdeConfig) GetConfigYamlFilePath() string {
+func (yamlFileConfig *SmartIdeConfig) GetConfigFileAbsolutePath() string {
 	return yamlFileConfig.getConfigYamlFilePath()
 }
 

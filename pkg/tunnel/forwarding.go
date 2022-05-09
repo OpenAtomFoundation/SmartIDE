@@ -205,16 +205,17 @@ func parseCmdOutput(cmdOutput string) (result []NetstatInfo) {
 	for _, str := range strArray[2:] {
 
 		if strings.Contains(str, "Not all processes could be identified, non-owned process info") ||
-			strings.Contains(str, "you would have to be root to see it all.") {
+			strings.Contains(str, "you would have to be root to see it all.") ||
+			strings.Contains(str, "No info could be read for \"-p\": geteuid()=1000 but you should be root.") {
 			continue
 		}
 
 		if len(strings.ReplaceAll(str, " ", "")) == 0 {
 			continue
 		}
-		if indexs[6] > len(str) {
-			common.SmartIDELog.Debug(cmdOutput)
-			common.SmartIDELog.Error(str)
+		if indexs[6] > len(str) { // 当最后1列的数据位置 比 当前数据还小 时
+			//common.SmartIDELog.Debug(cmdOutput)
+			common.SmartIDELog.Importance(str)
 		}
 		tmp := strings.ReplaceAll(str[indexs[6]:], " ", "")
 		pid, programName := "", ""
@@ -292,18 +293,25 @@ func TunnelMultiple(clientConn *ssh.Client, mapping map[string]string) error {
 			if err != nil {
 				common.SmartIDELog.Warning("failed to dial to remote: ", err.Error())
 			}
+
 			for {
 				here, err := listener.Accept()
 				if err != nil {
 					common.SmartIDELog.Warning("failed to dial to remote: ", err.Error())
+					time.Sleep(time.Second * 1)
+					continue
 				}
 				if here == nil {
 					common.SmartIDELog.Importance("本地连接失败" + local)
+					time.Sleep(time.Second * 1)
+					continue
 				}
 				go func(here net.Conn) {
 					there, err := clientConn.Dial("tcp", remote)
 					if there == nil {
 						common.SmartIDELog.Importance("ssh 连接失败，请确保远程主机上相应端口已打开 " + remote)
+						time.Sleep(time.Second * 1)
+						return
 					}
 					if err != nil {
 						common.SmartIDELog.Warning(err.Error())

@@ -158,7 +158,7 @@ func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId in
 			return -1, err
 		}
 
-		res, err := stmt.Exec(workspaceInfo.Name, workspaceInfo.WorkingDirectoryPath, workspaceInfo.TempDockerComposeFilePath, workspaceInfo.ConfigFilePath, remoteId, k8sId,
+		res, err := stmt.Exec(workspaceInfo.Name, workspaceInfo.WorkingDirectoryPath, workspaceInfo.TempYamlFileAbsolutePath, workspaceInfo.ConfigFileRelativePath, remoteId, k8sId,
 			workspaceInfo.Mode, workspaceInfo.GitCloneRepoUrl, workspaceInfo.GitRepoAuthType, workspaceInfo.Branch,
 			string(jsonBytes), configStr, linkComposeStr, tempComposeStr)
 		if err != nil {
@@ -175,7 +175,7 @@ func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId in
 		if err != nil {
 			return -1, err
 		}
-		_, err = stmt.Exec(workspaceInfo.Name, workspaceInfo.WorkingDirectoryPath, workspaceInfo.TempDockerComposeFilePath, workspaceInfo.ConfigFilePath,
+		_, err = stmt.Exec(workspaceInfo.Name, workspaceInfo.WorkingDirectoryPath, workspaceInfo.TempYamlFileAbsolutePath, workspaceInfo.ConfigFileRelativePath,
 			workspaceInfo.Mode, workspaceInfo.GitCloneRepoUrl, workspaceInfo.GitRepoAuthType, workspaceInfo.Branch,
 			string(jsonBytes), configStr, linkComposeStr, tempComposeStr,
 			affectId)
@@ -223,7 +223,7 @@ func GetWorkspaceList() (workspaces []workspace.WorkspaceInfo, err error) {
 }
 
 //
-func GetSingleWorkspaceByParams(workingMode workspace.WorkingMode, workingDir string, gitCloneUrl string, remoteId int, remoteHost string) (workspaceInfo workspace.WorkspaceInfo, err error) {
+func GetSingleWorkspaceByParams(workingMode workspace.WorkingModeEnum, workingDir string, gitCloneUrl string, remoteId int, remoteHost string) (workspaceInfo workspace.WorkspaceInfo, err error) {
 	db := getDb()
 	defer db.Close()
 
@@ -300,8 +300,8 @@ func workspaceDataMap(workspaceInfo *workspace.WorkspaceInfo, do workspaceDo) er
 	workspaceInfo.ID = strconv.Itoa(do.w_id)
 	workspaceInfo.Name = do.w_name
 	workspaceInfo.WorkingDirectoryPath = do.w_workingdir.String
-	workspaceInfo.ConfigFilePath = do.w_config_file.String
-	workspaceInfo.TempDockerComposeFilePath = do.w_docker_compose_file_path.String
+	workspaceInfo.ConfigFileRelativePath = do.w_config_file.String
+	workspaceInfo.TempYamlFileAbsolutePath = do.w_docker_compose_file_path.String
 
 	//2. 类型
 	if do.w_mode == string(workspace.WorkingMode_Local) {
@@ -347,7 +347,7 @@ func workspaceDataMap(workspaceInfo *workspace.WorkspaceInfo, do workspaceDo) er
 			}
 		}
 	} else {
-		tempK8sYaml, _ := config.NewK8SConfig(workspaceInfo.ConfigFilePath, []string{}, do.w_config_content.String, do.w_temp_compose_content.String)
+		tempK8sYaml, _ := config.NewK8SConfig(workspaceInfo.ConfigFileRelativePath, []string{}, do.w_config_content.String, do.w_temp_compose_content.String)
 		workspaceInfo.K8sInfo.TempK8sConfig = *tempK8sYaml
 	}
 

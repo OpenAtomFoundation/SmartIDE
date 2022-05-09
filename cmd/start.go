@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2022-04-13 15:25:44
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-05-07 09:20:23
  */
 package cmd
 
@@ -40,9 +40,6 @@ import (
 	ssh2 "golang.org/x/crypto/ssh"
 )
 
-// 远程服务器上的根目录
-const REMOTE_REPO_ROOT string = "project"
-
 // var i18nInstance.Start = i18n.GetInstance().Start
 var i18nInstance = i18n.GetInstance()
 
@@ -70,7 +67,7 @@ var startCmd = &cobra.Command{
 			common.WebsocketStart(wsURL)
 			token, _ := cmd.Flags().GetString(server.Flags_ServerToken)
 			if token != "" {
-				if workspaceIdStr := getWorkspaceIdFromFlagsAndArgs(cmd, args); strings.Contains(workspaceIdStr, "SWS") {
+				if workspaceIdStr := getWorkspaceIdFromFlagsOrArgs(cmd, args); strings.Contains(workspaceIdStr, "SWS") {
 					if pid, err := workspace.GetParentId(workspaceIdStr, 1, token, apiHost); err == nil && pid > 0 {
 						common.SmartIDELog.Ws_id = workspaceIdStr
 						common.SmartIDELog.ParentId = pid
@@ -94,7 +91,7 @@ var startCmd = &cobra.Command{
 
 		//0.1. 从参数中获取结构体，并做基本的数据有效性校验
 		common.SmartIDELog.Info(i18nInstance.Main.Info_workspace_loading)
-		worksapceInfo, err := getWorkspaceFromCmd(cmd, args)
+		workspaceInfo, err := getWorkspaceFromCmd(cmd, args)
 		common.CheckErrorFunc(err, func(err error) {
 			mode, _ := cmd.Flags().GetString("mode")
 			isModeServer := strings.ToLower(mode) == "server"
@@ -102,7 +99,7 @@ var startCmd = &cobra.Command{
 				return
 			}
 			if err != nil {
-				smartideServer.Feedback_Finish(server.FeedbackCommandEnum_Start, cmd, false, 0, workspace.WorkspaceInfo{}, err.Error(), "")
+				smartideServer.Feedback_Finish(server.FeedbackCommandEnum_Start, cmd, false, nil, workspace.WorkspaceInfo{}, err.Error(), "")
 			}
 		})
 
@@ -110,51 +107,54 @@ var startCmd = &cobra.Command{
 		err = smartideServer.Check(cmd)
 		common.CheckError(err)
 
-		//ai记录
+		// ai记录
 		var trackEvent string
 		for _, val := range args {
 			trackEvent = trackEvent + " " + val
 		}
 
 		// 执行命令
-		if worksapceInfo.Mode == workspace.WorkingMode_Local { // 本地模式
+		if workspaceInfo.Mode == workspace.WorkingMode_Local { // 本地模式
 			executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
 				var imageNames []string
 				for _, service := range yamlConfig.Workspace.Servcies {
 					imageNames = append(imageNames, service.Image)
 				}
-				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(worksapceInfo.Mode), strings.Join(imageNames, ","))
+				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(workspaceInfo.Mode), strings.Join(imageNames, ","))
 			}
-			start.ExecuteStartCmd(worksapceInfo, func(v string, d common.Docker) {}, executeStartCmdFunc)
+			start.ExecuteStartCmd(workspaceInfo, func(v string, d common.Docker) {}, executeStartCmdFunc)
 
-		} else if worksapceInfo.Mode == workspace.WorkingMode_K8s { // k8s 模式
+		} else if workspaceInfo.Mode == workspace.WorkingMode_K8s { // k8s 模式
 			executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
 				var imageNames []string
 				for _, service := range yamlConfig.Workspace.Servcies {
 					imageNames = append(imageNames, service.Image)
 				}
-				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(worksapceInfo.Mode), strings.Join(imageNames, ","))
+				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(workspaceInfo.Mode), strings.Join(imageNames, ","))
 			}
-			start.ExecuteK8sStartCmd(worksapceInfo, executeStartCmdFunc)
+			start.ExecuteK8sStartCmd(workspaceInfo, executeStartCmdFunc)
 
 			//99. 死循环进行驻守
 			for {
-				time.Sleep(500)
+				time.Sleep(time.Millisecond * 300)
 			}
 
-		} else if worksapceInfo.Mode == workspace.WorkingMode_Server { // server vm 模式
+		} else if workspaceInfo.CliRunningEnv == workspace.CliRunningEnvEnum_Client &&
+			workspaceInfo.Mode == workspace.WorkingMode_Remote &&
+			workspaceInfo.ServerWorkSpace != nil { // server 工作区，在本地运行
 			executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
 				var imageNames []string
 				for _, service := range yamlConfig.Workspace.Servcies {
 					imageNames = append(imageNames, service.Image)
 				}
-				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(worksapceInfo.Mode), strings.Join(imageNames, ","))
+				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(workspaceInfo.Mode), strings.Join(imageNames, ","))
 			}
-			start.ExecuteServerVmStartCmd(worksapceInfo, executeStartCmdFunc)
+			err = start.ExecuteServerVmStartByClientEnvCmd(workspaceInfo, executeStartCmdFunc)
+			common.CheckError(err)
 
 			//99. 死循环进行驻守
 			for {
-				time.Sleep(500)
+				time.Sleep(time.Millisecond * 300)
 			}
 
 		} else { // vm 模式
@@ -163,9 +163,14 @@ var startCmd = &cobra.Command{
 				for _, service := range yamlConfig.Workspace.Servcies {
 					imageNames = append(imageNames, service.Image)
 				}
-				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(worksapceInfo.Mode), strings.Join(imageNames, ","))
+				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(workspaceInfo.Mode), strings.Join(imageNames, ","))
 			}
-			start.ExecuteVmStartCmd(worksapceInfo, executeStartCmdFunc, cmd)
+
+			disabelGitClone := false
+			if workspaceInfo.GitCloneRepoUrl == "" {
+				disabelGitClone = true
+			}
+			start.ExecuteVmStartCmd(workspaceInfo, executeStartCmdFunc, cmd, disabelGitClone)
 
 		}
 
@@ -204,53 +209,99 @@ var (
 )
 
 // 获取工作区id
-func getWorkspaceIdFromFlagsAndArgs(cmd *cobra.Command, args []string) string {
+func getWorkspaceIdFromFlagsOrArgs(cmd *cobra.Command, args []string) string {
 	fflags := cmd.Flags()
 
 	// 从args 或者 flag 中获取值
-	var workspaceId string
 	if len(args) > 0 { // 从args中加载
-		workspaceId = args[0]
+		tmpWorkspaceId := args[0]
+		checkFlagUnnecessary(fflags, flag_workspaceid, tmpWorkspaceId)
 
-		checkFlagUnnecessary(fflags, flag_workspaceid, workspaceId)
-	} else if fflags.Changed(flag_workspaceid) { // 从flag中加载
-		fflags.GetString(flag_workspaceid)
-		tmpWorkspaceId, err := fflags.GetString(flag_workspaceid)
-		common.CheckError(err)
-		if tmpWorkspaceId != "" {
-			workspaceId = tmpWorkspaceId
+		// 是否为数字，或者包含sw
+		if common.IsNumber(tmpWorkspaceId) || strings.Index(strings.ToLower(tmpWorkspaceId), "sw") == 0 {
+			return tmpWorkspaceId
 		}
 	}
 
-	return workspaceId
+	// 从 workspaceid 参数中加载
+	if fflags.Changed(flag_workspaceid) { // 从flag中加载
+		tmpWorkspaceId, err := fflags.GetString(flag_workspaceid)
+		common.CheckError(err)
+
+		// 是否为数字，或者包含sw
+		if common.IsNumber(tmpWorkspaceId) || strings.Index(strings.ToLower(tmpWorkspaceId), "sw") == 0 {
+			return tmpWorkspaceId
+		}
+	}
+
+	// 从 serverworkspaceid 参数中获取
+	if fflags.Changed("serverworkspaceid") { // 从flag中加载
+		serverWorkspaceId, err := fflags.GetString("serverworkspaceid")
+		common.CheckError(err)
+
+		// 是否为数字，或者包含sw
+		if common.IsNumber(serverWorkspaceId) || strings.Index(strings.ToLower(serverWorkspaceId), "sw") == 0 {
+			return serverWorkspaceId
+		}
+	}
+
+	return ""
 }
 
 // 从start command的flag、args中获取workspace
 func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo workspace.WorkspaceInfo, err error) {
 	fflags := cmd.Flags()
+	//1.
 	//从args或flags中获取workspaceid，如 : smartide start 1
-	workspaceIdStr := getWorkspaceIdFromFlagsAndArgs(cmd, args)
+	workspaceIdStr := getWorkspaceIdFromFlagsOrArgs(cmd, args)
 	//从args或flags中获取giturl，如 : smartide start https://github.com/idcf-boat-house/boathouse-calculator.git
 	gitUrl := getGitUrlFromArgs(cmd, args)
-	//1. 加载workspace
-	workspaceInfo = workspace.WorkspaceInfo{}
+	// 加载workspace
+	workspaceInfo = workspace.WorkspaceInfo{
+		CliRunningEnv: workspace.CliRunningEnvEnum_Client,
+		CacheEnv:      workspace.CacheEnvEnum_Local,
+	}
+	// 运行环境
+	if value, _ := fflags.GetString("mode"); strings.ToLower(value) == "server" { // || strings.Index(strings.ToLower(workspaceIdStr), "sw") == 0
+		workspaceInfo.CliRunningEnv = workspace.CliRunningEvnEnum_Server
+	}
+	if strings.Index(strings.ToLower(workspaceIdStr), "sw") == 0 {
+		workspaceInfo.CacheEnv = workspace.CacheEnvEnum_Server
+	} else if value, _ := fflags.GetString("serverworkspaceid"); value != "" {
+		workspaceInfo.CacheEnv = workspace.CacheEnvEnum_Server
+	}
 
-	// server 模式从api 获取ws
-	if strings.Contains(strings.ToUpper(workspaceIdStr), "SW") {
+	//2. 获取基本的信息
+	// server 上的工作区
+	if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server {
 		auth := model.Auth{}
-		auth, err = workspace.GetCurrentUser()
-		if auth != (model.Auth{}) && auth.Token != "" {
-			// 从api 获取workspace
-			workspaceInfo, err = workspace.GetWorkspaceFromServer(auth, workspaceIdStr)
-			common.CheckError(err)
-
-			// 使用是否关联 server workspace 进行判断
-			if (workspaceInfo.ServerWorkSpace == model.ServerWorkspace{}) {
-				common.SmartIDELog.Error("没有查询到对应的数据！")
+		if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server {
+			auth.Token, _ = fflags.GetString(server.Flags_ServerToken)
+			auth.LoginUrl, _ = fflags.GetString(server.Flags_ServerHost)
+			auth.UserName, _ = fflags.GetString(server.Flags_ServerUsername)
+		} else {
+			auth, err = workspace.GetCurrentUser()
+			if err != nil {
+				return
 			}
 		}
 
-	} else {
+		if auth.IsNotNil() {
+			// 从 api 获取 workspace
+			workspaceInfo, err = workspace.GetWorkspaceFromServer(auth, workspaceIdStr, workspaceInfo.CliRunningEnv)
+
+			// 使用是否关联 server workspace 进行判断
+			if workspaceInfo.ServerWorkSpace == nil {
+				err = fmt.Errorf("没有查询到 (%v) 对应的工作区数据！", workspaceIdStr)
+			}
+		} else {
+			err = fmt.Errorf("请运行smartide login命令登录！")
+		}
+		if err != nil {
+			return
+		}
+
+	} else { // 非 server 模式
 		workspaceId, _ := strconv.Atoi(workspaceIdStr)
 		common.CheckError(err)
 		//1.1. 指定了从workspaceid，从sqlite中读取
@@ -277,11 +328,20 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 			}
 
 			// 模式
-			if fflags.Changed(flag_host) { // vm 模式
+			hostValue, _ := fflags.GetString(flag_host)
+			if fflags.Changed(flag_host) && hostValue != "" { // vm 模式
 				workingMode = workspace.WorkingMode_Remote
 				hostInfo, err := getRemoteAndValid(fflags)
 				if err != nil {
 					return workspace.WorkspaceInfo{}, err
+				}
+
+				// 项目名称 ！！！！！ //TODO: 应该作为一个公共的方法
+				if cmd.Name() == "new" {
+					if tmp, er := fflags.GetString("workspacename"); tmp == "" || er != nil {
+						return workspace.WorkspaceInfo{}, errors.New("参数 workspacename 不为空！")
+					}
+					workspaceInfo.Name, _ = fflags.GetString("workspacename")
 				}
 
 				workspaceInfo.Remote = hostInfo
@@ -298,8 +358,13 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 					workspaceInfo.GitRepoAuthType = workspace.GitRepoAuthType_HTTP
 				}
 
-				repoName := getRepoName(workspaceInfo.GitCloneRepoUrl)
-				repoWorkspaceDir := filepath.Join("~", REMOTE_REPO_ROOT, repoName)
+				var repoWorkspaceDir string
+				repoName := common.GetRepoName(workspaceInfo.GitCloneRepoUrl)
+				if repoName != "" {
+					repoWorkspaceDir = filepath.Join("~", model.CONST_REMOTE_REPO_ROOT, repoName)
+				} else {
+					repoWorkspaceDir = filepath.Join("~", model.CONST_REMOTE_REPO_ROOT, workspaceInfo.Name)
+				}
 				workspaceInfo.WorkingDirectoryPath = repoWorkspaceDir
 
 			} else if fflags.Changed("k8s") { // k8s模式
@@ -318,6 +383,8 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 				workspaceInfo.K8sInfo.Context = getFlagValue(fflags, flag_k8s)
 
 			} else { // 本地模式
+				workspaceInfo.Name = path.Base(pwd)
+
 				// 本地模式下，不需要录入git库的克隆地址、分支
 				checkFlagUnnecessary(fflags, flag_repourl, "mode=local")
 				checkFlagUnnecessary(fflags, flag_branch, "mode=local")
@@ -351,15 +418,12 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 			} else {
 				if workspaceInfo.Mode != workspace.WorkingMode_K8s {
 					// docker-compose 文件路径
-					workspaceInfo.TempDockerComposeFilePath = workspaceInfo.GetTempDockerComposeFilePath()
+					workspaceInfo.TempYamlFileAbsolutePath = workspaceInfo.GetTempDockerComposeFilePath()
 				}
 
 			}
 		}
 	}
-
-	/* // 项目名称
-	workspaceInfo.GetProjectDirctoryName() = getProjectName(workspaceInfo.Mode, workspaceInfo.GitCloneRepoUrl) */
 
 	// 涉及到配置文件的改变
 	if fflags.Changed(flag_filepath) {
@@ -367,11 +431,16 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 		common.CheckError(err)
 
 		if configFilePath != "" {
-			workspaceInfo.ConfigFilePath = configFilePath
+			if strings.Contains(configFilePath, "/") || strings.Contains(configFilePath, "\\") {
+				workspaceInfo.ConfigFileRelativePath = configFilePath
+			} else {
+				workspaceInfo.ConfigFileRelativePath = ".ide/" + configFilePath
+			}
+
 		}
 	}
-	if workspaceInfo.ConfigFilePath == "" { // 避免配置文件的路径为空
-		workspaceInfo.ConfigFilePath = model.CONST_Default_ConfigRelativeFilePath
+	if workspaceInfo.ConfigFileRelativePath == "" { // 避免配置文件的路径为空
+		workspaceInfo.ConfigFileRelativePath = model.CONST_Default_ConfigRelativeFilePath
 	}
 	if fflags.Changed(flag_branch) {
 		branch, err := fflags.GetString(flag_branch)
@@ -385,8 +454,8 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 	// 验证
 	if workspaceInfo.Mode == workspace.WorkingMode_Remote {
 		// path change
-		workspaceInfo.ConfigFilePath = common.FilePahtJoin4Linux(workspaceInfo.ConfigFilePath)
-		workspaceInfo.TempDockerComposeFilePath = common.FilePahtJoin4Linux(workspaceInfo.TempDockerComposeFilePath)
+		workspaceInfo.ConfigFileRelativePath = common.FilePahtJoin4Linux(workspaceInfo.ConfigFileRelativePath)
+		workspaceInfo.TempYamlFileAbsolutePath = common.FilePahtJoin4Linux(workspaceInfo.TempYamlFileAbsolutePath)
 		workspaceInfo.WorkingDirectoryPath = common.FilePahtJoin4Linux(workspaceInfo.WorkingDirectoryPath)
 
 		// 在远程模式下，首先验证远程服务器是否可以登录
@@ -480,8 +549,8 @@ func getWorkspaceWithDbAndValid(workspaceId int) (workspaceInfo workspace.Worksp
 	}
 
 	// 临时compose文件路径
-	if workspaceInfo.TempDockerComposeFilePath == "" {
-		workspaceInfo.TempDockerComposeFilePath = workspaceInfo.GetTempDockerComposeFilePath()
+	if workspaceInfo.TempYamlFileAbsolutePath == "" {
+		workspaceInfo.TempYamlFileAbsolutePath = workspaceInfo.GetTempDockerComposeFilePath()
 	}
 
 	// 验证数据

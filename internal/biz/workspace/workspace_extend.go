@@ -18,8 +18,6 @@ func (workspace *WorkspaceInfo) GetWorkspaceExtend() WorkspaceExtend {
 		if workspace.TempDockerCompose.IsNil() || workspace.ConfigYaml.IsNil() {
 			return extend
 		}
-	} else {
-
 	}
 
 	// 兼容链接docker-compose 和 不链接docker-compose 两种方式
@@ -42,10 +40,14 @@ func (workspace *WorkspaceInfo) GetWorkspaceExtend() WorkspaceExtend {
 			}
 
 			// webide 端口
-			portWebide := fmt.Sprintf("%v:%v", model.CONST_Local_Default_BindingPort_WebIDE, workspace.ConfigYaml.GetContainerWebIDEPort())
-			if !common.Contains(originServicePorts, portWebide) {
-				originServicePorts = append(originServicePorts, portWebide)
+			containerWebIDEPort := workspace.ConfigYaml.GetContainerWebIDEPort()
+			if containerWebIDEPort != nil { // 判断是否获取到webide的端口，在sdk-only模式下没有webide
+				portWebide := fmt.Sprintf("%v:%v", model.CONST_Local_Default_BindingPort_WebIDE, *containerWebIDEPort)
+				if !common.Contains(originServicePorts, portWebide) {
+					originServicePorts = append(originServicePorts, portWebide)
+				}
 			}
+
 		}
 
 		// 遍历原始端口
@@ -67,17 +69,16 @@ func (workspace *WorkspaceInfo) GetWorkspaceExtend() WorkspaceExtend {
 			if isDevService && label == "" {
 				if originLocalPort == model.CONST_Local_Default_BindingPort_WebIDE {
 					if containerPort == model.CONST_Container_JetBrainsIDEPort {
-						label = "tools-webide-jb"
+						label = model.CONST_DevContainer_PortDesc_JB
 					} else if containerPort == model.CONST_Container_OpensumiIDEPort {
-						label = "tools-webide-opensumi"
+						label = model.CONST_DevContainer_PortDesc_Opensumi
 					} else {
-						label = "tools-webide-vscode"
+						label = model.CONST_DevContainer_PortDesc_Vscode
 					}
 				} else if originLocalPort == model.CONST_Local_Default_BindingPort_SSH {
-					label = "tools-ssh"
+					label = model.CONST_DevContainer_PortDesc_SSH
 				}
 			}
-			//TODO 端口绑定存在漏洞，并没有指定是哪个sercie，多个service可能会出现重名的情况
 
 			// 如果描述信息不为空，就添加
 			if label != "" {

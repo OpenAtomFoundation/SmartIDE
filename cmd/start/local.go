@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-04-06 18:21:01
+ * @LastEditTime: 2022-04-22 10:10:04
  */
 package start
 
@@ -36,7 +36,7 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo,
 	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) {
 
 	//0. 检查本地环境
-	err := CheckLocalEnv()
+	err := common.CheckLocalEnv()
 	common.CheckError(err)
 
 	//1. 变量
@@ -50,7 +50,7 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo,
 	var ideBindingPort, sshBindingPort int
 
 	//1.3. 初始化配置文件对象
-	currentConfig := config.NewConfig(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFilePath, "")
+	currentConfig := config.NewConfig(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath, "")
 
 	//2. docker-compose
 	//2.1. 获取compose数据
@@ -89,7 +89,7 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo,
 		err = workspaceInfo.SaveTempFiles()
 		common.CheckError(err)
 
-		tempDockerCompose, ideBindingPort, sshBindingPort = currentConfig.LoadDockerComposeFromTempFile(common.SSHRemote{}, workspaceInfo.TempDockerComposeFilePath)
+		tempDockerCompose, ideBindingPort, sshBindingPort = currentConfig.LoadDockerComposeFromTempFile(common.SSHRemote{}, workspaceInfo.TempYamlFileAbsolutePath)
 	}
 	//2.2. 扩展信息
 	workspaceInfo.Extend = workspaceInfo.GetWorkspaceExtend()
@@ -122,7 +122,7 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo,
 		// 运行docker-compose命令
 		// e.g. docker-compose -f {docker-compose文件路径} --project-directory {工作目录} up -d
 		pwd, _ := os.Getwd()
-		composeCmd := exec.Command("docker-compose", "-f", workspaceInfo.TempDockerComposeFilePath, "--project-directory", pwd, "up", "-d")
+		composeCmd := exec.Command("docker-compose", "-f", workspaceInfo.TempYamlFileAbsolutePath, "--project-directory", pwd, "up", "-d")
 		composeCmd.Stdout = os.Stdout
 		composeCmd.Stderr = os.Stderr
 		if composeCmdErr := composeCmd.Run(); composeCmdErr != nil {
@@ -133,8 +133,9 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo,
 	//4. 获取启动的容器列表
 	dockerComposeContainers := GetLocalContainersWithServices(ctx, cli, currentConfig.GetServiceNames())
 	devContainerName := getDevContainerName(dockerComposeContainers, currentConfig.Workspace.DevContainer.ServiceName)
-	gitconfig := currentConfig.Workspace.DevContainer.Volumes.GitConfig
-	config.GitConfig(gitconfig, false, devContainerName, cli, &compose.Service{}, common.SSHRemote{}, kubectl.ExecInPodRequest{})
+	if currentConfig.Workspace.DevContainer.Volumes.HasGitConfig.Value() {
+		config.GitConfig(false, devContainerName, cli, &compose.Service{}, common.SSHRemote{}, kubectl.ExecInPodRequest{})
+	}
 	docker := *common.NewDocker(cli)
 	dockerContainerName := strings.ReplaceAll(devContainerName, "/", "")
 	config.LocalContainerGitSet(docker, dockerContainerName)
@@ -143,7 +144,9 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo,
 	if hasChanged {
 		common.SmartIDELog.Info(i18nInstance.Start.Info_workspace_saving)
 		//5.1.
-		workspaceInfo.Name = devContainerName
+		if workspaceInfo.Name == "" {
+			workspaceInfo.Name = devContainerName
+		}
 		workspaceInfo.TempDockerCompose = tempDockerCompose
 		//5.2.
 		workspaceId, err := dal.InsertOrUpdateWorkspace(workspaceInfo)

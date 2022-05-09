@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2021-10-13 15:31:52
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-03-30 15:30:46
+ * @LastEditTime: 2022-04-18 09:58:44
  * @Description: file content
  */
 
@@ -11,7 +11,6 @@ package config
 import (
 	"bufio"
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -67,117 +66,97 @@ func ConfigGitByDockerExec() {
 
 }
 
-func SSHVolumesConfig(sshKey string, isVmCommand bool, service *compose.Service, sshRemote common.SSHRemote) {
+// 注入ssh配置
+func SSHVolumesConfig(isVmCommand bool, service *compose.Service, sshRemote common.SSHRemote) {
 
 	var configPaths []string
-	if sshKey == "true" {
-		// volumes
-		if runtime.GOOS == "windows" && !isVmCommand {
-			configPaths = []string{fmt.Sprintf("\\'%v\\.ssh:/home/smartide/.ssh\\'", os.Getenv("USERPROFILE"))}
-		} else {
-			configPaths = []string{"$HOME/.ssh:/home/smartide/.ssh"}
+
+	// volumes
+	if runtime.GOOS == "windows" && !isVmCommand {
+		configPaths = []string{fmt.Sprintf("\\'%v\\.ssh:/home/smartide/.ssh\\'", os.Getenv("USERPROFILE"))}
+	} else {
+		configPaths = []string{"$HOME/.ssh:/home/smartide/.ssh"}
+	}
+	if configPaths != nil {
+		service.Volumes = append(service.Volumes, configPaths...)
+	}
+
+	// return
+}
+
+//
+func GitConfig(isVmCommand bool, containerName string, cli *client.Client,
+	service *compose.Service, sshRemote common.SSHRemote, execRquest kubectl.ExecInPodRequest) {
+
+	// 获取本机git config 内容
+	// git config --list --show-origin
+	var configStr string
+	var err error
+	cmd := exec.Command("git", "config", "--list")
+	cmd.Stderr = os.Stderr
+	var out []byte
+	out, err = cmd.Output()
+	configStr = string(out)
+	var isConfig bool
+
+	if err != nil {
+		common.SmartIDELog.Fatal(err)
+	}
+
+	if configStr == "" {
+		common.SmartIDELog.Importance("local git config is null")
+		return
+	}
+	// git config 默认设置
+
+	gitconfigs := strings.ReplaceAll(configStr, "file:", "")
+	s := bufio.NewScanner(strings.NewReader(gitconfigs))
+
+	for s.Scan() {
+		//以=分割,前面为key,后面为value
+		var str = s.Text()
+		var index = strings.Index(str, "=")
+		var key = str[0:index]
+		var value = str[index+1:]
+		if strings.Contains(key, "user.name") || strings.Contains(key, "user.email") || strings.Contains(key, "core.autocrlf") {
+			gitConfigCmd := fmt.Sprint("git config --global --replace-all ", key, " ", "\"", value, "\"")
+			if isVmCommand {
+				output, err := sshRemote.ExeSSHCommand(gitConfigCmd)
+				isConfig = true
+				common.CheckError(err, output)
+			} else if cli != nil {
+				docker := *common.NewDocker(cli)
+				out := ""
+				out, err = docker.Exec(context.Background(), strings.ReplaceAll(containerName, "/", ""), "/bin", []string{"git", "config", "--global", "--replace-all", key, value}, []string{})
+				common.CheckError(err)
+				common.SmartIDELog.Debug(out)
+			} else if execRquest.ContainerName != "" {
+
+				gitConfigCmd := fmt.Sprint("git config --global --replace-all ", key, " ", "\"", value, "\"")
+				execRquest.Command = gitConfigCmd
+				//kubectl.ExecInPod(execRquest)
+
+			}
 		}
+
+	}
+	//git config --global core.filemode false
+
+	if cli != nil {
+		docker := *common.NewDocker(cli)
+		out := ""
+		out, err = docker.Exec(context.Background(), strings.ReplaceAll(containerName, "/", ""), "/bin", []string{"git", "config", "--global", "--replace-all", "core.filemode", "false"}, []string{})
+		common.CheckError(err)
+		common.SmartIDELog.Debug(out)
+	}
+	if isConfig {
+		configPaths := []string{"$HOME/.gitconfig:/home/smartide/.gitconfig"}
 		if configPaths != nil {
 			service.Volumes = append(service.Volumes, configPaths...)
 		}
 	}
 
-	return
-}
-
-func GitConfig(configGit string, isVmCommand bool, containerName string, cli *client.Client,
-	service *compose.Service, sshRemote common.SSHRemote, execRquest kubectl.ExecInPodRequest) {
-
-	// 获取本机git config 内容
-	// git config --list --show-origin
-	if configGit == "true" {
-		var configStr string
-		var err error
-		cmd := exec.Command("git", "config", "--list")
-		cmd.Stderr = os.Stderr
-		var out []byte
-		out, err = cmd.Output()
-		configStr = string(out)
-		var isConfig bool
-
-		if err != nil {
-			common.SmartIDELog.Fatal(err)
-		}
-
-		if configStr == "" {
-			common.SmartIDELog.Importance("local git config is null")
-			return
-		}
-		// git config 默认设置
-
-		gitconfigs := strings.ReplaceAll(configStr, "file:", "")
-		s := bufio.NewScanner(strings.NewReader(gitconfigs))
-
-		for s.Scan() {
-			//以=分割,前面为key,后面为value
-			var str = s.Text()
-			var index = strings.Index(str, "=")
-			var key = str[0:index]
-			var value = str[index+1:]
-			if strings.Contains(key, "user.name") || strings.Contains(key, "user.email") || strings.Contains(key, "core.autocrlf") {
-				gitConfigCmd := fmt.Sprint("git config --global --replace-all ", key, " ", "\"", value, "\"")
-				if isVmCommand {
-					output, err := sshRemote.ExeSSHCommand(gitConfigCmd)
-					isConfig = true
-					common.CheckError(err, output)
-				} else if cli != nil {
-					docker := *common.NewDocker(cli)
-					out := ""
-					out, err = docker.Exec(context.Background(), strings.ReplaceAll(containerName, "/", ""), "/bin", []string{"git", "config", "--global", "--replace-all", key, value}, []string{})
-					common.CheckError(err)
-					common.SmartIDELog.Debug(out)
-				} else if execRquest.ContainerName != "" {
-
-					gitConfigCmd := fmt.Sprint("git config --global --replace-all ", key, " ", "\"", value, "\"")
-					execRquest.Command = gitConfigCmd
-					//kubectl.ExecInPod(execRquest)
-
-				}
-			}
-
-		}
-		//git config --global core.filemode false
-
-		if cli != nil {
-			docker := *common.NewDocker(cli)
-			out := ""
-			out, err = docker.Exec(context.Background(), strings.ReplaceAll(containerName, "/", ""), "/bin", []string{"git", "config", "--global", "--replace-all", "core.filemode", "false"}, []string{})
-			common.CheckError(err)
-			common.SmartIDELog.Debug(out)
-		}
-		if isConfig {
-			configPaths := []string{"$HOME/.gitconfig:/home/smartide/.gitconfig"}
-			if configPaths != nil {
-				service.Volumes = append(service.Volumes, configPaths...)
-			}
-		}
-
-	}
-
-	return
-}
-
-// 检查本地环境，是否安装git
-func CheckLocalGitEnv() error {
-	var errMsgArray []string
-
-	// 校验是否能正常执行 git
-	gitErr := exec.Command("git", "version").Run()
-	if gitErr != nil {
-		errMsgArray = append(errMsgArray, i18n.GetInstance().Main.Err_env_git_check)
-	}
-
-	// 错误判断
-	if len(errMsgArray) > 0 {
-		return errors.New(strings.Join(errMsgArray, "; "))
-	}
-
-	return nil
+	//return
 }
 
 func LocalContainerGitSet(docker common.Docker, dockerContainerName string) {

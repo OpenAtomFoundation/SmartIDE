@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-10 16:51:36
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-04-18 09:37:23
+ * @LastEditTime: 2022-05-05 17:37:23
  * @FilePath: /smartide-cli/cmd/login.go
  * @Description:
  *
@@ -13,6 +13,7 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/howeyc/gopass"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
@@ -67,10 +68,14 @@ var loginCmd = &cobra.Command{
 		//TODO: 如果密码错误，可以重新录入再试
 
 		//2. 登录
+		cliRunningEnv := workspace.CliRunningEnvEnum_Client
+		if value, _ := fflags.GetString("mode"); strings.ToLower(value) == "server" {
+			cliRunningEnv = workspace.CliRunningEvnEnum_Server
+		}
 		errPassword := loginAndSaveToken(loginUrl, userName, userPassword) // 使用密码登录
 		if errPassword != nil {
 			// 尝试使用token登录
-			errToken := loginWithTokenAndSaveToken(loginUrl, userName, userPassword)
+			errToken := loginWithTokenAndSaveToken(loginUrl, userName, userPassword, cliRunningEnv)
 			if errToken != nil { // 如果token 也登录不成功，就返回用户密码登录方式的error
 				common.CheckError(errPassword)
 			}
@@ -80,10 +85,11 @@ var loginCmd = &cobra.Command{
 	},
 }
 
-func loginWithTokenAndSaveToken(loginUrl, userName, token string) error {
+func loginWithTokenAndSaveToken(loginUrl, userName, token string, cliRunningEnv workspace.CliRunningEvnEnum) error {
 
 	// 请求
-	_, err := workspace.GetServerWorkspaceList(model.Auth{UserName: userName, Token: token, LoginUrl: loginUrl})
+	auth := model.Auth{UserName: userName, Token: token, LoginUrl: loginUrl}
+	_, err := workspace.GetServerWorkspaceList(auth, cliRunningEnv)
 	if err != nil {
 		return err
 	}
@@ -137,12 +143,6 @@ func saveToken(loginUrl, userName string, token interface{}) {
 	c.SaveConfigYaml()
 }
 
-func init() {
-	loginCmd.Flags().StringP("username", "u", "", i18nInstance.Login.Info_help_flag_username)
-	loginCmd.Flags().StringP("password", "t", "", i18nInstance.Login.Info_help_flag_password)
-	//loginCmd.Flags().StringP("login_url", "", "", i18nInstance.Login.Info_help_flag_loginurl)
-}
-
 func userIsExit(auths []model.Auth, username string, loginurl string) bool {
 	for _, a := range auths {
 		if a.UserName == username && a.LoginUrl == loginurl {
@@ -150,4 +150,9 @@ func userIsExit(auths []model.Auth, username string, loginurl string) bool {
 		}
 	}
 	return false
+}
+
+func init() {
+	loginCmd.Flags().StringP("username", "u", "", i18nInstance.Login.Info_help_flag_username)
+	loginCmd.Flags().StringP("password", "t", "", i18nInstance.Login.Info_help_flag_password)
 }

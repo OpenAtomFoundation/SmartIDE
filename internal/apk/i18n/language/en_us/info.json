@@ -103,7 +103,7 @@
         "info_help_long": "Load workspace details",
         "info_help_flag_workspaceid": "Use this Id to start the workspace (smartide start <id>)",
         "info_help_flag_all": "显示全部的信息",
-        "info_workspace_detail_template": "Workspace\nId:\t%v\nName:\t%v\nMode:\t%v\nConfig File:\t%v\nWorking Dir:\t%v\nGit Repo Url:\t%v\nGit Auth Mode:\t%v\n",
+        "info_workspace_detail_template": "Workspace\nId:\t%v\nName:\t%v\nRuntime:\t%v\nMode:\t%v\nConfig File:\t%v\nWorking Dir:\t%v\nGit Repo Url:\t%v\nGit Auth Mode:\t%v\n",
         "info_workspace_host_detail_template": "HOST\nHost Id:\t%v\nAddress:\t%v\nAuth Mode:\t%v\n",
         "Warn_flag_workspaceid_none": "workspaceId is required."
     },

@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2022-04-13 15:26:17
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-05-06 16:23:35
  */
 package cmd
 
@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/leansoftX/smartide-cli/cmd/server"
-	"github.com/leansoftX/smartide-cli/cmd/start"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
@@ -31,7 +30,7 @@ var stopCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		mode, _ := cmd.Flags().GetString("mode")
-		workspaceIdStr := getWorkspaceIdFromFlagsAndArgs(cmd, args)
+		workspaceIdStr := getWorkspaceIdFromFlagsOrArgs(cmd, args)
 		if strings.ToLower(mode) == "server" || strings.Contains(workspaceIdStr, "SWS") {
 			serverModeInfo, _ := server.GetServerModeInfo(cmd)
 			if serverModeInfo.ServerHost != "" {
@@ -45,60 +44,39 @@ var stopCmd = &cobra.Command{
 
 			}
 		}
-
 		common.SmartIDELog.Info(i18nInstance.Stop.Info_start)
+
+		// 检查错误并feedback
+		var checkErrorFeedback = func(err error, workspaceInfo workspace.WorkspaceInfo) {
+			if err != nil {
+				server.Feedback_Finish(server.FeedbackCommandEnum_Stop, cmd, false, nil, workspaceInfo, err.Error(), "")
+			}
+			common.CheckError(err)
+		}
 
 		// 获取 workspace 信息
 		common.SmartIDELog.Info(i18nInstance.Main.Info_workspace_loading)
-		var workspaceInfo workspace.WorkspaceInfo
+		workspaceInfo, err := getWorkspaceFromCmd(cmd, args)
+		common.CheckError(err)
 
-		// 检查错误并feedback
-		var checkErrorFeedback = func(err error) {
-			if err != nil {
-				server.Feedback_Finish(server.FeedbackCommandEnum_Stop, cmd, false, 0, workspaceInfo, err.Error(), "")
-			}
-			common.CheckError(err)
-		}
-		var currentServerAuth model.Auth // 当前服务区用户，在mode server 模式下才会赋值
-
-		// 当前登录信息
-		/* currentAuth, err := workspace.GetCurrentUser()
-		common.CheckError(err) */
-		if strings.ToLower(mode) == "server" || strings.Contains(workspaceIdStr, "SWS") { // 当mode=server时，从server端反调数据
-			// 当前服务端授权用户信息
-			serverModeInfo, err := server.GetServerModeInfo(cmd)
-			checkErrorFeedback(err)
-			currentServerAuth = model.Auth{
-				UserName: serverModeInfo.ServerUsername,
-				Token:    serverModeInfo.ServerToken,
-				LoginUrl: serverModeInfo.ServerHost,
-			}
-
-			// 工作区
-			workspaceInfo, err = workspace.GetWorkspaceFromServer(currentServerAuth, workspaceIdStr)
-			if err == nil {
-				if workspaceInfo.ID == "" || workspaceInfo.ServerWorkSpace.NO == "" {
-					err = fmt.Errorf("没有查询到 %v 对应的工作区数据！", workspaceIdStr)
-				}
-			}
-			checkErrorFeedback(err)
-
-		} else {
-			workspaceInfo = loadWorkspaceWithDb(cmd, args)
-		}
-
-		if strings.ToLower(mode) == "server" {
-			//msg := ""
+		if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server { // cli 在服务器上运行
 			// 远程主机上停止
 			err := stopRemote(workspaceInfo)
-			checkErrorFeedback(err)
+			checkErrorFeedback(err, workspaceInfo)
 
 			// feeadback
 			common.SmartIDELog.Info("反馈运行结果...")
-			err = server.Feedback_Finish(server.FeedbackCommandEnum_Stop, cmd, err == nil, 0, workspaceInfo, "", "")
+			err = server.Feedback_Finish(server.FeedbackCommandEnum_Stop, cmd, err == nil, nil, workspaceInfo, "", "")
 			common.CheckError(err)
 
-		} else if workspaceInfo.Mode == workspace.WorkingMode_Server { // 录入的是服务端工作区id
+		} else if workspaceInfo.Mode == workspace.WorkingMode_Remote &&
+			workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server &&
+			workspaceInfo.CliRunningEnv == workspace.CliRunningEnvEnum_Client { // 录入的是服务端工作区id
+
+			// 当前用户信息
+			currentServerAuth, err0 := workspace.GetCurrentUser() // 当前服务区用户，在mode server 模式下才会赋值
+			common.CheckError(err0)
+
 			// 触发stop
 			err := server.Trigger_Action("stop", workspaceIdStr, currentServerAuth, make(map[string]interface{}))
 			common.CheckError(err)
@@ -106,7 +84,7 @@ var stopCmd = &cobra.Command{
 			// 轮询检查工作区状态
 			isStop := false
 			for !isStop {
-				serverWorkSpace, err := workspace.GetWorkspaceFromServer(currentServerAuth, workspaceInfo.ID)
+				serverWorkSpace, err := workspace.GetWorkspaceFromServer(currentServerAuth, workspaceInfo.ID, workspace.CliRunningEnvEnum_Client)
 				if err != nil {
 					common.SmartIDELog.Importance(err.Error())
 				}
@@ -144,11 +122,11 @@ var stopCmd = &cobra.Command{
 // 停止本地容器
 func stopLocal(workspace workspace.WorkspaceInfo) {
 	// 校验是否能正常执行docker
-	err := start.CheckLocalEnv()
+	err := common.CheckLocalEnv()
 	common.CheckError(err)
 
 	// 本地执行docker-compose
-	composeCmd := exec.Command("docker-compose", "-f", workspace.TempDockerComposeFilePath,
+	composeCmd := exec.Command("docker-compose", "-f", workspace.TempYamlFileAbsolutePath,
 		"--project-directory", workspace.WorkingDirectoryPath, "stop")
 	composeCmd.Stdout = os.Stdout
 	composeCmd.Stderr = os.Stderr
@@ -167,18 +145,18 @@ func stopRemote(workspaceInfo workspace.WorkspaceInfo) error {
 	}
 
 	// 项目文件夹是否存在
-	if !sshRemote.IsCloned(workspaceInfo.WorkingDirectoryPath) {
+	if !sshRemote.IsDirExist(workspaceInfo.WorkingDirectoryPath) {
 		msg := fmt.Sprintf(i18nInstance.Stop.Err_env_project_dir_remove, workspaceInfo.ID)
 		return errors.New(msg)
 	}
 
 	// 检查临时文件夹是否存在
-	if !sshRemote.IsExit(workspaceInfo.TempDockerComposeFilePath) || !sshRemote.IsExit(workspaceInfo.ConfigYaml.GetConfigYamlFilePath()) {
+	if !sshRemote.IsFileExist(workspaceInfo.TempYamlFileAbsolutePath) || !sshRemote.IsFileExist(workspaceInfo.ConfigYaml.GetConfigFileAbsolutePath()) {
 		workspaceInfo.SaveTempFilesForRemote(sshRemote)
 	}
 
 	// 检查环境
-	err = start.CheckRemoveEnv(sshRemote)
+	err = sshRemote.CheckRemoveEnv()
 	if err != nil {
 		return err
 	}
@@ -186,7 +164,7 @@ func stopRemote(workspaceInfo workspace.WorkspaceInfo) error {
 	// 停止容器
 	common.SmartIDELog.Info(i18nInstance.Stop.Info_docker_stopping)
 	command := fmt.Sprintf("docker-compose -f %v --project-directory %v stop",
-		common.FilePahtJoin4Linux(workspaceInfo.TempDockerComposeFilePath), common.FilePahtJoin4Linux(workspaceInfo.WorkingDirectoryPath))
+		common.FilePahtJoin4Linux(workspaceInfo.TempYamlFileAbsolutePath), common.FilePahtJoin4Linux(workspaceInfo.WorkingDirectoryPath))
 	err = sshRemote.ExecSSHCommandRealTime(command)
 	if err != nil {
 		return err

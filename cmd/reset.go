@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2022-02-16 10:21:08
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-05-06 16:46:35
  */
 package cmd
 
@@ -55,7 +55,11 @@ var resetCmd = &cobra.Command{
 		}
 
 		// 打印全部工作区信息
-		printWorkspaces()
+		cliRunningEnv := workspace.CliRunningEnvEnum_Client
+		if value, _ := cmd.Flags().GetString("mode"); strings.ToLower(value) == "server" {
+			cliRunningEnv = workspace.CliRunningEvnEnum_Server
+		}
+		printWorkspaces(cliRunningEnv)
 
 		// 逐个删除工作区
 		common.SmartIDELog.Info(i18nInstance.Reset.Info_workspace_remove_all)
@@ -139,6 +143,11 @@ var resetCmd = &cobra.Command{
 			templatesDirctoryPath := filepath.Join(dirname, ".ide/templates")
 			os.RemoveAll(templatesDirctoryPath)
 			common.SmartIDELog.InfoF(i18nInstance.Reset.Info_template_remove, templatesDirctoryPath)
+
+			// 删除.k8s目录
+			k8sDirctoryPath := filepath.Join(dirname, ".ide/.k8s")
+			os.RemoveAll(k8sDirctoryPath)
+			common.SmartIDELog.InfoF(i18nInstance.Reset.Info_template_remove, k8sDirctoryPath)
 		}
 
 		// end

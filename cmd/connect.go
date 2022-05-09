@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2022-02-25
- * @LastEditors: kenan
- * @LastEditTime: 2022-03-31 20:40:14
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-05-07 09:34:09
  */
 package cmd
 
@@ -28,8 +28,7 @@ var connectCmd = &cobra.Command{
 	Long:    i18nInstance.Connect.Info_help_long,
 	Example: `  smartide connect`,
 	Run: func(cmd *cobra.Command, args []string) {
-		connectedWorkspaceIds := []string{} // 已启动工作区
-
+		// 用户登录信息
 		currentAuth, err := checkLogin(cmd)
 		common.CheckError(err)
 		if (currentAuth == model.Auth{}) {
@@ -38,8 +37,24 @@ var connectCmd = &cobra.Command{
 		}
 		common.SmartIDELog.Info("login for: " + currentAuth.LoginUrl)
 
+		// cli 运行环境
+		cliRunningEnv := workspace.CliRunningEnvEnum_Client
+		if value, _ := cmd.Flags().GetString("mode"); strings.ToLower(value) == "server" {
+			cliRunningEnv = workspace.CliRunningEvnEnum_Server
+		}
+
+		// 是否有工作区数据
+		tmpStartedServerWorkspaces, err := getServerWorkspaces(currentAuth, cliRunningEnv, []model.WorkspaceStatusEnum{model.WorkspaceStatusEnum_Start})
+		common.CheckError(err)
+		if len(tmpStartedServerWorkspaces) == 0 {
+			common.SmartIDELog.Importance("请等待server工作区启动！")
+		}
+
+		// 轮询开始端口转发
 		for {
-			connect(cmd, currentAuth, args, &connectedWorkspaceIds)
+			startedServerWorkspaces, err := getServerWorkspaces(currentAuth, cliRunningEnv, []model.WorkspaceStatusEnum{})
+			common.CheckError(err)
+			connect(startedServerWorkspaces, cmd, args)
 
 			time.Sleep(time.Second * 10)
 		}
@@ -48,6 +63,11 @@ var connectCmd = &cobra.Command{
 
 // 检查并获取当前登录用户的信息
 func checkLogin(cmd *cobra.Command) (currentAuth model.Auth, err error) {
+	cliRunningEnv := workspace.CliRunningEnvEnum_Client
+	if value, _ := cmd.Flags().GetString("mode"); strings.ToLower(value) == "server" {
+		cliRunningEnv = workspace.CliRunningEvnEnum_Server
+	}
+
 	// 确保登录
 	isLogged := false
 	for !isLogged {
@@ -57,7 +77,7 @@ func checkLogin(cmd *cobra.Command) (currentAuth model.Auth, err error) {
 
 		if currentAuth != (model.Auth{}) && currentAuth.Token != "" && currentAuth.Token != nil {
 			// 从api 获取workspace
-			_, err = workspace.GetServerWorkspaceList(currentAuth)
+			_, err = workspace.GetServerWorkspaceList(currentAuth, cliRunningEnv)
 			if err != nil {
 				common.SmartIDELog.Importance(err.Error())
 				common.SmartIDELog.Importance("token 已失效，请重新登录！")
@@ -84,46 +104,84 @@ func checkLogin(cmd *cobra.Command) (currentAuth model.Auth, err error) {
 	return
 }
 
-func connect(cmd *cobra.Command, currentAuth model.Auth, args []string, connectedWorkspaceIds *[]string) {
-	//
-	serverWorkSpaces, err := workspace.GetServerWorkspaceList(currentAuth)
+var connectedWorkspaceIds []string = []string{}
+
+func getServerWorkspaces(currentAuth model.Auth, cliRunningEnv workspace.CliRunningEvnEnum, filter []model.WorkspaceStatusEnum) ([]workspace.WorkspaceInfo, error) {
 	var startedServerWorkspaces []workspace.WorkspaceInfo
+	serverWorkSpaces, err := workspace.GetServerWorkspaceList(currentAuth, cliRunningEnv)
 	for _, item := range serverWorkSpaces {
-		if item.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Start {
-			startedServerWorkspaces = append(startedServerWorkspaces, item)
+		if len(filter) > 0 {
+			isContain := false
+			for _, filterItem := range filter {
+				if filterItem == item.ServerWorkSpace.Status {
+					isContain = true
+					break
+				}
+			}
+			if !isContain {
+				continue
+			}
 		}
-	}
-	common.CheckError(err)
 
-	// print
-	if len(startedServerWorkspaces) == 0 {
-		common.SmartIDELog.Importance("请等待server工作区启动！")
+		startedServerWorkspaces = append(startedServerWorkspaces, item)
 	}
 
-	// go routine 启动所有工作区
+	return startedServerWorkspaces, err
+}
+
+// go routine 启动所有工作区
+func connect(startedServerWorkspaces []workspace.WorkspaceInfo, cmd *cobra.Command, args []string) {
+
 	//ai记录
 	var trackEvent string
 	for _, val := range args {
 		trackEvent = trackEvent + " " + val
 	}
 
+	// appinsight
+	executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
+		var imageNames []string
+		for _, service := range yamlConfig.Workspace.Servcies {
+			imageNames = append(imageNames, service.Image)
+		}
+		appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(workspace.WorkingMode_Remote), strings.Join(imageNames, ","))
+	}
+
+	// start
+	forwardFunc := func(fixWorkspaceInfo workspace.WorkspaceInfo) {
+		common.SmartIDELog.Info(fmt.Sprintf("-- workspace (%v) -------------------------------", fixWorkspaceInfo.ServerWorkSpace.NO))
+		err := start.ExecuteServerVmStartByClientEnvCmd(fixWorkspaceInfo, executeStartCmdFunc)
+		if err != nil {
+			common.SmartIDELog.Importance(err.Error())
+			connectedWorkspaceIds = common.RemoveItem(connectedWorkspaceIds, fixWorkspaceInfo.ServerWorkSpace.NO)
+		}
+
+		for {
+			if !common.Contains(connectedWorkspaceIds, fixWorkspaceInfo.ServerWorkSpace.NO) {
+				common.SmartIDELog.Info(fmt.Sprintf("-- workspace (%v) -------------------------------", fixWorkspaceInfo.ServerWorkSpace.NO))
+				common.SmartIDELog.Importance(fmt.Sprintf("当前工作区（%v）非启动状态，端口转发停止！", fixWorkspaceInfo.ServerWorkSpace.NO))
+				return
+			}
+			time.Sleep(time.Second * 10)
+		}
+
+	}
+
 	// 启动工作区
 	for _, workspaceInfo := range startedServerWorkspaces {
-		if workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Start &&
-			!common.Contains(*connectedWorkspaceIds, workspaceInfo.ServerWorkSpace.NO) {
+		if workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Start {
+			if !common.Contains(connectedWorkspaceIds, workspaceInfo.ServerWorkSpace.NO) {
+				// 加入到已连接数组
+				connectedWorkspaceIds = append(connectedWorkspaceIds, workspaceInfo.ServerWorkSpace.NO)
 
-			executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
-				var imageNames []string
-				for _, service := range yamlConfig.Workspace.Servcies {
-					imageNames = append(imageNames, service.Image)
-				}
-				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(workspaceInfo.Mode), strings.Join(imageNames, ","))
+				go forwardFunc(workspaceInfo)
 			}
-			//
-			start.ExecuteServerVmStartCmd(workspaceInfo, executeStartCmdFunc)
 
-			// 加入到已连接数组
-			*connectedWorkspaceIds = append(*connectedWorkspaceIds, workspaceInfo.ServerWorkSpace.NO)
+		} else {
+			if common.Contains(connectedWorkspaceIds, workspaceInfo.ServerWorkSpace.NO) {
+				connectedWorkspaceIds = common.RemoveItem(connectedWorkspaceIds, workspaceInfo.ServerWorkSpace.NO)
+			}
+
 		}
 	}
 }

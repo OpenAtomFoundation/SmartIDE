@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2022-04-13 15:32:48
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-05-06 16:23:20
  */
 package cmd
 
@@ -74,7 +74,7 @@ var removeCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		mode, _ := cmd.Flags().GetString("mode")
-		workspaceIdStr := getWorkspaceIdFromFlagsAndArgs(cmd, args)
+		workspaceIdStr := getWorkspaceIdFromFlagsOrArgs(cmd, args)
 		if strings.ToLower(mode) == "server" || strings.Contains(workspaceIdStr, "SWS") {
 			serverModeInfo, _ := server.GetServerModeInfo(cmd)
 			if serverModeInfo.ServerHost != "" {
@@ -101,52 +101,27 @@ var removeCmd = &cobra.Command{
 
 		//1. 获取 workspace 信息
 		common.SmartIDELog.Info(i18nInstance.Main.Info_workspace_loading) // log
-		var workspaceInfo workspace.WorkspaceInfo                         // defined
-		var err error = nil
+		workspaceInfo, err := getWorkspaceFromCmd(cmd, args)
+		common.CheckError(err)
+		if workspaceInfo.IsNil() {
+			common.SmartIDELog.Error(i18nInstance.Main.Err_workspace_none)
+		}
 
 		// 检查错误并feedback
 		var checkErrorFeedback = func(err error) {
-			if err != nil {
-				server.Feedback_Finish(server.FeedbackCommandEnum_Remove, cmd, false, 0, workspaceInfo, err.Error(), "")
+			if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server && err != nil {
+				server.Feedback_Finish(server.FeedbackCommandEnum_Remove, cmd, false, nil, workspaceInfo, err.Error(), "")
 			}
 			common.CheckError(err)
-		}
-		var currentServerAuth model.Auth // 当前服务区用户，在mode server 模式下才会赋值
-
-		if strings.ToLower(mode) == "server" || strings.Contains(workspaceIdStr, "SWS") { // 当mode=server时，从server端反调数据
-			// 当前服务端授权用户信息
-			serverModeInfo, err := server.GetServerModeInfo(cmd)
-			checkErrorFeedback(err)
-			currentServerAuth = model.Auth{
-				UserName: serverModeInfo.ServerUsername,
-				Token:    serverModeInfo.ServerToken,
-				LoginUrl: serverModeInfo.ServerHost,
-			}
-
-			// 从远程服务器上查询工作区信息
-			workspaceInfo, err = workspace.GetWorkspaceFromServer(currentServerAuth, workspaceIdStr)
-			if err == nil { // 检查数据是否为空
-				if workspaceInfo.ID == "" || workspaceInfo.ServerWorkSpace.NO == "" {
-					err = fmt.Errorf("没有查询到 %v 对应的工作区数据！", workspaceIdStr)
-				}
-			}
-			checkErrorFeedback(err)
-
-		} else {
-			workspaceInfo = loadWorkspaceWithDb(cmd, args)
-			if workspaceInfo.IsNil() {
-				common.SmartIDELog.Error(i18nInstance.Main.Err_workspace_none)
-			}
-
 		}
 
 		//2. 操作类型
 		//2.1. 验证互斥的操作
 		if removeCmdFlag.IsOnlyRemoveContainer && removeCmdFlag.IsOnlyRemoveWorkspaceDataRecord { // 仅删除容器 和 仅删除工作区，不能同时存在
-			common.SmartIDELog.Error(i18nInstance.Remove.Err_flag_workspace_container)
+			checkErrorFeedback(errors.New(i18nInstance.Remove.Err_flag_workspace_container))
 		}
 		if workspaceInfo.Mode == workspace.WorkingMode_Local && removeCmdFlag.IsOnlyRemoveContainer { // 本地模式下，
-			common.SmartIDELog.Error(i18nInstance.Remove.Err_flag_container_valid)
+			checkErrorFeedback(errors.New(i18nInstance.Remove.Err_flag_container_valid))
 		}
 
 		//2.2. 操作类型
@@ -175,7 +150,7 @@ var removeCmd = &cobra.Command{
 				if workspaceInfo.Mode == workspace.WorkingMode_Local {
 					err := removeLocalMode(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsForce)
 					common.CheckError(err)
-				} else if workspaceInfo.Mode == workspace.WorkingMode_Remote || workspaceInfo.Mode == workspace.WorkingMode_Server {
+				} else if workspaceInfo.Mode == workspace.WorkingMode_Remote {
 					err := removeRemoteMode(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsRemoveRemoteDirectory, removeCmdFlag.IsForce)
 					common.CheckError(err)
 				} else {
@@ -191,10 +166,12 @@ var removeCmd = &cobra.Command{
 			if removeCmdFlag.IsOnlyRemoveContainer {
 				command = server.FeedbackCommandEnum_RemoveContainer
 			}
-			err = server.Feedback_Finish(command, cmd, err == nil, 0, workspaceInfo, msg, "")
+			err = server.Feedback_Finish(command, cmd, err == nil, nil, workspaceInfo, msg, "")
 			common.CheckError(err)
 
-		} else if workspaceInfo.Mode == workspace.WorkingMode_Server { // 录入的是服务端工作区id
+		} else if workspaceInfo.CliRunningEnv == workspace.CliRunningEnvEnum_Client && workspaceInfo.Mode == workspace.WorkingMode_Remote { // 录入的是服务端工作区id
+
+			currentServerAuth, _ := workspace.GetCurrentUser()
 
 			// 触发remove
 			datas := make(map[string]interface{})
@@ -205,9 +182,10 @@ var removeCmd = &cobra.Command{
 			common.CheckError(err)
 
 			// 轮询检查工作区状态
+			common.SmartIDELog.Info("等待服务器删除工作区...")
 			isRemoved := false
 			for !isRemoved {
-				serverWorkSpace, err := workspace.GetWorkspaceFromServer(currentServerAuth, workspaceInfo.ID)
+				serverWorkSpace, err := workspace.GetWorkspaceFromServer(currentServerAuth, workspaceInfo.ID, workspace.CliRunningEnvEnum_Client)
 				if err != nil {
 					common.SmartIDELog.Importance(err.Error())
 				}
@@ -216,6 +194,8 @@ var removeCmd = &cobra.Command{
 					serverWorkSpace.ServerWorkSpace.Status == model.WorkspaceStatusEnum_ContainerRemoved ||
 					serverWorkSpace.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Error_ContainerRemoved {
 					isRemoved = true
+					desc := getWorkspaceStatusDesc(serverWorkSpace.ServerWorkSpace.Status)
+					common.SmartIDELog.Info(desc)
 				}
 
 				time.Sleep(time.Second * 15)
@@ -228,7 +208,7 @@ var removeCmd = &cobra.Command{
 			common.SmartIDELog.Info("移除k8s资源...")
 			kubernetes, err := kubectl.NewKubernetes(workspaceInfo.K8sInfo.Namespace)
 			common.CheckError(err)
-			output, err := kubernetes.ExecKubectlCommandCombined("delete --force -f "+workspaceInfo.TempDockerComposeFilePath, "")
+			output, err := kubernetes.ExecKubectlCommandCombined("delete --force -f "+workspaceInfo.TempYamlFileAbsolutePath, "")
 			common.SmartIDELog.Debug(output)
 			common.CheckError(err)
 
@@ -280,7 +260,7 @@ var removeCmd = &cobra.Command{
 // 从flag、args中获取参数信息，然后再去数据库中读取相关数据
 func loadWorkspaceWithDb(cmd *cobra.Command, args []string) workspace.WorkspaceInfo {
 	workspaceInfo := workspace.WorkspaceInfo{}
-	workspaceIdStr := getWorkspaceIdFromFlagsAndArgs(cmd, args)
+	workspaceIdStr := getWorkspaceIdFromFlagsOrArgs(cmd, args)
 	workspaceId, _ := strconv.Atoi(workspaceIdStr)
 	if workspaceId > 0 { // 从db中获取workspace的信息
 		var err2 error
@@ -318,7 +298,7 @@ func loadWorkspaceWithDb(cmd *cobra.Command, args []string) workspace.WorkspaceI
 // 本地删除工作去对应的环境
 func removeLocalMode(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeImages bool, isForce bool) error {
 	// 校验是否能正常执行docker
-	err := start.CheckLocalEnv()
+	err := common.CheckLocalEnv()
 	common.CheckError(err)
 
 	if !common.IsExit(workspaceInfo.WorkingDirectoryPath) {
@@ -332,7 +312,7 @@ func removeLocalMode(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeIm
 	}
 
 	// 保存临时文件
-	if !common.IsExit(workspaceInfo.TempDockerComposeFilePath) || !common.IsExit(workspaceInfo.ConfigFilePath) {
+	if !common.IsExit(workspaceInfo.TempYamlFileAbsolutePath) || !common.IsExit(workspaceInfo.ConfigFileRelativePath) {
 		workspaceInfo.SaveTempFiles()
 
 	}
@@ -349,7 +329,7 @@ func removeLocalMode(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeIm
 	// docker-compose 删除容器
 	if len(containers) > 0 {
 		common.SmartIDELog.Info(i18nInstance.Remove.Info_docker_removing)
-		composeCmd := exec.Command("docker-compose", "-f", workspaceInfo.TempDockerComposeFilePath, "--project-directory", workspaceInfo.WorkingDirectoryPath, "down", "-v")
+		composeCmd := exec.Command("docker-compose", "-f", workspaceInfo.TempYamlFileAbsolutePath, "--project-directory", workspaceInfo.WorkingDirectoryPath, "down", "-v")
 		composeCmd.Stdout = os.Stdout
 		composeCmd.Stderr = os.Stderr
 		if composeCmdErr := composeCmd.Run(); composeCmdErr != nil {
@@ -397,7 +377,7 @@ func removeK8sMode(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeImag
 	}
 
 	// 保存临时文件
-	if !common.IsExit(workspaceInfo.TempDockerComposeFilePath) || !common.IsExit(workspaceInfo.ConfigFilePath) {
+	if !common.IsExit(workspaceInfo.TempYamlFileAbsolutePath) || !common.IsExit(workspaceInfo.ConfigFileRelativePath) {
 		workspaceInfo.SaveTempFiles()
 
 	}
@@ -432,7 +412,7 @@ func removeRemoteMode(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeI
 	common.CheckError(err)
 
 	// 检查环境
-	err = start.CheckRemoveEnv(sshRemote)
+	err = sshRemote.CheckRemoveEnv()
 	if err != nil {
 		if strings.Contains(err.Error(), "i/o timeout") || strings.Contains(err.Error(), "connect: connection refused") {
 			isSkip := ""
@@ -451,15 +431,17 @@ func removeRemoteMode(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeI
 	}
 
 	// 项目文件夹是否存在
-	if !sshRemote.IsCloned(workspaceInfo.WorkingDirectoryPath) {
+	if workspaceInfo.GitCloneRepoUrl != "" && !sshRemote.IsCloned(workspaceInfo.WorkingDirectoryPath) {
 		sshRemote.GitClone(workspaceInfo.GitCloneRepoUrl, workspaceInfo.WorkingDirectoryPath)
 		isRemoveRemoteDirectory = true // 创建后就删掉
 
 	}
 
 	// 检查临时文件夹是否存在
-	if !sshRemote.IsExit(workspaceInfo.TempDockerComposeFilePath) || !sshRemote.IsExit(workspaceInfo.ConfigYaml.GetConfigYamlFilePath()) {
+	configYamlFilePath := workspaceInfo.ConfigYaml.GetConfigFileAbsolutePath()
+	if !sshRemote.IsFileExist(workspaceInfo.TempYamlFileAbsolutePath) || !sshRemote.IsFileExist(configYamlFilePath) {
 		workspaceInfo.SaveTempFilesForRemote(sshRemote)
+		//isRemoveRemoteDirectory = true // 创建后就删掉
 
 	}
 
@@ -474,7 +456,7 @@ func removeRemoteMode(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeI
 	//	if len(containers) > 0 {
 	common.SmartIDELog.Info(i18nInstance.Remove.Info_docker_removing)
 	command := fmt.Sprintf(`docker-compose -f %v --project-directory %v down -v`,
-		common.FilePahtJoin4Linux(workspaceInfo.TempDockerComposeFilePath), common.FilePahtJoin4Linux(workspaceInfo.WorkingDirectoryPath))
+		common.FilePahtJoin4Linux(workspaceInfo.TempYamlFileAbsolutePath), common.FilePahtJoin4Linux(workspaceInfo.WorkingDirectoryPath))
 	err = sshRemote.ExecSSHCommandRealTime(command)
 	common.CheckError(err)
 	//	}

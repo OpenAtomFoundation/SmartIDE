@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-15 17:18:27
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-04-18 09:39:58
+ * @LastEditTime: 2022-05-05 17:31:00
  * @FilePath: /smartide-cli/internal/biz/workspace/workspace.go
  * @Description:
  *
@@ -20,7 +20,7 @@ import (
 	"github.com/leansoftX/smartide-cli/pkg/common"
 )
 
-func GetServerWorkspaceList(auth model.Auth) (ws []WorkspaceInfo, err error) {
+func GetServerWorkspaceList(auth model.Auth, cliRunningEnv CliRunningEvnEnum) (ws []WorkspaceInfo, err error) {
 	//ws = workspaces
 	url := fmt.Sprint(auth.LoginUrl, "/api/smartide/workspace/getList?page=1&pageSize=100")
 	headers := map[string]string{
@@ -50,6 +50,7 @@ func GetServerWorkspaceList(auth model.Auth) (ws []WorkspaceInfo, err error) {
 		{
 			for _, serverWorkSpace := range l.Data.List {
 				workspaceInfo, err := CreateWorkspaceInfoFromServer(serverWorkSpace)
+				workspaceInfo.CliRunningEnv = cliRunningEnv
 				common.CheckError(err)
 				ws = append(ws, workspaceInfo)
 			}
@@ -59,17 +60,21 @@ func GetServerWorkspaceList(auth model.Auth) (ws []WorkspaceInfo, err error) {
 }
 
 // 获取工作区详情
-func GetWorkspaceFromServer(auth model.Auth, no string) (workspaceInfo WorkspaceInfo, err error) {
+func GetWorkspaceFromServer(auth model.Auth, no string, cliRunningEnv CliRunningEvnEnum) (workspaceInfo WorkspaceInfo, err error) {
 	if (auth == model.Auth{}) {
 		err = errors.New("用户未登录！")
 		return
 	}
 
 	url := fmt.Sprint(auth.LoginUrl, "/api/smartide/workspace/find")
+	queryparams := map[string]string{}
+	if common.IsNumber(no) {
+		queryparams["id"] = no
+	} else {
+		queryparams["no"] = no
+	}
 	response, err := common.Get(url,
-		map[string]string{
-			"no": no,
-		},
+		queryparams,
 		map[string]string{
 			"Content-Type": "application/json",
 			"x-token":      auth.Token.(string),
@@ -90,6 +95,7 @@ func GetWorkspaceFromServer(auth model.Auth, no string) (workspaceInfo Workspace
 
 	if l.Code == 0 {
 		workspaceInfo, err = CreateWorkspaceInfoFromServer(l.Data.ResmartideWorkspace)
+		workspaceInfo.CliRunningEnv = cliRunningEnv
 	}
 	return workspaceInfo, err
 }

@@ -3,11 +3,12 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-04-11 10:37:15
+ * @LastEditTime: 2022-04-25 14:45:48
  */
 package config
 
 import (
+	"bytes"
 	"errors"
 	"io/ioutil"
 	"os"
@@ -148,7 +149,9 @@ func newConfig(localWorkingDir string, configFilePath string, configContent stri
 
 	// 加载配置
 	if configContent != "" {
-		err := yaml.Unmarshal([]byte(configContent), &result)
+		contentBytes := []byte(configContent)
+		contentBytes = bytes.Trim(contentBytes, "\x00")
+		err := yaml.Unmarshal(contentBytes, &result)
 		if err != nil {
 			if result.IsNil() {
 				common.CheckError(err)

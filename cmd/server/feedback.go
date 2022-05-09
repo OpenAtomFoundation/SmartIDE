@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
@@ -129,12 +128,12 @@ func Trigger_Action(action string, serverWorkspaceNo string, auth model.Auth, da
 
 // 反馈server工作区的创建情况
 func Feedback_Finish(feedbackCommand FeedbackCommandEnum, cmd *cobra.Command,
-	isSuccess bool, webidePort int, workspaceInfo workspace.WorkspaceInfo, message string, containerId string) error {
+	isSuccess bool, webidePort *int, workspaceInfo workspace.WorkspaceInfo, message string, containerId string) error {
 
-	fflags := cmd.Flags()
+	//fflags := cmd.Flags()
 
-	mode, _ := fflags.GetString(Flags_Mode)
-	if strings.ToLower(mode) != "server" {
+	//mode, _ := fflags.GetString(Flags_Mode)
+	if workspaceInfo.CliRunningEnv != workspace.CliRunningEvnEnum_Server {
 		return errors.New("当前仅支持在 mode=server 的模式下运行！")
 	}
 
@@ -166,13 +165,11 @@ func Feedback_Finish(feedbackCommand FeedbackCommandEnum, cmd *cobra.Command,
 	}
 
 	datas := map[string]interface{}{
-		"command": string(feedbackCommand),
-
+		"command":           string(feedbackCommand),
 		"serverWorkspaceid": serverModeInfo.ServerWorkspaceid,
 		"serverUserName":    serverModeInfo.ServerUsername,
-		//"serverUserGuid":    "",
-		"isSuccess":   isSuccess,
-		"webidePort":  webidePort,
+		"isSuccess":         isSuccess,
+		//"webidePort":        webidePort,
 		"message":     message,
 		"containerId": containerId,
 	}

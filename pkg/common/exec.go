@@ -1,13 +1,14 @@
 /*
  * @Date: 2022-03-29 14:16:33
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-03-29 14:30:24
+ * @LastEditTime: 2022-04-29 14:14:40
  * @FilePath: /smartide-cli/pkg/common/exec.go
  */
 
 package common
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
@@ -37,6 +38,8 @@ func (eo *execOperation) Realtime(command string, rootDir string) error {
 	if rootDir != "" {
 		execCommand.Dir = rootDir
 	}
+
+	SmartIDELog.Debug(fmt.Sprintf("local (%v) exec -> %v ", runtime.GOOS, command))
 
 	execCommand.Stdout = os.Stdout
 	execCommand.Stderr = os.Stderr

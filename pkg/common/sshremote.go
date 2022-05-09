@@ -3,13 +3,14 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-03-24 18:04:51
+ * @LastEditTime: 2022-04-28 18:16:11
  */
 package common
 
 import (
 	"bytes"
 	"errors"
+	"log"
 	"path"
 
 	//"errors"
@@ -26,6 +27,7 @@ import (
 	scp "github.com/bramvdbogaerde/go-scp"
 	"github.com/howeyc/gopass"
 	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
+	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -179,7 +181,7 @@ func (instance *SSHRemote) IsCloned(workSpaceDir string) bool {
 }
 
 // 文件是否存在
-func (instance *SSHRemote) IsExit(filepath string) bool {
+func (instance *SSHRemote) IsFileExist(filepath string) bool {
 
 	filepath = instance.ConvertFilePath(filepath)
 
@@ -188,6 +190,102 @@ func (instance *SSHRemote) IsExit(filepath string) bool {
 	CheckError(err)
 
 	return outContent == "1"
+}
+
+// 文件是否存在
+func (instance *SSHRemote) IsDirExist(filepath string) bool {
+
+	filepath = instance.ConvertFilePath(filepath)
+
+	command := fmt.Sprintf(`[[ -d "%v" ]] && echo "1" || echo "0"`, filepath)
+	outContent, err := instance.ExeSSHCommand(command)
+	CheckError(err)
+
+	return outContent == "1"
+}
+
+// 文件是否存在
+func (instance *SSHRemote) IsDirEmpty(dirPath string) bool {
+
+	dirPath = instance.ConvertFilePath(dirPath)
+
+	command := fmt.Sprintf(`[ "$(sudo ls -A %v)" ] && echo "0" || echo "111111"`, dirPath)
+	//e.g. ls: cannot access '/home/localadmin/project/test001'111111\n: No such file or directory
+	outContent, err := instance.ExeSSHCommand(command)
+	CheckError(err)
+
+	return strings.Contains(outContent, "111111") || strings.Contains(outContent, "No such file or directory")
+}
+
+// 清空文件夹
+func (instance *SSHRemote) Clear(dirPath string) bool {
+	dirPath = instance.ConvertFilePath(dirPath)
+
+	command := fmt.Sprintf(`cd %v && sudo rm -rf {,.[!.],..?}*`, dirPath)
+	_, err := instance.ExeSSHCommand(command)
+	CheckError(err)
+
+	return true
+}
+
+// 清空文件夹
+func (instance *SSHRemote) Remove(fileOrDirPath string) bool {
+	fileOrDirPath = instance.ConvertFilePath(fileOrDirPath)
+
+	command := fmt.Sprintf(`sudo rm -rf %v`, fileOrDirPath)
+	_, err := instance.ExeSSHCommand(command)
+	CheckError(err)
+
+	return true
+}
+
+// 复制本地文件夹中的文件到 远程主机对应的目录下
+func (instance *SSHRemote) CopyDirectory(srcDirPath string, remoteDestDirPath string) error {
+	remoteDestDirPath = instance.ConvertFilePath(remoteDestDirPath)
+
+	//检测目录正确性
+	if srcInfo, err := os.Stat(srcDirPath); err != nil {
+		return err
+	} else {
+		if !srcInfo.IsDir() {
+			return fmt.Errorf("在本地 %v 不是一个正确的目录！", srcDirPath)
+		}
+	}
+
+	isExist := instance.IsDirExist(remoteDestDirPath)
+	if !isExist {
+		return fmt.Errorf("在远程主机上 %v 不是一个正确的目录！", remoteDestDirPath)
+	}
+
+	err := filepath.Walk(srcDirPath, func(localFilePath string, f os.FileInfo, err error) error {
+		if f == nil {
+			return err
+		}
+		if !f.IsDir() {
+			fielRelativePath := strings.Replace(localFilePath, srcDirPath, "", -1)
+			remoteFilePath := FilePahtJoin4Linux(remoteDestDirPath, fielRelativePath)
+			if instance.IsFileExist(remoteFilePath) {
+				return fmt.Errorf("%v 文件已经存在！", remoteFilePath)
+			}
+			//	content, _ := ioutil.ReadFile(localFilePath)
+			/* command := fmt.Sprintf(`echo '%v' >> %v`, content, remoteFilePath)
+			_, err := instance.ExeSSHCommand(command) */
+
+			/* err = instance.CheckAndCreateDir(filepath.Dir(remoteFilePath))
+			if err != nil {
+				instance.Clear(remoteDestDirPath)
+				return err
+			} */
+
+			err = instance.CopyFile(localFilePath, remoteFilePath)
+			if err != nil {
+				instance.Clear(remoteDestDirPath)
+				return err
+			}
+		}
+		return nil
+	})
+	return err
 }
 
 // 获取文件内容
@@ -215,6 +313,7 @@ func (sshRemote *SSHRemote) CreateFileByEcho(filepath string, content string) er
 	   	} */
 
 	// 创建文件
+	content = strings.ReplaceAll(content, "\"", "\\\"")
 	command := fmt.Sprintf(`sudo echo "%v" >> %v`, content, filepath)
 	_, err := sshRemote.ExeSSHCommand(command)
 
@@ -245,6 +344,62 @@ func (instance *SSHRemote) ConvertFilePath(filepath string) (newFilepath string)
 	}
 
 	return newFilepath
+}
+
+// 检测远程服务器的环境，是否安装docker、docker-compose、git
+func (instance *SSHRemote) CheckRemoveEnv() error {
+	var msg []string
+
+	// 环境监测
+	output, err := instance.ExeSSHCommand("git version")
+	if err != nil || strings.Contains(strings.ToLower(output), "error:") {
+		if err != nil {
+			SmartIDELog.Debug(err.Error(), output)
+		}
+		msg = append(msg, i18nInstance.Main.Err_env_git_check)
+	}
+	output, err = instance.ExeSSHCommand("docker version")
+	if err != nil || strings.Contains(strings.ToLower(output), "error:") {
+		if err != nil {
+			SmartIDELog.Debug(err.Error(), output)
+		}
+		msg = append(msg, i18nInstance.Main.Err_env_docker)
+	}
+	output, err = instance.ExeSSHCommand("docker-compose version")
+	if err != nil ||
+		(!strings.Contains(strings.ToLower(output), "docker-compose version") && !strings.Contains(strings.ToLower(output), "docker compose version")) ||
+		strings.Contains(strings.ToLower(output), "error:") {
+		if err != nil {
+			SmartIDELog.Debug(err.Error(), output)
+		}
+		msg = append(msg, i18nInstance.Main.Err_env_Docker_Compose)
+	}
+
+	// 错误判断
+	if len(msg) > 0 {
+		return errors.New(strings.Join(msg, "; "))
+	}
+
+	// 把当前用户加到docker用户组里面
+	_, err = instance.ExeSSHCommand("sudo usermod -a -G docker " + instance.SSHUserName)
+	if err != nil {
+		SmartIDELog.Debug(err.Error())
+	}
+
+	// clone 代码库时，不提示：“are you sure you want to continue connecting (yes/no) ”
+	sshConfig, err := instance.ExeSSHCommand("[[ -f \".ssh/config\" ]] && cat ~/.ssh/config || echo \"\"")
+	if err != nil {
+		return err
+	}
+	if !strings.Contains(sshConfig, "StrictHostKeyChecking no") { // 不包含就添加
+		command := "if [ ! -d ～/.ssh ]; then mkdir -p ~/.ssh; fi && echo -e \"StrictHostKeyChecking no\n\" >> ~/.ssh/config"
+		_, err := instance.ExeSSHCommand(command)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // git clone
@@ -461,6 +616,52 @@ func GetRepoName(repoUrl string) string {
 func (instance *SSHRemote) ExeSSHCommand(sshCommand string) (outContent string, err error) {
 
 	return instance.ExeSSHCommandConsole(sshCommand, true)
+}
+
+// 复制文件
+func (instance *SSHRemote) CopyFile(localFilePath string, remoteFilepath string) error {
+	var (
+		err        error
+		sftpClient *sftp.Client
+	)
+
+	// create sftp client
+	if sftpClient, err = sftp.NewClient(instance.Connection); err != nil {
+		return err
+	}
+	defer sftpClient.Close()
+
+	//Local file path and folder on remote machine for testing
+	srcFile, err := os.Open(localFilePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer srcFile.Close()
+
+	// 创建目录
+	parent := filepath.Dir(remoteFilepath)
+	path := string(filepath.Separator)
+	dirs := strings.Split(parent, path)
+	for _, dir := range dirs {
+		path = filepath.Join(path, dir)
+		_ = sftpClient.Mkdir(path)
+	}
+
+	//
+	dstFile, err := sftpClient.Create(remoteFilepath)
+	if err != nil {
+		return err
+	}
+	defer dstFile.Close()
+
+	//
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		return err
+	}
+
+	SmartIDELog.Debug(fmt.Sprintf("copy file (%v) to remote server (%v) finished!", localFilePath, remoteFilepath))
+	return nil
 }
 
 // 执行ssh command，在session模式下，standard output 只能在执行结束的时候获取到

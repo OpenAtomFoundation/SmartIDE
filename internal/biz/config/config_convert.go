@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-30 23:10:52
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-04-11 10:37:47
+ * @LastEditTime: 2022-04-20 15:35:32
  * @FilePath: /smartide-cli/internal/biz/config/config_convert.go
  */
 
@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path"
+	"strings"
 
 	"github.com/jinzhu/copier"
 	"gopkg.in/yaml.v2"
@@ -39,12 +40,10 @@ func (k8sConfig *SmartIdeK8SConfig) ConvertToSmartIdeConfig() *SmartIdeConfig {
 func (smartideConfig *SmartIdeConfig) ConvertToSmartIdeK8SConfig() *SmartIdeK8SConfig {
 
 	if smartideConfig != nil {
-		var smartIdeConfig SmartIdeK8SConfig
-		smartIdeConfig.Orchestrator = smartideConfig.Orchestrator
-		smartIdeConfig.Version = smartideConfig.Version
-		smartIdeConfig.Workspace.DevContainer = smartideConfig.Workspace.DevContainer
-		smartIdeConfig.Workspace.KubeDeployFiles = smartideConfig.Workspace.KubeDeployFiles
-		return &smartIdeConfig
+		var k8sConfig SmartIdeK8SConfig
+		copier.CopyWithOption(&k8sConfig, &smartideConfig, copier.Option{IgnoreEmpty: true, DeepCopy: true})
+
+		return &k8sConfig
 	}
 	return nil
 }
@@ -56,11 +55,18 @@ func (k8sConfig *SmartIdeK8SConfig) ConvertToConfigYaml() (string, error) {
 	return string(bytes), err
 }
 
-// 转换为临时的yaml文件
-func (originK8sConfig SmartIdeK8SConfig) ConvertToTempYaml(repoName string, namespace string) SmartIdeK8SConfig {
-	k8sConfig := SmartIdeK8SConfig{}
-	copier.CopyWithOption(&k8sConfig, &originK8sConfig, copier.Option{IgnoreEmpty: true, DeepCopy: true})
+//TODO, 获取devcontainer的登录用户
+func (originK8sConfig SmartIdeK8SConfig) GetSystemUserName() string {
 
+	return "root"
+}
+
+// 转换为临时的yaml文件
+func (originK8sConfig SmartIdeK8SConfig) ConvertToTempYaml(repoName string, namespace string, systemUserName string) SmartIdeK8SConfig {
+	k8sConfig := SmartIdeK8SConfig{}
+	copier.CopyWithOption(&k8sConfig, &originK8sConfig, copier.Option{IgnoreEmpty: true, DeepCopy: true}) // 把一个对象赋值给另外一个对象
+
+	repoName = strings.ToLower(repoName)
 	//1. namespace
 	for i := 0; i < len(k8sConfig.Workspace.Deployments); i++ {
 		k8sConfig.Workspace.Deployments[i].Namespace = namespace
@@ -69,94 +75,130 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempYaml(repoName string, name
 		k8sConfig.Workspace.Services[i].Namespace = namespace
 	}
 
-	//2. pvc
-	//2.1. git 库
-	pvcRepo := coreV1.PersistentVolumeClaim{}
-	pvcRepo.ObjectMeta.Name = fmt.Sprintf("%v-claim-repo", repoName)
-	pvcRepo.Spec.AccessModes = append(pvcRepo.Spec.AccessModes, coreV1.ReadWriteOnce)
-	pvcRepo.Spec.Resources.Requests = coreV1.ResourceList{
-		coreV1.ResourceName(coreV1.ResourceStorage): resource.MustParse("100Mi"),
+	// 一个 pvc
+	pvc := coreV1.PersistentVolumeClaim{}
+	pvcName := fmt.Sprintf("%v-pvc-claim", repoName)
+	storageClassName := "smartide-file-storageclass"
+	pvc.ObjectMeta.Name = pvcName
+	pvc.Spec.AccessModes = append(pvc.Spec.AccessModes, coreV1.ReadWriteMany) // ReadWriteMany 可以在多个节点 和 多个pod间访问
+	pvc.Spec.StorageClassName = &storageClassName
+	pvc.Spec.Resources.Requests = coreV1.ResourceList{
+		coreV1.ResourceName(coreV1.ResourceStorage): resource.MustParse("2Gi"), // 默认的存储大小为 2G
 	}
-	pvcRepo.Kind = "PersistentVolumeClaim"
-	pvcRepo.APIVersion = "v1"
-	k8sConfig.Workspace.PVCS = append(k8sConfig.Workspace.PVCS, pvcRepo)
+	pvc.Kind = "PersistentVolumeClaim" // 必须要赋值，否则为空
+	pvc.APIVersion = "v1"              // 必须要赋值，否则为空
+	k8sConfig.Workspace.PVCS = append(k8sConfig.Workspace.PVCS, pvc)
 
-	//2.2. git 配置
-	pvcGitConfig := coreV1.PersistentVolumeClaim{}
-	pvcGitConfig.ObjectMeta.Name = fmt.Sprintf("%v-claim-gitconfig", repoName)
-	pvcGitConfig.Spec.AccessModes = append(pvcGitConfig.Spec.AccessModes, coreV1.ReadWriteOnce)
-	pvcGitConfig.Spec.Resources.Requests = coreV1.ResourceList{
-		coreV1.ResourceName(coreV1.ResourceStorage): resource.MustParse("100Mi"),
-	}
-	pvcGitConfig.Kind = "PersistentVolumeClaim"
-	pvcGitConfig.APIVersion = "v1"
-	k8sConfig.Workspace.PVCS = append(k8sConfig.Workspace.PVCS, pvcGitConfig)
+	//
+	addPvcFunc := func(containerName string, containerDirPath string, storageSubPath string) {
+		if storageSubPath[0:1] == "/" {
+			storageSubPath = storageSubPath[1:]
+		}
 
-	//2.3. ssh 配置
-	pvcSSHConfig := coreV1.PersistentVolumeClaim{}
-	pvcSSHConfig.ObjectMeta.Name = fmt.Sprintf("%v-claim-ssh", repoName)
-	pvcSSHConfig.Spec.AccessModes = append(pvcSSHConfig.Spec.AccessModes, coreV1.ReadWriteOnce)
-	pvcSSHConfig.Spec.Resources.Requests = coreV1.ResourceList{
-		coreV1.ResourceName(coreV1.ResourceStorage): resource.MustParse("100Mi"),
-	}
-	pvcSSHConfig.Kind = "PersistentVolumeClaim"
-	pvcSSHConfig.APIVersion = "v1"
-	k8sConfig.Workspace.PVCS = append(k8sConfig.Workspace.PVCS, pvcSSHConfig)
+		for index, deployment := range k8sConfig.Workspace.Deployments {
 
-	// 需要添加pvc
-	pvcMap := map[string]string{
-		pvcRepo.ObjectMeta.Name:      "/home/project",
-		pvcGitConfig.ObjectMeta.Name: "/home/smartide/.git",
-		pvcSSHConfig.ObjectMeta.Name: "/home/smartide/.ssh",
+			volumeName := pvcName + "-storage"
+
+			isCotain := false
+			for _, item := range deployment.Spec.Template.Spec.Volumes {
+				if item.Name == volumeName {
+					isCotain = true
+					break
+				}
+			}
+			if !isCotain {
+				volume := coreV1.Volume{}
+				volume.Name = volumeName
+				volume.PersistentVolumeClaim = &coreV1.PersistentVolumeClaimVolumeSource{}
+				volume.PersistentVolumeClaim.ClaimName = pvcName
+				deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, volume)
+			}
+
+			for indexContainer, container := range deployment.Spec.Template.Spec.Containers {
+				if container.Name == containerName {
+
+					volumeMount := coreV1.VolumeMount{}
+					volumeMount.MountPath = containerDirPath
+					volumeMount.Name = volumeName
+					volumeMount.SubPath = storageSubPath
+					container.VolumeMounts = append(container.VolumeMounts, volumeMount)
+					deployment.Spec.Template.Spec.Containers[indexContainer] = container
+
+					k8sConfig.Workspace.Deployments[index] = deployment
+
+					break
+				}
+			}
+
+		}
 	}
 
 	//3. 把pvc写入到deployment中
-	for index, deployment := range k8sConfig.Workspace.Deployments {
+	// git
+	if originK8sConfig.Workspace.DevContainer.Volumes.HasGitConfig.Value() {
+		gitDirPath := fmt.Sprintf("/home/%v/.git", systemUserName)
+		addPvcFunc(originK8sConfig.Workspace.DevContainer.ServiceName, gitDirPath, gitDirPath)
+	}
+	// ssh
+	if originK8sConfig.Workspace.DevContainer.Volumes.HasSshKey.Value() {
+		sshDirPath := fmt.Sprintf("/home/%v/.ssh", systemUserName)
+		addPvcFunc(originK8sConfig.Workspace.DevContainer.ServiceName, sshDirPath, sshDirPath)
+	}
+	// 其他类型
+	hasProjectConfig := false
+	for containerName, container := range originK8sConfig.Workspace.Containers {
 
-		for pvcName := range pvcMap {
-			volume := coreV1.Volume{}
-			volume.Name = pvcName
-			volume.PersistentVolumeClaim = &coreV1.PersistentVolumeClaimVolumeSource{}
-			volume.PersistentVolumeClaim.ClaimName = pvcName
-			deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, volume)
-		}
-
-		for indexContainer, container := range deployment.Spec.Template.Spec.Containers {
-			if container.Name == k8sConfig.Workspace.DevContainer.ServiceName {
-
-				for pvcName, dirPath := range pvcMap {
-					volumeMount := coreV1.VolumeMount{}
-					volumeMount.MountPath = dirPath
-					volumeMount.Name = pvcName
-					container.VolumeMounts = append(container.VolumeMounts, volumeMount)
-					deployment.Spec.Template.Spec.Containers[indexContainer] = container
+		for _, pv := range container.PersistentVolumes {
+			switch pv.DirectoryType {
+			case PersistentVolumeDirectoryTypeEnum_Project:
+				if containerName == originK8sConfig.Workspace.DevContainer.ServiceName {
+					hasProjectConfig = true
+					projectSubPath := fmt.Sprintf("/home/%v/project", systemUserName)
+					addPvcFunc(containerName, pv.MountPath, projectSubPath)
 				}
 
-				k8sConfig.Workspace.Deployments[index] = deployment
+			case PersistentVolumeDirectoryTypeEnum_DbData:
+				dbSubPath := "smartide-db"
+				addPvcFunc(containerName, pv.MountPath, dbSubPath) // 当前容器
+				//addPvcFunc(originK8sConfig.Workspace.DevContainer.ServiceName, dbSubPath, dbSubPath) // devContainer 中映射db路径
 
-				break
+			case PersistentVolumeDirectoryTypeEnum_Other:
+				addPvcFunc(containerName, pv.MountPath, pv.MountPath)
+
+			case PersistentVolumeDirectoryTypeEnum_Agent:
+				agentSubPath := "smartide-agent"
+				addPvcFunc(containerName, pv.MountPath, agentSubPath) // 当前容器
+				//addPvcFunc(originK8sConfig.Workspace.DevContainer.ServiceName, agentSubPath, agentSubPath) // devContainer 中映射agent路径
+
 			}
 		}
-
+	}
+	// project，没有项目路径映射的话，就用默认的
+	if !hasProjectConfig {
+		projectPath := fmt.Sprintf("/home/%v/project", systemUserName)
+		addPvcFunc(originK8sConfig.Workspace.DevContainer.ServiceName, projectPath, projectPath)
 	}
 
 	return k8sConfig
 }
 
-//
-func (k8sConfig *SmartIdeK8SConfig) SaveK8STempYaml(dir string, repoName string) (string, error) {
+// 保存k8s 临时yaml文件
+func (k8sConfig *SmartIdeK8SConfig) SaveK8STempYaml(gitRepoRootDirPath string) (string, error) {
 
 	k8sYamlContent, err := k8sConfig.ConvertToK8sYaml()
 	if err != nil {
 		return "", err
 	}
-	tempConfigFilePath := path.Join(dir, fmt.Sprintf("k8s_deployment_%v_temp.yaml", repoName))
-	err = ioutil.WriteFile(tempConfigFilePath, []byte(k8sYamlContent), 0777)
+
+	tempConfigFileRelativePath := path.Join(gitRepoRootDirPath, fmt.Sprintf("k8s_deployment_%v_temp.yaml", path.Base(gitRepoRootDirPath)))
+	err = ioutil.WriteFile(tempConfigFileRelativePath, []byte(k8sYamlContent), 0777)
 	if err != nil {
 		return "", err
 	}
 
-	return tempConfigFilePath, nil
+	tempConfigFileRelativePath = strings.Replace(tempConfigFileRelativePath, gitRepoRootDirPath, "", -1)
+
+	return tempConfigFileRelativePath, nil
 }
 
 func (k8sConfig *SmartIdeK8SConfig) ConvertToK8sYaml() (string, error) {

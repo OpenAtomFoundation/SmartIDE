@@ -24,13 +24,27 @@ import (
 )
 
 // 工作模式
-type WorkingMode string
+type WorkingModeEnum string
 
 const (
-	WorkingMode_Remote WorkingMode = "remote"
-	WorkingMode_Local  WorkingMode = "local"
-	WorkingMode_K8s    WorkingMode = "k8s"
-	WorkingMode_Server WorkingMode = "server"
+	WorkingMode_Remote WorkingModeEnum = "remote"
+	WorkingMode_Local  WorkingModeEnum = "local"
+	WorkingMode_K8s    WorkingModeEnum = "k8s"
+	//WorkingMode_Server WorkingModeEnum = "server"
+)
+
+type CliRunningEvnEnum string
+
+const (
+	CliRunningEvnEnum_Server CliRunningEvnEnum = "server"
+	CliRunningEnvEnum_Client CliRunningEvnEnum = "client"
+)
+
+type CacheEnvEnum string
+
+const (
+	CacheEnvEnum_Server CacheEnvEnum = "server"
+	CacheEnvEnum_Local  CacheEnvEnum = "local"
 )
 
 // 远程连接的类型
@@ -58,15 +72,20 @@ const (
 )
 
 type WorkspaceInfo struct {
-	ID                   string
-	Name                 string
+	ID   string
+	Name string
+	// 即repo clone到本地时的文件夹路径
 	WorkingDirectoryPath string
-	// 配置文件路径
-	ConfigFilePath string
-	// 临时docker-compose文件生成后的保存路径
-	TempDockerComposeFilePath string
-	// 模式，local 本地、remote 远程
-	Mode WorkingMode
+	// 配置文件相对路径，相对于 WorkingDirectoryPath
+	ConfigFileRelativePath string
+	// 临时文件（docker-compose 或者 k8s yaml）生成后的保存路径
+	TempYamlFileAbsolutePath string
+	// 模式，local 本地、remote 远程、k8s
+	Mode WorkingModeEnum
+	// CLI运行环境
+	CliRunningEnv CliRunningEvnEnum
+	// 缓存环境
+	CacheEnv CacheEnvEnum
 	// host信息
 	Remote RemoteInfo
 	// git 库的克隆地址
@@ -98,39 +117,7 @@ type WorkspaceInfo struct {
 	CreatedTime time.Time
 
 	// 关联的服务端workspace
-	ServerWorkSpace model.ServerWorkspace
-}
-
-func getWorkspaceStatusDesc(workspaceStatus model.WorkspaceStatusEnum) string {
-
-	desc := ""
-	switch workspaceStatus {
-	case model.WorkspaceStatusEnum_Init:
-		desc = "Initialization"
-	case model.WorkspaceStatusEnum_Pending:
-		desc = "Pending"
-	case model.WorkspaceStatusEnum_Remove:
-		desc = "Cleaned"
-	case model.WorkspaceStatusEnum_Removing:
-		desc = "Cleaning"
-	case model.WorkspaceStatusEnum_ContainerRemoving:
-		desc = "Removing"
-	case model.WorkspaceStatusEnum_ContainerRemoved:
-		desc = "Removed"
-	case model.WorkspaceStatusEnum_Stop:
-		desc = "Stopped"
-	case model.WorkspaceStatusEnum_Stopping:
-		desc = "Stopping"
-	case model.WorkspaceStatusEnum_Start:
-		desc = "Running"
-	default:
-		desc = "Pending"
-	}
-	if int(workspaceStatus) < 0 {
-		desc = "Error"
-	}
-
-	return desc
+	ServerWorkSpace *model.ServerWorkspace
 }
 
 // 获取工作区状态值对应的label
@@ -178,20 +165,25 @@ func getWorkspaceStatusDescFromServer(workspaceStatus model.WorkspaceStatusEnum)
 
 //
 func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (WorkspaceInfo, error) {
-	repoName := getRepoName(serverWorkSpace.GitRepoUrl)
-	label := getWorkspaceStatusDesc(serverWorkSpace.Status)
+	projectName := serverWorkSpace.Name
+	if projectName == "" {
+		projectName = getRepoName(serverWorkSpace.GitRepoUrl)
+	}
+	//label := getWorkspaceStatusDesc(serverWorkSpace.Status)
 	/* if err != nil {
 		return WorkspaceInfo{}, err
 	} */
 	workspaceInfo := WorkspaceInfo{
-		ID:                   serverWorkSpace.NO,
-		Name:                 serverWorkSpace.Name + fmt.Sprintf(" (%v)", label),
-		ConfigFilePath:       serverWorkSpace.ConfigFilePath,
-		GitCloneRepoUrl:      serverWorkSpace.GitRepoUrl,
-		Branch:               serverWorkSpace.Branch,
-		Mode:                 WorkingMode_Server,
+		ID:                     serverWorkSpace.NO,
+		Name:                   serverWorkSpace.Name, //+ fmt.Sprintf(" (%v)", label),
+		ConfigFileRelativePath: serverWorkSpace.ConfigFilePath,
+		GitCloneRepoUrl:        serverWorkSpace.GitRepoUrl,
+		Branch:                 serverWorkSpace.Branch,
+		Mode:                   WorkingMode_Remote,
+		CacheEnv:               CacheEnvEnum_Server,
+		//CliRunningEnv:          CliRunningEvnEnum_Server,
 		CreatedTime:          serverWorkSpace.CreatedAt,
-		WorkingDirectoryPath: filepath.Join("~", "project", repoName),
+		WorkingDirectoryPath: filepath.Join("~", model.CONST_REMOTE_REPO_ROOT, projectName),
 		//TempDockerComposeFilePath: filepath.Join("~", REMOTE_REPO_ROOT, repoName),
 		Remote: RemoteInfo{
 			Addr:     serverWorkSpace.Resource.IP,
@@ -200,8 +192,14 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 			SSHPort:  model.CONST_Container_SSHPort,
 		},
 	}
-	workspaceInfo.TempDockerComposeFilePath = workspaceInfo.GetTempDockerComposeFilePath()
-	workspaceInfo.ServerWorkSpace = serverWorkSpace
+
+	if workspaceInfo.ConfigFileRelativePath == "" {
+		workspaceInfo.ConfigFileRelativePath = model.CONST_Default_ConfigRelativeFilePath
+	}
+
+	workspaceInfo.ServerWorkSpace = &serverWorkSpace
+	workspaceInfo.TempYamlFileAbsolutePath = workspaceInfo.GetTempDockerComposeFilePath()
+
 	if serverWorkSpace.Extend != "" {
 		err := json.Unmarshal([]byte(serverWorkSpace.Extend), &workspaceInfo.Extend)
 		if err != nil {
@@ -221,13 +219,15 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 		}
 	}
 	if serverWorkSpace.ConfigFileContent != "" {
-		err := yaml.Unmarshal([]byte(serverWorkSpace.ConfigFileContent), &workspaceInfo.ConfigYaml)
-		if err != nil {
+		//err := yaml.Unmarshal([]byte(serverWorkSpace.ConfigFileContent), &workspaceInfo.ConfigYaml)
+		tmpConfig := config.NewConfig(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath, serverWorkSpace.ConfigFileContent)
+		workspaceInfo.ConfigYaml = *tmpConfig
+		/* if err != nil {
 			return WorkspaceInfo{}, err
-		}
+		} */
 	}
 
-	workspaceInfo.ServerWorkSpace = serverWorkSpace
+	workspaceInfo.ServerWorkSpace = &serverWorkSpace
 
 	return workspaceInfo, nil
 }
@@ -235,7 +235,7 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 // 工作区数据为空
 func (w WorkspaceInfo) IsNil() bool {
 
-	return w.ID == "" || w.WorkingDirectoryPath == "" || w.ConfigFilePath == "" || w.Name == "" || w.Mode == "" // || w.ProjectName == "" len(w.Extend.Ports) == 0 ||
+	return w.ID == "" || w.WorkingDirectoryPath == "" || w.ConfigFileRelativePath == "" || w.Name == "" || w.Mode == "" // || w.ProjectName == "" len(w.Extend.Ports) == 0 ||
 }
 
 // 工作区数据不为空
@@ -254,7 +254,7 @@ func (w WorkspaceInfo) Valid() error {
 
 	}
 
-	if w.ConfigFilePath == "" {
+	if w.ConfigFileRelativePath == "" {
 		return errors.New(i18nInstance.Main.Err_workspace_config_filepath_none)
 
 	}
@@ -279,17 +279,23 @@ func (w WorkspaceInfo) Valid() error {
 func (w WorkspaceInfo) GetProjectDirctoryName() string {
 	if w.projectDirctoryName == "" {
 		if w.Mode == WorkingMode_Remote { // 远程模式
-			if w.GitCloneRepoUrl == "" { // 当前模式下，不可能git库为空
+			/* if w.GitCloneRepoUrl == "" { // 当前模式下，不可能git库为空
 				common.SmartIDELog.Error(i18nInstance.Common.Err_sshremote_param_repourl_none)
+			} */
+
+			if strings.TrimSpace(w.GitCloneRepoUrl) == "" {
+				w.projectDirctoryName = w.Name
+			} else {
+				w.projectDirctoryName = getRepoName(w.GitCloneRepoUrl)
 			}
 
-			w.projectDirctoryName = getRepoName(w.GitCloneRepoUrl)
-		} else if w.Mode == WorkingMode_Server {
-			if w.GitCloneRepoUrl == "" { // 当前模式下，不可能git库为空
-				common.SmartIDELog.Error(i18nInstance.Common.Err_sshremote_param_repourl_none)
+		} else if w.CliRunningEnv == CliRunningEvnEnum_Server {
+			if w.GitCloneRepoUrl == "" {
+				w.projectDirctoryName = w.Name
+			} else {
+				w.projectDirctoryName = common.GetRepoName(w.GitCloneRepoUrl)
 			}
 
-			w.projectDirctoryName = getRepoName(w.GitCloneRepoUrl)
 		} else { // 本地模式
 			//
 			if w.GitCloneRepoUrl == "" && w.WorkingDirectoryPath == "" {

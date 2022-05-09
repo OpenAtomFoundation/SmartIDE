@@ -102,7 +102,7 @@ func (workspace WorkspaceInfo) SaveTempFilesForRemote(sshRemote common.SSHRemote
 	// .ignore 文件
 	gitignoreFilePath := path.Join(tempDirPath, ".gitignore")
 	gitignoreContent := "/" + tempDirName + "/"
-	if sshRemote.IsExit(gitignoreFilePath) {
+	if sshRemote.IsFileExist(gitignoreFilePath) {
 		output := sshRemote.GetContent(gitignoreFilePath)
 		if !strings.Contains(output, gitignoreContent) {
 			sshRemote.CreateFileByEcho(gitignoreFilePath, gitignoreContent)

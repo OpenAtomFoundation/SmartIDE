@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors:
- * @LastEditTime:
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-05-06 14:41:30
  */
 package common
 
@@ -49,8 +49,30 @@ func RemoveEmptyItem(slice []string) []string {
 	}
 	for i, v := range slice {
 		if strings.TrimSpace(v) == "" {
-			slice = append(slice[:i], slice[i+1:]...)
+			if i+1 > len(slice) {
+				slice = slice[:i]
+			} else {
+				slice = append(slice[:i], slice[i+1:]...)
+			}
 			return RemoveEmptyItem(slice)
+		}
+	}
+	return slice
+}
+
+// 剔除空元素
+func RemoveItem(slice []string, item string) []string {
+	if len(slice) == 0 {
+		return slice
+	}
+	for i, v := range slice {
+		if v == item {
+			if i+1 > len(slice) {
+				slice = slice[:i]
+			} else {
+				slice = append(slice[:i], slice[i+1:]...)
+			}
+			return slice
 		}
 	}
 	return slice

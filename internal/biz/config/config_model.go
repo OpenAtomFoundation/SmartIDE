@@ -3,11 +3,13 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-04-11 10:36:28
+ * @LastEditTime: 2022-05-06 17:59:14
  */
 package config
 
 import (
+	"strings"
+
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/docker/compose"
 
@@ -48,6 +50,33 @@ const (
 	IdeTypeEnum_SDKOnly     IdeTypeEnum = "sdk-only"
 )
 
+// 容器配置
+type ContainerConfig struct {
+	// 持久化配置列表
+	PersistentVolumes []PersistentVolumeConfig `yaml:"persistentVolumes"`
+}
+
+type PersistentVolumeDirectoryTypeEnum string
+
+const (
+	PersistentVolumeDirectoryTypeEnum_Project PersistentVolumeDirectoryTypeEnum = "project"
+
+	PersistentVolumeDirectoryTypeEnum_DbData PersistentVolumeDirectoryTypeEnum = "database"
+	PersistentVolumeDirectoryTypeEnum_Agent  PersistentVolumeDirectoryTypeEnum = "agent"
+	PersistentVolumeDirectoryTypeEnum_Other  PersistentVolumeDirectoryTypeEnum = "other"
+)
+
+// 持久化配置
+type PersistentVolumeConfig struct {
+	// 容器内的目录，映射到外部持久化存储介质
+	MountPath string `yaml:"mountPath"`
+	// volume 类型
+	DirectoryType PersistentVolumeDirectoryTypeEnum `yaml:"directoryType"`
+}
+
+// 自定义的bool类型，用于兼容多种的bool设置方式
+type CustomBool string
+
 // 开发容器配置
 type DevContainerConfig struct {
 	// 服务名称
@@ -60,8 +89,8 @@ type DevContainerConfig struct {
 	IdeType IdeTypeEnum `yaml:"ide-type"`
 	// 磁盘映射
 	Volumes struct {
-		GitConfig string `yaml:"git-config"`
-		SshKey    string `yaml:"ssh-key"`
+		HasGitConfig CustomBool `yaml:"git-config"`
+		HasSshKey    CustomBool `yaml:"ssh-key"`
 	} `yaml:"volumes"`
 
 	// 绑定的端口列表
@@ -71,7 +100,7 @@ type DevContainerConfig struct {
 	configRelativeFilePath string //= CONST_Default_ConfigRelativeFilePath
 
 	// 本地模式时，本地工作目录（相对于工作目录，但是在.ide.yaml中写的是相对于“.ide”目录，后续会通过程序进行转换）
-	workingDirectoryPath string //= "." //TODO 应该是一个私有成员
+	workingDirectoryPath string //= "."
 
 	// web ide 对外访问的端口
 	// WebidePort string `yaml:"webide-port"`
@@ -94,6 +123,9 @@ type SmartIdeConfig struct {
 	Workspace struct {
 		// 开发容器申明
 		DevContainer DevContainerConfig `yaml:"dev-container"`
+
+		// 容器申明，不是必须的
+		Containers map[string]ContainerConfig `yaml:"containers"`
 
 		// 链接的docker-compose文件路径
 		DockerComposeFile string `yaml:"docker-compose-file"`
@@ -127,6 +159,9 @@ type SmartIdeK8SConfig struct {
 	Workspace struct {
 		// 开发容器申明
 		DevContainer DevContainerConfig `yaml:"dev-container"`
+
+		// 容器申明，不是必须的
+		Containers map[string]ContainerConfig `yaml:"containers"`
 
 		// k8s 的部署文件（通配符）
 		KubeDeployFiles string `yaml:"kube-deploy-files,omitempty"`
@@ -176,6 +211,22 @@ const (
 	PortMapInfo_K8S_Service PortMapTypeEnum = "k8s_service"
 )
 
+func (customBool CustomBool) Value() bool {
+	/* switch customBool.(type) {
+	case int:
+		tmp := customBool.(int)
+		return tmp == 1
+	case string:
+		tmp := strings.ToLower(customBool.(string))
+		return tmp == "true" || tmp == "1"
+	case bool:
+		return customBool.(bool)
+	} */
+
+	tmp := strings.ToLower(string(customBool))
+	return tmp == "true" || tmp == "1"
+}
+
 //
 func NewPortMap(
 	mapType PortMapTypeEnum, orginLocalPort int, currentLocalPort int, localPortDesc string, containerPort int, serviceName string) *PortMapInfo {
@@ -204,16 +255,20 @@ func (w SmartIdeConfig) GetWorkingDirectoryPath() string {
 }
 
 //返回容器内IDE端口，web ide的默认端口：3000，JetBrains IDE的默认端口：8887
-func (w SmartIdeConfig) GetContainerWebIDEPort() int {
+func (w SmartIdeConfig) GetContainerWebIDEPort() (port *int) {
 	switch w.Workspace.DevContainer.IdeType {
 	case IdeTypeEnum_VsCode:
-		return model.CONST_Container_WebIDEPort
+		tmp := model.CONST_Container_WebIDEPort
+		port = &tmp
 	case IdeTypeEnum_JbProjector:
-		return model.CONST_Container_JetBrainsIDEPort
+		tmp := model.CONST_Container_JetBrainsIDEPort
+		port = &tmp
 	case IdeTypeEnum_Opensumi:
-		return model.CONST_Container_OpensumiIDEPort
-	default:
-		return model.CONST_Container_WebIDEPort
+		tmp := model.CONST_Container_OpensumiIDEPort
+		port = &tmp
+		/* default:
+		return -1 */
 	}
 
+	return port
 }

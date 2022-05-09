@@ -105,7 +105,7 @@
         "info_help_long": "获取工作区(Workspace)详情",
         "info_help_flag_workspaceid": "使用此Id直接启动 SmartIDE 环境 (smartide start <id>)",
         "info_help_flag_all": "显示全部的信息",
-        "info_workspace_detail_template": "工作区信息\nId:\t%v\n名称：\t%v\n模式：\t%v\n配置文件：\t%v\n工作目录：\t%v\nGit库地址：\t%v\nGit库验证方式：\t%v\n",
+        "info_workspace_detail_template": "工作区信息\nId:\t%v\n名称：\t%v\n运行环境:\t%v\n模式：\t%v\n配置文件：\t%v\n工作目录：\t%v\nGit库地址：\t%v\nGit库验证方式：\t%v\n",
         "info_workspace_host_detail_template": "远程主机信息\n主机ID:\t%v\n地址：\t%v\n验证模式：\t%v\n",
         "Warn_flag_workspaceid_none": "参数 workspaceId 为空！"
     },

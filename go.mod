@@ -63,6 +63,7 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/kevinburke/ssh_config v1.1.0 // indirect
+	github.com/kr/fs v0.1.0 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
@@ -122,6 +123,7 @@ require (
 	github.com/gorilla/websocket v1.5.0
 	github.com/jinzhu/copier v0.3.5
 	github.com/microsoft/ApplicationInsights-Go v0.4.4
+	github.com/pkg/sftp v1.13.4
 	github.com/thedevsaddam/gojsonq v2.3.0+incompatible
 	k8s.io/api v0.23.5
 	k8s.io/apimachinery v0.23.5

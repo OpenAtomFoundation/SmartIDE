@@ -10,7 +10,7 @@ spec:
   resources:
     requests:
       storage: 100Mi
- # storageClassName: standard
+  storageClassName: smartide-file-storageclass
 #  volumeName: test-pv
 
  # selector:
@@ -27,16 +27,16 @@ kind: Deployment
 metadata:
   name: smartide-go
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
-      smartide-cli.service: smartide-go
+      smartide-cli.service: smartide-test
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        smartide-cli.service: smartide-go
+        smartide-cli.service: smartide-test
     spec:
       containers:
         - 
@@ -70,7 +70,7 @@ spec:
           volumeMounts:
           - name: smartide-go-claim-storage
             mountPath: /var/lib/mysql
-            subPath: "project01/service-mysql/data"
+            subPath: project01/service-mysql/data
 
       restartPolicy: Always
       volumes:
@@ -110,12 +110,6 @@ spec:
             - mountPath: /home/project/repo
               name: smartide-go-claim-storage
               subPath: project01/service-name/repo
-       #     - mountPath: /home/project/repo/.git
-        #      name: smartide-go-claim-storage
-         #     subPath: "./project01/service-name/repo/.git"
-          #  - mountPath: /home/root/.ssh
-           #   name: smartide-go-claim-storage
-            #  subPath: "./project01/service-name/.ssh"
       restartPolicy: Always
       volumes:
         - name: smartide-go-claim-storage

@@ -3,7 +3,7 @@
  * @Description: config
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-03-30 00:00:55
+ * @LastEditTime: 2022-05-06 16:20:22
  */
 package config
 
@@ -82,7 +82,8 @@ func (yamlFileConfig *SmartIdeConfig) LoadDockerComposeFromTempFile(sshRemote co
 				continue
 			}
 			for _, port := range service.Ports {
-				if strings.Contains(port, ":"+strconv.Itoa(yamlFileConfig.GetContainerWebIDEPort())) { // webide 端口
+				containerWebIDEPort := yamlFileConfig.GetContainerWebIDEPort()
+				if containerWebIDEPort != nil && strings.Contains(port, ":"+strconv.Itoa(*containerWebIDEPort)) { // webide 端口
 					index := strings.Index(port, ":")
 					if index > 0 {
 						ideBindingPort, _ = strconv.Atoi(port[:index])
@@ -181,7 +182,8 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 
 					// ide、ssh端口更新
 					if serviceName == yamlFileConfig.Workspace.DevContainer.ServiceName {
-						if containerPort == yamlFileConfig.GetContainerWebIDEPort() {
+						containerWebIDEPort := yamlFileConfig.GetContainerWebIDEPort()
+						if containerWebIDEPort != nil && containerPort == *containerWebIDEPort {
 							ideBindingPort = bindingPortNew
 						} else if containerPort == model.CONST_Container_SSHPort {
 							sshBindingPort = bindingPortNew
@@ -199,7 +201,10 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 		if serviceName == yamlFileConfig.Workspace.DevContainer.ServiceName {
 
 			// webide port
-			if !service.ContainContainerPort(yamlFileConfig.GetContainerWebIDEPort()) {
+			containerWebIDEPort := yamlFileConfig.GetContainerWebIDEPort()
+			if containerWebIDEPort != nil &&
+				!service.ContainContainerPort(*containerWebIDEPort) &&
+				yamlFileConfig.Workspace.DevContainer.IdeType != IdeTypeEnum_SDKOnly {
 				// 是否检查端口被占用
 				if isCheckUnuesedPorts {
 					// webide port
@@ -207,7 +212,7 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 					newIdeBindingPort, err0 := checkAndGetAvailableRemotePort(sshRemote, originIdeBindingPort, 100) // 检测端口是否被占用
 					common.CheckError(err0)
 
-					yamlFileConfig.setPort4Label(yamlFileConfig.GetContainerWebIDEPort(), originIdeBindingPort, newIdeBindingPort, serviceName)
+					yamlFileConfig.setPort4Label(*containerWebIDEPort, originIdeBindingPort, newIdeBindingPort, serviceName)
 
 					if newIdeBindingPort != originIdeBindingPort {
 						ideBindingPort = newIdeBindingPort
@@ -215,7 +220,7 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 				}
 
 				//
-				service.AppendPort(strconv.Itoa(ideBindingPort) + ":" + strconv.Itoa(yamlFileConfig.GetContainerWebIDEPort()))
+				service.AppendPort(strconv.Itoa(ideBindingPort) + ":" + strconv.Itoa(*containerWebIDEPort))
 			}
 
 			// ssh port
@@ -243,7 +248,6 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 	}
 	//3.2. 遍历端口描述，添加遗漏的端口
 	for label, port := range yamlFileConfig.Workspace.DevContainer.Ports {
-
 		hasContain := false
 		for _, item := range yamlFileConfig.Workspace.DevContainer.bindingPorts {
 			if item.OriginHostPort == port {
@@ -260,14 +264,16 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 	}
 
 	//4. ssh volume配置
-	sshKey := yamlFileConfig.Workspace.DevContainer.Volumes.SshKey
-	gitconfig := yamlFileConfig.Workspace.DevContainer.Volumes.GitConfig
 	for serviceName, service := range dockerCompose.Services {
 		if serviceName == yamlFileConfig.Workspace.DevContainer.ServiceName {
 
-			SSHVolumesConfig(sshKey, isRemoteMode, &service, sshRemote)
+			if yamlFileConfig.Workspace.DevContainer.Volumes.HasSshKey.Value() {
+				SSHVolumesConfig(isRemoteMode, &service, sshRemote)
+			}
 
-			GitConfig(gitconfig, isRemoteMode, "", nil, &service, sshRemote, kubectl.ExecInPodRequest{})
+			if yamlFileConfig.Workspace.DevContainer.Volumes.HasGitConfig.Value() {
+				GitConfig(isRemoteMode, "", nil, &service, sshRemote, kubectl.ExecInPodRequest{})
+			}
 
 			dockerCompose.Services[serviceName] = service
 

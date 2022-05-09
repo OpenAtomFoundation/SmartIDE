@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2022-04-15 13:39:45
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-05-06 16:22:40
  */
 package start
 
@@ -28,7 +28,8 @@ import (
 )
 
 // 远程服务器执行 start 命令
-func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun func(yamlConfig config.SmartIdeConfig), cmd *cobra.Command) {
+func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo,
+	yamlExecuteFun func(yamlConfig config.SmartIdeConfig), cmd *cobra.Command, disableClone bool) {
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_starting)
 
 	mode, _ := cmd.Flags().GetString("mode")
@@ -40,7 +41,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fun
 			return
 		}
 		if err != nil {
-			smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_Start, cmd, false, 0, workspace.WorkspaceInfo{}, err.Error(), "")
+			smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_Start, cmd, false, nil, workspace.WorkspaceInfo{}, err.Error(), "")
 		}
 	}
 
@@ -51,28 +52,30 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fun
 	common.CheckErrorFunc(err, serverFeedback)
 
 	//1. 检查远程主机是否有docker、docker-compose、git
-	err = CheckRemoveEnv(sshRemote)
+	err = sshRemote.CheckRemoveEnv()
 	common.CheckErrorFunc(err, serverFeedback)
 
 	//2. git clone & checkout
-	//2.1. 是否已 clone
-	common.SmartIDELog.Info(i18nInstance.VmStart.Info_git_clone)
-	isCloned := sshRemote.IsCloned(workspaceInfo.WorkingDirectoryPath)
+	if !disableClone { // 是否禁止clone
+		//2.1. 是否已 clone
+		common.SmartIDELog.Info(i18nInstance.VmStart.Info_git_clone)
+		isCloned := sshRemote.IsCloned(workspaceInfo.WorkingDirectoryPath)
 
-	//2.2. git 操作
-	if isCloned {
-		common.SmartIDELog.Info(i18nInstance.VmStart.Info_git_cloned)
-	} else {
-		err = gitAction(sshRemote, workspaceInfo)
-		common.CheckErrorFunc(err, serverFeedback)
+		//2.2. git 操作
+		if isCloned {
+			common.SmartIDELog.Info(i18nInstance.VmStart.Info_git_cloned)
+		} else {
+			err = gitAction(sshRemote, workspaceInfo)
+			common.CheckErrorFunc(err, serverFeedback)
+		}
 	}
 
 	//3. 获取配置文件的内容
 	var ideBindingPort int
 	var tempDockerCompose compose.DockerComposeYml
-	ideYamlFilePath := common.FilePahtJoin(common.OS_Linux, workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFilePath) //fmt.Sprintf(`%v/.ide/.ide.yaml`, repoWorkspace)
+	ideYamlFilePath := common.FilePahtJoin(common.OS_Linux, workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath) //fmt.Sprintf(`%v/.ide/.ide.yaml`, repoWorkspace)
 	common.SmartIDELog.Info(fmt.Sprintf(i18nInstance.VmStart.Info_read_config, ideYamlFilePath))
-	if !sshRemote.IsExit(ideYamlFilePath) {
+	if !sshRemote.IsFileExist(ideYamlFilePath) {
 		message := fmt.Sprintf(i18nInstance.Main.Err_file_not_exit2, ideYamlFilePath)
 		common.SmartIDELog.Error(message)
 	}
@@ -80,7 +83,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fun
 	output, err := sshRemote.ExeSSHCommand(catCommand)
 	common.CheckErrorFunc(err, serverFeedback)
 	configYamlContent := output
-	currentConfig := config.NewRemoteConfig(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFilePath, configYamlContent)
+	currentConfig := config.NewRemoteConfig(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath, configYamlContent)
 
 	//3. docker-compose
 	//3.1. 获取 compose 数据
@@ -90,13 +93,10 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fun
 	hasChanged := workspaceInfo.ChangeConfig(yamlStr, linkComposeFileContent) // 是否改变
 	if hasChanged {                                                           // 改变包括了初始化
 		// log
-
 		if workspaceInfo.ID != "" {
 			common.SmartIDELog.Info(i18nInstance.Start.Info_workspace_changed)
-
 		} else {
 			common.SmartIDELog.Info(i18nInstance.Start.Info_workspace_create)
-
 		}
 
 		// 获取compose配置
@@ -125,7 +125,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fun
 		common.CheckErrorFunc(err, serverFeedback)
 
 		// 从临时文件中加载docker-compose
-		tempDockerCompose, ideBindingPort, _ = currentConfig.LoadDockerComposeFromTempFile(sshRemote, workspaceInfo.TempDockerComposeFilePath)
+		tempDockerCompose, ideBindingPort, _ = currentConfig.LoadDockerComposeFromTempFile(sshRemote, workspaceInfo.TempYamlFileAbsolutePath)
 	}
 
 	//3.2. 扩展信息
@@ -156,7 +156,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fun
 		printServices(tempDockerCompose.Services) // 打印services
 		common.CheckError(err, string(bytesDockerComposeContent))
 		commandCreateDockerComposeFile := fmt.Sprintf("docker-compose -f %v --project-directory %v up -d",
-			workspaceInfo.TempDockerComposeFilePath, workspaceInfo.WorkingDirectoryPath)
+			workspaceInfo.TempYamlFileAbsolutePath, workspaceInfo.WorkingDirectoryPath)
 		fmt.Println() // 避免向前覆盖
 		fun1 := func(output string) error {
 			if strings.Contains(output, ":error") || strings.Contains(output, ":fatal") {
@@ -217,12 +217,18 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fun
 		common.CheckErrorFunc(err, serverFeedback)
 		//7.1. 补充数据
 		devContainerName := getDevContainerName(remoteDockerComposeContainers, currentConfig.Workspace.DevContainer.ServiceName)
-		workspaceInfo.Name = devContainerName
+		if workspaceInfo.Name == "" {
+			workspaceInfo.Name = devContainerName
+		}
 		workspaceInfo.TempDockerCompose = tempDockerCompose
 		//7.2. save
-		workspaceId, err := dal.InsertOrUpdateWorkspace(workspaceInfo)
-		common.CheckErrorFunc(err, serverFeedback)
-		common.SmartIDELog.InfoF(i18nInstance.Start.Info_workspace_saved, workspaceId)
+		if workspaceInfo.CliRunningEnv == workspace.CliRunningEnvEnum_Client {
+			workspaceId, err := dal.InsertOrUpdateWorkspace(workspaceInfo)
+			common.CheckErrorFunc(err, serverFeedback)
+			common.SmartIDELog.InfoF(i18nInstance.Start.Info_workspace_saved, workspaceId)
+		} else {
+			common.SmartIDELog.Importance(fmt.Sprintf("当前运行环境为 %v，工作区不需要缓存到本地！", workspaceInfo.CliRunningEnv))
+		}
 
 	}
 
@@ -267,13 +273,16 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fun
 	//9. 反馈给smartide server
 	if isModeServer {
 		//获取容器id
+		containerId := ""
+		dcc, err := GetRemoteContainersWithServices(sshRemote, []string{workspaceInfo.ConfigYaml.Workspace.DevContainer.ServiceName})
+		if containerId, err = sshRemote.ExeSSHCommand(fmt.Sprintf("docker ps  -f 'name=%s' -q", dcc[len(dcc)-1].ContainerName)); containerId != "" && err == nil {
+			// smartide-agent install
+			workspace.InstallSmartideAgent(sshRemote, containerId, cmd)
+		}
 
-		containerId, err := sshRemote.ExeSSHCommand(fmt.Sprintf("docker ps  -f 'name=%s' -q", workspaceInfo.Name))
-
-		// smartide-agent install
-		workspace.InstallSmartideAgent(sshRemote, containerId)
 		common.SmartIDELog.Info("feedback...")
-		err = smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_Start, cmd, true, workspaceInfo.ConfigYaml.GetContainerWebIDEPort(), workspaceInfo, "", containerId)
+		containerWebIDEPort := workspaceInfo.ConfigYaml.GetContainerWebIDEPort()
+		err = smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_Start, cmd, true, containerWebIDEPort, workspaceInfo, "", containerId)
 		common.CheckError(err)
 	}
 

@@ -1,14 +1,17 @@
 /*
  * @Author: kenan
  * @Date: 2021-12-30 19:48:33
- * @LastEditors: kenan
- * @LastEditTime: 2022-03-15 17:09:35
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-04-28 14:53:59
  * @FilePath: /smartide-cli/internal/model/const.go
  * @Description:
  *
  * Copyright (c) 2022 by kenanlu@leansoftx.com, All Rights Reserved.
  */
 package model
+
+// 远程服务器上的根目录
+const CONST_REMOTE_REPO_ROOT string = "project"
 
 // 容器内部的web ide的默认端口
 const CONST_Container_WebIDEPort int = 3000
@@ -18,6 +21,14 @@ const CONST_Container_JetBrainsIDEPort int = 8887
 
 // 容器内部的Opensumi IDE的默认端口
 const CONST_Container_OpensumiIDEPort int = 8000
+
+const (
+	CONST_DevContainer_PortDesc_Opensumi string = "tools-webide-opensumi"
+	CONST_DevContainer_PortDesc_Vscode   string = "tools-webide-vscode"
+	CONST_DevContainer_PortDesc_JB       string = "tools-webide-jb"
+
+	CONST_DevContainer_PortDesc_SSH string = "tools-ssh"
+)
 
 // 容器内部的ssh端口
 const CONST_Container_SSHPort int = 22

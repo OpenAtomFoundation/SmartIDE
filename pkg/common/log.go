@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2022-04-01 23:55:13
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-05-06 11:57:22
  */
 package common
 
@@ -32,29 +32,35 @@ type smartIDELogStruct struct {
 
 var SmartIDELog = &smartIDELogStruct{Ws_id: "", ParentId: 0}
 
+// 进入诊断模式
 var isDebugLevel bool = false
 
 type lastMsg struct {
 	Message    string
 	CreateTime time.Time
+	TimeOut    time.Duration
 	Level      zapcore.Level
 }
 
 var _lastMsg lastMsg
 
 func isRepeat(message string, level zapcore.Level) bool {
-	result := false
+	repeat := false
 	fmt.Sprintln(time.Since(_lastMsg.CreateTime))
 	if (_lastMsg != lastMsg{}) && message != "" &&
-		message == _lastMsg.Message && time.Since(_lastMsg.CreateTime).Minutes() <= 60 && level == _lastMsg.Level {
-		result = true
+		message == _lastMsg.Message && level == _lastMsg.Level {
+		if _lastMsg.TimeOut < 0 || (_lastMsg.TimeOut >= 0 && time.Since(_lastMsg.CreateTime) <= _lastMsg.TimeOut) {
+			repeat = true
+		}
+
 	}
 
-	if !result {
-		_lastMsg = lastMsg{Message: message, CreateTime: time.Now()}
+	if !repeat {
+		_lastMsg = lastMsg{Message: message, CreateTime: time.Now(), TimeOut: time.Minute * 10, Level: level}
+
 	}
 
-	return result
+	return repeat
 }
 
 func (sLog *smartIDELogStruct) InitLogger(logLevel string) {
@@ -146,8 +152,6 @@ func (sLog *smartIDELogStruct) Info(args ...string) (err error) {
 	msg := strings.Join(args, " ")
 	if isRepeat(msg, zapcore.InfoLevel) { // 是否重复
 		return
-	} else {
-		_lastMsg = lastMsg{Message: msg, CreateTime: time.Now(), Level: zapcore.InfoLevel}
 	}
 
 	prefix := getPrefix(zapcore.InfoLevel)
@@ -204,15 +208,16 @@ func (sLog *smartIDELogStruct) Debug(args ...string) (err error) {
 	}
 
 	msg := strings.Join(args, " ")
-	if isRepeat(msg, zapcore.InfoLevel) { // 是否重复
-		return
-	} else {
-		_lastMsg = lastMsg{Message: msg, CreateTime: time.Now(), Level: zapcore.InfoLevel}
-	}
 
 	prefix := getPrefix(zapcore.DebugLevel)
 	if isDebugLevel {
-		fmt.Println(prefix, msg)
+
+		if isRepeat(msg, zapcore.DebugLevel) { // 是否重复
+			return
+		} else {
+			fmt.Println(prefix, msg)
+		}
+
 	}
 	if sLog.Ws_id != "" {
 		go SendAndReceive("business", "workspaceLog", "", "", model.WorkspaceLog{
@@ -278,8 +283,6 @@ func (sLog *smartIDELogStruct) Importance(infos ...string) (err error) {
 
 	if isRepeat(msg, zapcore.WarnLevel) { // 是否重复
 		return
-	} else {
-		_lastMsg = lastMsg{Message: msg, CreateTime: time.Now(), Level: zapcore.InfoLevel}
 	}
 
 	prefix := getPrefix(zapcore.WarnLevel)
@@ -288,6 +291,11 @@ func (sLog *smartIDELogStruct) Importance(infos ...string) (err error) {
 	sugarLogger.Warn(msg)
 
 	return nil
+}
+
+// 等待另外一个新日志
+func (sLog *smartIDELogStruct) WaitingForAnother() {
+	_lastMsg.TimeOut = -1
 }
 
 //

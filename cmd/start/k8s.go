@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-04-15 15:57:54
+ * @LastEditTime: 2022-04-28 14:47:31
  * @FilePath: /smartide-cli/cmd/start/k8s.go
  */
 
@@ -57,11 +57,16 @@ func ExecuteK8sStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fu
 
 	//3. 解析 .k8s.ide.yaml 文件（是否需要注入到deploy.yaml文件中）
 	common.SmartIDELog.Info("下载配置文件 及 关联k8s yaml文件")
-	configFilePath, k8sYamlFileAbsolutePaths, err := downloadConfigAndLinkFiles(workspaceInfo)
+	gitRepoRootDirPath, configFileRelativePath, k8sYamlRelativePaths, err := downloadConfigAndLinkFiles(workspaceInfo)
 	common.CheckError(err)
 	//3.1. 解析配置文件 + 关联的k8s yaml
-	common.SmartIDELog.Info(fmt.Sprintf("解析配置文件 %v", workspaceInfo.ConfigFilePath))
-	originK8sConfig, err := config.NewK8SConfig(configFilePath, k8sYamlFileAbsolutePaths, "", "")
+	common.SmartIDELog.Info(fmt.Sprintf("解析配置文件 %v", workspaceInfo.ConfigFileRelativePath))
+	configFileAbsolutePath := path.Join(gitRepoRootDirPath, configFileRelativePath) // 配置文件绝对路径
+	var k8sYamlAbsolutePaths []string                                               // 关联k8s yaml文件的绝对路径
+	for _, relativePath := range k8sYamlRelativePaths {
+		k8sYamlAbsolutePaths = append(k8sYamlAbsolutePaths, path.Join(gitRepoRootDirPath, relativePath))
+	}
+	originK8sConfig, err := config.NewK8SConfig(configFileAbsolutePath, k8sYamlAbsolutePaths, "", "")
 	common.CheckError(err)
 	if originK8sConfig == nil {
 		common.SmartIDELog.Error("配置文件解析失败！")
@@ -69,12 +74,13 @@ func ExecuteK8sStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fu
 	}
 
 	//4. 是否 配置文件 & k8s yaml 有改变
-	hasChanged, err := hasChanged(workspaceInfo, *originK8sConfig) // k8s yaml 有改变
+	hasChanged, err := hasChanged(workspaceInfo, *originK8sConfig) // 配置文件 或者 关联k8s yaml是否有改变
 	common.CheckError(err)
 	tempK8sConfig := workspaceInfo.K8sInfo.TempK8sConfig
 	checkPod, err := getDevContainerPodReady(*kubernetes, *originK8sConfig) // pod 是否运行正常
 	isReady := checkPod && err == nil
 	if hasChanged || !isReady {
+		//4.1. 尝试删除deployment、service
 		if workspaceInfo.ID != "" { // id 为空的时候时，是 update；尝试先删除deployment、service
 			common.SmartIDELog.Info("删除 service && deployment ")
 
@@ -91,60 +97,35 @@ func ExecuteK8sStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fu
 			}
 		}
 
-		//3.2. 保存配置文件（用于kubectl apply）
+		//4.2. 保存配置文件（用于kubectl apply）
 		common.SmartIDELog.Info("保存临时配置文件")
 		repoName := common.GetRepoName(workspaceInfo.GitCloneRepoUrl)
-		tempK8sConfig = originK8sConfig.ConvertToTempYaml(repoName, workspaceInfo.K8sInfo.Namespace)
-		tempK8sYamlFilePath, err := tempK8sConfig.SaveK8STempYaml(path.Dir(configFilePath), repoName)
+		// ★★★★★ 把所有k8s kind转换为一个临时的k8s yaml文件
+		tempK8sConfig = originK8sConfig.ConvertToTempYaml(repoName, workspaceInfo.K8sInfo.Namespace, originK8sConfig.GetSystemUserName())
+		tempK8sYamlFileRelativePath, err := tempK8sConfig.SaveK8STempYaml(gitRepoRootDirPath)
+		// ★★★★★ 保存到目录（临时k8s yaml文件的绝对路径）
+		tempK8sYamlAbsolutePath := path.Join(gitRepoRootDirPath, tempK8sYamlFileRelativePath)
 		common.CheckError(err)
-		//3.5. 赋值属性
-		workspaceInfo.Name = repoName
-		workspaceInfo.WorkingDirectoryPath = path.Dir(configFilePath)
-		workspaceInfo.ConfigFilePath = path.Base(configFilePath)
+		//4.3. 赋值属性
+		if workspaceInfo.Name == "" {
+			workspaceInfo.Name = repoName
+		}
+		workspaceInfo.WorkingDirectoryPath = gitRepoRootDirPath
+		workspaceInfo.ConfigFileRelativePath = configFileRelativePath
 		workspaceInfo.ConfigYaml = *originK8sConfig.ConvertToSmartIdeConfig()
-		workspaceInfo.TempDockerComposeFilePath = tempK8sYamlFilePath
+		workspaceInfo.TempYamlFileAbsolutePath = tempK8sYamlAbsolutePath
 		workspaceInfo.K8sInfo.OriginK8sYaml = *originK8sConfig
 		workspaceInfo.K8sInfo.TempK8sConfig = tempK8sConfig
 
-		//4. 执行kubectl 命令进行部署
+		//4.4. 执行kubectl 命令进行部署
 		common.SmartIDELog.Info("执行kubectl 命令进行部署")
-		err = kubernetes.ExecKubectlCommandRealtime(fmt.Sprintf("apply -f %v", tempK8sYamlFilePath), "", false)
+		err = kubernetes.ExecKubectlCommandRealtime(fmt.Sprintf("apply -f %v", tempK8sYamlAbsolutePath), "", false)
 		common.CheckError(err)
 		common.SmartIDELog.Info(i18nInstance.Start.Info_k8s_created)
 
-		//5. git config + ssh config + git clone
+		//4.5. git config + ssh config + git clone
 		//e.g. kubectl exec -it pod-name -- /bin/bash -c "command(s)"
-		//5.0. 启动中
-		common.SmartIDELog.Info("等待 deployment 启动...")
-		for {
-			ready, err := getDevContainerPodReady(*kubernetes, *originK8sConfig)
-			if err != nil {
-				common.SmartIDELog.Importance(err.Error())
-			}
-			if ready {
-				common.SmartIDELog.Debug("deployment pending")
-				break
-			} else {
-				time.Sleep(time.Second * 2)
-			}
-		}
-		devContainerPod, _, err := getDevContainerPod(*kubernetes, tempK8sConfig)
-		common.CheckError(err)
-		//5.1. git config
-		common.SmartIDELog.Info("git config")
-		err = kubernetes.CopyLocalGitConfigToPod(*devContainerPod)
-		common.CheckError(err)
-		//5.2. ssh config
-		common.SmartIDELog.Info("ssh config")
-		err = kubernetes.CopyLocalSSHConfigToPod(*devContainerPod)
-		common.CheckError(err)
-		//5.3. git clone
-		common.SmartIDELog.Info("git clone")
-		err = kubernetes.GitClone(*devContainerPod, workspaceInfo.GitCloneRepoUrl, workspaceInfo.Branch)
-		common.CheckError(err)
-		//5.4. 复制config文件
-		common.SmartIDELog.Info("copy config file")
-		err = copyConfigToPod(*kubernetes, *devContainerPod, repoName, configFilePath)
+		err = execPod(workspaceInfo, kubernetes, originK8sConfig, tempK8sConfig)
 		common.CheckError(err)
 
 		//6. 抽取端口
@@ -175,11 +156,11 @@ func ExecuteK8sStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fu
 	//6. 端口转发，依然需要检查对应的端口是否占用
 	common.SmartIDELog.Info("端口转发...")
 	//6.2. 端口转发，并记录到extend
-	_, k8sServiceName, err := getDevContainerPod(*kubernetes, tempK8sConfig)
-	common.SmartIDELog.Debug("k8s service name: " + k8sServiceName)
+	_, _, err = getDevContainerPod(*kubernetes, tempK8sConfig)
+	//common.SmartIDELog.Debug("k8s service name: " + k8sServiceName)
 	common.CheckError(err)
 
-	f := func(availableClientPort, hostOriginPort, index int) {
+	function1 := func(k8sServiceName string, availableClientPort, hostOriginPort, index int) {
 		if availableClientPort != hostOriginPort {
 			common.SmartIDELog.InfoF(i18n.GetInstance().Common.Info_port_binding_result2, availableClientPort, hostOriginPort, hostOriginPort)
 		} else {
@@ -209,7 +190,7 @@ func ExecuteK8sStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fu
 		unusedClientPort, err := common.CheckAndGetAvailableLocalPort(portMapInfo.ClientPort, 100)
 		common.SmartIDELog.Error(err)
 
-		go f(unusedClientPort, portMapInfo.CurrentHostPort, index)
+		go function1(portMapInfo.ServiceName, unusedClientPort, portMapInfo.CurrentHostPort, index)
 
 	}
 
@@ -226,6 +207,77 @@ func ExecuteK8sStartCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun fu
 	//99. 结束
 	common.SmartIDELog.Info(i18nInstance.Start.Info_end)
 
+}
+
+func execPod(workspaceInfo workspace.WorkspaceInfo,
+	kubernetes *kubectl.Kubernetes,
+	originK8sConfig *config.SmartIdeK8SConfig, tempK8sConfig config.SmartIdeK8SConfig) error {
+	// 等待启动
+	common.SmartIDELog.Info("等待 deployment 启动...")
+	for {
+		ready, err := getDevContainerPodReady(*kubernetes, *originK8sConfig)
+		if err != nil {
+			common.SmartIDELog.Importance(err.Error())
+		}
+		if ready {
+			common.SmartIDELog.Debug("deployment pending")
+			break
+		} else {
+			time.Sleep(time.Second * 2)
+		}
+	}
+	devContainerPod, _, err := getDevContainerPod(*kubernetes, tempK8sConfig)
+	if err != nil {
+		return err
+	}
+
+	//5.1. git config
+	if originK8sConfig.Workspace.DevContainer.Volumes.HasGitConfig.Value() {
+		common.SmartIDELog.Info("git config")
+		err = kubernetes.CopyLocalGitConfigToPod(*devContainerPod)
+		if err != nil {
+			return err
+		}
+	}
+
+	//5.2. ssh config
+	if originK8sConfig.Workspace.DevContainer.Volumes.HasSshKey.Value() {
+		common.SmartIDELog.Info("ssh config")
+		err = kubernetes.CopyLocalSSHConfigToPod(*devContainerPod)
+		if err != nil {
+			return err
+		}
+	}
+
+	//5.3. git clone
+	common.SmartIDELog.Info("git clone")
+	containerGitCloneDir := "/home/project"
+	for containerName, item := range originK8sConfig.Workspace.Containers { // git clone 的目录是否设置
+		if containerName == originK8sConfig.Workspace.DevContainer.ServiceName {
+			for _, volume := range item.PersistentVolumes {
+				if volume.DirectoryType == config.PersistentVolumeDirectoryTypeEnum_Project {
+					containerGitCloneDir = volume.MountPath
+					break
+				}
+			}
+			break
+		}
+	}
+	err = kubernetes.GitClone(*devContainerPod, workspaceInfo.GitCloneRepoUrl, containerGitCloneDir, workspaceInfo.Branch)
+	if err != nil {
+		return err
+	}
+
+	//5.4. 复制config文件
+	common.SmartIDELog.Info("copy config file")
+	//repoName := common.GetRepoName(workspaceInfo.GitCloneRepoUrl)
+	configFileAbsolutePath := path.Join(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath)
+	err = copyConfigToPod(*kubernetes, *devContainerPod, containerGitCloneDir, configFileAbsolutePath)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // 是否改变
@@ -254,7 +306,7 @@ func hasChanged(workspaceInfo workspace.WorkspaceInfo, originK8sConfig config.Sm
 }
 
 // 复制config文件到pod
-func copyConfigToPod(k kubectl.Kubernetes, pod coreV1.Pod, projectName string, configFilePath string) error {
+func copyConfigToPod(k kubectl.Kubernetes, pod coreV1.Pod, podDestGitRepoPath string, configFilePath string) error {
 	// 目录
 	configFileDir := path.Dir(configFilePath)
 	tempDirPath := filepath.Join(configFileDir, ".temp")
@@ -284,7 +336,7 @@ func copyConfigToPod(k kubectl.Kubernetes, pod coreV1.Pod, projectName string, c
 	}
 
 	// copy
-	destDir := path.Join("/home/project/", projectName, ".ide")
+	destDir := path.Join(podDestGitRepoPath, ".ide")
 	err = k.CopyToPod(pod, gitignoreFile, destDir)
 	if err != nil {
 		return err
@@ -298,49 +350,71 @@ func copyConfigToPod(k kubectl.Kubernetes, pod coreV1.Pod, projectName string, c
 }
 
 // 下载配置文件 和 关联的k8s yaml文件
-func downloadConfigAndLinkFiles(workspaceInfo workspace.WorkspaceInfo) (string, []string, error) {
-	repoName := common.GetRepoName(workspaceInfo.GitCloneRepoUrl)
+func downloadConfigAndLinkFiles(workspaceInfo workspace.WorkspaceInfo) (gitRepoRootDirPath string,
+	configFileRelativePath string, linkK8sYamlRelativePaths []string, err error) {
+
 	//3.1. 下载配置文件
-	files, err := downloadFilesByGit(repoName, workspaceInfo.GitCloneRepoUrl, workspaceInfo.Branch, path.Base(workspaceInfo.ConfigFilePath))
+	gitRepoRootDirPath, fileRelativePaths, err := downloadFilesByGit(workspaceInfo.GitCloneRepoUrl, workspaceInfo.Branch, workspaceInfo.ConfigFileRelativePath)
 	if err != nil {
-		return "", []string{}, err
+		return
 	}
-	if len(files) != 1 || !strings.Contains(files[0], workspaceInfo.ConfigFilePath) {
-		return "", []string{}, fmt.Errorf("配置文件 %v 不存在！", path.Base(workspaceInfo.ConfigFilePath))
+	if len(fileRelativePaths) != 1 || !strings.Contains(fileRelativePaths[0], workspaceInfo.ConfigFileRelativePath) {
+		err = fmt.Errorf("配置文件 %v 不存在！", workspaceInfo.ConfigFileRelativePath)
+		return
 	}
 
 	//3.2. 下载配置文件关联的yaml文件
 	common.SmartIDELog.Info("下载配置文件 关联的 k8s yaml 文件")
-	configFilePath := files[0]
+	configFileRelativePath = fileRelativePaths[0]
 	var configYaml map[string]interface{}
-	configFileBytes, err := ioutil.ReadFile(configFilePath)
+	configFileBytes, err := ioutil.ReadFile(path.Join(gitRepoRootDirPath, configFileRelativePath))
 	if err != nil {
-		return "", []string{}, err
+		return
 	}
 	err = yaml.Unmarshal(configFileBytes, &configYaml)
 	if err != nil {
-		return "", []string{}, err
+		return
 	}
 	smartIdeConfig := config.NewConfig("", "", string(configFileBytes))
 	if smartIdeConfig == nil {
-		return "", []string{}, fmt.Errorf("配置文件 %v 内容为空！", path.Base(workspaceInfo.ConfigFilePath))
+		err = fmt.Errorf("配置文件 %v 内容为空！", workspaceInfo.ConfigFileRelativePath)
+		return
 	}
 	if smartIdeConfig.Workspace.KubeDeployFiles == "" {
-		return "", []string{}, fmt.Errorf("配置文件 %v Workspace.KubeDeployFiles 节点未配置！", path.Base(workspaceInfo.ConfigFilePath))
+		return "", "", []string{}, fmt.Errorf("配置文件 %v Workspace.KubeDeployFiles 节点未配置！", workspaceInfo.ConfigFileRelativePath)
 	}
-	k8sYamlFileAbsolutePaths, err := downloadFilesByGit(repoName, workspaceInfo.GitCloneRepoUrl, workspaceInfo.Branch, smartIdeConfig.Workspace.KubeDeployFiles)
+	filePathExpression := path.Join(".ide", smartIdeConfig.Workspace.KubeDeployFiles) // 这里的文件路径都是相对	.ide 的
+	_, linkK8sYamlRelativePaths, err = downloadFilesByGit(workspaceInfo.GitCloneRepoUrl, workspaceInfo.Branch, filePathExpression)
 	if err != nil {
-		return "", []string{}, err
+		return "", "", []string{}, err
+	}
+	if len(linkK8sYamlRelativePaths) == 0 {
+		return "", "", []string{}, fmt.Errorf("没有找到关联的 %v yaml文件！", smartIdeConfig.Workspace.KubeDeployFiles)
 	}
 
-	return configFilePath, k8sYamlFileAbsolutePaths, nil
+	//configFileRelativePath := strings.Replace(configFileAbsolutePath, gitRepoRootDirPath, "", -1)
+	return gitRepoRootDirPath, configFileRelativePath, linkK8sYamlRelativePaths, nil
 }
 
 // 等待webide可以访问，并打开
 func waitingAndOpenBrower(workspaceInfo workspace.WorkspaceInfo, originK8sConfig config.SmartIdeK8SConfig) error {
 	var ideBindingPort int
+
+	// 获取项目文件夹路径
+	projectDir := "/home/project"
+	for containerName, item := range originK8sConfig.Workspace.Containers {
+		if containerName == originK8sConfig.Workspace.DevContainer.ServiceName {
+			for _, pv := range item.PersistentVolumes {
+				if pv.DirectoryType == config.PersistentVolumeDirectoryTypeEnum_Project {
+					projectDir = pv.MountPath
+					break
+				}
+			}
+			break
+		}
+	}
+
 	// 获取webide的url
-	repoName := common.GetRepoName(workspaceInfo.GitCloneRepoUrl)
 	var url string
 	switch originK8sConfig.Workspace.DevContainer.IdeType {
 	case config.IdeTypeEnum_VsCode:
@@ -349,8 +423,8 @@ func waitingAndOpenBrower(workspaceInfo workspace.WorkspaceInfo, originK8sConfig
 			return err
 		}
 		ideBindingPort = portMap.ClientPort
-		url = fmt.Sprintf("http://localhost:%v/?folder=vscode-remote://localhost:%v/home/project/%v",
-			ideBindingPort, ideBindingPort, repoName)
+		url = fmt.Sprintf("http://localhost:%v/?folder=vscode-remote://localhost:%v%v",
+			ideBindingPort, ideBindingPort, projectDir)
 	case config.IdeTypeEnum_JbProjector:
 		portMap, err := workspaceInfo.Extend.Ports.Find("tools-webide-jb")
 		if err != nil {
@@ -364,11 +438,7 @@ func waitingAndOpenBrower(workspaceInfo workspace.WorkspaceInfo, originK8sConfig
 			return err
 		}
 		ideBindingPort = portMap.ClientPort
-		url = fmt.Sprintf(`http://localhost:%v/?workspaceDir=/home/project/%v`, ideBindingPort, repoName)
-
-		// url = fmt.Sprintf(`http://localhost:%v/?workspaceDir=/home/project`, webidePord)
-		/* default:
-		url = fmt.Sprintf(`http://localhost:%v`, ideBindingPort) */
+		url = fmt.Sprintf(`http://localhost:%v/?workspaceDir=%v`, ideBindingPort, projectDir)
 	}
 	// 等待webide启动
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_warting_for_webide + " " + url)
@@ -515,56 +585,44 @@ func checkAndInstallKubectl(kubernetes *kubectl.Kubernetes) error {
 	return nil
 }
 
-/* func getWorkingDirectoryPath(repoName string) (string, error) {
-	// home 目录的路径
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-
-	// 文件路径
-	ideDir := filepath.Join(home, ".ide")      // ide的路径
-	repoDir := filepath.Join(ideDir, repoName) // git 库在本地的存储地址
-	return repoDir, nil
-} */
-
 // 从git下载相关文件
-func downloadFilesByGit(repoName string, gitCloneUrl string, branch string, filePathExpression string) ([]string, error) {
+func downloadFilesByGit(gitCloneUrl string, branch string, filePathExpression string) (
+	gitRepoRootDirPath string, fileRelativePaths []string, err error) {
 	// home 目录的路径
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return []string{}, err
+		return
 	}
 
 	// 文件路径
-	ideDir := filepath.Join(home, ".ide") // ide的路径
-	//repoDir := filepath.Join(ideDir, repoName) // git 库在本地的存储地址
+	workingRootDir := filepath.Join(home, ".ide", ".k8s") // 工作目录，repo 会clone到当前目录下
 	sshPath := filepath.Join(home, ".ssh")
-	if !common.IsExit(ideDir) {
-		os.MkdirAll(ideDir, os.ModePerm)
+	if !common.IsExit(workingRootDir) { // 目录如果不存在，就要创建
+		os.MkdirAll(workingRootDir, os.ModePerm)
 	}
-	/* if common.IsExit(repoDir) {
-		os.RemoveAll(repoDir)
-	} */
 
 	// 设置不进行host的检查，即clone新的git库时，不会给出提示
 	err = common.FS.SkipStrictHostKeyChecking(sshPath, false)
 	if err != nil {
-		return []string{}, err
+		return
 	}
 
 	// 下载指定的文件
-	filePathExpression = path.Join(".ide", filePathExpression)
-	files, err := common.GIT.SparseCheckout(ideDir, gitCloneUrl, filePathExpression, branch)
+	//filePathExpression = path.Join(".ide", filePathExpression)
+	fileRelativePaths, err = common.GIT.SparseCheckout(workingRootDir, gitCloneUrl, filePathExpression, branch)
 	if err != nil {
-		return []string{}, err
+		return
 	}
 
 	// 还原.ssh config 的设置
 	err = common.FS.SkipStrictHostKeyChecking(sshPath, true)
 	if err != nil {
-		return []string{}, err
+		return
 	}
 
-	return files, nil
+	gitRepoRootDirPath = path.Join(workingRootDir, common.GetRepoName(gitCloneUrl)) // git repo 的根目录
+	for index, _ := range fileRelativePaths {
+		fileRelativePaths[index] = strings.Replace(fileRelativePaths[index], gitRepoRootDirPath, "", -1) // 把绝对路径改为相对路径
+	}
+	return gitRepoRootDirPath, fileRelativePaths, nil
 }

@@ -2,15 +2,14 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors:
- * @LastEditTime:
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-04-29 16:41:28
  */
 package cmd
 
 import (
 	"fmt"
 	"os"
-	"strconv"
 	"text/tabwriter"
 
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
@@ -27,21 +26,25 @@ var getCmd = &cobra.Command{
   smartide get {workspaceid}`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		workspaceIdStr := getWorkspaceIdFromFlagsAndArgs(cmd, args)
-		workspaceId, _ := strconv.Atoi(workspaceIdStr)
-		if workspaceId <= 0 {
-			common.SmartIDELog.Warning(i18nInstance.Get.Warn_flag_workspaceid_none)
-			cmd.Help()
-			return
-		}
+		/*	workspaceIdStr := getWorkspaceIdFromFlagsAndArgs(cmd, args)
+			workspaceId, _ := strconv.Atoi(workspaceIdStr)
+			 if workspaceId <= 0 {
+				common.SmartIDELog.Warning(i18nInstance.Get.Warn_flag_workspaceid_none)
+				cmd.Help()
+				return
+			} */
 
 		// 从数据库中查询
-		workspaceInfo, err := getWorkspaceWithDbAndValid(workspaceId)
+		workspaceInfo, err := getWorkspaceFromCmd(cmd, args)
 		common.CheckError(err)
+		if workspaceInfo.IsNil() {
+			workspaceIdStr := getWorkspaceIdFromFlagsOrArgs(cmd, args)
+			common.SmartIDELog.Error(fmt.Sprintf("根据ID（%v）未找到数据！", workspaceIdStr))
+		}
 
 		// 打印
 		print := fmt.Sprintf(i18nInstance.Get.Info_workspace_detail_template,
-			workspaceInfo.ID, workspaceInfo.Name, workspaceInfo.Mode, workspaceInfo.ConfigFilePath, workspaceInfo.WorkingDirectoryPath,
+			workspaceInfo.ID, workspaceInfo.Name, workspaceInfo.CliRunningEnv, workspaceInfo.Mode, workspaceInfo.ConfigFileRelativePath, workspaceInfo.WorkingDirectoryPath,
 			workspaceInfo.GitCloneRepoUrl, workspaceInfo.GitRepoAuthType)
 		common.SmartIDELog.Console(print)
 
@@ -64,7 +67,7 @@ var getCmd = &cobra.Command{
 			// 配置文件
 			configYamlStr, err := workspaceInfo.ConfigYaml.ToYaml()
 			common.CheckError(err)
-			console := fmt.Sprintf("-- Configration file ---------\n%v\n%v", workspaceInfo.TempDockerComposeFilePath, configYamlStr)
+			console := fmt.Sprintf("-- Configration file ---------\n%v\n%v", workspaceInfo.TempYamlFileAbsolutePath, configYamlStr)
 			common.SmartIDELog.Console(console)
 
 			// 链接的 docker-compose
@@ -78,7 +81,7 @@ var getCmd = &cobra.Command{
 			// 生成的docker-compose
 			dockerYamlStr, err := workspaceInfo.TempDockerCompose.ToYaml()
 			common.CheckError(err)
-			console = fmt.Sprintf("-- Docker-Compose ---------\n%v\n%v", workspaceInfo.TempDockerComposeFilePath, dockerYamlStr)
+			console = fmt.Sprintf("-- Docker-Compose ---------\n%v\n%v", workspaceInfo.TempYamlFileAbsolutePath, dockerYamlStr)
 			common.SmartIDELog.Console(console)
 		}
 
