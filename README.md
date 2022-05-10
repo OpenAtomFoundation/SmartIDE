@@ -39,11 +39,21 @@ SmartIDE可以帮助你完成开发环境的一键搭建，如果你熟悉命令
 
 - CLI快速启动文档 [5分钟快速启动](https://smartide.cn/zh/docs/quickstart/cli/) 
 - Server快速启动文档 [5分钟快速启动](https://smartide.cn/zh/docs/quickstart/server/) 
-- Node开发环境快速启动文档 [Node.Js 快速启动教程](https://smartide.cn/zh/docs/quickstart/node/)
-- Java开发环境快速启动文档 [Node.Js 快速启动教程](https://smartide.cn/zh/docs/quickstart/java/)
-- 视频 [SmartIDE 开发从未如此简单](https://www.bilibili.com/video/BV1pR4y147wn)
-- 视频 [开发从未如此简单 - 谁说vue.js和大型微服务Java Spring项目不能在WebIDE中运行，谁说不能一键部署WebIDE到远程主机](https://www.bilibili.com/video/BV1zb4y1i7B1)
-- 视频 [SmartIDE 产品发布会](https://www.bilibili.com/video/BV1xR4y1s7sx)
+- 开发语言快速启动文档 
+  - [Node.Js 快速启动教程](https://smartide.cn/zh/docs/quickstart/node/)
+  - [Java 快速启动教程](https://smartide.cn/zh/docs/quickstart/java/)
+- 视频 
+  - [快速启动演示（VSCode WebIDE）](https://www.bilibili.com/video/BV1pR4y147wn)
+  - [快速启动演示（IntelliJ IDEA WebIDE）](https://www.bilibili.com/video/BV16L411L7q5?spm_id_from=333.999.0.0)
+  - [开发从未如此简单 - 谁说vue.js和大型微服务Java Spring项目不能在WebIDE中运行，谁说不能一键部署WebIDE到远程主机](https://www.bilibili.com/video/BV1zb4y1i7B1)
+  - [SmartIDE 产品发布会](https://www.bilibili.com/video/BV1xR4y1s7sx)
+  - [SmartIDE插件市场](https://www.bilibili.com/video/BV1uR4y1A7Ja#reply112451583584)
+  - [使用模版库搭建若依微服务开发环境](https://www.bilibili.com/video/BV1MY411A7ve?spm_id_from=333.999.0.0)
+  - [国产IDE支持 - 阿里&蚂蚁开源国产IDE OpenSumi](https://www.bilibili.com/video/BV14Y4y187hC?spm_id_from=333.999.0.0)
+  - [使用IntelliJ IDEA WebIDE开发调试若依管理系统 (Vue + Java Spring)](https://www.bilibili.com/video/BV13L4y1g75S?spm_id_from=333.999.0.0)
+  - [开源项目Gin-Vue-Admin快速启动 VSCode + GoLand WebIDE联调](https://www.bilibili.com/video/BV1eL4y1b7ep?spm_id_from=333.999.0.0)
+  - [Hybird模式快速启动 (JetBrains Gateway)](https://www.bilibili.com/video/BV1cb4y1n7Bs?spm_id_from=333.999.0.0)
+
 
 ## SmartIDE 三种形态
 
