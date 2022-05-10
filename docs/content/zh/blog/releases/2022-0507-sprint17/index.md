@@ -111,7 +111,7 @@ SmartIDE插件市场的代码以及部署文档开源免费（EPL-2.0）提供�
 - [如何更新Visual Studio Code以及兼容IDE的配置文件连接到SmartIDE 插件市场，包括：VSCode, Codium, Code Server, OpenVSCode Server和OpenSumi](/zh/docs/manual/marketplace/config/)
 - [部署手册](/zh/docs/install/marketplace/)
 
-> 说明：[Eclipse OpenVSX](https://open-vsx.org/) 是Eclipse基金会旗下的一款采用EPL-2.0开源授权的开源软件，按照 [Github官网](https://github.com/eclipse/openvsx) 上的说法：OpenVSX提供了一个 [Visual Studio Marketplace](https://marketplace.visualstudio.com/) 的替代品，包括可用于管理VSCode插件的数据库以及对用的Web应用，同时提供了一个cli工具用于后台管理。Eclipse OpenVSX出现的原因是微软并不允许类 VSCode IDE (VSCode的Fork) 使用官方的插件市场，因此社区需要一个类似的基础设施服务，具体可以参考这个 [Issue](https://github.com/microsoft/vscode/issues/31168) 。
+> 说明：[Eclipse OpenVSX](https://open-vsx.org/) 是Eclipse基金会旗下的一款采用EPL-2.0开源授权的开源软件，按照 [Github官网](https://github.com/eclipse/openvsx) 上的说法：OpenVSX提供了一个 [Visual Studio Marketplace](https://marketplace.visualstudio.com/) 的替代品，包括可用于管理VSCode插件的数据库以及对应的Web应用，同时提供了一个cli工具用于后台管理。Eclipse OpenVSX出现的原因是微软并不允许类 VSCode IDE (VSCode的Fork) 使用官方的插件市场，因此社区需要一个类似的基础设施服务，具体可以参考这个 [Issue](https://github.com/microsoft/vscode/issues/31168) 。
 
 SmartIDE插件市场是OpenVSX的一个fork，我们在OpenVSX的基础上进行一些修改以便适合中国开发者使用，包括：界面的中文汉化，插件自动同步到国内（使用[GitHub Action](https://github.com/SmartIDE/eclipse-openvsx/actions)），针对国内部署进行验证，测试以及服务托管。因此，SmartIDE插件市场是 [Eclipse OpenVSX](https://open-vsx.org/) 的一个代理服务，目的是方便国内的开发者安装和管理VSCode的插件。同时，也支持企业使用SmartIDE插件市场进行私有部署。当然，我们也欢迎国内的开发者直接将自己的插件发布到我们所运行的 SmartIDE插件市场，如果你有类似的需求，请和我们联系。
 

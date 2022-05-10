@@ -1,5 +1,5 @@
 ---
-title: "README.exe - SmartIDE发布IDE配置文件标准格式"
+title: "README.exe"
 linkTitle: "README.exe"
 date: 2022-05-10
 description: >
