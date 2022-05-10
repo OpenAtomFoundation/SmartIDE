@@ -22,7 +22,7 @@ SmartIDE Server 是一款开源的容器化工作区管理工具，你可以在�
 
 ![Server模版库](images/server-template.png)
 
-以下是使用Server版模板库功能创建 [若依微服务版本](/zh/docs/examples/ruoyi/) 快速开发框架的演示视频，若依微服务版的模版包含 `vue.js` 的前端应用，一系列 `Java Springboot` 后端服务，`Nacos` 服务注册中心，`redis` 缓存和 `mysql` 数据库（配置`phpMyAdmin` 管理工具）以及 `SonaQube` 代码检查工具；这是一个相对复杂的工作区，使用server版的模板库开发者可以一键创建以上所有环境，无需关心这些组件之间的配置，所有这些配置都已经预先设置好并保存在 `IDE配置文件` 中了。
+以下是使用Server版模板库功能创建 [若依微服务版本](/zh/docs/examples/ruoyi/) 快速开发框架的演示视频，若依微服务版的模版包含 `vue.js` 的前端应用，一系列 `Java Spring` 后端服务，`Nacos` 服务注册中心，`redis` 缓存和 `mysql` 数据库（配置`phpMyAdmin` 管理工具）以及 `SonaQube` 代码检查工具；这是一个相对复杂的工作区，使用server版的模板库开发者可以一键创建以上所有环境，无需关心这些组件之间的配置，所有这些配置都已经预先设置好并保存在 `IDE配置文件` 中了。
 
 {{< bilibili 256267958 >}}
 
@@ -39,8 +39,6 @@ smartide new --host <HostId> <模版名称> --type <子类型名称> --workspace
 ## type参数也可以省略，则可以使用当前默认模版
 smartide new <模版名称> --type <子类型名称>
 ```
-
-以下是使用new指令在远程服务器上创建工作区的演示视频：
 
 当前支持的模版列表如下，列表中的所有组合都可以通过以上指令用于在远程主机上创建工作区
 
