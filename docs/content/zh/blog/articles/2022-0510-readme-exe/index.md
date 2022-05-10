@@ -26,7 +26,7 @@ smartide start https://github.com/idcf-boat-house/boathouse-calculator
 
 {{< bilibili 336989627 >}}
 
-## IDE文件详解
+## IDE配置文件详解
 
 以上示例中所使用的 `.ide.yaml` 文件如下
 
