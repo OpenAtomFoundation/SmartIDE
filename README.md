@@ -15,23 +15,32 @@
 </p>
 <hr />
 
-SmartIDE可以帮助你完成开发环境的一键搭建，你只需要学会一个命令 (smartide start) 就可以在自己所需要的环境中，使用自己喜欢的开发工具进行编码和开发调试了，不再需要安装任何工具，SDK，调试器，编译器，环境变量等繁琐的操作。如果我们把Vscode和JetBrain这些IDE称为传统IDE的话，这些传统IDE最大的问题是：他们虽然在 I (Integration) 和 D (Development) 上面都做的非常不错，但是都没有解决 E (Environment) 的问题。
+SmartIDE可以帮助你完成开发环境的一键搭建，如果你熟悉命令行操作，那么么安装我们的cli，然后你只需要学会一个命令 `smartide start` 就可以在自己所需要的环境中，使用自己喜欢的开发工具进行编码和开发调试了，不再需要安装任何工具，SDK，调试器，编译器，环境变量等繁琐的操作。如果不喜欢命令行操作，也可以使用 [SmartIDE Server](https://smartide.cn/zh/docs/quickstart/server/) 通过网页完成全部操作。如果我们把Vscode和JetBrain这些IDE称为传统IDE的话，这些传统IDE最大的问题是：他们虽然在 I (Integration) 和 D (Development) 上面都做的非常不错，但是都没有解决 E (Environment) 的问题。
 
 **SmartIDE的重点就是要解决 E 的问题。**
 
-## 产品安装方式
+当前SmartIDE包括4个组件：
+
+- CLI: 一个简单易用的命令行工具，可以运行在Windows/MacOS/Linux上，开发者使用一个简单的指令 `smartide start` 即可一键搭建开发环境，直接打开环境内置的WebIDE开始进行编码和调试。
+- Server: 支持私有部署的开源容器化开发环境管理服务。Server版继承CLI的所有能力，但是提供网页化的操作，同时针对团队使用进行扩展和支持。
+- Marketplace: SmartIDE插件市场是 open-vsx.org 的一个fork，我们进行了汉化并提供中国本地部署和插件自动同步服务。企业也可以选择在内网部署 SmartIDE插件市场，为内部开发者提供安全可控的VSCode插件管理服务。
+- 开发者镜像和模版: 开发者镜像是一系列预先构建好的开发环境容器，我们提供7种开发语言的开发者镜像，并且同时托管在国内的阿里云和DockerHub，方便全球的开发者使用。
+
+## CLI安装方式
 
 我们按照敏捷开发模式进行SmartIDE的开发，所有的版本都通过CI/CD流水线自动构建，打包，测试和发布。为了同时满足外部用户对于稳定性的要求和开发团队以及早期使用者对新功能快速更新的要求，我们提供以下两个发布通道。
 
-- [稳定版](https://smartide.cn/zh/docs/install/#%E7%A8%B3%E5%AE%9A%E7%89%88%E9%80%9A%E9%81%93)
-- [每日构建版](https://smartide.cn/zh/docs/install/#%E6%AF%8F%E6%97%A5%E6%9E%84%E5%BB%BA%E7%89%88%E9%80%9A%E9%81%93)
+- [稳定版](https://smartide.cn/zh/docs/install/cli/#%E7%A8%B3%E5%AE%9A%E7%89%88%E9%80%9A%E9%81%93)
+- [每日构建版](https://smartide.cn/zh/docs/install/cli/#%E6%AF%8F%E6%97%A5%E6%9E%84%E5%BB%BA%E7%89%88%E9%80%9A%E9%81%93)
 
 ## 快速启动
 
 请参考以下资料开始使用SmartIDE
 
-- 文档 [5分钟快速启动](https://smartide.cn/zh/docs/quickstart/) 
-- 文档 [Node.Js 快速启动教程](https://smartide.cn/zh/docs/quickstart/new-node/)
+- CLI快速启动文档 [5分钟快速启动](https://smartide.cn/zh/docs/quickstart/cli/) 
+- Server快速启动文档 [5分钟快速启动](https://smartide.cn/zh/docs/quickstart/server/) 
+- Node开发环境快速启动文档 [Node.Js 快速启动教程](https://smartide.cn/zh/docs/quickstart/node/)
+- Java开发环境快速启动文档 [Node.Js 快速启动教程](https://smartide.cn/zh/docs/quickstart/java/)
 - 视频 [SmartIDE 开发从未如此简单](https://www.bilibili.com/video/BV1pR4y147wn)
 - 视频 [开发从未如此简单 - 谁说vue.js和大型微服务Java Spring项目不能在WebIDE中运行，谁说不能一键部署WebIDE到远程主机](https://www.bilibili.com/video/BV1zb4y1i7B1)
 - 视频 [SmartIDE 产品发布会](https://www.bilibili.com/video/BV1xR4y1s7sx)
