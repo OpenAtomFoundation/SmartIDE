@@ -33,17 +33,17 @@ sudo rm -rf ./openvscode-images/node
 
 
 # 解压插件
-OPVSCODEVSIX=./vsix
+# OPVSCODEVSIX=./vsix
 
-for i in ./extensions/*.vsix;
-    do
-    sudo unzip $i "extension/*" -d $OPVSCODEVSIX/extensions/$(basename -s .vsix $i); \
-    sudo mv $OPVSCODEVSIX/extensions/$(basename -s .vsix $i)/extension/* $OPVSCODEVSIX/extensions/$(basename -s .vsix $i); \
-    sudo rm -rf $OPVSCODEVSIX/extensions/$(basename -s .vsix $i)/extension; \
-    echo "$i........已复制"; \
-    done
+# for i in ./extensions/*.vsix;
+#     do
+#     sudo unzip $i "extension/*" -d $OPVSCODEVSIX/extensions/$(basename -s .vsix $i); \
+#     sudo mv $OPVSCODEVSIX/extensions/$(basename -s .vsix $i)/extension/* $OPVSCODEVSIX/extensions/$(basename -s .vsix $i); \
+#     sudo rm -rf $OPVSCODEVSIX/extensions/$(basename -s .vsix $i)/extension; \
+#     echo "$i........已复制"; \
+#     done
 
-sudo \cp -rf ./vsix/extensions openvscode-images
+# sudo \cp -rf ./vsix/extensions openvscode-images
 
 echo 'ide.sh............end'
 
