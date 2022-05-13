@@ -4,7 +4,7 @@
 # Copyright (C) leansoftX.com
 #################################################
 
-FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-base-v2-sysbox
+FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-base-sysbox-v2
 
 USER root
 RUN apt-get update && \
