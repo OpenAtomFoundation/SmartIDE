@@ -32,7 +32,7 @@ if [ $USER_UID == '0' ]; then
     /usr/sbin/sshd
 
     echo "-----------Starting ide"
-    exec /home/opvscode/server.sh
+    exec /home/opvscode/server.sh  "$@"
 
 else
 
@@ -73,6 +73,6 @@ else
     /usr/sbin/sshd
 
     echo "-----smartide-----Starting gosu ide"
-    exec gosu smartide /home/opvscode/server.sh
+    exec gosu smartide /home/opvscode/server.sh  "$@"
 
 fi
