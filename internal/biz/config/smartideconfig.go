@@ -2,15 +2,14 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2022-02-16 16:31:52
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-05-15 23:10:16
  */
 package config
 
 import (
 	"io/ioutil"
 	"os"
-	"path/filepath"
 
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
@@ -41,7 +40,7 @@ func GetCurrentAuth(auths []model.Auth) model.Auth {
 
 //加载config配置文件
 func (c *GlobalConfig) LoadConfigYaml() *GlobalConfig {
-	ideConfigPath := filepath.Join(SmartIdeHome, configFileName)
+	ideConfigPath := common.PathJoin(SmartIdeHome, configFileName)
 	isIdeConfigExist := common.IsExit(ideConfigPath)
 	if isIdeConfigExist {
 		yamlByte, err := os.ReadFile(ideConfigPath)
@@ -67,7 +66,7 @@ func (c *GlobalConfig) LoadConfigYaml() *GlobalConfig {
 
 //保存config
 func (c *GlobalConfig) SaveConfigYaml() {
-	ideConfigPath := filepath.Join(SmartIdeHome, configFileName)
+	ideConfigPath := common.PathJoin(SmartIdeHome, configFileName)
 	templatesByte, err := yaml.Marshal(&c)
 	common.SmartIDELog.Error(err)
 	err = ioutil.WriteFile(ideConfigPath, templatesByte, 0777)
@@ -78,7 +77,7 @@ func init() {
 	//全局idehome
 	home, err := os.UserHomeDir()
 	common.CheckError(err)
-	SmartIdeHome = filepath.Join(home, ".ide")
+	SmartIdeHome = common.PathJoin(home, ".ide")
 
 	//创建userhome/.ide
 	templatesFolderIsExist := common.IsExit(SmartIdeHome)

@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-04-25 14:45:48
+ * @LastEditTime: 2022-05-15 23:09:41
  */
 package config
 
@@ -91,7 +91,7 @@ func NewK8SConfig(configFileAbsolutePath string, k8sYamlFileAbsolutePaths []stri
 	} else {
 		if len(k8sYamlFileAbsolutePaths) == 0 {
 			dir := path.Dir(configFileAbsolutePath)
-			tempExpression := path.Join(dir, config.Workspace.KubeDeployFiles)
+			tempExpression := common.PathJoin(dir, config.Workspace.KubeDeployFiles)
 			files, err := filepath.Glob(tempExpression)
 			if err != nil {
 				return nil, err
@@ -186,7 +186,7 @@ func newConfig(localWorkingDir string, configFilePath string, configContent stri
 func loadConfigWithYamlFile(workingDirectoryPath, configRelativeFilePath string) (result *SmartIdeConfig) {
 
 	result = &SmartIdeConfig{}
-	configFilePath := filepath.Join(workingDirectoryPath, configRelativeFilePath)
+	configFilePath := common.PathJoin(workingDirectoryPath, configRelativeFilePath)
 
 	// check file exit
 	if _, err := os.Stat(configFilePath); os.IsNotExist(err) {

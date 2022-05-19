@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-04-20 17:08:53
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-07 11:29:15
+ * @LastEditTime: 2022-05-11 15:26:40
  * @FilePath: /smartide-cli/cmd/new.go
  */
 package cmd
@@ -55,6 +55,7 @@ var newCmd = &cobra.Command{
 func init() {
 	newCmd.Flags().StringP("type", "t", "", i18nInstance.New.Info_help_flag_type)
 	newCmd.Flags().BoolVarP(&removeCmdFlag.IsContinue, "yes", "y", false, "目录不为空，是否清空文件夹！")
+	newCmd.Flags().BoolVarP(&removeCmdFlag.IsUnforward, "unforward", "", false, "是否禁止端口转发")
 
 	newCmd.Flags().StringP("host", "o", "", i18nInstance.Start.Info_help_flag_host)
 	newCmd.Flags().StringP("workspacename", "w", "", "工作区名称")

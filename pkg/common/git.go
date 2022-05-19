@@ -3,15 +3,15 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-03-29 16:38:04
+ * @LastEditTime: 2022-05-17 00:37:51
  */
 package common
 
 import (
 	"fmt"
-	"path"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 )
 
@@ -40,6 +40,13 @@ func (g gitOperation) SparseCheckout(rootDir string, gitCloneUrl string, fileExp
 	//1. 配置
 	//1.1. command
 	sparseCheckout := fmt.Sprintf("echo \"%v\" >> .git/info/sparse-checkout", fileExpression) //TODO 会插入多条
+	if runtime.GOOS == "windows" {
+		sparseCheckout = fmt.Sprintf(`$content = "%v"
+$checkoutFilePath = ".git\\info\\sparse-checkout"		
+if (Test-Path $checkoutFilePath) { $content = (Get-Content $checkoutFilePath)+"%v" } 
+Set-Content $checkoutFilePath -Value $content -Encoding Ascii`,
+			"`n"+fileExpression, "`n"+fileExpression)
+	}
 	command := fmt.Sprintf(`
 	git init %v
 	cd %v
@@ -56,7 +63,7 @@ func (g gitOperation) SparseCheckout(rootDir string, gitCloneUrl string, fileExp
 	}
 
 	//2. checkout
-	repoDirPath := path.Join(rootDir, repoName)
+	repoDirPath := PathJoin(rootDir, repoName)
 	output, err := EXEC.CombinedOutput("git branch -a", repoDirPath)
 	if err != nil {
 		return []string{}, err
@@ -77,7 +84,7 @@ func (g gitOperation) SparseCheckout(rootDir string, gitCloneUrl string, fileExp
 	}
 
 	//3. 获取下载的文件列表
-	tempExpression := path.Join(rootDir, repoName, fileExpression)
+	tempExpression := PathJoin(rootDir, repoName, fileExpression)
 	files, err := filepath.Glob(tempExpression)
 	if err != nil {
 		return []string{}, err

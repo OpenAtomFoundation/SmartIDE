@@ -59,6 +59,7 @@
         "info_help_short": "Run SmartIDE dev environment",
         "info_help_long": "Run SmartIDE dev environment",
         "info_start": "SmartIDE is starting up ...",
+        "info_help_flag_ownerguid": "ownerguid",
         "info_k8s_init": "init env include validating k8s config and get .ide.yaml...",
         "info_k8s_inited": "env inited ...",
         "info_k8s_creating": "Creating deployment... ",

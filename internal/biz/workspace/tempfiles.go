@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -20,8 +19,8 @@ var i18nInstance = i18n.GetInstance()
 // 获取生成的临时 docker-compose 文件路径
 func (workspace WorkspaceInfo) GetTempDockerComposeFilePath() string {
 	dockerComposeFileName := fmt.Sprintf("docker-compose-%s.yaml", workspace.GetProjectDirctoryName()) // docker-compose 文件的名称
-	yamlFileDirPath := filepath.Join(workspace.WorkingDirectoryPath, model.CONST_TempDirPath)          //
-	yamlFilePath := filepath.Join(yamlFileDirPath, dockerComposeFileName)
+	yamlFileDirPath := common.PathJoin(workspace.WorkingDirectoryPath, model.CONST_TempDirPath)        //
+	yamlFilePath := common.PathJoin(yamlFileDirPath, dockerComposeFileName)
 
 	return yamlFilePath
 }
@@ -46,7 +45,7 @@ func (workspace WorkspaceInfo) SaveTempFiles() (err error) { // dockerComposeFil
 		dir, err := ioutil.ReadDir(tempDirPath)
 		common.SmartIDELog.Error(err)
 		for _, d := range dir {
-			os.RemoveAll(path.Join([]string{tempDirPath, d.Name()}...))
+			os.RemoveAll(common.PathJoin([]string{tempDirPath, d.Name()}...))
 		}
 	}
 
@@ -96,11 +95,11 @@ func (workspace WorkspaceInfo) SaveTempFilesForRemote(sshRemote common.SSHRemote
 	}
 
 	// 临时文件夹
-	tempDirPath := path.Join(workspace.WorkingDirectoryPath, tempParentDirPath)
+	tempDirPath := common.PathJoin(workspace.WorkingDirectoryPath, tempParentDirPath)
 	sshRemote.CheckAndCreateDir(tempDirPath)
 
 	// .ignore 文件
-	gitignoreFilePath := path.Join(tempDirPath, ".gitignore")
+	gitignoreFilePath := common.PathJoin(tempDirPath, ".gitignore")
 	gitignoreContent := "/" + tempDirName + "/"
 	if sshRemote.IsFileExist(gitignoreFilePath) {
 		output := sshRemote.GetContent(gitignoreFilePath)
@@ -174,9 +173,9 @@ func getTempConfigFilePath(localWorkingDir string, projectName string) string {
 		workingDir = localWorkingDir
 	}
 
-	dockerComposeFileName := fmt.Sprintf("config-%s.yaml", projectName)   // docker-compose 文件的名称
-	yamlFileDirPath := filepath.Join(workingDir, model.CONST_TempDirPath) //
-	yamlFilePath := filepath.Join(yamlFileDirPath, dockerComposeFileName)
+	dockerComposeFileName := fmt.Sprintf("config-%s.yaml", projectName)     // docker-compose 文件的名称
+	yamlFileDirPath := common.PathJoin(workingDir, model.CONST_TempDirPath) //
+	yamlFilePath := common.PathJoin(yamlFileDirPath, dockerComposeFileName)
 
 	return yamlFilePath
 }
@@ -199,7 +198,7 @@ func checkLocalGitignoreContainTmpDir(workingDir string) {
 	}
 
 	// ignore
-	gitignorePath := filepath.Join(workingDir, tempParentDir, ".gitignore")
+	gitignorePath := common.PathJoin(workingDir, tempParentDir, ".gitignore")
 	if !common.IsExit(gitignorePath) {
 		dirPath := filepath.Dir(gitignorePath)
 

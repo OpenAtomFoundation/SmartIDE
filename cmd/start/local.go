@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-04-22 10:10:04
+ * @LastEditTime: 2022-05-11 15:30:52
  */
 package start
 
@@ -31,7 +31,7 @@ import (
 )
 
 // 本地执行 start
-func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo,
+func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	endPostExecuteFun func(dockerContainerName string, docker common.Docker),
 	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) {
 
@@ -152,6 +152,11 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo,
 		workspaceId, err := dal.InsertOrUpdateWorkspace(workspaceInfo)
 		common.CheckError(err)
 		common.SmartIDELog.InfoF(i18nInstance.Start.Info_workspace_saved, workspaceId)
+	}
+
+	// 如果是不进行端口转发，后续就不需要运行
+	if isUnforward {
+		return
 	}
 
 	//6. 执行函数内容

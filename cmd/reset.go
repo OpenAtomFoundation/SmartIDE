@@ -3,16 +3,16 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-06 16:46:35
+ * @LastEditTime: 2022-05-15 23:08:10
  */
 package cmd
 
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/dal"
@@ -128,24 +128,30 @@ var resetCmd = &cobra.Command{
 			common.CheckError(err)
 
 			// 删除.db文件
-			sqliteFilePath := filepath.Join(dirname, dal.SqliteFilePath)
+			sqliteFilePath := common.PathJoin(dirname, dal.SqliteFilePath)
 			err = os.Remove(sqliteFilePath)
+			if err != nil { // 如果无法删除，等待5秒再删除
+				common.SmartIDELog.Importance(err.Error())
+				common.SmartIDELog.Debug("等待5秒再删除 " + sqliteFilePath)
+				time.Sleep(time.Second * 5)
+				err = os.Remove(sqliteFilePath)
+			}
 			common.CheckError(err)
 			common.SmartIDELog.InfoF(i18nInstance.Reset.Info_db_remove, sqliteFilePath)
 
 			// 删除模板文件
-			configFilePath := filepath.Join(dirname, ".ide/.ide.config")
+			configFilePath := common.PathJoin(dirname, ".ide/.ide.config")
 			err = os.Remove(configFilePath)
 			common.CheckError(err)
 			common.SmartIDELog.InfoF(i18nInstance.Reset.Info_config_remove, configFilePath)
 
 			// 删除配置文件
-			templatesDirctoryPath := filepath.Join(dirname, ".ide/templates")
+			templatesDirctoryPath := common.PathJoin(dirname, ".ide/templates")
 			os.RemoveAll(templatesDirctoryPath)
 			common.SmartIDELog.InfoF(i18nInstance.Reset.Info_template_remove, templatesDirctoryPath)
 
 			// 删除.k8s目录
-			k8sDirctoryPath := filepath.Join(dirname, ".ide/.k8s")
+			k8sDirctoryPath := common.PathJoin(dirname, ".ide/.k8s")
 			os.RemoveAll(k8sDirctoryPath)
 			common.SmartIDELog.InfoF(i18nInstance.Reset.Info_template_remove, k8sDirctoryPath)
 		}

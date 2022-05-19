@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-04-20 10:46:40
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-09 08:45:43
+ * @LastEditTime: 2022-05-12 19:49:44
  * @FilePath: /smartide-cli/cmd/new/newVm.go
  */
 
@@ -88,21 +88,15 @@ func VmNew(cmd *cobra.Command, args []string, workspaceInfo workspace.WorkspaceI
 		selectedTemplateSettings.TypeName, selectedTemplateSettings.SubType)
 	common.CheckErrorFunc(err, serverFeedback)
 
-	// 执行vm start命令c
-	start.ExecuteVmStartCmd(workspaceInfo, yamlExecuteFun, cmd, true)
+	// 执行vm start命令
+	isUnforward, _ := cmd.Flags().GetBool("unforward")
+	start.ExecuteVmStartCmd(workspaceInfo, isUnforward, yamlExecuteFun, cmd, true)
 }
 
 // 在服务器上使用git下载制定的template文件，完成后删除.git文件
 func gitCloneTemplateRepo4Remote(sshRemote common.SSHRemote, projectDir string, templateGitCloneUrl string, baseType string, subType string) error {
 
-	//separator := string(filepath.Separator)
-
-	tempDirPath := common.FilePahtJoin4Linux("~", ".ide", "template")
-	command := fmt.Sprintf(`
-	cd %v
-	[[ -d .git ]] && git checkout -- * && git pull || git clone %v %v
-`, tempDirPath, templateGitCloneUrl, tempDirPath)
-	err := sshRemote.ExecSSHCommandRealTimeFunc(command, func(output string) error {
+	errFunc := func(output string) error {
 		if strings.Contains(output, "error") || strings.Contains(output, "fatal") {
 			return errors.New(output)
 		} else {
@@ -113,8 +107,20 @@ func gitCloneTemplateRepo4Remote(sshRemote common.SSHRemote, projectDir string, 
 		}
 
 		return nil
-	})
+	}
+
+	// git
+	tempDirPath := common.FilePahtJoin4Linux("~", ".ide", "template")
+	command := fmt.Sprintf(`
+	cd %v
+	[[ -d .git ]] && git pull || git clone %v %v
+`, tempDirPath, templateGitCloneUrl, tempDirPath)
+	err := sshRemote.ExecSSHCommandRealTimeFunc(command, errFunc)
 	if err != nil {
+		if strings.Contains(err.Error(), "You have not concluded your merge") {
+			err = sshRemote.ExecSSHCommandRealTimeFunc("git merge --abort && git reset --merge && git pull", errFunc)
+		}
+
 		return err
 	}
 

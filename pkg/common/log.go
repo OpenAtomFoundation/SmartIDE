@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-06 11:57:22
+ * @LastEditTime: 2022-05-15 23:13:06
  */
 package common
 
@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -410,7 +409,7 @@ func getLogWriter() zapcore.WriteSyncer {
 	}
 	t := time.Now()
 	logFileName := fmt.Sprintf("%v.log", t.Format("20060102"))
-	logFilePath := filepath.Join(dirname, ".ide", logFileName) // current user dir + ...
+	logFilePath := PathJoin(dirname, ".ide", logFileName) // current user dir + ...
 
 	lumberJackLogger := &lumberjack.Logger{
 		Filename:   logFilePath, // ⽇志⽂件路径

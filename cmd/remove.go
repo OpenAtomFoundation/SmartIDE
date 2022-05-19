@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-06 16:23:20
+ * @LastEditTime: 2022-05-16 12:46:09
  */
 package cmd
 
@@ -13,7 +13,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -42,6 +41,9 @@ var removeCmdFlag struct {
 
 	// 是否确定删除
 	IsContinue bool
+
+	// 是否禁止端口转发
+	IsUnforward bool
 
 	// 是否删除远程主机上的文件夹
 	IsRemoveRemoteDirectory bool
@@ -217,7 +219,7 @@ var removeCmd = &cobra.Command{
 			home, err := os.UserHomeDir()
 			common.CheckError(err)
 			repoName := common.GetRepoName(workspaceInfo.GitCloneRepoUrl)
-			filePath := path.Join(home, ".ide", repoName)
+			filePath := common.PathJoin(home, ".ide", repoName)
 			os.RemoveAll(filePath)
 
 			// 删除数据

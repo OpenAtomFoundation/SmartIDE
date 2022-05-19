@@ -2,15 +2,14 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors:
- * @LastEditTime:
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-05-15 23:09:53
  */
 package config
 
 import (
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -100,5 +99,5 @@ func (yamlFileConfig *SmartIdeConfig) GetConfigFileAbsolutePath() string {
 
 // 获取本地配置文件所在的路径
 func (c *SmartIdeConfig) getConfigYamlFilePath() string {
-	return path.Join(c.Workspace.DevContainer.workingDirectoryPath, c.Workspace.DevContainer.configRelativeFilePath)
+	return common.PathJoin(c.Workspace.DevContainer.workingDirectoryPath, c.Workspace.DevContainer.configRelativeFilePath)
 }

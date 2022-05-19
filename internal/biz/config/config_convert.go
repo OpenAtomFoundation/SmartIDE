@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-30 23:10:52
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-04-20 15:35:32
+ * @LastEditTime: 2022-05-15 23:09:29
  * @FilePath: /smartide-cli/internal/biz/config/config_convert.go
  */
 
@@ -11,10 +11,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"path"
+	"path/filepath"
+	"reflect"
 	"strings"
 
 	"github.com/jinzhu/copier"
+	"github.com/leansoftX/smartide-cli/pkg/common"
 	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/api/resource"
 	k8sYaml "sigs.k8s.io/yaml"
@@ -62,17 +64,24 @@ func (originK8sConfig SmartIdeK8SConfig) GetSystemUserName() string {
 }
 
 // 转换为临时的yaml文件
-func (originK8sConfig SmartIdeK8SConfig) ConvertToTempYaml(repoName string, namespace string, systemUserName string) SmartIdeK8SConfig {
+func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(repoName string, namespace string, systemUserName string) SmartIdeK8SConfig {
 	k8sConfig := SmartIdeK8SConfig{}
 	copier.CopyWithOption(&k8sConfig, &originK8sConfig, copier.Option{IgnoreEmpty: true, DeepCopy: true}) // 把一个对象赋值给另外一个对象
 
 	repoName = strings.ToLower(repoName)
 	//1. namespace
 	for i := 0; i < len(k8sConfig.Workspace.Deployments); i++ {
-		k8sConfig.Workspace.Deployments[i].Namespace = namespace
+		k8sConfig.Workspace.Deployments[i].ObjectMeta.Namespace = namespace
 	}
 	for i := 0; i < len(k8sConfig.Workspace.Services); i++ {
-		k8sConfig.Workspace.Services[i].Namespace = namespace
+		k8sConfig.Workspace.Services[i].ObjectMeta.Namespace = namespace
+	}
+	for i := 0; i < len(k8sConfig.Workspace.Networks); i++ {
+		k8sConfig.Workspace.Networks[i].ObjectMeta.Namespace = namespace
+	}
+	for i := 0; i < len(k8sConfig.Workspace.Others); i++ {
+		other := k8sConfig.Workspace.Others[i]
+		reflect.ValueOf(other).Elem().FieldByName("ObjectMeta").Elem().FieldByName("Namespace").SetString(namespace)
 	}
 
 	// 一个 pvc
@@ -85,6 +94,7 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempYaml(repoName string, name
 	pvc.Spec.Resources.Requests = coreV1.ResourceList{
 		coreV1.ResourceName(coreV1.ResourceStorage): resource.MustParse("2Gi"), // 默认的存储大小为 2G
 	}
+	pvc.ObjectMeta.Namespace = namespace
 	pvc.Kind = "PersistentVolumeClaim" // 必须要赋值，否则为空
 	pvc.APIVersion = "v1"              // 必须要赋值，否则为空
 	k8sConfig.Workspace.PVCS = append(k8sConfig.Workspace.PVCS, pvc)
@@ -96,7 +106,6 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempYaml(repoName string, name
 		}
 
 		for index, deployment := range k8sConfig.Workspace.Deployments {
-
 			volumeName := pvcName + "-storage"
 
 			isCotain := false
@@ -147,7 +156,6 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempYaml(repoName string, name
 	// 其他类型
 	hasProjectConfig := false
 	for containerName, container := range originK8sConfig.Workspace.Containers {
-
 		for _, pv := range container.PersistentVolumes {
 			switch pv.DirectoryType {
 			case PersistentVolumeDirectoryTypeEnum_Project:
@@ -160,7 +168,6 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempYaml(repoName string, name
 			case PersistentVolumeDirectoryTypeEnum_DbData:
 				dbSubPath := "smartide-db"
 				addPvcFunc(containerName, pv.MountPath, dbSubPath) // 当前容器
-				//addPvcFunc(originK8sConfig.Workspace.DevContainer.ServiceName, dbSubPath, dbSubPath) // devContainer 中映射db路径
 
 			case PersistentVolumeDirectoryTypeEnum_Other:
 				addPvcFunc(containerName, pv.MountPath, pv.MountPath)
@@ -168,7 +175,6 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempYaml(repoName string, name
 			case PersistentVolumeDirectoryTypeEnum_Agent:
 				agentSubPath := "smartide-agent"
 				addPvcFunc(containerName, pv.MountPath, agentSubPath) // 当前容器
-				//addPvcFunc(originK8sConfig.Workspace.DevContainer.ServiceName, agentSubPath, agentSubPath) // devContainer 中映射agent路径
 
 			}
 		}
@@ -190,7 +196,7 @@ func (k8sConfig *SmartIdeK8SConfig) SaveK8STempYaml(gitRepoRootDirPath string) (
 		return "", err
 	}
 
-	tempConfigFileRelativePath := path.Join(gitRepoRootDirPath, fmt.Sprintf("k8s_deployment_%v_temp.yaml", path.Base(gitRepoRootDirPath)))
+	tempConfigFileRelativePath := common.PathJoin(gitRepoRootDirPath, fmt.Sprintf("k8s_deployment_%v_temp.yaml", filepath.Base(gitRepoRootDirPath)))
 	err = ioutil.WriteFile(tempConfigFileRelativePath, []byte(k8sYamlContent), 0777)
 	if err != nil {
 		return "", err

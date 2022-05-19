@@ -72,7 +72,7 @@ func formatVerion() (smartVersion cmd.SmartVersion) {
 	if stable == "$(version)" {
 		smartVersion.VersionNumber = fmt.Sprintf(i18n.GetInstance().Main.Info_version_local, smartVersion.BuildTime.Format("2006-01-02 15:04:05"))
 		common.SmartIDELog.Importance(i18n.GetInstance().Main.Err_version_not_build)
-	} else if strings.ToLower(stable[0:1]) != "v" {
+	} else if stable != "" && !strings.Contains(strings.ToLower(stable), "v") {
 		smartVersion.VersionNumber = "v" + smartVersion.VersionNumber
 	}
 

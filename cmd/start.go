@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-07 09:20:23
+ * @LastEditTime: 2022-05-17 15:14:34
  */
 package cmd
 
@@ -14,7 +14,6 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
-	"path"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -113,6 +112,8 @@ var startCmd = &cobra.Command{
 			trackEvent = trackEvent + " " + val
 		}
 
+		isUnforward, _ := cmd.Flags().GetBool("unforward")
+
 		// 执行命令
 		if workspaceInfo.Mode == workspace.WorkingMode_Local { // 本地模式
 			executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
@@ -122,7 +123,7 @@ var startCmd = &cobra.Command{
 				}
 				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(workspaceInfo.Mode), strings.Join(imageNames, ","))
 			}
-			start.ExecuteStartCmd(workspaceInfo, func(v string, d common.Docker) {}, executeStartCmdFunc)
+			start.ExecuteStartCmd(workspaceInfo, isUnforward, func(v string, d common.Docker) {}, executeStartCmdFunc)
 
 		} else if workspaceInfo.Mode == workspace.WorkingMode_K8s { // k8s 模式
 			executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
@@ -135,8 +136,10 @@ var startCmd = &cobra.Command{
 			start.ExecuteK8sStartCmd(workspaceInfo, executeStartCmdFunc)
 
 			//99. 死循环进行驻守
-			for {
-				time.Sleep(time.Millisecond * 300)
+			if !isUnforward {
+				for {
+					time.Sleep(time.Millisecond * 300)
+				}
 			}
 
 		} else if workspaceInfo.CliRunningEnv == workspace.CliRunningEnvEnum_Client &&
@@ -153,8 +156,10 @@ var startCmd = &cobra.Command{
 			common.CheckError(err)
 
 			//99. 死循环进行驻守
-			for {
-				time.Sleep(time.Millisecond * 300)
+			if !isUnforward {
+				for {
+					time.Sleep(time.Millisecond * 300)
+				}
 			}
 
 		} else { // vm 模式
@@ -170,7 +175,7 @@ var startCmd = &cobra.Command{
 			if workspaceInfo.GitCloneRepoUrl == "" {
 				disabelGitClone = true
 			}
-			start.ExecuteVmStartCmd(workspaceInfo, executeStartCmdFunc, cmd, disabelGitClone)
+			start.ExecuteVmStartCmd(workspaceInfo, isUnforward, executeStartCmdFunc, cmd, disabelGitClone)
 
 		}
 
@@ -361,9 +366,9 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 				var repoWorkspaceDir string
 				repoName := common.GetRepoName(workspaceInfo.GitCloneRepoUrl)
 				if repoName != "" {
-					repoWorkspaceDir = filepath.Join("~", model.CONST_REMOTE_REPO_ROOT, repoName)
+					repoWorkspaceDir = common.PathJoin("~", model.CONST_REMOTE_REPO_ROOT, repoName)
 				} else {
-					repoWorkspaceDir = filepath.Join("~", model.CONST_REMOTE_REPO_ROOT, workspaceInfo.Name)
+					repoWorkspaceDir = common.PathJoin("~", model.CONST_REMOTE_REPO_ROOT, workspaceInfo.Name)
 				}
 				workspaceInfo.WorkingDirectoryPath = repoWorkspaceDir
 
@@ -383,7 +388,7 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 				workspaceInfo.K8sInfo.Context = getFlagValue(fflags, flag_k8s)
 
 			} else { // 本地模式
-				workspaceInfo.Name = path.Base(pwd)
+				workspaceInfo.Name = filepath.Base(pwd)
 
 				// 本地模式下，不需要录入git库的克隆地址、分支
 				checkFlagUnnecessary(fflags, flag_repourl, "mode=local")
@@ -620,6 +625,7 @@ func getRemoteAndValid(fflags *pflag.FlagSet) (remoteInfo workspace.RemoteInfo, 
 func init() {
 
 	startCmd.Flags().Int32P("workspaceid", "w", 0, i18nInstance.Remove.Info_flag_workspaceid)
+	startCmd.Flags().BoolP("unforward", "", false, "是否禁止端口转发")
 
 	startCmd.Flags().StringP("host", "o", "", i18nInstance.Start.Info_help_flag_host)
 	startCmd.Flags().IntP("port", "p", 22, i18nInstance.Start.Info_help_flag_port)
@@ -631,7 +637,7 @@ func init() {
 	startCmd.Flags().StringP("branch", "b", "", i18nInstance.Start.Info_help_flag_branch)
 	startCmd.Flags().StringP("k8s", "k", "", i18nInstance.Start.Info_help_flag_k8s)
 	startCmd.Flags().StringP("namespace", "n", "", i18nInstance.Start.Info_help_flag_k8s_namespace)
-
+	startCmd.Flags().StringP("serverownerguid", "g", "", i18nInstance.Start.Info_help_flag_ownerguid)
 }
 
 // get repo name
@@ -657,7 +663,7 @@ func getGitUrlFromArgs(cmd *cobra.Command, args []string) string {
 // 直接调用git命令进行git clone
 func cloneRepo4LocalWithCommand(rootDir string, gitUrl string) (string, error) {
 	repoName := getRepoName(gitUrl)
-	repoPath := filepath.Join(rootDir, repoName)
+	repoPath := common.PathJoin(rootDir, repoName)
 
 	var execCommand *exec.Cmd
 	command := "git clone " + gitUrl
@@ -683,7 +689,7 @@ func cloneRepo4LocalWithCommand(rootDir string, gitUrl string) (string, error) {
 // clone repos for local mode
 func cloneRepo4Local(rootDir string, gitUrl string) string {
 	repoName := getRepoName(gitUrl)
-	repoPath := filepath.Join(rootDir, repoName)
+	repoPath := common.PathJoin(rootDir, repoName)
 	options := &git.CloneOptions{
 		URL:      gitUrl,
 		Progress: os.Stdout,
@@ -699,9 +705,9 @@ func cloneRepo4Local(rootDir string, gitUrl string) string {
 		homeDirectory := currentUser.HomeDir
 		idRsaFilePath := ""
 		if runtime.GOOS == "windows" {
-			idRsaFilePath = path.Join(homeDirectory, "\\.ssh\\id_rsa")
+			idRsaFilePath = common.PathJoin(homeDirectory, "\\.ssh\\id_rsa")
 		} else {
-			idRsaFilePath = path.Join(homeDirectory, "/.ssh/id_rsa")
+			idRsaFilePath = common.PathJoin(homeDirectory, "/.ssh/id_rsa")
 		}
 
 		//

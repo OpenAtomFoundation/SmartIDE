@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-04-20 10:46:56
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-09 08:44:53
+ * @LastEditTime: 2022-05-15 23:08:52
  * @FilePath: /smartide-cli/cmd/new/newLocal.go
  */
 package new
@@ -87,7 +87,8 @@ func LocalNew(cmd *cobra.Command, args []string, workspaceInfo workspace.Workspa
 				}
 			}
 		}
-		start.ExecuteStartCmd(workspaceInfo, func1, yamlExecuteFun)
+		isUnforward, _ := cmd.Flags().GetBool("unforward")
+		start.ExecuteStartCmd(workspaceInfo, isUnforward, func1, yamlExecuteFun)
 	}
 
 }
@@ -190,7 +191,7 @@ func copyTemplateToCurrentDir(modelType, newProjectType string) {
 	if newProjectType == "" {
 		newProjectType = "_default"
 	}
-	templatePath := filepath.Join(config.SmartIdeHome, TMEPLATE_DIR_NAME, modelType, newProjectType)
+	templatePath := common.PathJoin(config.SmartIdeHome, TMEPLATE_DIR_NAME, modelType, newProjectType)
 	templatesFolderIsExist := common.IsExit(templatePath)
 	if !templatesFolderIsExist {
 		common.SmartIDELog.Error(i18nInstance.New.Info_type_no_exist)
@@ -224,8 +225,8 @@ func folderEmpty(dirPth string) (bool, error) {
 
 // clone模版repo
 func templatesClone() error {
-	templatePath := filepath.Join(config.SmartIdeHome, TMEPLATE_DIR_NAME)
-	templateGitPath := filepath.Join(templatePath, ".git")
+	templatePath := common.PathJoin(config.SmartIdeHome, TMEPLATE_DIR_NAME)
+	templateGitPath := common.PathJoin(templatePath, ".git")
 	templatesGitIsExist := common.IsExit(templateGitPath)
 
 	// 通过判断.git目录存在，执行git pull，保持最新
@@ -354,7 +355,7 @@ func copyFile(src, dest string) (w int64, err error) {
 //加载templates索引json
 func loadTemplatesJson() (templateTypes []NewTypeBO, err error) {
 	// new type转换为结构体
-	templatesPath := filepath.Join(config.SmartIdeHome, TMEPLATE_DIR_NAME, "templates.json")
+	templatesPath := common.PathJoin(config.SmartIdeHome, TMEPLATE_DIR_NAME, "templates.json")
 	templatesByte, err := os.ReadFile(templatesPath)
 	if err != nil {
 		return templateTypes, errors.New(i18nInstance.New.Err_read_templates + templatesPath + err.Error())

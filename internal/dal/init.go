@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"log"
 	"os"
-	"path/filepath"
 
 	"github.com/leansoftX/smartide-cli/pkg/common"
 )
@@ -68,7 +67,12 @@ CREATE TABLE IF NOT EXISTS "workspace" (
  `
 
 	db, err := connection()
-	common.CheckError(err)
+	if err != nil {
+		db.Close()
+		common.CheckError(err)
+	}
+	defer db.Close()
+
 	_, err = db.Exec(sql_table)
 	common.CheckError(err)
 
@@ -81,8 +85,6 @@ CREATE TABLE IF NOT EXISTS "workspace" (
 	db.Exec("ALTER TABLE workspace ADD COLUMN w_link_compose_content text NULL;")
 	db.Exec("ALTER TABLE workspace ADD COLUMN w_temp_compose_content text NULL;")
 	db.Exec("ALTER TABLE workspace ADD COLUMN k_id INTEGER NULL;")
-
-	defer db.Close()
 
 }
 
@@ -106,10 +108,10 @@ func connection() (*sql.DB, error) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	sqliteFilePath := filepath.Join(dirname, SqliteFilePath)
+	sqliteFilePath := common.PathJoin(dirname, SqliteFilePath)
 
 	if !common.IsExit(sqliteFilePath) {
-		os.MkdirAll(filepath.Join(dirname, ".ide"), os.ModePerm) // create dir
+		os.MkdirAll(common.PathJoin(dirname, ".ide"), os.ModePerm) // create dir
 		os.Create(sqliteFilePath)
 	}
 

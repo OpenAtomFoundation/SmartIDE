@@ -1,8 +1,8 @@
 /*
  * @Author: kenan
  * @Date: 2022-02-15 19:32:44
- * @LastEditors: kenan
- * @LastEditTime: 2022-04-01 00:22:09
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-05-09 17:46:40
  * @FilePath: /smartide-cli/internal/model/workspace.go
  * @Description:
  *
@@ -146,6 +146,7 @@ type Resource struct {
 	Name               string                 `json:"name"`
 	AuthenticationType AuthenticationTypeEnum `json:"authentication_type"`
 	IP                 string                 `json:"ip" `
+	Port               int                    `json:"port" `
 	Status             ResourceStatusEnum     `json:"status" `
 	SSHUserName        string                 `json:"username" `
 	SSHPassword        string                 `json:"password" `

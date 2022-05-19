@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2022-02-25
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-07 09:34:09
+ * @LastEditTime: 2022-05-17 17:09:50
  */
 package cmd
 
@@ -51,11 +51,15 @@ var connectCmd = &cobra.Command{
 		}
 
 		// 轮询开始端口转发
+		isUnforward, _ := cmd.Flags().GetBool("unforward")
 		for {
 			startedServerWorkspaces, err := getServerWorkspaces(currentAuth, cliRunningEnv, []model.WorkspaceStatusEnum{})
 			common.CheckError(err)
 			connect(startedServerWorkspaces, cmd, args)
 
+			if isUnforward {
+				return
+			}
 			time.Sleep(time.Second * 10)
 		}
 	},
@@ -187,5 +191,5 @@ func connect(startedServerWorkspaces []workspace.WorkspaceInfo, cmd *cobra.Comma
 }
 
 func init() {
-
+	connectCmd.Flags().BoolP("unforward", "", false, "是否禁止端口转发")
 }

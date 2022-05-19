@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-16 17:44:45
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-07 09:19:58
+ * @LastEditTime: 2022-05-09 18:07:34
  * @FilePath: /smartide-cli/cmd/start/server_vm.go
  * @Description:
  *
@@ -66,7 +66,9 @@ func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo, y
 	//0. 连接到远程主机
 	msg := fmt.Sprintf(" %v@%v:%v ...", workspaceInfo.Remote.UserName, workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort)
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_connect_remote + msg)
-
+	if workspaceInfo.Remote.IsNil() {
+		return errors.New("关联 远程主机 信息为空！")
+	}
 	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password)
 	if err != nil {
 		return err
@@ -122,33 +124,38 @@ func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo, y
 
 	//8. 打开浏览器
 	var checkUrl string
-	//vscode启动时候默认打开文件夹处理
-	common.SmartIDELog.Info(i18nInstance.VmStart.Info_warting_for_webide + fmt.Sprintf(`: %v`, unusedLocalPort4IdeBindingPort))
-	switch workspaceInfo.ConfigYaml.Workspace.DevContainer.IdeType {
-	case config.IdeTypeEnum_VsCode:
-		checkUrl = fmt.Sprintf("http://localhost:%v/?folder=vscode-remote://localhost:%v%v",
-			unusedLocalPort4IdeBindingPort, unusedLocalPort4IdeBindingPort, workspaceInfo.GetContainerWorkingPathWithVolumes())
-	case config.IdeTypeEnum_JbProjector:
-		checkUrl = fmt.Sprintf(`http://localhost:%v`, unusedLocalPort4IdeBindingPort)
-	case config.IdeTypeEnum_Opensumi:
-		checkUrl = fmt.Sprintf(`http://localhost:%v/?workspaceDir=/home/project`, unusedLocalPort4IdeBindingPort)
-	default:
-		checkUrl = fmt.Sprintf(`http://localhost:%v`, unusedLocalPort4IdeBindingPort)
+	if workspaceInfo.ConfigYaml.Workspace.DevContainer.IdeType != config.IdeTypeEnum_SDKOnly {
+		//vscode启动时候默认打开文件夹处理
+		common.SmartIDELog.Info(i18nInstance.VmStart.Info_warting_for_webide + fmt.Sprintf(`: %v`, unusedLocalPort4IdeBindingPort))
+		switch workspaceInfo.ConfigYaml.Workspace.DevContainer.IdeType {
+		case config.IdeTypeEnum_VsCode:
+			checkUrl = fmt.Sprintf("http://localhost:%v/?folder=vscode-remote://localhost:%v%v",
+				unusedLocalPort4IdeBindingPort, unusedLocalPort4IdeBindingPort, workspaceInfo.GetContainerWorkingPathWithVolumes())
+		case config.IdeTypeEnum_JbProjector:
+			checkUrl = fmt.Sprintf(`http://localhost:%v`, unusedLocalPort4IdeBindingPort)
+		case config.IdeTypeEnum_Opensumi:
+			checkUrl = fmt.Sprintf(`http://localhost:%v/?workspaceDir=/home/project`, unusedLocalPort4IdeBindingPort)
+		default:
+			checkUrl = fmt.Sprintf(`http://localhost:%v`, unusedLocalPort4IdeBindingPort)
+		}
 	}
-	isUrlReady := false
+
 	go func() {
-		// 检测浏览器
-		for !isUrlReady {
-			resp, err := http.Get(checkUrl)
-			if (err == nil) && (resp.StatusCode == 200) {
-				isUrlReady = true
-				//common.OpenBrowser(checkUrl) // 这里不用打开，从server中点击即可
-				common.SmartIDELog.InfoF(i18nInstance.VmStart.Info_open_brower, checkUrl)
+		if workspaceInfo.ConfigYaml.Workspace.DevContainer.IdeType != config.IdeTypeEnum_SDKOnly {
+			isUrlReady := false
+			// 检测浏览器
+			for !isUrlReady {
+				resp, err := http.Get(checkUrl)
+				if (err == nil) && (resp.StatusCode == 200) {
+					isUrlReady = true
+					//common.OpenBrowser(checkUrl) // 这里不用打开，从server中点击即可
+					common.SmartIDELog.InfoF(i18nInstance.VmStart.Info_open_brower, checkUrl)
 
-			} else {
-				msg := fmt.Sprintf("%v 检测失败", checkUrl)
-				common.SmartIDELog.Debug(msg)
+				} else {
+					msg := fmt.Sprintf("%v 检测失败", checkUrl)
+					common.SmartIDELog.Debug(msg)
 
+				}
 			}
 		}
 

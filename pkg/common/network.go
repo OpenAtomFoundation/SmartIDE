@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-03-28 23:15:56
+ * @LastEditTime: 2022-05-17 16:32:00
  */
 package common
 
@@ -13,6 +13,8 @@ import (
 	"net"
 	"os/exec"
 	"runtime"
+	"strconv"
+	"strings"
 )
 
 // 获取可用端口
@@ -41,7 +43,7 @@ func IsPortAvailable(port int) (result bool, err error) {
 	var command *exec.Cmd
 	switch runtime.GOOS {
 	case "linux":
-		command = exec.Command("sh", "-c", fmt.Sprintf("lsof -i tcp:%d", port))
+		command = exec.Command("sh", "-c", fmt.Sprintf("sudo lsof -nP -iTCP:%v -sTCP:LISTEN", port))
 	case "windows":
 		command = exec.Command("powershell", "/c", fmt.Sprintf("netstat -aon|findstr \":%d\"", port))
 	case "darwin":
@@ -56,10 +58,20 @@ func IsPortAvailable(port int) (result bool, err error) {
 	if _, ok := err.(*exec.ExitError); ok {
 		err = nil
 	}
-	if len(output) <= 0 {
+	if !strings.Contains(string(output), string(rune(port))) {
 		result = true // 端口未被占用
 	} else {
 		SmartIDELog.Debug(fmt.Sprintf("%v used，"+string(output), port))
+	}
+
+	// 再次验证，防止错误
+	if result {
+		l, err := net.Listen("tcp", ":"+strconv.Itoa(port))
+		if err != nil {
+			SmartIDELog.Debug(fmt.Sprintf("%v used, "+err.Error(), port))
+			return false, err
+		}
+		defer l.Close()
 	}
 
 	return

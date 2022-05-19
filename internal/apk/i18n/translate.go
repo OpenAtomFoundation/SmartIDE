@@ -125,6 +125,7 @@ type I18nSource struct {
 		Info_help_flag_filepath      string `json:"info_help_flag_filepath"`
 		Info_help_flag_k8s           string `json:"info_help_flag_k8s"`
 		Info_help_flag_k8s_namespace string `json:"info_help_flag_k8s_namespace"`
+		Info_help_flag_ownerguid     string `json:"info_help_flag_ownerguid"`
 
 		Info_start                   string `json:"info_start"`
 		Info_end                     string `json:"info_end"`

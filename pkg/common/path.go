@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors:
- * @LastEditTime:
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-05-15 23:07:00
  */
 package common
 
@@ -42,6 +42,11 @@ const (
 	OS_Windows OSType = 1
 	OS_Linux   OSType = 2
 )
+
+// 使用当前系统分隔符，进行路径的拼接
+func PathJoin(paths ...string) string {
+	return strings.Join(paths, string(filepath.Separator))
+}
 
 // 路径组合，参数 os 可以是windows
 func FilePahtJoin(osType OSType, paths ...string) string {

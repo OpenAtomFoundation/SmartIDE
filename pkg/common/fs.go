@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2021-12-29 14:26:42
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-03-29 09:18:08
+ * @LastEditTime: 2022-05-15 23:11:56
  * @Description: file content
  */
 
@@ -12,7 +12,6 @@ import (
 	"bufio"
 	"bytes"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -29,7 +28,7 @@ func init() {
 
 // 跳过host检查
 func (fs *fileOperation) SkipStrictHostKeyChecking(sshDirectory string, isReset bool) error {
-	sshConfigPath := filepath.Join(sshDirectory, "config")
+	sshConfigPath := PathJoin(sshDirectory, "config")
 	if !IsExit(sshConfigPath) { // 是否存在
 		f, err := os.Create(sshConfigPath) // 创建
 		if err != nil {

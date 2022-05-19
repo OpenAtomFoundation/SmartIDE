@@ -11,7 +11,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -183,14 +182,21 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 		CacheEnv:               CacheEnvEnum_Server,
 		//CliRunningEnv:          CliRunningEvnEnum_Server,
 		CreatedTime:          serverWorkSpace.CreatedAt,
-		WorkingDirectoryPath: filepath.Join("~", model.CONST_REMOTE_REPO_ROOT, projectName),
-		//TempDockerComposeFilePath: filepath.Join("~", REMOTE_REPO_ROOT, repoName),
+		WorkingDirectoryPath: common.PathJoin("~", model.CONST_REMOTE_REPO_ROOT, projectName),
+		//TempDockerComposeFilePath: common.PathJoin("~", REMOTE_REPO_ROOT, repoName),
 		Remote: RemoteInfo{
+			ID:       int(serverWorkSpace.Resource.ID),
 			Addr:     serverWorkSpace.Resource.IP,
 			UserName: serverWorkSpace.Resource.SSHUserName,
 			Password: serverWorkSpace.Resource.SSHPassword,
-			SSHPort:  model.CONST_Container_SSHPort,
+			SSHPort:  serverWorkSpace.Resource.Port,
 		},
+	}
+	switch serverWorkSpace.Resource.AuthenticationType {
+	case model.AuthenticationTypeEnum_Password:
+		workspaceInfo.Remote.AuthType = RemoteAuthType_Password
+	case model.AuthenticationTypeEnum_SSH:
+		workspaceInfo.Remote.AuthType = RemoteAuthType_SSH
 	}
 
 	if workspaceInfo.ConfigFileRelativePath == "" {

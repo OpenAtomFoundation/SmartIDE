@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-06 16:22:40
+ * @LastEditTime: 2022-05-12 20:19:29
  */
 package start
 
@@ -28,7 +28,7 @@ import (
 )
 
 // 远程服务器执行 start 命令
-func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo,
+func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	yamlExecuteFun func(yamlConfig config.SmartIdeConfig), cmd *cobra.Command, disableClone bool) {
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_starting)
 
@@ -206,8 +206,6 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo,
 			unusedLocalPortStr, workspaceInfo.Remote.Addr, remoteBindingPort, containerPort)
 		common.SmartIDELog.Info(msg)
 	}
-	//6.2. 执行绑定
-	tunnel.TunnelMultiple(sshRemote.Connection, addrMapping)
 
 	//7. 保存数据
 	if hasChanged {
@@ -232,7 +230,15 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo,
 
 	}
 
-	//8. 打开浏览器
+	//7. 如果是不进行端口映射，直接退出
+	if isUnforward {
+		return
+	}
+
+	//8. 端口绑定
+	//8.1. 执行绑定
+	tunnel.TunnelMultiple(sshRemote.Connection, addrMapping)
+	//8.2. 打开浏览器
 	if currentConfig.Workspace.DevContainer.IdeType != config.IdeTypeEnum_SDKOnly {
 		var url string
 		//vscode启动时候默认打开文件夹处理
@@ -275,6 +281,9 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo,
 		//获取容器id
 		containerId := ""
 		dcc, err := GetRemoteContainersWithServices(sshRemote, []string{workspaceInfo.ConfigYaml.Workspace.DevContainer.ServiceName})
+		if err != nil {
+			common.SmartIDELog.Importance(err.Error())
+		}
 		if containerId, err = sshRemote.ExeSSHCommand(fmt.Sprintf("docker ps  -f 'name=%s' -q", dcc[len(dcc)-1].ContainerName)); containerId != "" && err == nil {
 			// smartide-agent install
 			workspace.InstallSmartideAgent(sshRemote, containerId, cmd)
