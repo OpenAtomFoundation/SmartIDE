@@ -11,6 +11,17 @@ echo "Starting with USER_UID : $USER_UID"
 echo "Starting with USER_GID : $USER_GID"
 echo "Starting with USER_PASS : $USER_PASS"
 
+wget https://packages.microsoft.com/config/ubuntu/16.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+dpkg -i packages-microsoft-prod.deb
+
+apt-get update && \ 
+    apt-get install -y apt-transport-https && \
+    apt-get install -y dotnet-sdk-6.0 && \
+    apt-get install -y aspnetcore-runtime-6.0 && \
+    apt-get autoremove -y && \
+    rm -rf /tmp/* /var/lib/apt/lists/* /var/tmp/*
+
+
 # root运行容器，容器里面一样root运行
 if [ $USER_UID == '0' ]; then
 
