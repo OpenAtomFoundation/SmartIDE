@@ -3,7 +3,7 @@ service docker start &&
 
 USER_UID=${LOCAL_USER_UID:-1000}
 USER_GID=${LOCAL_USER_GID:-1000}
-USER_PASS=${LOCAL_USER_PASSWORD:-"123qwe"}
+USER_PASS=${LOCAL_USER_PASSWORD:-"smartide123.@IDE"}
 USERNAME=smartide
 
 echo "gosu_entrypoint_node.sh"
