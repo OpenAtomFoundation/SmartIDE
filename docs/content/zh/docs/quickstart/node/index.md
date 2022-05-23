@@ -471,9 +471,9 @@ smartide start https://gitee.com/smartide/sample-node-opensumi
 
 在这个过程中你的项目代码也已经具备了远程开发的能力，你可以按照以下文档中的说明使用任意一种远程工作区来开发调试你的应用
 
-- [远程主机工作区](/zh/docs/overview/workspace/#远程主机工作区)
-- [k8s工作区](/zh/docs/overview/workspace/#k8s工作区)
-- [Server工作区](/zh/docs/overview/workspace/#server工作区)
+- [远程主机工作区](/zh/docs/overview/remote-workspace/#远程主机工作区)
+- [k8s工作区](/zh/docs/overview/remote-workspace/#k8s工作区)
+- [Server工作区](/zh/docs/overview/remote-workspace/#server工作区)
 
 另外，你也可以通过VSCode或者JetBrains内置的远程开发模式进行Hybird模式的远程开发，具体请参考
 

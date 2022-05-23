@@ -75,7 +75,7 @@ workspace:
 这个文件内容非常通俗易懂，是个程序员应该都能看明白，不过我还是简单说明一下：
 
 - `orchestrator` - 环境调度工具设置，用来制定调度容器环境的底层工具，这里我们使用的是 docker-compose
-- `workspace` - 工作区配置，[工作区](/zh/docs/overview/workspace/) 是SmartIDE中最重要的概念，包含开发者用来进行开发调试的所有环境信息
+- `workspace` - 工作区配置，[工作区](/zh/docs/overview/remote-workspace/) 是SmartIDE中最重要的概念，包含开发者用来进行开发调试的所有环境信息
   - `dev-container` - 开发者容器设置
     - `service-name` - 开发者容器所对应的 docker-compose 服务名称
     - `ports` - 开发者容器对外暴露的端口

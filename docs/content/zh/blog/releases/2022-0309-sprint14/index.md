@@ -10,7 +10,7 @@ description: >
 
 ## Server内测
 
-2021年12月3日，SmartIDE 发布了第一个社区可用的版本，那个时候的SmartIDE是以一款命令行工具（cli）的形式出现的。我们之所以先以命令行工具的方式提供SmartIDE的功能，是因为cli本身承载了SmartIDE的核心功能：工作区调度。cli的发布让开发者可以在不了解容器技术，无需学习docker指令以及k8s的工作机制的前提下，一键完成 [SmartIDE工作区](/zh/docs/overview/workspace/) 的部署，而且在工作区中可以内嵌自己喜欢的WebIDE（VSCode或者JetBrains全家桶）。cli的发布给开发者提供了极大的便利，使得以前必须要专业运维人员才能完成的复杂环境搭建工作都可以非常方便地自助完成。
+2021年12月3日，SmartIDE 发布了第一个社区可用的版本，那个时候的SmartIDE是以一款命令行工具（cli）的形式出现的。我们之所以先以命令行工具的方式提供SmartIDE的功能，是因为cli本身承载了SmartIDE的核心功能：工作区调度。cli的发布让开发者可以在不了解容器技术，无需学习docker指令以及k8s的工作机制的前提下，一键完成 [SmartIDE工作区](/zh/docs/overview/remote-workspace/) 的部署，而且在工作区中可以内嵌自己喜欢的WebIDE（VSCode或者JetBrains全家桶）。cli的发布给开发者提供了极大的便利，使得以前必须要专业运维人员才能完成的复杂环境搭建工作都可以非常方便地自助完成。
 
 当然，cli也有它的缺点，就是用户体验不好，操作门槛高。用户必须充分了解cli的各种指令和参数才能顺利地完成工作区的创建和管理；因此我们在cli的功能相对稳定之后便开始着手进行Server版的开发。
 
