@@ -63,7 +63,7 @@ smartide start https://github.com/SmartIDE/sample-dapr-traffic-control
 
 ## Jupyter Notebook 环境支持
 
-远程工作区 的一个重要优势就是可以帮助开发者更好的利用远程主机的强大算力和数据处理能力，在这个领域中 `Jupyter Notebook` 无疑是一个非常典型的应用类型。我们在 Sprint 18 中增加了对 `Jupyter Notebook` 的远程工作区支持，现在开发者可以使用一个简单的指令就可以启动预装 `Jupyter Notebook` 的远程工作区，并且可以通过 `--host` 参数将这个 工作区漫游 到任意主机上，我们未来还会允许开发者将同样的工作区漫游到k8s环境中。相关指令如下：
+[远程工作区](/zh/docs/overview/remote-workspace/) 的一个重要优势就是可以帮助开发者更好的利用远程主机的强大算力和数据处理能力，在这个领域中 `Jupyter Notebook` 无疑是一个非常典型的应用类型。我们在 Sprint 18 中增加了对 `Jupyter Notebook` 的远程工作区支持，现在开发者可以使用一个简单的指令就可以启动预装 `Jupyter Notebook` 的远程工作区，并且可以通过 `--host` 参数将这个 工作区漫游 到任意主机上，我们未来还会允许开发者将同样的工作区漫游到k8s环境中。相关指令如下：
 
 ```shell
 ## 启动使用 Jupyter Notebook 的数据科学处理开发者容器

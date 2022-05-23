@@ -6,7 +6,7 @@ description: >
   支持自阿里&蚂蚁开源的国产 IDE OpenSumi
 ---
 
-[SmartIDE v0.1.16 (Build 3137)](/zh/docs/install/) 已经在**2022年4月19日**发布到稳定版通道，我们在这个版本中增加了阿里和蚂蚁发布的国产IDE OpenSumi的支持，以及其他一些改进。SmartIDE 从 Sprint 11 (v0.1.11) 开始已经将重心转向 [Server版](/zh/docs/quickstart/server/) 的开发，并且已经针对社区开放了server的内测。但是对于 [CLI](/zh/docs/quickstart/cli/) 的改进和增强一直没有停止，因为 CLI 是 SmartIDE 的核心，实际上我们的 Server 版对于 [工作区](/zh/docs/overview/workspace/) 的管理也是通过云原生开源流水线框架 Tekton 调度 CLI 实现的。
+[SmartIDE v0.1.16 (Build 3137)](/zh/docs/install/) 已经在**2022年4月19日**发布到稳定版通道，我们在这个版本中增加了阿里和蚂蚁发布的国产IDE OpenSumi的支持，以及其他一些改进。SmartIDE 从 Sprint 11 (v0.1.11) 开始已经将重心转向 [Server版](/zh/docs/quickstart/server/) 的开发，并且已经针对社区开放了server的内测。但是对于 [CLI](/zh/docs/quickstart/cli/) 的改进和增强一直没有停止，因为 CLI 是 SmartIDE 的核心，实际上我们的 Server 版对于 [工作区](/zh/docs/overview/remote-workspace/) 的管理也是通过云原生开源流水线框架 Tekton 调度 CLI 实现的。
 
 我们将在近期发布更加完善的 Server 版安装部署手册和文档，同时 Server 版 和 CLI 核心代码也将在近期开源。SmartIDE 的核心代码将采用GPL协议开源，允许任何组织和个人免费使用我们的代码搭建自己的云原生IDE环境。
 
