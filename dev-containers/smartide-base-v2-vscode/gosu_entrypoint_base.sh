@@ -58,6 +58,7 @@ else
     # chmod g+rw /home
     chown -R $USERNAME:$USERNAME /home/project
     chown -R $USERNAME:$USERNAME /home/opvscode
+    chown -R $USERNAME:$USERNAME /home/$USERNAME/.ssh
     chmod +x /home/opvscode/server.sh
 
     echo "root:$USER_PASS" | chpasswd
