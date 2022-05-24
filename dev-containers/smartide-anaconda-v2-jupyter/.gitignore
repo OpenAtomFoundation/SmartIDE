@@ -1,0 +1,10 @@
+openvscode-images
+vsix
+*.vsix
+extensions
+openvscode-server*.tar.gz
+pipeline.yaml
+ide.local.sh
+build-image.sh
+clear-image.sh
+start-container.sh
