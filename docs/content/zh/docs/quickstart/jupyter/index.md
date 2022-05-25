@@ -3,7 +3,7 @@ title: "Jupyter Notebook 快速启动教程"
 linkTitle: "Jupyter"
 weight: 40
 description: >
-本文档描述如何使用SmartIDE完成一个Jupyter Notebook 应用的完整开发和代码提交过程。
+  本文档描述如何使用SmartIDE完成一个Jupyter Notebook 应用的完整开发和代码提交过程。
 ---
 ## 概述
 远程工作区的一个重要优势就是可以帮助开发者更好的利用远程主机的强大算力和数据处理能力，在这个领域中 Jupyter Notebook 无疑是非常典型的应用类型。SmartIDE 提供了对 Jupyter Notebook 的远程工作区支持，开发者只需要一个简单的指令就可以启动一个预装了 Jupyter Notebook 的远程工作区，并通过 `--host` 参数将这个工作区漫游到任意主机或者 k8s 环境中。
