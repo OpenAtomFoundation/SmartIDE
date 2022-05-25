@@ -41,7 +41,6 @@ smartide host add <IP-Address> --username <user> --password <pwd> --port <ssh po
 # 获取新添加的hostId
 smartide host list
 # 创建开发环境
-smartide new --host <hostId> anaconda -t jupyter
 smartide new --host <hostId> anaconda -t jupyter -w <workspace-name>
 # done！
 ```
