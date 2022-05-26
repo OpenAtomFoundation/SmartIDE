@@ -90,25 +90,25 @@ docker-compose -version
 
 我在这里安装的是社区版，通过执行以下命令下载Sysbox的安装包
 
-```bash
+```shell
 wget https://downloads.nestybox.com/sysbox/releases/v0.5.0/sysbox-ce_0.5.0-0.linux_amd64.deb
 ```
 
 安装前需要通过执行以下命令移除当前正在运行的容器
 
-```bash
+```shell
 docker rm $(docker ps -a -q) -f
 ```
 
 执行以下命令来安装Sysbox 社区版的安装包
 
-```bash
+```shell
 sudo apt-get install ./sysbox-ce_0.5.0-0.linux_amd64.deb
 ```
 
 安装成功后通过执行以下命令来验证Sysbox是否安装成功并已启动服务
 
-```bash
+```shell
 sudo systemctl status sysbox -n20
 ```
 输出的信息如下图：
