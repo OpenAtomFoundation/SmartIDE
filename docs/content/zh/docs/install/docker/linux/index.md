@@ -84,3 +84,34 @@ docker-compose -version
 ![验证docker和docker-compose安装正确](images/docker-install-linux001.png)
 
 完成以上2项设置之后，你就可以继续按照 [快速启动](/zh/docs/quickstart/) 中 **远程模式** 部分的说明继续体验SmartIDE的功能了。
+
+## 配置Sysbox
+> 如果你想通过Smartide来配置含有dapr的dotnet开发环境，由于dapr本身与在初始化会构建多个容器，想要在容器中使用dapr，就必须需要在容器中运行容器，而想要实现这种方式最好的办法就是在你服务器中配置Sysbox
+
+我在这里安装的是社区版，通过执行以下命令下载Sysbox的安装包
+
+```bash
+wget https://downloads.nestybox.com/sysbox/releases/v0.5.0/sysbox-ce_0.5.0-0.linux_amd64.deb
+```
+
+安装前需要通过执行以下命令移除当前正在运行的容器
+
+```bash
+docker rm $(docker ps -a -q) -f
+```
+
+执行以下命令来安装Sysbox 社区版的安装包
+
+```bash
+sudo apt-get install ./sysbox-ce_0.5.0-0.linux_amd64.deb
+```
+
+安装成功后通过执行以下命令来验证Sysbox是否安装成功并已启动服务
+
+```bash
+sudo systemctl status sysbox -n20
+```
+输出的信息如下图：
+![输入图片说明](images/Sysbox.png)
+
+详细的安装过程可以参考：<https://github.com/nestybox/sysbox/blob/master/docs/user-guide/install-package.md>
