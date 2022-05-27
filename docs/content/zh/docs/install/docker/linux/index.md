@@ -84,3 +84,34 @@ docker-compose -version
 ![验证docker和docker-compose安装正确](images/docker-install-linux001.png)
 
 完成以上2项设置之后，你就可以继续按照 [快速启动](/zh/docs/quickstart/) 中 **远程模式** 部分的说明继续体验SmartIDE的功能了。
+
+## 配置Sysbox
+> SmartIDE 的部分开发者镜像内使用了 VM-Like-Container 的能力，比如需要在容器内运行完整的docker，也就是嵌套容器（Docker in Docker - DinD）。类似的能力需要我们在主机上针对容器运行时（container runtime）进行一些改进。为了满足类似的能力，SmartIDE 采用了开源项目 sysbox  提供类似的容器运行时。
+
+以下文档描述了如何在主机上安装 Sysbox容器运行时，在执行此操作之前，请确保已经按照本文档的上半部分正确安装了 docker环境。
+
+本文档针对 sysbox 社区版的安装过程进行说明，如果需要安装企业版，请自行参考 [sysbox](https://github.com/nestybox/sysbox)  官方文档。
+
+```shell
+wget https://downloads.nestybox.com/sysbox/releases/v0.5.0/sysbox-ce_0.5.0-0.linux_amd64.deb
+```
+
+安装前需要通过执行以下命令移除当前正在运行的容器
+
+```shell
+docker rm $(docker ps -a -q) -f
+```
+
+执行以下指令完成安装
+
+```shell
+sudo apt-get install ./sysbox-ce_0.5.0-0.linux_amd64.deb
+```
+
+安装成功后通过执行以下命令来验证Sysbox是否安装成功并已启动服务，注意查看 active (running) 的提示信息
+
+```shell
+sudo systemctl status sysbox -n20
+```
+输出的信息如下图：
+![输入图片说明](images/Sysbox.png)
