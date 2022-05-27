@@ -3,6 +3,7 @@ title: "Server 安装说明"
 linkTitle: "Server"
 date: 2021-09-24
 weight: 30
+draft: true
 description: >
   SmartIDE Server为开发团队提供对远程容器化工作区的统一管理，支持开发者自助绑定linux主机或者k8s集群作为工作区运行资源，并通过输入Git代码库地址来一键启动远程容器化工作区。
   SmartIDE Server的基础功能是开源免费的，任何人都可以在自己的服务器上进行部署，本文档描述如何完成Server的部署过程。
