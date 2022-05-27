@@ -1,0 +1,75 @@
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartide-docs-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      smartide-docs.service: smartide-docs
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        smartide-docs.service: smartide-docs
+    spec:
+      containers:
+        - env:
+            - name: HOME
+              value: /root
+            - name: LOCAL_USER_PASSWORD
+              value: root123
+            - name: ROOT_PASSWORD
+              value: root123
+            - name: LOCAL_USER_UID
+              value: "0"
+            - name: LOCAL_USER_GID
+              value: "0"
+          image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-hugo:latest
+          name: smartide-docs-dev
+          # command: ["/bin/bash", "-ce", "tail -f /dev/null"]
+          ports:
+            - containerPort: 1313
+          resources: {}
+status: {}
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartide-docs-service
+spec:
+  ports:
+    - name: "1313"
+      port: 1313
+      targetPort: 1313
+    - name: "6800"
+      port: 6800
+      targetPort: 3000
+    - name: "6822"
+      port: 6822
+      targetPort: 22
+  selector:
+    smartide-docs.service: smartide-docs
+status:
+  loadBalancer: {}
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: smartide-docs-network
+spec:
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              smartide-docs/smartide-network: "true"
+  podSelector:
+    matchLabels:
+      smartide-docs/smartide-network: "true"
