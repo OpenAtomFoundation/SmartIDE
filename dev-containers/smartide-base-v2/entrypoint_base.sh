@@ -1,4 +1,14 @@
 #!/bin/bash
+###
+ # @Author: kenan
+ # @Date: 2022-05-24 14:37:27
+ # @LastEditors: kenan
+ # @LastEditTime: 2022-05-24 15:10:42
+ # @FilePath: /smartide/dev-containers/smartide-base-v2/entrypoint_base.sh
+ # @Description: 
+ # 
+ # Copyright (c) 2022 by kenanlu@leansoftx.com, All Rights Reserved. 
+### 
 
 USER_UID=${LOCAL_USER_UID:-1000}
 USER_GID=${LOCAL_USER_GID:-1000}
@@ -34,6 +44,8 @@ else
 
     chown -R $USERNAME:$USERNAME /home/project
     chown -R $USERNAME:$USERNAME /home/opvscode
+    chown -R $USERNAME:$USERNAME /home/$USERNAME/.ssh
+
 
     echo "root:$USER_PASS" | chpasswd
     echo "smartide:$USER_PASS" | chpasswd

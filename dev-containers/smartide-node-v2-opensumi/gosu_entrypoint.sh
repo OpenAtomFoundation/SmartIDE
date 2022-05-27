@@ -1,4 +1,14 @@
 #!/bin/bash
+###
+ # @Author: kenan
+ # @Date: 2022-05-24 14:37:27
+ # @LastEditors: kenan
+ # @LastEditTime: 2022-05-24 15:14:28
+ # @FilePath: /smartide/dev-containers/smartide-node-v2-opensumi/gosu_entrypoint.sh
+ # @Description: 
+ # 
+ # Copyright (c) 2022 by kenanlu@leansoftx.com, All Rights Reserved. 
+### 
 
 USER_UID=${LOCAL_USER_UID:-1000}
 USER_GID=${LOCAL_USER_GID:-1000}
@@ -59,6 +69,8 @@ else
     chown -R $USERNAME:$USERNAME /release
     chown -R $USERNAME:$USERNAME /home/smartide/.sumi
     chown -R $USERNAME:$USERNAME /home/smartide/.sumi/extensions
+    chown -R $USERNAME:$USERNAME /home/$USERNAME/.ssh
+
     chmod +x /release/server.sh
 
     echo "root:$USER_PASS" | chpasswd

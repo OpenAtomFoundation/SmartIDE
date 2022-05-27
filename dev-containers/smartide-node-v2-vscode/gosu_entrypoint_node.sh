@@ -1,4 +1,14 @@
 #!/bin/bash
+###
+ # @Author: kenan
+ # @Date: 2022-05-24 14:37:27
+ # @LastEditors: kenan
+ # @LastEditTime: 2022-05-24 15:14:38
+ # @FilePath: /smartide/dev-containers/smartide-node-v2-vscode/gosu_entrypoint_node.sh
+ # @Description: 
+ # 
+ # Copyright (c) 2022 by kenanlu@leansoftx.com, All Rights Reserved. 
+### 
 
 USER_UID=${LOCAL_USER_UID:-1000}
 USER_GID=${LOCAL_USER_GID:-1000}
@@ -60,6 +70,8 @@ else
     # chmod g+rw /home
     chown -R $USERNAME:$USERNAME /home/project
     chown -R $USERNAME:$USERNAME /home/opvscode
+    chown -R $USERNAME:$USERNAME /home/$USERNAME/.ssh
+
     chmod +x /home/opvscode/server.sh
 
     echo "root:$USER_PASS" | chpasswd

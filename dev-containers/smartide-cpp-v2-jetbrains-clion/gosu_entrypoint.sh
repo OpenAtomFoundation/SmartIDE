@@ -31,7 +31,7 @@ if [ $USER_UID == '0' ]; then
     /usr/sbin/sshd
 
     echo "-----------Starting ide"
-    exec smartide run.sh "$@"
+    exec  run.sh "$@"
 
 else
 
@@ -57,6 +57,8 @@ else
     export HOME=/home/$USERNAME
     # chmod g+rw /home
     chown -R $USERNAME:$USERNAME /home/project
+    chown -R $USERNAME:$USERNAME /home/$USERNAME/.ssh
+
     #chown -R $USERNAME:$USERNAME /home/opvscode
     #chmod +x /home/opvscode/server.sh
 
