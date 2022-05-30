@@ -31,7 +31,7 @@ smartide new dotnet -t vscode
 运行后的效果如下，通过命令窗口中的日志详细了解SmartIDE的 启动过程，会自动打开浏览器窗口并导航到VSCode界面，输入 dotnet --version 你可看到dotnet sdk 6.0已经安装完毕。
 
 
-![dotnet Quickstart DevEnv](images/quickstart-dotnet-vscode-01.png)
+![smartIDE init dotnet devlopment enviroment](images/quickstart-dotnet-vscode-01.png)
 
 ###  2. 创建ASP.NET Core minimal  web API 项目
 
@@ -47,7 +47,7 @@ dotnet new webapi -minimal -o TodoApi
 执行成功后Web Api项目已经初始化成功了如下图：
 
 
-![dotnet minimal web api](images/quickstart-dotnet-vscode-02.png)
+![dotnet minimal web api project](images/quickstart-dotnet-vscode-02.png)
 
 
 打开VS Code 命令终端执行如下命令安装EntityFrameworkCore工具包：
@@ -165,13 +165,13 @@ dotnet run
 如果输出结果如下图，说明当前初始化项目能编译通过并且可以正常启动
 
 
-![dotnet minimal web api log](images/quickstart-dotnet-vscode-03.png)
+![dotnet project start up log](images/quickstart-dotnet-vscode-03.png)
 
 
 通过启动项目输出的日志了解当前初始化项目默认设置的端口为7163与5105 与SmartIDE初始化的环境开放的端口不一致，访问.ide文件夹下的.ide.yaml
 
 
-![dotnet .ide.yaml](images/quickstart-dotnet-vscode-04.png)
+![sample-dotnet-vscode .ide.yaml](images/quickstart-dotnet-vscode-04.png)
 
 
 你会看到端口是可以通过当前文件进行配置的，这里默认开放的端口如下：
@@ -183,7 +183,7 @@ dotnet run
  访问TodoApi项目下的Properties文件夹下的launchSettings.json文件
 
 
-![dotnet launchSettings.json](images/quickstart-dotnet-vscode-05.png)
+![launchSettings.json](images/quickstart-dotnet-vscode-05.png)
 
 
 修改 applicationUrl 属性如下：
@@ -193,21 +193,21 @@ dotnet run
 "applicationUrl": "http://0.0.0.0:5000",
 ```
 
-![dotnet changed launchSettings.json](images/quickstart-dotnet-vscode-06.png)
+![changed launchSettings.json](images/quickstart-dotnet-vscode-06.png)
 
 由于localhost指的是127.0.0.1是一个回环地址，这个地址发出去的信息只能被自己接受，宿主机是无法通过这个IP地址访问进来的，0.0.0.0表示的是所有的IPV4地址，如果当前的宿主机如果有多个IP地址并且0.0.0.0开放5000端口，那么该端口均可以被这些IP访问到，再次启动项目，访问地址http://localhost:5000/swagger如下图：
 
-![dotnet webapi swagger UI](images/quickstart-dotnet-vscode-07.png)
+![swagger UI](images/quickstart-dotnet-vscode-07.png)
 
 ###  3. 开发调试
 
 通过之前的操作我们已经可以对项目进行编译运行的操作了，想要对当前项目进行调试操作还需要做额外配置，点击 VS Code 的 Run and Debug 中的 create a launch.json file 按钮如下图：
 
-![dotnet run and debug step 1](images/quickstart-dotnet-vscode-debug-01.png)
+![vscode config dotnet debug](images/quickstart-dotnet-vscode-debug-01.png)
 
 点击后并选择 .NET 5+ and .NET Core，执行完上述操作后会创建一个名为.vscode的文件夹里面包含两个文件如下图：
 
-![dotnet .vscode launch.json](images/quickstart-dotnet-vscode-debug-02.png)
+![launch.json](images/quickstart-dotnet-vscode-debug-02.png)
 
 修改 vscode文件夹下的 launch.json 文件中的args属性如下：
 
@@ -215,34 +215,105 @@ dotnet run
  "args": ["--urls","http://0.0.0.0:5000"],
 ```
 
-![dotnet .vscode launch.json changed](images/quickstart-dotnet-vscode-debug-03.png)
+![changed launch.json](images/quickstart-dotnet-vscode-debug-03.png)
 
 回到 Run and debug 页面点击Run and debug 按钮，VS code会出现 Start Debugging 按钮点击它或者按F5键即可进入该项目的调试模式，如下图：
 
-![dotnet run and debug step 2](images/quickstart-dotnet-vscode-debug-04.png)
+![run and debug](images/quickstart-dotnet-vscode-debug-04.png)
 
-![dotnet run and debug step 3](images/quickstart-dotnet-vscode-debug-05.png)
+![debug button](images/quickstart-dotnet-vscode-debug-05.png)
 
 设置调试断点，如下图：
 
-![dotnet run and debug step 4](images/quickstart-dotnet-vscode-debug-06.png)
+![set break point](images/quickstart-dotnet-vscode-debug-06.png)
 
 访问swagger页面触发标记断点的api接口，访问http://0.0.0.0:5000/可以看到当前的Http请求停止在了已设置的断点
 
-![dotnet run and debug step 5](images/quickstart-dotnet-vscode-debug-07.png)
+![http request break](images/quickstart-dotnet-vscode-debug-07.png)
 
-![dotnet run and debug step 6](images/quickstart-dotnet-vscode-debug-08.png)
+![break point pass](images/quickstart-dotnet-vscode-debug-08.png)
 
 之前添加的代码是通过minimal api 完成的增删改查的操作，触发Post/ todoitems 的api可以完成插入数据的操作如下图：
 
-![dotnet run and debug step 7](images/quickstart-dotnet-vscode-debug-09.png)
+![post todoItems](images/quickstart-dotnet-vscode-debug-09.png)
 
 通过触发api Get/ todoitems可以直接查询到之前插入过的数据，如下图：
 
-![dotnet run and debug step 8](images/quickstart-dotnet-vscode-debug-10.png)
+![get todoitems breakpoint](images/quickstart-dotnet-vscode-debug-10.png)
 
-![dotnet run and debug step 9](images/quickstart-dotnet-vscode-debug-11.png)
+![get todoitems breakpoint pass](images/quickstart-dotnet-vscode-debug-11.png)
 
+
+
+## JetBrains Rider
+
+JetBrains Rider 是由JetBrains公司开发的一个跨平台的.NET IDE工具，不同于VSCode，JetBrains Rider构建.Net 项目并不需要单独配置调试环境
+
+###  1. 新建开发环境
+
+运行以下命令创建基于JetBrains Rider的.Net环境
+
+```shell
+mkdir sample-dotnet-rider
+cd sample-dotnet-rider
+smartide new dotnet -t rider
+```
+
+运行后效果如下：
+
+![jetbrains rider quickstart](images/quickstart-dotnet-rider-01.png)
+
+然后根据配置向导逐一完成操作，最终会到配置Licenses的页面如下图：
+
+![jetbrains rider install licenses](images/quickstart-dotnet-rider-02.png)
+
+到这里你需要登录你自己的Jetbrains 账号（第一次使用Jetbrains 软件的用户会有一年的免费试用期），配置完如下图：
+
+![jetbrains rider account](images/quickstart-dotnet-rider-03.png)
+
+###  2. 创建ASP.NET Core Web Api项目
+
+点击New Solution 选择ASP.NET Core Web Application选项，由于Rider目前并未集成minimal web api类型，因此这里项目类型选择Web Api如下图：
+
+![jetbrains rider create web api project](images/quickstart-dotnet-rider-04.png)
+
+点击create 创建项目，操作完成后如下图：
+
+![jetbrains rider init web api project](images/quickstart-dotnet-rider-05.png)
+
+编译项目确保默认初始化项目没有问题，点击Build Solution编译项目操作如下图：
+
+![jetbrains rider build web api project](images/quickstart-dotnet-rider-06.png)
+
+编译成功后如下图：
+
+![jetbrains rider build web api project successful](images/quickstart-dotnet-rider-07.png)
+
+与配置基于VS Code的.NET 环境一样我们需要确认当前SmartIDE开发环境的配置端口信息，访问宿主机的sample-dotnet-rider文件夹下的.ide文件夹中的.ide.yaml文件如下图：
+
+![jetbrains rider .ide.yaml](images/quickstart-dotnet-rider-08.png)
+
+通过ide.yaml文件确认将默认初始化的项目端口设置为5000即可，修改项目中的Properities文件夹中的launchSettings.json文件如下图：
+
+![jetbrains rider launchSettings.json](images/quickstart-dotnet-rider-09.png)
+
+修改 applicationUrl 属性如下：
+
+```json
+"applicationUrl": "http://0.0.0.0:5000",
+```
+
+![jetbrains rider launchSettings.json changed](images/quickstart-dotnet-rider-10.png)
+
+修改完成后点击Debug进入调试模式，访问该项目的Swagger页面并触发Api WeatherForecast如下图：
+
+![jetbrains rider debug step1](images/quickstart-dotnet-rider-11.png)
+
+![jetbrains rider debug step2](images/quickstart-dotnet-rider-12.png)
+
+
+
+###  3. 开发调试
 
 ## 远程开发
 
