@@ -288,6 +288,8 @@ smartide new dotnet -t rider
 
 ![jetbrains rider init web api project](images/quickstart-dotnet-rider-05.png)
 
+###  3. 开发调试
+
 编译项目确保默认初始化项目没有问题，点击Build Solution编译项目操作如下图：
 
 ![jetbrains rider build web api project](images/quickstart-dotnet-rider-06.png)
@@ -318,9 +320,6 @@ smartide new dotnet -t rider
 
 ![jetbrains rider debug step2](images/quickstart-dotnet-rider-12.png)
 
-
-
-###  3. 开发调试
 
 ## 远程开发
 
