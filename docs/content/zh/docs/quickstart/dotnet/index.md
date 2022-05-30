@@ -193,14 +193,9 @@ dotnet run
 "applicationUrl": "http://0.0.0.0:5000",
 ```
 
-
 ![dotnet changed launchSettings.json](images/quickstart-dotnet-vscode-06.png)
 
-
-
 由于localhost指的是127.0.0.1是一个回环地址，这个地址发出去的信息只能被自己接受，宿主机是无法通过这个IP地址访问进来的，0.0.0.0表示的是所有的IPV4地址，如果当前的宿主机如果有多个IP地址并且0.0.0.0开放5000端口，那么该端口均可以被这些IP访问到，再次启动项目，访问地址http://localhost:5000/swagger如下图：
-
-
 
 ![dotnet webapi swagger UI](images/quickstart-dotnet-vscode-07.png)
 
@@ -208,20 +203,13 @@ dotnet run
 
 通过之前的操作我们已经可以对项目进行编译运行的操作了，想要对当前项目进行调试操作还需要做额外配置，点击 VS Code 的 Run and Debug 中的 create a launch.json file 按钮如下图：
 
-
-
 ![dotnet run and debug step 1](images/quickstart-dotnet-vscode-debug-01.png)
-
-
 
 点击后并选择 .NET 5+ and .NET Core，执行完上述操作后会创建一个名为.vscode的文件夹里面包含两个文件如下图：
 
-
 ![dotnet .vscode launch.json](images/quickstart-dotnet-vscode-debug-02.png)
 
-
 修改 vscode文件夹下的 launch.json 文件中的args属性如下：
-
 
 ```json
  "args": ["--urls","http://0.0.0.0:5000"],
@@ -229,22 +217,31 @@ dotnet run
 
 ![dotnet .vscode launch.json changed](images/quickstart-dotnet-vscode-debug-03.png)
 
-
-
 回到 Run and debug 页面点击Run and debug 按钮，VS code会出现 Start Debugging 按钮点击它或者按F5键即可进入该项目的调试模式，如下图：
-
-
 
 ![dotnet run and debug step 2](images/quickstart-dotnet-vscode-debug-04.png)
 
 ![dotnet run and debug step 3](images/quickstart-dotnet-vscode-debug-05.png)
 
-
 设置调试断点，如下图：
 
-
-
 ![dotnet run and debug step 4](images/quickstart-dotnet-vscode-debug-06.png)
+
+访问swagger页面触发标记断点的api接口，访问http://0.0.0.0:5000/可以看到当前的Http请求停止在了已设置的断点
+
+![dotnet run and debug step 5](images/quickstart-dotnet-vscode-debug-07.png)
+
+![dotnet run and debug step 6](images/quickstart-dotnet-vscode-debug-08.png)
+
+之前添加的代码是通过minimal api 完成的增删改查的操作，触发Post/ todoitems 的api可以完成插入数据的操作如下图：
+
+![dotnet run and debug step 7](images/quickstart-dotnet-vscode-debug-09.png)
+
+通过触发api Get/ todoitems可以直接查询到之前插入过的数据，如下图：
+
+![dotnet run and debug step 8](images/quickstart-dotnet-vscode-debug-10.png)
+
+![dotnet run and debug step 9](images/quickstart-dotnet-vscode-debug-11.png)
 
 
 ## 远程开发
