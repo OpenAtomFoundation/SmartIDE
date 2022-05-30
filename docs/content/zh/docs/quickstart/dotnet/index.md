@@ -28,7 +28,14 @@ cd sample-dotnet-vscode
 smartide new dotnet -t vscode
 ```
 
-运行后的效果如下，通过命令窗口中的日志详细了解SmartIDE的 启动过程，会自动打开浏览器窗口并导航到VSCode界面，输入 dotnet --version 你可看到dotnet sdk 6.0已经安装完毕。
+运行后的效果如下，通过命令窗口中的日志详细了解SmartIDE的 启动过程，会自动打开浏览器窗口并导航到VSCode界面，输入 
+
+```shell
+#检查dotnet sdk 版本
+dotnet --version
+```
+
+你可以看到dotnet sdk 6.0已经安装完毕。
 
 
 ![smartIDE init dotnet devlopment enviroment](images/quickstart-dotnet-vscode-01.png)
@@ -195,7 +202,7 @@ dotnet run
 
 ![changed launchSettings.json](images/quickstart-dotnet-vscode-06.png)
 
-由于localhost指的是127.0.0.1是一个回环地址，这个地址发出去的信息只能被自己接受，宿主机是无法通过这个IP地址访问进来的，0.0.0.0表示的是所有的IPV4地址，如果当前的宿主机如果有多个IP地址并且0.0.0.0开放5000端口，那么该端口均可以被这些IP访问到，再次启动项目，访问地址http://localhost:5000/swagger如下图：
+由于localhost指的是127.0.0.1是一个回环地址，这个地址发出去的信息只能被自己接受，所以宿主机是无法通过这个IP地址访问进来的，0.0.0.0表示的是所有的IPV4地址，如果当前的宿主机有多个IP地址，并且0.0.0.0开放了5000端口，那么该端口均可以被这些IP访问到，再次启动项目，访问地址 [http://localhost:5000/swagger](http://localhost:5000/swagger) 如下图：
 
 ![swagger UI](images/quickstart-dotnet-vscode-07.png)
 
@@ -227,7 +234,7 @@ dotnet run
 
 ![set break point](images/quickstart-dotnet-vscode-debug-06.png)
 
-访问swagger页面触发标记断点的api接口，访问http://0.0.0.0:5000/可以看到当前的Http请求停止在了已设置的断点
+访问swagger页面触发标记断点的api接口，访问 [http://0.0.0.0:5000/](http://0.0.0.0:5000/) 可以看到当前的Http请求停止在了已设置的断点
 
 ![http request break](images/quickstart-dotnet-vscode-debug-07.png)
 
