@@ -79,9 +79,9 @@ Dapr官网 https://dapr.io
 
 ## 开发者不使用容器？
 
-首先说明，这里所说的不是使用容器进行部署，而是使用容器进行开发。云原生的典型部署模式一定是容器化的，开发者在这个问题上并不纠结。开发者的现状是，虽然应用最终要在容器内运行，但是在开发的时候并不希望在容器内进行开发，主要原因当然还是不方便，操作太繁琐。这样带来的问题也非常米显而易见，因为开发环境和生产环境不一致，就必须通过配置的方式，流水线自动化的方式来解决这些不一致的问题，造成整个发布系统变得更加复杂和难以维护。
+首先说明，这里所说的不是使用容器进行部署，而是使用容器进行开发。云原生的典型部署模式一定是容器化的，开发者在这个问题上并不纠结。开发者的现状是，虽然应用最终要在容器内运行，但是在开发的时候并不希望在容器内进行开发，主要原因当然还是不方便，操作太繁琐。这样带来的问题也非常显而易见，因为开发环境和生产环境不一致，就必须通过配置的方式，流水线自动化的方式来解决这些不一致的问题，造成整个发布系统变得更加复杂和难以维护。
 
-要解决这个问题，我们必须降低容器的使用门槛，让开发者在不了解/不学习容器技术的前提下使用容器进行开发。SmartIDE就是为了解决这个问题而设计的，与繁琐的环境搭建脚本不同，SmartIDE 允许你使用一个简单的指令 `smartide start` 来启动 任何应用 的开发调试环境，而且这个环境从一开始就是容器化的。
+要解决这个问题，我们必须降低容器的使用门槛，让开发者在 **不了解/不学习** 容器技术的前提下使用容器进行开发。SmartIDE就是为了解决这个问题而设计的，与繁琐的环境搭建脚本不同，SmartIDE 允许你使用一个简单的指令 `smartide start` 来启动 **任何应用** 的开发调试环境，而且这个环境从一开始就是容器化的。
 
 对于上面这个 `dapr-traffic-control` 而言，启动命令如下
 
@@ -89,7 +89,7 @@ Dapr官网 https://dapr.io
 smartide start https://github.com/SmartIDE/sample-dapr-traffic-control
 ```
 
-也就是说，开发者可以使用 `smartide start` 加上代码库地址来启动任何应用的开发调试；而且，如果开发者自己有一台可以运行Docker环境的云主机，那么就可以将这个环境一键漫游到这个主机上，整个过程只需要2个指令
+也就是说，开发者可以使用 `smartide start` 加上代码库地址来启动任何应用的开发调试；而且，如果开发者自己有一台可以运行Docker环境的云主机，那么就可以将这个 **环境一键漫游** 到这个主机上，整个过程只需要2个指令
 
 ```shell
 ## 添加主机到SmartIDE工具并获取 主机ID
@@ -98,7 +98,7 @@ smartide host add <Docker主机IP地址> --username <SSH登录用户名> --passw
 smartide start --host <主机ID> https://github.com/SmartIDE/sample-dapr-traffic-control
 ```
 
-启动以后开发者就可以启动整个 `dapr-traffic-control` 的 环境进行开发调试了，效果如下
+完成以上操作后开发者就可以启动整个 `dapr-traffic-control` 的 环境进行开发调试了，效果如下
 
 ![Dapr Traffice Control Sample](images/r18-dapr-traffic-control.gif)
 
@@ -108,13 +108,13 @@ smartide start --host <主机ID> https://github.com/SmartIDE/sample-dapr-traffic
 
 ![Dapr Development](images/dapr-dev001.png)
 
-这时，dapr 会启动3个docker容器，分别是 `dapr: 1.7.4`, `zipkin` 和 `redis`。默认情况下，dapr 会利用 docker 为开发者提供必要的中间件组件。要完成 `dapr init` 动作，开发者必须首先在本地安装 docker 环境，而在刚才的操作中，我们使用的是一个已经预装了 docker 的容器环境，也就是在容器内提供了 docker 的支持，这样开发者的环境完全处于容器内部，不再需要在开发机或者远程服务器上安装这些服务。这种方式也同时保证了无论开发者在什么地方启动这个环境，都可以获得一致的体验。
+这时，dapr 会启动3个docker容器，分别是 `dapr: 1.7.4`, `zipkin` 和 `redis`。默认情况下，dapr 会利用 docker 为开发者提供必要的中间件组件。要完成 `dapr init` 动作，开发者必须首先在本地安装 docker 环境，而在刚才的操作中，我们使用的是一个已经预装了 docker 的容器环境，也就是在容器内提供了 docker 的支持，这样开发者的环境完全处于容器内部，不再需要在开发机或者远程服务器上安装这些服务， 这种环境我们称之为 VM Like Container （VMLC），也就是类虚拟机容器环境，后续我们会专门针对VMLC进行更加详细的介绍。这种方式也同时保证了无论开发者在什么地方启动这个环境，都可以获得一致的体验。
 
 现在，键入 `docker ps` 就可以看到这3个容器已经启动完毕
 
 ![Dapr Development](images/dapr-dev002.png)
 
-现在，我们通过一个预先准备好的 `PowerShell` 脚本来启动 `Traffice-Control` 应用需要的其他中间件环境，同样，这个过程中你也不必考虑 `PowerShell` 工具是否存在的问题，因为这些都已经通过标准化的开发者镜像提供了。只需要在终端中执行
+现在，我们通过一个预先准备好的 `PowerShell` 脚本来启动 `Traffice-Control` 应用的其他中间件环境，同样，这个过程中你也不必考虑 `PowerShell` 工具是否存在的问题，因为这些都已经通过标准化的 **开发者镜像** 提供了。你只需要在终端中执行
 
 ```shell
 cd src/Infrastructure/
@@ -152,7 +152,7 @@ dotnet run
 
 ![Dapr Development](images/dapr-dev006.png)
 
-至此，我们完成了整个 `dapr-traffic-control` 示例应用的调试。在这个过程中，开发者不必了解背后的 Docker，远程SSH隧道，环境的各种配置；而且，无论开发者在自己的本地开发机，还是一台远程主机，或是k8s集群中启动这个环境，都可以使用统一的 `smartide start` 指令完成环境的启动。
+至此，我们完成了整个 `dapr-traffic-control` 示例应用的调试。在这个过程中，开发者不必了解背后的 Docker，远程SSH隧道，容器镜像环境的各种配置；而且，无论开发者在自己的本地开发机，还是远程主机，或是k8s集群中启动这个环境，都可以使用统一的 `smartide start` 指令来完成。
 
 SmartIDE 的设计初衷就是希望能够最大程度的降低开发者上手一个应用的复杂度，无论这个应用是一个简单的hello-world，还是一个复杂的微服务应用；也无论应用所需要的环境只是简单的SDK，还是各种复杂中间件以及繁琐的网络配置，都只需要一个指令：`smartide start`
 
