@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-16 12:46:09
+ * @LastEditTime: 2022-05-29 15:54:14
  */
 package cmd
 
@@ -153,7 +153,7 @@ var removeCmd = &cobra.Command{
 					err := removeLocalMode(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsForce)
 					common.CheckError(err)
 				} else if workspaceInfo.Mode == workspace.WorkingMode_Remote {
-					err := removeRemoteMode(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsRemoveRemoteDirectory, removeCmdFlag.IsForce)
+					err := removeRemoteMode(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsRemoveRemoteDirectory, removeCmdFlag.IsForce, cmd)
 					common.CheckError(err)
 				} else {
 					err := removeK8sMode(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsForce)
@@ -189,7 +189,7 @@ var removeCmd = &cobra.Command{
 			for !isRemoved {
 				serverWorkSpace, err := workspace.GetWorkspaceFromServer(currentServerAuth, workspaceInfo.ID, workspace.CliRunningEnvEnum_Client)
 				if err != nil {
-					common.SmartIDELog.Importance(err.Error())
+					common.SmartIDELog.ImportanceWithError(err)
 				}
 				if serverWorkSpace.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Remove ||
 					serverWorkSpace.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Error_Remove ||
@@ -208,7 +208,7 @@ var removeCmd = &cobra.Command{
 
 			// 移除k8s资源
 			common.SmartIDELog.Info("移除k8s资源...")
-			kubernetes, err := kubectl.NewKubernetes(workspaceInfo.K8sInfo.Namespace)
+			kubernetes, err := kubectl.NewK8sUtil(workspaceInfo.K8sInfo.KubeConfigFilePath, workspaceInfo.K8sInfo.Context, workspaceInfo.K8sInfo.Namespace)
 			common.CheckError(err)
 			output, err := kubernetes.ExecKubectlCommandCombined("delete --force -f "+workspaceInfo.TempYamlFileAbsolutePath, "")
 			common.SmartIDELog.Debug(output)
@@ -235,7 +235,7 @@ var removeCmd = &cobra.Command{
 					err := removeLocalMode(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsForce)
 					common.CheckError(err)
 				} else if workspaceInfo.Mode == workspace.WorkingMode_Remote {
-					err := removeRemoteMode(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsRemoveRemoteDirectory, removeCmdFlag.IsForce)
+					err := removeRemoteMode(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsRemoveRemoteDirectory, removeCmdFlag.IsForce, cmd)
 					common.CheckError(err)
 				} else {
 					err := removeK8sMode(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsForce)
@@ -407,7 +407,7 @@ func removeK8sMode(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeImag
 }
 
 // 在远程主机上运行删除命令
-func removeRemoteMode(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeImages bool, isRemoveRemoteDirectory bool, isForce bool) error {
+func removeRemoteMode(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeImages bool, isRemoveRemoteDirectory bool, isForce bool, cmd *cobra.Command) error {
 	// ssh 连接
 	common.SmartIDELog.Info(i18nInstance.Remove.Info_sshremote_connection_creating)
 	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password)
@@ -418,7 +418,7 @@ func removeRemoteMode(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeI
 	if err != nil {
 		if strings.Contains(err.Error(), "i/o timeout") || strings.Contains(err.Error(), "connect: connection refused") {
 			isSkip := ""
-			common.SmartIDELog.Importance(err.Error())
+			common.SmartIDELog.ImportanceWithError(err)
 			common.SmartIDELog.Console(i18nInstance.Remove.Info_ssh_timeout_confirm_skip)
 			fmt.Scanln(&isSkip)
 			if strings.ToLower(isSkip) != "y" {
@@ -434,7 +434,7 @@ func removeRemoteMode(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeI
 
 	// 项目文件夹是否存在
 	if workspaceInfo.GitCloneRepoUrl != "" && !sshRemote.IsCloned(workspaceInfo.WorkingDirectoryPath) {
-		sshRemote.GitClone(workspaceInfo.GitCloneRepoUrl, workspaceInfo.WorkingDirectoryPath)
+		sshRemote.GitClone(workspaceInfo.GitCloneRepoUrl, workspaceInfo.WorkingDirectoryPath, common.SmartIDELog.Ws_id, cmd)
 		isRemoveRemoteDirectory = true // 创建后就删掉
 
 	}
@@ -478,7 +478,7 @@ func removeRemoteMode(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeI
 				command := fmt.Sprintf("docker rmi %v %v", force, service.Image)
 				_, err = sshRemote.ExeSSHCommand(command)
 				if err != nil {
-					common.SmartIDELog.Importance(err.Error())
+					common.SmartIDELog.ImportanceWithError(err)
 				} else {
 					common.SmartIDELog.InfoF(i18nInstance.Remove.Info_docker_rmi_image_removed, service.Image)
 				}

@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-12 20:19:29
+ * @LastEditTime: 2022-05-26 14:22:53
  */
 package start
 
@@ -33,6 +33,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_starting)
 
 	mode, _ := cmd.Flags().GetString("mode")
+	userName, _ := cmd.Flags().GetString("serverusername")
 	isModeServer := strings.ToLower(mode) == "server"
 
 	// 错误反馈
@@ -65,7 +66,9 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		if isCloned {
 			common.SmartIDELog.Info(i18nInstance.VmStart.Info_git_cloned)
 		} else {
-			err = gitAction(sshRemote, workspaceInfo)
+			// 执行ssh-key 策略
+			sshRemote.ExecSSHkeyPolicy(common.SmartIDELog.Ws_id, cmd)
+			err = gitAction(sshRemote, workspaceInfo, cmd)
 			common.CheckErrorFunc(err, serverFeedback)
 		}
 	}
@@ -100,7 +103,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		}
 
 		// 获取compose配置
-		tempDockerCompose, ideBindingPort, _ = currentConfig.ConvertToDockerCompose(sshRemote, workspaceInfo.GetProjectDirctoryName(), workspaceInfo.WorkingDirectoryPath, true)
+		tempDockerCompose, ideBindingPort, _ = currentConfig.ConvertToDockerCompose(sshRemote, workspaceInfo.GetProjectDirctoryName(), workspaceInfo.WorkingDirectoryPath, true, userName)
 		workspaceInfo.TempDockerCompose = tempDockerCompose
 
 		// 配置
@@ -163,7 +166,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 				common.SmartIDELog.Error(output)
 
 			} else {
-				common.SmartIDELog.ConsoleInLine(output)
+				//common.SmartIDELog.ConsoleInLine(output)
 				if strings.Contains(output, "Pulling") {
 					fmt.Println()
 				}
@@ -237,7 +240,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 	//8. 端口绑定
 	//8.1. 执行绑定
-	tunnel.TunnelMultiple(sshRemote.Connection, addrMapping)
+	tunnel.TunnelMultiple(sshRemote.Connection, addrMapping) // 端口转发
 	//8.2. 打开浏览器
 	if currentConfig.Workspace.DevContainer.IdeType != config.IdeTypeEnum_SDKOnly {
 		var url string
@@ -265,7 +268,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 					isUrlReady = true
 					err = common.OpenBrowser(url)
 					if err != nil {
-						common.SmartIDELog.Importance(err.Error())
+						common.SmartIDELog.ImportanceWithError(err)
 					}
 					common.SmartIDELog.InfoF(i18nInstance.VmStart.Info_open_brower, url)
 				} else {
@@ -282,7 +285,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		containerId := ""
 		dcc, err := GetRemoteContainersWithServices(sshRemote, []string{workspaceInfo.ConfigYaml.Workspace.DevContainer.ServiceName})
 		if err != nil {
-			common.SmartIDELog.Importance(err.Error())
+			common.SmartIDELog.ImportanceWithError(err)
 		}
 		if containerId, err = sshRemote.ExeSSHCommand(fmt.Sprintf("docker ps  -f 'name=%s' -q", dcc[len(dcc)-1].ContainerName)); containerId != "" && err == nil {
 			// smartide-agent install
@@ -334,26 +337,50 @@ func isRemoteDockerComposeRunning(sshRemote common.SSHRemote, serviceNames []str
 }
 
 // git 相关操作
-func gitAction(sshRemote common.SSHRemote, workspace workspace.WorkspaceInfo) error {
+func gitAction(sshRemote common.SSHRemote, workspace workspace.WorkspaceInfo, cmd *cobra.Command) error {
 	// 执行 git clone
-	err := sshRemote.GitClone(workspace.GitCloneRepoUrl, workspace.WorkingDirectoryPath)
+	err := sshRemote.GitClone(workspace.GitCloneRepoUrl, workspace.WorkingDirectoryPath, common.SmartIDELog.Ws_id, cmd)
 	//common.CheckErrorFunc(err, serverFeedback)
 	if err != nil {
 		return err
 	}
-
+	checkoutCommand := ""
+	isSSHClone := strings.Index(workspace.GitCloneRepoUrl, "git@") == 0
+	fflags := cmd.Flags()
+	userName, _ := fflags.GetString("serverusername")
+	GIT_SSH_COMMAND := fmt.Sprintf(`GIT_SSH_COMMAND='ssh -i ~/.ssh/id_rsa_%s_%s -o IdentitiesOnly=yes'`, userName, common.SmartIDELog.Ws_id)
 	// git checkout
-	checkoutCommand := "git fetch "
-	if workspace.Branch != "" {
-		checkoutCommand += "&& git checkout " + workspace.Branch
-	} else { // 有可能当前目录所处的分支非主分支
-		// 获取分支列表，确认主分支是master 还是 main
-		output, _ := sshRemote.ExeSSHCommand(fmt.Sprintf("cd %v && git branch", workspace.WorkingDirectoryPath))
-		branches := strings.Split(output, "\n")
-		//isContainMaster := false
-		for _, branch := range branches {
-			if strings.Index(branch, "*") == 0 {
-				checkoutCommand += "&& git checkout " + branch[2:]
+	if isSSHClone {
+		checkoutCommand = fmt.Sprintf("%s git fetch ", GIT_SSH_COMMAND)
+		if workspace.Branch != "" {
+			checkoutCommand += fmt.Sprintf("&& %s git checkout ", GIT_SSH_COMMAND) + workspace.Branch
+		} else { // 有可能当前目录所处的分支非主分支
+			// 获取分支列表，确认主分支是master 还是 main
+			output, _ := sshRemote.ExeSSHCommand(fmt.Sprintf("cd %v && %s git branch", workspace.WorkingDirectoryPath, GIT_SSH_COMMAND))
+			branches := strings.Split(output, "\n")
+			//isContainMaster := false
+			for _, branch := range branches {
+				if strings.Index(branch, "*") == 0 {
+					checkoutCommand += fmt.Sprintf("&& %s git checkout ", GIT_SSH_COMMAND) + branch[2:]
+				}
+
+			}
+
+		}
+	} else {
+		checkoutCommand = "git fetch "
+		if workspace.Branch != "" {
+			checkoutCommand += "&& git checkout " + workspace.Branch
+		} else { // 有可能当前目录所处的分支非主分支
+			// 获取分支列表，确认主分支是master 还是 main
+			output, _ := sshRemote.ExeSSHCommand(fmt.Sprintf("cd %v && git branch", workspace.WorkingDirectoryPath))
+			branches := strings.Split(output, "\n")
+			//isContainMaster := false
+			for _, branch := range branches {
+				if strings.Index(branch, "*") == 0 {
+					checkoutCommand += "&& git checkout " + branch[2:]
+				}
+
 			}
 
 		}
@@ -362,7 +389,14 @@ func gitAction(sshRemote common.SSHRemote, workspace workspace.WorkspaceInfo) er
 
 	// git checkout & pull
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_git_checkout_and_pull)
-	gitPullCommand := fmt.Sprintf("cd %v && %v && git pull && cd ~", workspace.WorkingDirectoryPath, checkoutCommand)
+	gitPullCommand := ""
+	if isSSHClone {
+		gitPullCommand = fmt.Sprintf("cd %v && %v && %s git pull && cd ~", workspace.WorkingDirectoryPath, checkoutCommand, GIT_SSH_COMMAND)
+
+	} else {
+		gitPullCommand = fmt.Sprintf("cd %v && %v && git pull && cd ~", workspace.WorkingDirectoryPath, checkoutCommand)
+
+	}
 	err = sshRemote.ExecSSHCommandRealTime(gitPullCommand)
 	return err
 }

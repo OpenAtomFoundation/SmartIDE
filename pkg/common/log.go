@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-15 23:13:06
+ * @LastEditTime: 2022-05-23 16:07:52
  */
 package common
 
@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -273,11 +274,19 @@ func (sLog *smartIDELogStruct) ConsoleInLine(args ...interface{}) (err error) {
 	return nil
 }
 
+//
+func (sLog *smartIDELogStruct) ImportanceWithError(err error) {
+	if _, ok := err.(*exec.ExitError); !ok {
+		sLog.Importance(err.Error())
+	}
+
+}
+
 // 一些重要的信息，已warning的形式输出到控制台
-func (sLog *smartIDELogStruct) Importance(infos ...string) (err error) {
+func (sLog *smartIDELogStruct) Importance(infos ...string) {
 	msg := strings.Join(infos, " ")
 	if len(msg) <= 0 {
-		return nil
+		return
 	}
 
 	if isRepeat(msg, zapcore.WarnLevel) { // 是否重复
@@ -289,7 +298,6 @@ func (sLog *smartIDELogStruct) Importance(infos ...string) (err error) {
 
 	sugarLogger.Warn(msg)
 
-	return nil
 }
 
 // 等待另外一个新日志

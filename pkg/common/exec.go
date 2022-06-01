@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-29 14:16:33
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-04-29 14:14:40
+ * @LastEditTime: 2022-05-27 16:44:19
  * @FilePath: /smartide-cli/pkg/common/exec.go
  */
 
@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 )
 
 type execOperation struct{}
@@ -68,5 +69,9 @@ func (eo *execOperation) CombinedOutput(command string, rootDir string) (string,
 	}
 
 	bytes, err := execCommand.CombinedOutput()
-	return string(bytes), err
+
+	output := strings.TrimSpace(string(bytes))
+	SmartIDELog.Debug(fmt.Sprintf("local (%v) exec -> %v >>\n%v", runtime.GOOS, command, output))
+
+	return output, err
 }

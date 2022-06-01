@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-15 23:08:10
+ * @LastEditTime: 2022-05-26 10:02:30
  */
 package cmd
 
@@ -77,7 +77,7 @@ var resetCmd = &cobra.Command{
 				err = ssmRemote.CheckDail(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password)
 				if err != nil {
 					if resetCmdFalgs.IsAll { // 删除所有的时候，不顾及太多
-						common.SmartIDELog.Importance(err.Error())
+						common.SmartIDELog.ImportanceWithError(err)
 					} else {
 						common.SmartIDELog.Error(err.Error())
 					}
@@ -97,7 +97,7 @@ var resetCmd = &cobra.Command{
 					} else if workspaceInfo.Mode == workspace.WorkingMode_Remote { // 远程模式
 						// 删除对应的容器\镜像\工作目录
 						removeRemoteMode(workspaceInfo,
-							resetCmdFalgs.IsRemoveAllComposeImages || resetCmdFalgs.IsAll, resetCmdFalgs.IsRemoveDirectory || resetCmdFalgs.IsAll, resetCmdFalgs.IsAll)
+							resetCmdFalgs.IsRemoveAllComposeImages || resetCmdFalgs.IsAll, resetCmdFalgs.IsRemoveDirectory || resetCmdFalgs.IsAll, resetCmdFalgs.IsAll, cmd)
 
 					}
 					i, err := strconv.Atoi(workspaceInfo.ID)
@@ -130,8 +130,8 @@ var resetCmd = &cobra.Command{
 			// 删除.db文件
 			sqliteFilePath := common.PathJoin(dirname, dal.SqliteFilePath)
 			err = os.Remove(sqliteFilePath)
-			if err != nil { // 如果无法删除，等待5秒再删除
-				common.SmartIDELog.Importance(err.Error())
+			for err != nil { // 如果无法删除，等待5秒再删除
+				common.SmartIDELog.ImportanceWithError(err)
 				common.SmartIDELog.Debug("等待5秒再删除 " + sqliteFilePath)
 				time.Sleep(time.Second * 5)
 				err = os.Remove(sqliteFilePath)

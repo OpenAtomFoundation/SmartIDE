@@ -156,7 +156,7 @@ func newConfig(localWorkingDir string, configFilePath string, configContent stri
 			if result.IsNil() {
 				common.CheckError(err)
 			} else {
-				common.SmartIDELog.Importance(err.Error())
+				common.SmartIDELog.ImportanceWithError(err)
 			}
 		}
 

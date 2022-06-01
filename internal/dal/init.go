@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS "workspace" (
  );
  CREATE TABLE IF NOT EXISTS "k8s" (
 	"k_id" INTEGER PRIMARY KEY AUTOINCREMENT,
+	"k_kubeconfig" VARCHAR(500) NULL,
 	"k_context" VARCHAR(50) NULL,
 	"k_namespace" VARCHAR(50) NULL,
 	"k_deployment" VARCHAR(50) NULL,
@@ -79,6 +80,7 @@ CREATE TABLE IF NOT EXISTS "workspace" (
 	// 新增的列
 	db.Exec("ALTER TABLE remote ADD r_port int default (22);")
 	db.Exec("ALTER TABLE remote ADD COLUMN r_json text;")
+
 	db.Exec("ALTER TABLE workspace ADD COLUMN w_json text;")
 	db.Exec("ALTER TABLE workspace ADD COLUMN w_config_file VARCHAR(256) NULL;")
 	db.Exec("ALTER TABLE workspace ADD COLUMN w_config_content text NULL;")
@@ -86,6 +88,7 @@ CREATE TABLE IF NOT EXISTS "workspace" (
 	db.Exec("ALTER TABLE workspace ADD COLUMN w_temp_compose_content text NULL;")
 	db.Exec("ALTER TABLE workspace ADD COLUMN k_id INTEGER NULL;")
 
+	db.Exec("ALTER TABLE k8s ADD COLUMN k_kubeconfig VARCHAR(500) NULL;")
 }
 
 // sqlite 数据库文件所在路径

@@ -131,6 +131,7 @@ stages:
       displayName: "aks start"
       pool: SmartIDESub03-linux-agt
       steps:
+          - checkout: none
 
           - task: AzureCLI@2
             displayName: start aks
@@ -151,10 +152,10 @@ stages:
           - task: AzureCLI@2
             displayName: startup windows vm
             inputs:
-              azureSubscription: 'smartide-win10pro-eng-testvm01'
+              azureSubscription: 'smartide-win-server-eng-testvm01'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
-              inlineScript: 'az vm start --resource-group smartide-win10pro-eng-testvm01-rg --name smartide-win10pro-eng-testvm01 --subscription 12ab281f-876f-4e7d-8a43-0cab78d05744'
+              inlineScript: 'az vm start --resource-group smartide-win-server-eng-testvm01 --name smartide-winserver-eng-testvm01 --subscription 12ab281f-876f-4e7d-8a43-0cab78d05744'
 
           - task: AzureCLI@2
             displayName: startup remote vitural machine for windows test
@@ -164,15 +165,13 @@ stages:
               scriptLocation: 'inlineScript'
               inlineScript: 'az vm start --resource-group experiment-002 --name experiment-002 --subscription 4603be58-9bf3-4aa4-bfb5-ac9c5462cf0e'
 
-          - task: SSH@0
-            displayName: clean up remote vitural machine for windows test
+          - task: PowerShell@2
+            displayName: waiting for vm running
             inputs:
-              sshEndpoint: 'ssh-experiment-002'
-              runOptions: 'inline'
-              inline: |                
-                [[ $(docker ps -aq) != '' ]] && sudo docker rm -f $(docker ps -aq)  || echo 'docker container empty'
-                rm -rf ~/project
-              readyTimeout: '20000'
+              targetType: 'inline'
+              script: |
+                Start-Sleep -Seconds 66
+              failOnStderr: true
  
     - job: windowsTest
       dependsOn: vmStart
@@ -180,26 +179,6 @@ stages:
       pool: integration-test-win10
       steps:
           - checkout: none
-
-          - task: PowerShell@2
-            displayName: docker start
-            inputs:
-              targetType: 'inline'
-              script: | 
-  
-                Start-Service "Hyper-V Virtual Machine Management"
-                Start-Service "Hyper-V Host Compute Service"
-
-                Start-Service *docker*
-                "c:\program files\docker\docker\Docker for Windows.exe"
-                cd "C:\Program Files\Docker\Docker"
-                ./DockerCli.exe -SwitchDaemon
-
-                docker version
-                docker-compose version
-
-                Get-Process "*Hyper-V*"
-                Get-Process "*docker*"
 
           - task: DownloadBuildArtifacts@1
             inputs:
@@ -230,9 +209,10 @@ stages:
                 Write-Host 'new local ---------------------------------------------------------------------------------'
                 $FolderPath = ".\newtest"
                 if (Test-Path $FolderPath) {
-                  Remove-Item $FolderPath -Force -Recurse
-                }                
-                New-Item -ItemType "directory" -Path $FolderPath
+                  Remove-Item ("{0}{1}" -f $FolderPath,'\*') -Force -Recurse
+                }else{
+                  New-Item -ItemType "directory" -Path $FolderPath
+                }
                 cd $FolderPath
                 ..\$(cliname) new node -t _default -d --unforward
                 cd ..
@@ -248,6 +228,18 @@ stages:
                 .\$(cliname) remove 1 -yfpi -d                
 
               workingDirectory: $(Build.SourcesDirectory)
+
+          - task: SSH@0
+            displayName: clean up remote vitural machine for windows test
+            inputs:
+              sshEndpoint: 'ssh-experiment-002'
+              runOptions: 'inline'
+              inline: |
+                [[ $(docker ps -aq) != '' ]] && sudo docker rm -f $(docker ps -aq)  || echo 'docker container empty'
+                rm -rf ~/project
+                rm -rf ~/.ssh
+                rm -rf ~/.gitconfig
+              readyTimeout: '200000'
 
           - task: PowerShell@2
             displayName: new(remote) + stop + remove test
@@ -284,7 +276,7 @@ stages:
                 Write-Host 'new local ---------------------------------------------------------------------------------'
                 $FolderPath = ".\boathouse-calculator"
                 if (Test-Path $FolderPath) {
-                  Remove-Item $FolderPath -Force -Recurse
+                  Remove-Item ("{0}{1}" -f $FolderPath,'\*') -Force -Recurse
                 }  
                 git clone https://github.com/idcf-boat-house/boathouse-calculator.git $FolderPath
                 cd boathouse-calculator
@@ -302,6 +294,18 @@ stages:
                 .\$(cliname) remove 1 -yfpi -d        
               workingDirectory: $(Build.SourcesDirectory)
 
+          - task: SSH@0
+            displayName: clean up remote vitural machine for windows test
+            inputs:
+              sshEndpoint: 'ssh-experiment-002'
+              runOptions: 'inline'
+              inline: |
+                [[ $(docker ps -aq) != '' ]] && sudo docker rm -f $(docker ps -aq)  || echo 'docker container empty'
+                rm -rf ~/project
+                rm -rf ~/.ssh
+                rm -rf ~/.gitconfig
+              readyTimeout: '200000'
+              
           - task: PowerShell@2
             displayName: start(remote) + stop + remove test
             inputs:
@@ -312,7 +316,7 @@ stages:
                 .\$(cliname) reset -ya -d
 
                 Write-Host 'new remote ---------------------------------------------------------------------------------'
-                .\$(cliname) start -d --unforward --host $(integration_test.vm.host) --port $(integration_test.vm.hostport) --username $(integration_test.vm.username) --password $(integration_test.vm.password) --repourl https://github.com/idcf-boat-house/boathouse-calculator.git
+                .\$(cliname) start -d --unforward --host $(integration_test.vm.host) --port $(integration_test.vm.hostport) --username $(integration_test.vm.username) --password $(integration_test.vm.password) --repourl https://github.com/idcf-boat-house/boathouse-calculator.git 
 
                 Write-Host 'stop ---------------------------------------------------------------------------------'
                 .\$(cliname) list -d 
@@ -335,7 +339,7 @@ stages:
                 .\$(cliname) reset -ya -d
 
                 Write-Host 'create k8s workspace ---------------------------------------------------------------------------------'
-                .\$(cliname) start --k8s SmartIDEAKS -d --unforward --filepath k8s.ide.yaml --namespace default --repourl https://github.com/idcf-boat-house/boathouse-calculator.git
+                .\$(cliname) start --k8s SmartIDEAKS -d --unforward --filepath k8s.ide.yaml --repourl https://github.com/idcf-boat-house/boathouse-calculator.git
 
                 Write-Host 'show info ---------------------------------------------------------------------------------'
                 .\$(cliname) list -d 
@@ -370,6 +374,13 @@ stages:
       dependsOn: windowsTest
       pool: SmartIDESub03-linux-agt
       steps:
+          - task: AzureCLI@2
+            displayName: shutdown windows server vm
+            inputs:
+              azureSubscription: 'smartide-win-server-eng-testvm01'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: 'az vm stop --resource-group smartide-win-server-eng-testvm01 --name smartide-winserver-eng-testvm01 --subscription 12ab281f-876f-4e7d-8a43-0cab78d05744'
 
           - task: AzureCLI@2
             displayName: stop remote vitural machine 
@@ -377,102 +388,102 @@ stages:
               azureSubscription: 'integration-test-000'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
-              inlineScript: 'az vm stop --resource-group INTEGRATION-TEST-001 --name INTEGRATION-TEST-001 --subscription 4603be58-9bf3-4aa4-bfb5-ac9c5462cf0e'
+              inlineScript: 'az vm stop --resource-group experiment-002 --name experiment-002 --subscription 4603be58-9bf3-4aa4-bfb5-ac9c5462cf0e'
 
-  - stage: Integration_Test_mac
-    dependsOn: AKS_Start
-    jobs:
-    - job: vmStart
-      displayName: "vm start"
-      pool: SmartIDESub03-linux-agt
-      steps:
+  # - stage: Integration_Test_mac
+  #   dependsOn: AKS_Start
+  #   jobs:
+  #   - job: vmStart
+  #     displayName: "vm start"
+  #     pool: SmartIDESub03-linux-agt
+  #     steps:
 
-          - task: AzureCLI@2
-            displayName: startup remote vitural machine
-            inputs:
-              azureSubscription: 'integration-test-001'
-              scriptType: 'bash'
-              scriptLocation: 'inlineScript'
-              inlineScript: 'az vm start --resource-group INTEGRATION-TEST-001 --name INTEGRATION-TEST-001 --subscription 4603be58-9bf3-4aa4-bfb5-ac9c5462cf0e'
+  #         - task: AzureCLI@2
+  #           displayName: startup remote vitural machine
+  #           inputs:
+  #             azureSubscription: 'integration-test-001'
+  #             scriptType: 'bash'
+  #             scriptLocation: 'inlineScript'
+  #             inlineScript: 'az vm start --resource-group INTEGRATION-TEST-001 --name INTEGRATION-TEST-001 --subscription 4603be58-9bf3-4aa4-bfb5-ac9c5462cf0e'
 
-          - task: SSH@0
-            displayName: clean up remote vitural machine for windows test
-            inputs:
-              sshEndpoint: 'ssh-integration-test-001'
-              runOptions: 'inline'
-              inline: |                
-                [[ $(docker ps -aq) != '' ]] && sudo docker rm -f $(docker ps -aq)  || echo 'docker container empty'
-                rm -rf ~/project
-              readyTimeout: '20000'
+  #         - task: SSH@0
+  #           displayName: clean up remote vitural machine for windows test
+  #           inputs:
+  #             sshEndpoint: 'ssh-integration-test-001'
+  #             runOptions: 'inline'
+  #             inline: |                
+  #               [[ $(docker ps -aq) != '' ]] && sudo docker rm -f $(docker ps -aq)  || echo 'docker container empty'
+  #               rm -rf ~/project
+  #             readyTimeout: '20000'
 
-    - job: macTest
-      dependsOn: vmStart
-      displayName: "mac test"
-      pool: Mac
-      workspace:
-        clean: all
-      steps:
-          - checkout: none
+  #   - job: macTest
+  #     dependsOn: vmStart
+  #     displayName: "mac test"
+  #     pool: Mac
+  #     workspace:
+  #       clean: all
+  #     steps:
+  #         - checkout: none
 
-          - task: DownloadBuildArtifacts@1
-            inputs:
-              buildType: "current"
-              downloadType: "single"
-              artifactName: "drop"
-              itemPattern: "**/$(cliname)-osx-**-x64"
-              downloadPath: "$(Build.SourcesDirectory)"
-          - task: Bash@3
-            displayName: rename cli
-            inputs:
-              targetType: "inline"
-              script: | 
-                ls ./drop
-                mv ./drop/$(cliname)-osx-**-x64 $(cliname)
-                chmod +x $(cliname)
-              workingDirectory: $(Build.SourcesDirectory)
+  #         - task: DownloadBuildArtifacts@1
+  #           inputs:
+  #             buildType: "current"
+  #             downloadType: "single"
+  #             artifactName: "drop"
+  #             itemPattern: "**/$(cliname)-osx-**-x64"
+  #             downloadPath: "$(Build.SourcesDirectory)"
+  #         - task: Bash@3
+  #           displayName: rename cli
+  #           inputs:
+  #             targetType: "inline"
+  #             script: | 
+  #               ls ./drop
+  #               mv ./drop/$(cliname)-osx-**-x64 $(cliname)
+  #               chmod +x $(cliname)
+  #             workingDirectory: $(Build.SourcesDirectory)
             
-          - task: Bash@3
-            displayName: new(local) + stop + remove test
-            inputs:
-              targetType: "inline"
-              script: |
-                exit 101
+  #         - task: Bash@3
+  #           displayName: new(local) + stop + remove test
+  #           inputs:
+  #             targetType: "inline"
+  #             script: |
+  #               exit 101
 
-                echo 'clean up ---------------------------------------------------------------------------------'
-                ./$(cliname) version
-                ./$(cliname) reset -ya -d
+  #               echo 'clean up ---------------------------------------------------------------------------------'
+  #               ./$(cliname) version
+  #               ./$(cliname) reset -ya -d
 
-                echo 'new local ---------------------------------------------------------------------------------'
-                FolderPath="newtest"
-                [[ -d $FolderPath ]] && 'folder is exists' || mkdir $FolderPath
-                cd $FolderPath
-                ../$(cliname) new node -t _default -d --unforward
-                cd ..
+  #               echo 'new local ---------------------------------------------------------------------------------'
+  #               FolderPath="newtest"
+  #               [[ -d $FolderPath ]] && 'folder is exists' || mkdir $FolderPath
+  #               cd $FolderPath
+  #               ../$(cliname) new node -t _default -d --unforward
+  #               cd ..
 
-                echo 'stop ---------------------------------------------------------------------------------'
-                ./$(cliname) list -d 
-                ./$(cliname) get 1 -d
-                ./$(cliname) stop 1 -d
+  #               echo 'stop ---------------------------------------------------------------------------------'
+  #               ./$(cliname) list -d 
+  #               ./$(cliname) get 1 -d
+  #               ./$(cliname) stop 1 -d
 
-                echo 'stop && remove ---------------------------------------------------------------------------------'
-                ./$(cliname) start 1 -d --unforward
-                ./$(cliname) stop 1 -d
-                ./$(cliname) remove 1 -yfpi -d 
-              workingDirectory: $(Build.SourcesDirectory)
+  #               echo 'stop && remove ---------------------------------------------------------------------------------'
+  #               ./$(cliname) start 1 -d --unforward
+  #               ./$(cliname) stop 1 -d
+  #               ./$(cliname) remove 1 -yfpi -d 
+  #             workingDirectory: $(Build.SourcesDirectory)
 
-    - job: vmShutdonw
-      displayName: "vm shutdown"
-      dependsOn: macTest
-      pool: SmartIDESub03-linux-agt
-      steps:
+  #   - job: vmShutdonw
+  #     displayName: "vm shutdown"
+  #     dependsOn: macTest
+  #     pool: SmartIDESub03-linux-agt
+  #     steps:
 
-          - task: AzureCLI@2
-            displayName: stop remote vitural machine 
-            inputs:
-              azureSubscription: 'integration-test-001'
-              scriptType: 'bash'
-              scriptLocation: 'inlineScript'
-              inlineScript: 'az vm stop --resource-group INTEGRATION-TEST-001 --name INTEGRATION-TEST-001 --subscription 4603be58-9bf3-4aa4-bfb5-ac9c5462cf0e'
+  #         - task: AzureCLI@2
+  #           displayName: stop remote vitural machine 
+  #           inputs:
+  #             azureSubscription: 'integration-test-001'
+  #             scriptType: 'bash'
+  #             scriptLocation: 'inlineScript'
+  #             inlineScript: 'az vm stop --resource-group INTEGRATION-TEST-001 --name INTEGRATION-TEST-001 --subscription 4603be58-9bf3-4aa4-bfb5-ac9c5462cf0e'
 
   - stage: Integration_Test_ubuntu
     dependsOn: AKS_Start
@@ -497,15 +508,14 @@ stages:
               scriptLocation: 'inlineScript'
               inlineScript: 'az vm start --resource-group experiment-007 --name experiment-007 --subscription 4603be58-9bf3-4aa4-bfb5-ac9c5462cf0e'
 
-          - task: SSH@0
-            displayName: clean up remote vitural machine for windows test
+          - task: Bash@3
+            displayName: waiting for vm running
             inputs:
-              sshEndpoint: 'ssh-integration-test-002'
-              runOptions: 'inline'
-              inline: |                
-                [[ $(docker ps -aq) != '' ]] && sudo docker rm -f $(docker ps -aq)  || echo 'docker container empty'
-                rm -rf ~/project
-              readyTimeout: '20000'
+              targetType: 'inline'
+              script: |
+                sleep 66s
+
+
 
     - job: linuxTest
       dependsOn: vmStart
@@ -560,6 +570,18 @@ stages:
                 ./$(cliname) stop 1 -d
                 ./$(cliname) remove 1 -yfpi -d 
 
+          - task: SSH@0
+            displayName: clean up remote vitural machine 
+            inputs:
+              sshEndpoint: 'ssh-integration-test-002'
+              runOptions: 'inline'
+              inline: |                
+                [[ $(docker ps -aq) != '' ]] && sudo docker rm -f $(docker ps -aq)  || echo 'docker container empty'
+                rm -rf ~/project
+                rm -rf ~/.ssh
+                rm -rf ~/.gitconfig
+              readyTimeout: '200000'
+
           - task: Bash@3
             displayName: new(remote) + stop + remove test
             inputs:
@@ -610,6 +632,18 @@ stages:
                 ./$(cliname) stop 1 -d
                 ./$(cliname) remove 1 -yfpi -d        
 
+          - task: SSH@0
+            displayName: clean up remote vitural machine 
+            inputs:
+              sshEndpoint: 'ssh-integration-test-002'
+              runOptions: 'inline'
+              inline: |                
+                [[ $(docker ps -aq) != '' ]] && sudo docker rm -f $(docker ps -aq)  || echo 'docker container empty'
+                rm -rf ~/project
+                rm -rf ~/.ssh
+                rm -rf ~/.gitconfig
+              readyTimeout: '200000'
+
           - task: Bash@3
             displayName: start(remote) + stop + remove test
             inputs:
@@ -621,7 +655,7 @@ stages:
                 ./$(cliname) reset -ya -d
 
                 echo 'new remote ---------------------------------------------------------------------------------'
-                ./$(cliname) start -d --unforward --host $(integration_test.vm.host3) --port $(integration_test.vm.hostport3) --username $(integration_test.vm.username) --password $(integration_test.vm.password) --repourl https://github.com/idcf-boat-house/boathouse-calculator.git
+                ./$(cliname) start -d --unforward --host $(integration_test.vm.host3) --port $(integration_test.vm.hostport3) --username $(integration_test.vm.username) --password $(integration_test.vm.password) --repourl https://github.com/idcf-boat-house/boathouse-calculator.git 
 
                 echo 'stop ---------------------------------------------------------------------------------'
                 ./$(cliname) list -d 
@@ -643,7 +677,7 @@ stages:
                 ./$(cliname) reset -ya -d
 
                 echo 'create k8s workspace ---------------------------------------------------------------------------------'
-                ./$(cliname) start --k8s SmartIDEAKS -d --unforward --filepath k8s.ide.yaml --namespace default --repourl https://github.com/idcf-boat-house/boathouse-calculator.git
+                ./$(cliname) start --k8s SmartIDEAKS -d --unforward --filepath k8s.ide.yaml --repourl https://github.com/idcf-boat-house/boathouse-calculator.git
 
                 echo 'show info --------------------------------------------------------------------------------------------'
                 ./$(cliname) list -d 
@@ -693,10 +727,10 @@ stages:
               inlineScript: 'az vm stop --resource-group experiment-007 --name experiment-007 --subscription 4603be58-9bf3-4aa4-bfb5-ac9c5462cf0e'
 
   - stage: AKS_Stop
-    dependsOn: [ Integration_Test_windows, Integration_Test_mac, Integration_Test_ubuntu ]
+    dependsOn: [ Integration_Test_windows,  Integration_Test_ubuntu ] ## Integration_Test_mac,
     jobs:
-    - job: vmStart
-      displayName: "vm start"
+    - job: vmStop
+      displayName: "vm stop"
       pool: SmartIDESub03-linux-agt
       steps:
 

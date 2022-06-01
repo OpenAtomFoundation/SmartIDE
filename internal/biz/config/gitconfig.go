@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2021-10-13 15:31:52
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-04-18 09:58:44
+ * @LastEditTime: 2022-05-26 15:33:30
  * @Description: file content
  */
 
@@ -15,6 +15,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -67,15 +68,28 @@ func ConfigGitByDockerExec() {
 }
 
 // 注入ssh配置
-func SSHVolumesConfig(isVmCommand bool, service *compose.Service, sshRemote common.SSHRemote) {
+func SSHVolumesConfig(isVmCommand bool, service *compose.Service, sshRemote common.SSHRemote, userName string) {
 
 	var configPaths []string
 
 	// volumes
 	if runtime.GOOS == "windows" && !isVmCommand {
-		configPaths = []string{fmt.Sprintf("\\'%v\\.ssh:/home/smartide/.ssh\\'", os.Getenv("USERPROFILE"))}
+		if common.IsExit(filepath.Join(os.Getenv("USERPROFILE"), "/.ssh")) {
+			configPaths = []string{fmt.Sprintf("\\'%v\\.ssh:/home/smartide/.ssh\\'", os.Getenv("USERPROFILE"))}
+		}
 	} else {
-		configPaths = []string{"$HOME/.ssh:/home/smartide/.ssh"}
+		if isVmCommand {
+			configPaths = []string{fmt.Sprintf("$HOME/.ssh/id_rsa_%s_%s:/home/smartide/.ssh/id_rsa", userName, common.SmartIDELog.Ws_id), fmt.Sprintf("$HOME/.ssh/id_rsa.pub_%s_%s:/home/smartide/.ssh/id_rsa.pub", userName, common.SmartIDELog.Ws_id)}
+		} else {
+
+			if homeDir, err := os.UserHomeDir(); err == nil {
+				if common.IsExit(filepath.Join(homeDir, "/.ssh")); err == nil {
+					configPaths = []string{"$HOME/.ssh:/home/smartide/.ssh"}
+
+				}
+			}
+		}
+
 	}
 	if configPaths != nil {
 		service.Volumes = append(service.Volumes, configPaths...)

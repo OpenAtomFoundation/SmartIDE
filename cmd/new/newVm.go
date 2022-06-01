@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-04-20 10:46:40
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-12 19:49:44
+ * @LastEditTime: 2022-05-26 08:34:35
  * @FilePath: /smartide-cli/cmd/new/newVm.go
  */
 
@@ -96,29 +96,21 @@ func VmNew(cmd *cobra.Command, args []string, workspaceInfo workspace.WorkspaceI
 // 在服务器上使用git下载制定的template文件，完成后删除.git文件
 func gitCloneTemplateRepo4Remote(sshRemote common.SSHRemote, projectDir string, templateGitCloneUrl string, baseType string, subType string) error {
 
-	errFunc := func(output string) error {
-		if strings.Contains(output, "error") || strings.Contains(output, "fatal") {
-			return errors.New(output)
-		} else {
-			common.SmartIDELog.ConsoleInLine(output)
-			if strings.Contains(output, "done.") {
-				fmt.Println()
-			}
-		}
-
-		return nil
-	}
-
 	// git
 	tempDirPath := common.FilePahtJoin4Linux("~", ".ide", "template")
 	command := fmt.Sprintf(`
-	cd %v
-	[[ -d .git ]] && git pull || git clone %v %v
+cd %v 
+[[ -d .git ]] && (git checkout . && git clean -xdf && git pull) || git clone %v %v
 `, tempDirPath, templateGitCloneUrl, tempDirPath)
-	err := sshRemote.ExecSSHCommandRealTimeFunc(command, errFunc)
+	err := sshRemote.ExecSSHCommandRealTime(command)
 	if err != nil {
+		common.SmartIDELog.Importance(err.Error())
 		if strings.Contains(err.Error(), "You have not concluded your merge") {
-			err = sshRemote.ExecSSHCommandRealTimeFunc("git merge --abort && git reset --merge && git pull", errFunc)
+			common.SmartIDELog.Debug("re-pull")
+			command = fmt.Sprintf(`cd %v 
+git fetch --all && git reset --hard origin/master && git fetch && git pull`,
+				tempDirPath)
+			err = sshRemote.ExecSSHCommandRealTime(command)
 		}
 
 		return err

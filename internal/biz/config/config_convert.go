@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-30 23:10:52
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-15 23:09:29
+ * @LastEditTime: 2022-05-24 10:48:43
  * @FilePath: /smartide-cli/internal/biz/config/config_convert.go
  */
 
@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/jinzhu/copier"
@@ -65,11 +66,19 @@ func (originK8sConfig SmartIdeK8SConfig) GetSystemUserName() string {
 
 // 转换为临时的yaml文件
 func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(repoName string, namespace string, systemUserName string) SmartIdeK8SConfig {
+	//0.
 	k8sConfig := SmartIdeK8SConfig{}
 	copier.CopyWithOption(&k8sConfig, &originK8sConfig, copier.Option{IgnoreEmpty: true, DeepCopy: true}) // 把一个对象赋值给另外一个对象
+	repoName = strings.TrimSpace(strings.ToLower(repoName))
 
-	repoName = strings.ToLower(repoName)
 	//1. namespace
+	//1.1. 创建kind
+	namespaceKind := coreV1.Namespace{}
+	namespaceKind.Kind = "Namespace" // 必须要赋值，否则为空
+	namespaceKind.APIVersion = "v1"  // 必须要赋值，否则为空
+	namespaceKind.ObjectMeta.Name = namespace
+	k8sConfig.Workspace.Others = append(k8sConfig.Workspace.Others, namespaceKind)
+	//1.2. 挂载到这个namespace上
 	for i := 0; i < len(k8sConfig.Workspace.Deployments); i++ {
 		k8sConfig.Workspace.Deployments[i].ObjectMeta.Namespace = namespace
 	}
@@ -81,13 +90,23 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(repoName string, n
 	}
 	for i := 0; i < len(k8sConfig.Workspace.Others); i++ {
 		other := k8sConfig.Workspace.Others[i]
-		reflect.ValueOf(other).Elem().FieldByName("ObjectMeta").Elem().FieldByName("Namespace").SetString(namespace)
+
+		re := reflect.ValueOf(other)
+		kindName := ""
+		if re.Kind() == reflect.Ptr {
+			re = re.Elem()
+		}
+		kindName = fmt.Sprint(re.FieldByName("Kind"))
+		if kindName != "Namespace" {
+			re.FieldByName("ObjectMeta").FieldByName("Namespace").SetString(namespace)
+		}
+
 	}
 
-	// 一个 pvc
+	//2. 创建 一个pvc
 	pvc := coreV1.PersistentVolumeClaim{}
 	pvcName := fmt.Sprintf("%v-pvc-claim", repoName)
-	storageClassName := "smartide-file-storageclass"
+	storageClassName := "smartide-file-storageclass" //TODO: const
 	pvc.ObjectMeta.Name = pvcName
 	pvc.Spec.AccessModes = append(pvc.Spec.AccessModes, coreV1.ReadWriteMany) // ReadWriteMany 可以在多个节点 和 多个pod间访问
 	pvc.Spec.StorageClassName = &storageClassName
@@ -100,7 +119,7 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(repoName string, n
 	k8sConfig.Workspace.PVCS = append(k8sConfig.Workspace.PVCS, pvc)
 
 	//
-	addPvcFunc := func(containerName string, containerDirPath string, storageSubPath string) {
+	boundPvcFunc := func(containerName string, containerDirPath string, storageSubPath string) {
 		if storageSubPath[0:1] == "/" {
 			storageSubPath = storageSubPath[1:]
 		}
@@ -143,15 +162,17 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(repoName string, n
 	}
 
 	//3. 把pvc写入到deployment中
-	// git
+	// 直接把用户目录进行映射，其中就包含了用户的的 “.gitconfig" 文件
 	if originK8sConfig.Workspace.DevContainer.Volumes.HasGitConfig.Value() {
-		gitDirPath := fmt.Sprintf("/home/%v/.git", systemUserName)
-		addPvcFunc(originK8sConfig.Workspace.DevContainer.ServiceName, gitDirPath, gitDirPath)
+		gitContainerDirPath := fmt.Sprintf("/%v", systemUserName) //TODO 直接把当前用户目录进行映射太暴力
+		gitPvcSubDirPath := fmt.Sprintf("/home/%v", systemUserName)
+		boundPvcFunc(originK8sConfig.Workspace.DevContainer.ServiceName, gitContainerDirPath, gitPvcSubDirPath)
 	}
 	// ssh
 	if originK8sConfig.Workspace.DevContainer.Volumes.HasSshKey.Value() {
-		sshDirPath := fmt.Sprintf("/home/%v/.ssh", systemUserName)
-		addPvcFunc(originK8sConfig.Workspace.DevContainer.ServiceName, sshDirPath, sshDirPath)
+		sshContainerDirPath := fmt.Sprintf("/%v/.ssh", systemUserName)
+		sshPvcSubDirPath := fmt.Sprintf("/home/%v/.ssh", systemUserName)
+		boundPvcFunc(originK8sConfig.Workspace.DevContainer.ServiceName, sshContainerDirPath, sshPvcSubDirPath)
 	}
 	// 其他类型
 	hasProjectConfig := false
@@ -161,28 +182,28 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(repoName string, n
 			case PersistentVolumeDirectoryTypeEnum_Project:
 				if containerName == originK8sConfig.Workspace.DevContainer.ServiceName {
 					hasProjectConfig = true
-					projectSubPath := fmt.Sprintf("/home/%v/project", systemUserName)
-					addPvcFunc(containerName, pv.MountPath, projectSubPath)
+					projectPvcSubPath := fmt.Sprintf("/home/%v/project", systemUserName)
+					boundPvcFunc(containerName, pv.MountPath, projectPvcSubPath)
 				}
 
 			case PersistentVolumeDirectoryTypeEnum_DbData:
 				dbSubPath := "smartide-db"
-				addPvcFunc(containerName, pv.MountPath, dbSubPath) // 当前容器
+				boundPvcFunc(containerName, pv.MountPath, dbSubPath) // 当前容器
 
 			case PersistentVolumeDirectoryTypeEnum_Other:
-				addPvcFunc(containerName, pv.MountPath, pv.MountPath)
+				boundPvcFunc(containerName, pv.MountPath, pv.MountPath)
 
 			case PersistentVolumeDirectoryTypeEnum_Agent:
 				agentSubPath := "smartide-agent"
-				addPvcFunc(containerName, pv.MountPath, agentSubPath) // 当前容器
+				boundPvcFunc(containerName, pv.MountPath, agentSubPath) // 当前容器
 
 			}
 		}
 	}
 	// project，没有项目路径映射的话，就用默认的
 	if !hasProjectConfig {
-		projectPath := fmt.Sprintf("/home/%v/project", systemUserName)
-		addPvcFunc(originK8sConfig.Workspace.DevContainer.ServiceName, projectPath, projectPath)
+		subProjectPath := fmt.Sprintf("/home/%v/project", systemUserName)
+		boundPvcFunc(originK8sConfig.Workspace.DevContainer.ServiceName, "/home/project", subProjectPath)
 	}
 
 	return k8sConfig
@@ -223,37 +244,47 @@ func (k8sConfig *SmartIdeK8SConfig) ConvertToK8sYaml() (string, error) {
 		return fmt.Sprintln("---") + string(k8sYamlContentBytes), nil
 	}
 
-	k8sYamlContent := ""
+	//
+	kinds := []interface{}{}
+	kinds = append(kinds, k8sConfig.Workspace.Others...)
 	for _, deployment := range k8sConfig.Workspace.Deployments {
-		content, err := func1(deployment)
-		if err != nil {
-			return "", err
-		}
-		k8sYamlContent += string(content)
+		kinds = append(kinds, deployment)
 	}
 	for _, service := range k8sConfig.Workspace.Services {
-		content, err := func1(service)
-		if err != nil {
-			return "", err
-		}
-		k8sYamlContent += string(content)
+		kinds = append(kinds, service)
 	}
 	for _, pvc := range k8sConfig.Workspace.PVCS {
-		content, err := func1(pvc)
-		if err != nil {
-			return "", err
-		}
-		k8sYamlContent += string(content)
+		kinds = append(kinds, pvc)
 	}
 	for _, networkPolicy := range k8sConfig.Workspace.Networks {
-		content, err := func1(networkPolicy)
-		if err != nil {
-			return "", err
-		}
-		k8sYamlContent += string(content)
+		kinds = append(kinds, networkPolicy)
 	}
-	for _, other := range k8sConfig.Workspace.Others {
-		content, err := func1(other)
+
+	// 排序
+	sortIndex := func(kind interface{}) int {
+		kindName := ""
+		re := reflect.ValueOf(kind)
+		if re.Kind() == reflect.Ptr {
+			re = re.Elem()
+		}
+		kindName = fmt.Sprint(re.FieldByName("Kind"))
+
+		kindNameArray := []string{"Namespace", "PersistentVolumeClaim", "NetworkPolicy", "Deployment", "Service"}
+		for index, item := range kindNameArray {
+			if item == kindName {
+				return index
+			}
+		}
+		return 999
+	}
+	sort.Slice(kinds, func(i, j int) bool {
+		return sortIndex(kinds[i]) < sortIndex(kinds[j])
+	})
+
+	//
+	k8sYamlContent := ""
+	for _, kind := range kinds {
+		content, err := func1(kind)
 		if err != nil {
 			return "", err
 		}

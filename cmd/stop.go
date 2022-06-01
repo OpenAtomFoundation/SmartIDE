@@ -86,7 +86,7 @@ var stopCmd = &cobra.Command{
 			for !isStop {
 				serverWorkSpace, err := workspace.GetWorkspaceFromServer(currentServerAuth, workspaceInfo.ID, workspace.CliRunningEnvEnum_Client)
 				if err != nil {
-					common.SmartIDELog.Importance(err.Error())
+					common.SmartIDELog.ImportanceWithError(err)
 				}
 				if serverWorkSpace.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Stop ||
 					serverWorkSpace.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Error_Stop {

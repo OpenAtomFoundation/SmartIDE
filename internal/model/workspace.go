@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-15 19:32:44
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-09 17:46:40
+ * @LastEditTime: 2022-05-31 15:44:26
  * @FilePath: /smartide-cli/internal/model/workspace.go
  * @Description:
  *
@@ -151,6 +151,7 @@ type Resource struct {
 	SSHUserName        string                 `json:"username" `
 	SSHPassword        string                 `json:"password" `
 	SSHKey             string                 `json:"sshkey" `
+	KubeConfigContent  string                 `json:"kube_config" `
 	OwnerGUID          string                 `json:"ownerGuid" `
 	OwnerName          string                 `json:"ownerName" `
 }

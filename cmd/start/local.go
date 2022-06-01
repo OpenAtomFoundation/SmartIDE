@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-11 15:30:52
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-05-25 15:32:13
  */
 package start
 
@@ -69,7 +69,7 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 		// 获取compose配置
 		tempDockerCompose, ideBindingPort, sshBindingPort =
-			currentConfig.ConvertToDockerCompose(common.SSHRemote{}, workspaceInfo.GetProjectDirctoryName(), "", true) // 转换为docker compose格式
+			currentConfig.ConvertToDockerCompose(common.SSHRemote{}, workspaceInfo.GetProjectDirctoryName(), "", true, "") // 转换为docker compose格式
 
 		// 更新端口绑定列表，只在改变的时候才需要赋值
 		workspaceInfo.Extend = workspace.WorkspaceExtend{Ports: currentConfig.GetPortMappings()}
@@ -188,7 +188,7 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 				isUrlReady = true
 				err := common.OpenBrowser(url)
 				if err != nil {
-					common.SmartIDELog.Importance(err.Error())
+					common.SmartIDELog.ImportanceWithError(err)
 				}
 				common.SmartIDELog.InfoF(i18nInstance.VmStart.Info_open_brower, url)
 			} else {

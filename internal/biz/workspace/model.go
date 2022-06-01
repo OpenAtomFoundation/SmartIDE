@@ -168,10 +168,7 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 	if projectName == "" {
 		projectName = getRepoName(serverWorkSpace.GitRepoUrl)
 	}
-	//label := getWorkspaceStatusDesc(serverWorkSpace.Status)
-	/* if err != nil {
-		return WorkspaceInfo{}, err
-	} */
+
 	workspaceInfo := WorkspaceInfo{
 		ID:                     serverWorkSpace.NO,
 		Name:                   serverWorkSpace.Name, //+ fmt.Sprintf(" (%v)", label),
@@ -180,18 +177,28 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 		Branch:                 serverWorkSpace.Branch,
 		Mode:                   WorkingMode_Remote,
 		CacheEnv:               CacheEnvEnum_Server,
-		//CliRunningEnv:          CliRunningEvnEnum_Server,
-		CreatedTime:          serverWorkSpace.CreatedAt,
-		WorkingDirectoryPath: common.PathJoin("~", model.CONST_REMOTE_REPO_ROOT, projectName),
-		//TempDockerComposeFilePath: common.PathJoin("~", REMOTE_REPO_ROOT, repoName),
-		Remote: RemoteInfo{
+		CreatedTime:            serverWorkSpace.CreatedAt,
+		WorkingDirectoryPath:   common.PathJoin("~", model.CONST_REMOTE_REPO_ROOT, projectName),
+	}
+
+	switch serverWorkSpace.Resource.Type {
+	case model.ReourceTypeEnum_Remote:
+		workspaceInfo.Mode = WorkingMode_Remote
+		workspaceInfo.Remote = RemoteInfo{
 			ID:       int(serverWorkSpace.Resource.ID),
 			Addr:     serverWorkSpace.Resource.IP,
 			UserName: serverWorkSpace.Resource.SSHUserName,
 			Password: serverWorkSpace.Resource.SSHPassword,
 			SSHPort:  serverWorkSpace.Resource.Port,
-		},
+		}
+	case model.ReourceTypeEnum_K8S:
+		workspaceInfo.Mode = WorkingMode_K8s
+		workspaceInfo.K8sInfo = K8sInfo{
+			KubeConfigContent: serverWorkSpace.Resource.KubeConfigContent,
+			Context:           serverWorkSpace.Resource.Name,
+		}
 	}
+
 	switch serverWorkSpace.Resource.AuthenticationType {
 	case model.AuthenticationTypeEnum_Password:
 		workspaceInfo.Remote.AuthType = RemoteAuthType_Password
@@ -526,6 +533,10 @@ type K8sInfo struct {
 	Namespace      string
 	DeploymentName string
 	PVCName        string
+
+	KubeConfigFilePath string
+	// kubeconfig 的文件内容
+	KubeConfigContent string
 
 	// 原始的k8s yaml
 	OriginK8sYaml config.SmartIdeK8SConfig

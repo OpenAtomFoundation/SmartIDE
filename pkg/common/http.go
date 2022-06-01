@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-10 18:11:42
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-03-22 15:23:09
+ * @LastEditTime: 2022-05-23 16:09:15
  * @FilePath: /smartide-cli/pkg/common/http.go
  * @Description:
  *
@@ -180,7 +180,7 @@ func getReader(reqParams map[string]interface{}, contentType string, files []Upl
 			}
 			_, err = io.Copy(part, file)
 			if err != nil {
-				SmartIDELog.Importance(err.Error())
+				SmartIDELog.ImportanceWithError(err)
 			}
 			file.Close()
 		}

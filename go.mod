@@ -125,6 +125,7 @@ require (
 	github.com/microsoft/ApplicationInsights-Go v0.4.4
 	github.com/pkg/sftp v1.13.4
 	github.com/thedevsaddam/gojsonq v2.3.0+incompatible
+	golang.org/x/sync v0.0.0-20220513210516-0976fa681c29
 	k8s.io/api v0.23.5
 	k8s.io/apimachinery v0.23.5
 	k8s.io/client-go v0.23.5

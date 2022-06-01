@@ -35,3 +35,4 @@ smartide-linux
 .profile
 kubectl
 .vscode
+*.env

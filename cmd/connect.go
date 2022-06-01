@@ -3,13 +3,14 @@
  * @Description:
  * @Date: 2022-02-25
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-17 17:09:50
+ * @LastEditTime: 2022-05-27 15:58:57
  */
 package cmd
 
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/leansoftX/smartide-cli/cmd/start"
@@ -83,7 +84,7 @@ func checkLogin(cmd *cobra.Command) (currentAuth model.Auth, err error) {
 			// 从api 获取workspace
 			_, err = workspace.GetServerWorkspaceList(currentAuth, cliRunningEnv)
 			if err != nil {
-				common.SmartIDELog.Importance(err.Error())
+				common.SmartIDELog.ImportanceWithError(err)
 				common.SmartIDELog.Importance("token 已失效，请重新登录！")
 
 				loginCmd.Run(cmd, []string{currentAuth.LoginUrl})
@@ -151,14 +152,18 @@ func connect(startedServerWorkspaces []workspace.WorkspaceInfo, cmd *cobra.Comma
 		appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(workspace.WorkingMode_Remote), strings.Join(imageNames, ","))
 	}
 
+	var mutex sync.Mutex
 	// start
 	forwardFunc := func(fixWorkspaceInfo workspace.WorkspaceInfo) {
+		mutex.Lock()
 		common.SmartIDELog.Info(fmt.Sprintf("-- workspace (%v) -------------------------------", fixWorkspaceInfo.ServerWorkSpace.NO))
 		err := start.ExecuteServerVmStartByClientEnvCmd(fixWorkspaceInfo, executeStartCmdFunc)
 		if err != nil {
-			common.SmartIDELog.Importance(err.Error())
+			common.SmartIDELog.ImportanceWithError(err)
 			connectedWorkspaceIds = common.RemoveItem(connectedWorkspaceIds, fixWorkspaceInfo.ServerWorkSpace.NO)
 		}
+		time.Sleep(time.Second * 26)
+		mutex.Unlock()
 
 		for {
 			if !common.Contains(connectedWorkspaceIds, fixWorkspaceInfo.ServerWorkSpace.NO) {

@@ -12,6 +12,7 @@ import (
 
 type K8sDO struct {
 	k_id         int
+	k_kubeconfg  sql.NullString
 	k_context    string
 	k_namespace  string
 	k_deployment string
@@ -25,22 +26,21 @@ func GetK8sInfoList() (k8sInfoList []workspace.K8sInfo, err error) {
 	db := getDb()
 	defer db.Close()
 
-	rows, err := db.Query(`select k_id, k_context, k_namespace, k_deployment,k_pvc,k_created from k8s
+	rows, err := db.Query(`select k_id, k_kubeconfg, k_context, k_namespace, k_deployment,k_pvc,k_created from k8s
 							where k_is_del = 0`)
 	for rows.Next() {
 		do := K8sDO{}
 
-		switch errSql := rows.Scan(&do.k_id, &do.k_context, &do.k_namespace, do.k_deployment, do.k_pvc, &do.k_created); errSql {
+		switch errSql := rows.Scan(&do.k_id, &do.k_kubeconfg, &do.k_context, &do.k_namespace, do.k_deployment, do.k_pvc, &do.k_created); errSql {
 		/* case sql.ErrNoRows:
 		   common.SmartIDELog.Warning() //TODO */
 		case nil:
 
 			k8sInfo := workspace.K8sInfo{}
-
-			// k8sInfo.ID = do.k_id
-			k8sInfo.Namespace = do.k_namespace
-
+			k8sInfo.KubeConfigFilePath = do.k_kubeconfg.String
 			k8sInfo.Context = do.k_namespace
+
+			k8sInfo.Namespace = do.k_namespace
 			k8sInfo.DeploymentName = do.k_deployment
 			k8sInfo.PVCName = do.k_pvc
 			k8sInfo.CreatedTime = do.k_created
@@ -145,12 +145,13 @@ func InsertOrUpdateK8sInfo(K8sInfo workspace.K8sInfo) (id int, err error) {
 	//2. insert or update
 	if single != nil { //2.1. update
 		stmt, err := db.Prepare(`update k8s set
-		 k_context=?, k_namespace=?,k_deployment=? ,k_pvc=?  
+		 k_kubeconfig=?, k_context=?, k_namespace=?,k_deployment=? ,k_pvc=?  
 		where k_id=? or k_context=?`)
 		if err != nil {
 			return id, err
 		}
-		_, err = stmt.Exec(K8sInfo.Context, K8sInfo.Namespace, K8sInfo.DeploymentName, K8sInfo.PVCName,
+		_, err = stmt.Exec(K8sInfo.KubeConfigFilePath, K8sInfo.Context, K8sInfo.Namespace,
+			K8sInfo.DeploymentName, K8sInfo.PVCName,
 			K8sInfo.ID, K8sInfo.Context)
 		if err != nil {
 			return -1, err
@@ -159,12 +160,13 @@ func InsertOrUpdateK8sInfo(K8sInfo workspace.K8sInfo) (id int, err error) {
 		id = single.ID
 
 	} else { //2.2. insert
-		stmt, err := db.Prepare(`INSERT INTO k8s(k_context, k_namespace,k_deployment,k_pvc)  
-                                        values(?, ?, ?, ?)`)
+		stmt, err := db.Prepare(`INSERT INTO k8s(k_kubeconfig, k_context, k_namespace, k_deployment, k_pvc)  
+                                        values(?, ?, ?, ?, ?)`)
 		if err != nil {
 			return id, err
 		}
-		res, err := stmt.Exec(K8sInfo.Context, K8sInfo.Namespace, K8sInfo.DeploymentName, K8sInfo.PVCName)
+		res, err := stmt.Exec(K8sInfo.KubeConfigFilePath, K8sInfo.Context, K8sInfo.Namespace,
+			K8sInfo.DeploymentName, K8sInfo.PVCName)
 		if err != nil {
 			return id, err
 		}
@@ -186,14 +188,14 @@ func GetK8sInfo(id int, context string) (K8sInfo *workspace.K8sInfo, err error) 
 
 	var row *sql.Row
 	if len(context) > 0 {
-		row = db.QueryRow("select k_id, k_context, k_namespace,k_deployment,k_pvc, k_created from k8s where k_context=? and k_is_del = 0", context)
+		row = db.QueryRow("select k_id, k_kubeconfig, k_context, k_namespace,k_deployment,k_pvc, k_created from k8s where k_context=? and k_is_del = 0", context)
 	} else if id > 0 {
-		row = db.QueryRow("select k_id, k_context, k_namespace,k_deployment,k_pvc ,k_created from k8s where k_id=? and k_is_del = 0", id)
+		row = db.QueryRow("select k_id, k_kubeconfig, k_context, k_namespace,k_deployment,k_pvc ,k_created from k8s where k_id=? and k_is_del = 0", id)
 	} else {
 		return K8sInfo, nil
 	}
 
-	switch err := row.Scan(&do.k_id, &do.k_context, &do.k_namespace, &do.k_deployment, &do.k_pvc, &do.k_created); err {
+	switch err := row.Scan(&do.k_id, &do.k_kubeconfg, &do.k_context, &do.k_namespace, &do.k_deployment, &do.k_pvc, &do.k_created); err {
 	case sql.ErrNoRows:
 		msg := fmt.Sprintf("deployment (%v | %v)", context, id)
 		common.SmartIDELog.WarningF(i18nInstance.Common.Warn_dal_record_not_exit_condition, msg) // 不存在
@@ -201,6 +203,7 @@ func GetK8sInfo(id int, context string) (K8sInfo *workspace.K8sInfo, err error) 
 		tmp := workspace.K8sInfo{}
 		K8sInfo = &tmp
 		K8sInfo.ID = do.k_id
+		K8sInfo.KubeConfigFilePath = do.k_kubeconfg.String
 		K8sInfo.Context = do.k_context
 		K8sInfo.Namespace = do.k_namespace
 		K8sInfo.DeploymentName = do.k_deployment

@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-16 17:44:45
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-09 18:07:34
+ * @LastEditTime: 2022-05-27 15:59:20
  * @FilePath: /smartide-cli/cmd/start/server_vm.go
  * @Description:
  *
@@ -76,7 +76,6 @@ func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo, y
 
 	//6. 当前主机绑定到远程端口
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_tunnel_waiting) // log
-
 	var addrMapping map[string]string = map[string]string{}
 	var unusedLocalPort4IdeBindingPort int
 	for i, pmi := range workspaceInfo.Extend.Ports {
@@ -90,7 +89,7 @@ func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo, y
 		var unusedClientPort int
 		unusedClientPort, err = common.CheckAndGetAvailableLocalPort(pmi.CurrentHostPort, 100)
 		if err != nil {
-			common.SmartIDELog.Importance(err.Error())
+			common.SmartIDELog.ImportanceWithError(err)
 
 		}
 
@@ -162,7 +161,7 @@ func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo, y
 		//9. 更新server端的extend字段
 		err = smartideServer.FeeadbackExtend(currentAuth, workspaceInfo)
 		if err != nil {
-			common.SmartIDELog.Importance(err.Error())
+			common.SmartIDELog.ImportanceWithError(err)
 		}
 		common.SmartIDELog.Info("本地端口绑定信息 更新完成！")
 	}()

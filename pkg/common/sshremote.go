@@ -3,12 +3,13 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-04-28 18:16:11
+ * @LastEditTime: 2022-05-26 16:50:51
  */
 package common
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"log"
 	"path"
@@ -28,7 +29,9 @@ import (
 	"github.com/howeyc/gopass"
 	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
 	"github.com/pkg/sftp"
+	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/sync/errgroup"
 )
 
 //
@@ -68,25 +71,25 @@ func NewSSHRemote(host string, port int, userName, password string) (instance SS
 }
 
 /*
-// 实例
-func (instance *SSHRemote) Instance(host string, port int, userName, password string) error {
+ // 实例
+ func (instance *SSHRemote) Instance(host string, port int, userName, password string) error {
 
-	if (instance.Connection == &ssh.Client{}) || instance.Connection == nil {
-		instance.SSHHost = host
-		instance.SSHPort = port
-		instance.SSHUserName = userName
-		instance.SSHPassword = password
+	 if (instance.Connection == &ssh.Client{}) || instance.Connection == nil {
+		 instance.SSHHost = host
+		 instance.SSHPort = port
+		 instance.SSHUserName = userName
+		 instance.SSHPassword = password
 
-		connection, err := connectionDial(host, port, userName, password)
-		if err != nil {
-			return err
-		}
+		 connection, err := connectionDial(host, port, userName, password)
+		 if err != nil {
+			 return err
+		 }
 
-		instance.Connection = connection
-	}
+		 instance.Connection = connection
+	 }
 
-	return nil
-} */
+	 return nil
+ } */
 
 // 验证
 func (instance *SSHRemote) CheckDail(host string, port int, userName, password string) error {
@@ -272,10 +275,10 @@ func (instance *SSHRemote) CopyDirectory(srcDirPath string, remoteDestDirPath st
 			_, err := instance.ExeSSHCommand(command) */
 
 			/* err = instance.CheckAndCreateDir(filepath.Dir(remoteFilePath))
-			if err != nil {
-				instance.Clear(remoteDestDirPath)
-				return err
-			} */
+			 if err != nil {
+				 instance.Clear(remoteDestDirPath)
+				 return err
+			 } */
 
 			err = instance.CopyFile(localFilePath, remoteFilePath)
 			if err != nil {
@@ -306,11 +309,11 @@ func (sshRemote *SSHRemote) CreateFileByEcho(filepath string, content string) er
 	filepath = sshRemote.ConvertFilePath(filepath)
 
 	/* 	// 检查并创建文件夹
-	   	dir := path.Dir(filepath)
-	   	err := sshRemote.CheckAndCreateDir(dir)
-	   	if err != nil {
-	   		return err
-	   	} */
+	dir := path.Dir(filepath)
+	err := sshRemote.CheckAndCreateDir(dir)
+	if err != nil {
+		return err
+	} */
 
 	// 创建文件
 	content = strings.ReplaceAll(content, "\"", "\\\"")
@@ -403,8 +406,10 @@ func (instance *SSHRemote) CheckRemoveEnv() error {
 }
 
 // git clone
-func (instance *SSHRemote) GitClone(gitRepoUrl string, workSpaceDir string) error {
+func (instance *SSHRemote) GitClone(gitRepoUrl string, workSpaceDir string, no string, cmd *cobra.Command) error {
 
+	fflags := cmd.Flags()
+	userName, _ := fflags.GetString(Flags_ServerUserName)
 	if instance.IsCloned(workSpaceDir) {
 		SmartIDELog.Info(i18n.GetInstance().Common.Info_gitrepo_cloned)
 		return nil
@@ -418,84 +423,31 @@ func (instance *SSHRemote) GitClone(gitRepoUrl string, workSpaceDir string) erro
 	}
 
 	// 检测是否为ssh模式
-	if strings.Index(gitRepoUrl, "git@") == 0 {
-		isOverwrite := "y" // 是否覆盖服务器上的私钥文件
-		isAllowCopyPrivateKey := ""
-
-		commandRsa := `[[ -f ".ssh/id_rsa" ]] && cat ~/.ssh/id_rsa || echo ""`
-		remoteRsaPri, err := instance.ExeSSHCommandConsole(commandRsa, false)
-		CheckError(err)
-		SmartIDELog.DebugF("%v >> `%v`", commandRsa, "****")
-
-		commandRsaPub := `[[ -f ".ssh/id_rsa.pub" ]] && cat ~/.ssh/id_rsa.pub || echo ""`
-		remoteRsaPub, err := instance.ExeSSHCommandConsole(commandRsaPub, false)
-		CheckError(err)
-		SmartIDELog.DebugF("%v >> `%v`", commandRsaPub, "****")
-
-		if remoteRsaPri != "" && remoteRsaPub != "" { // 文件存在时提示是否覆盖
-
-			// 读取本地的ssh配置文件
-			homeDir, err := os.UserHomeDir()
-			CheckError(err)
-			localRsaPub, err := ioutil.ReadFile(filepath.Join(homeDir, "/.ssh/id_rsa.pub")) // 读取本地的 id_rsa 文件
-			CheckError(err)                                                                 // , string(localRsaPub)
-
-			// 公钥 文件不同时才会提示覆盖
-			if strings.TrimSpace(remoteRsaPub) != strings.TrimSpace(string(localRsaPub)) {
-				SmartIDELog.Console(i18n.GetInstance().Common.Info_privatekey_is_overwrite)
-				fmt.Scanln(&isOverwrite)
-			} else {
-				SmartIDELog.Debug(i18n.GetInstance().Common.Debug_same_not_overwrite)
-				isOverwrite = "n"
-			}
-
-		} else { // 提示私钥文件是否覆盖（不覆盖就无法执行git clone）
-			SmartIDELog.Console(i18n.GetInstance().Common.Info_whether_overwrite)
-			fmt.Scanln(&isAllowCopyPrivateKey)
-		}
-
-		if isAllowCopyPrivateKey == "y" || isOverwrite == "y" {
-
-			if isOverwrite == "y" {
-				// 读取本地的ssh配置文件
-				homeDir, err := os.UserHomeDir()
-				CheckError(err)
-				idRsa, err := ioutil.ReadFile(filepath.Join(homeDir, "/.ssh/id_rsa")) // 读取本地的 id_rsa 文件
-				CheckError(err, string(idRsa))
-				idRsaPub, err := ioutil.ReadFile(filepath.Join(homeDir, "/.ssh/id_rsa.pub")) // 读取本地的 id_rsa.pub 文件
-				CheckError(err, string(idRsaPub))
-
-				// 执行私钥文件复制
-				command := fmt.Sprintf(`mkdir -p .ssh
-			chmod 700 -R ~/.ssh
-			rm -rf ~/.ssh/id_rsa
-			echo "%v" >> ~/.ssh/id_rsa
-			chmod 600 ~/.ssh/id_rsa
-
-			rm -rf ~/.ssh/id_rsa.pub
-			echo "%v" >> ~/.ssh/id_rsa.pub
-			chmod 600 ~/.ssh/id_rsa.pub
-
-			`, string(idRsa), string(idRsaPub))
-				output, err := instance.ExeSSHCommandConsole(command, false)
-				CheckError(err, output)
-
-				// log
-				consoleCommand := strings.ReplaceAll(command, string(idRsa), "***")
-				consoleCommand = strings.ReplaceAll(consoleCommand, string(idRsaPub), "***")
-				SmartIDELog.DebugF("%v >> `%v`", consoleCommand, output)
-
-				// 执行私钥密码的取消 —— 把私钥密码设置为空
-				// https://docs.github.com/cn/authentication/connecting-to-github-with-ssh/working-with-ssh-key-passphrases
-				instance.sshSaveEmptyPassphrase()
-			}
-		}
-	}
+	// 是否覆盖服务器上的私钥文件
+	// 文件存在时提示是否覆盖
+	// 获取工作区策略中的 ssh-key
+	// workspace.GetWSPolicies(no, "2")
+	// 读取本地的ssh配置文件
+	// 读取本地的 id_rsa 文件
+	// , string(localRsaPub)
+	// 公钥 文件不同时才会提示覆盖
+	// fmt.Scanln(&isOverwrite)
+	// 提示私钥文件是否覆盖（不覆盖就无法执行git clone）
+	// fmt.Scanln(&isAllowCopyPrivateKey)
+	// 读取本地的 id_rsa 文件
+	// 读取本地的 id_rsa.pub 文件
+	// 执行私钥文件复制
+	// log
+	// 执行私钥密码的取消 —— 把私钥密码设置为空
+	// https://docs.github.com/cn/authentication/connecting-to-github-with-ssh/working-with-ssh-key-passphrases
+	// instance.ExecSSHkeyPolicy(gitRepoUrl, no, cmd)
 
 	// 执行clone
 	//gitDirPath := strings.Replace(FilePahtJoin4Linux(workSpaceDir, ".git"), "~/", "", -1) // 把路径变成 “a/b/c” 的形式，不支持 “./a/b/c”、“～/a/b/c”、“./a/b/c”
-	cloneCommand := fmt.Sprintf(`git clone %v %v`,
-		gitRepoUrl, workSpaceDir) // .git 文件如果不存在，在需要git clone
+	GIT_SSH_COMMAND := fmt.Sprintf(`GIT_SSH_COMMAND='ssh -i ~/.ssh/id_rsa_%s_%s -o IdentitiesOnly=yes'`, userName, no)
+
+	cloneCommand := fmt.Sprintf(`%s git clone %v %v`,
+		GIT_SSH_COMMAND, gitRepoUrl, workSpaceDir) // .git 文件如果不存在，在需要git clone
 	err := instance.ExecSSHCommandRealTimeFunc(cloneCommand, func(output string) error {
 		if strings.Contains(output, "error") || strings.Contains(output, "fatal") {
 
@@ -525,12 +477,12 @@ func (instance *SSHRemote) GitClone(gitRepoUrl string, workSpaceDir string) erro
 				return errors.New(output)
 			}
 
-		} else {
+		} /* else {
 			SmartIDELog.ConsoleInLine(output)
 			if strings.Contains(output, "done.") {
 				fmt.Println()
 			}
-		}
+		} */
 
 		return nil
 	})
@@ -541,6 +493,115 @@ func (instance *SSHRemote) GitClone(gitRepoUrl string, workSpaceDir string) erro
 	}
 
 	return err
+}
+
+func (instance *SSHRemote) ExecSSHkeyPolicy(no string, cmd *cobra.Command) {
+
+	isOverwrite := "y"
+	isAllowCopyPrivateKey := ""
+	fflags := cmd.Flags()
+	userName, _ := fflags.GetString(Flags_ServerUserName)
+	commandRsa := fmt.Sprintf(`[[ -f ".ssh/id_rsa_%s_%s" ]] && cat ~/.ssh/id_rsa_%s_%s || echo ""`, userName, no, userName, no)
+	remoteRsaPri, err := instance.ExeSSHCommandConsole(commandRsa, false)
+	CheckError(err)
+	SmartIDELog.DebugF("%v >> `%v`", commandRsa, "****")
+
+	commandRsaPub := fmt.Sprintf(`[[ -f ".ssh/id_rsa.pub_%s_%s" ]] && cat ~/.ssh/id_rsa.pub_%s_%s || echo ""`, userName, no, userName, no)
+	remoteRsaPub, err := instance.ExeSSHCommandConsole(commandRsaPub, false)
+	CheckError(err)
+	SmartIDELog.DebugF("%v >> `%v`", commandRsaPub, "****")
+
+	idRsa := ""
+	idRsaPub := ""
+	var ws []WorkspacePolicy
+	if no != "" {
+		ws, err = GetWSPolicies(no, "2", cmd)
+		CheckError(err)
+	}
+
+	if len(ws) > 0 {
+		idRsa = ws[len(ws)-1].IdRsA
+		idRsaPub = ws[len(ws)-1].IdRsAPub
+	}
+	// 远程公私钥都不为空
+	if strings.ReplaceAll(remoteRsaPri, "\n", "") != "" && strings.ReplaceAll(remoteRsaPub, "\n", "") != "" {
+		localRsaPub := ""
+		if no != "" {
+			isAllowCopyPrivateKey = "y"
+			isOverwrite = "y"
+			localRsaPub = idRsaPub
+
+		} else {
+			homeDir, err := os.UserHomeDir()
+			CheckError(err)
+			rsaPub, err := ioutil.ReadFile(filepath.Join(homeDir, "/.ssh/id_rsa.pub"))
+			localRsaPub = string(rsaPub)
+			CheckError(err)
+
+		}
+		//公钥文件不同时才会提示覆盖 非sever 模式
+		if strings.TrimSpace(remoteRsaPub) != strings.TrimSpace(string(localRsaPub)) && no == "" {
+			SmartIDELog.Console(i18n.GetInstance().Common.Info_privatekey_is_overwrite)
+			fmt.Scanln(&isOverwrite)
+			// isOverwrite = "y"
+
+			//公钥文件相同时 非sever 不覆盖
+		} else if strings.TrimSpace(remoteRsaPub) == strings.TrimSpace(string(localRsaPub)) && no == "" {
+			isOverwrite = "n"
+		} else { //公钥文件不同、公钥文件相同server模式 都是直接覆盖
+			SmartIDELog.Debug(i18n.GetInstance().Common.Debug_same_not_overwrite)
+			isOverwrite = "y"
+		}
+
+		/* 		if no == "" { // 远程公私钥有至少有一个为空的 非server模式
+			SmartIDELog.Console(i18n.GetInstance().Common.Info_whether_overwrite)
+			//isAllowCopyPrivateKey = "y"
+			fmt.Scanln(&isAllowCopyPrivateKey)
+		} */
+
+	}
+
+	if isAllowCopyPrivateKey == "y" || isOverwrite == "y" {
+
+		if isOverwrite == "y" {
+
+			if no == "" {
+				if homeDir, err := os.UserHomeDir(); err == nil {
+					if rsa, err := ioutil.ReadFile(filepath.Join(homeDir, "/.ssh/id_rsa")); err == nil {
+						idRsa = string(rsa)
+					}
+					if rsaPub, err := ioutil.ReadFile(filepath.Join(homeDir, "/.ssh/id_rsa.pub")); err == nil {
+						idRsaPub = string(rsaPub)
+					}
+				}
+
+			}
+			if idRsa != "" && idRsaPub != "" {
+				command := fmt.Sprintf(`mkdir -p .ssh
+									chmod 700 -R ~/.ssh
+									rm -rf ~/.ssh/id_rsa_%s_%s
+									echo "%v" >> ~/.ssh/id_rsa_%s_%s
+									chmod 600 ~/.ssh/id_rsa_%s_%s
+
+									rm -rf ~/.ssh/id_rsa.pub_%s_%s
+									echo "%v" >> ~/.ssh/id_rsa.pub_%s_%s
+									chmod 600 ~/.ssh/id_rsa.pub_%s_%s
+
+`, userName, no, string(idRsa), userName, no, userName, no, userName, no, string(idRsaPub), userName, no, userName, no)
+				output, err := instance.ExeSSHCommandConsole(command, false)
+				CheckError(err, output)
+
+				consoleCommand := strings.ReplaceAll(command, string(idRsa), "***")
+				consoleCommand = strings.ReplaceAll(consoleCommand, string(idRsaPub), "***")
+				SmartIDELog.DebugF("%v >> `%v`", consoleCommand, output)
+				if no == "" {
+					instance.sshSaveEmptyPassphrase()
+
+				}
+			}
+
+		}
+	}
 }
 
 // 保存一个空密码，保证后续的git clone不需要输入私钥的密码
@@ -674,7 +735,7 @@ func (instance *SSHRemote) ExeSSHCommandConsole(sshCommand string, isConsoleAndL
 	CheckError(err)
 
 	// 在ssh主机上执行命令
-	SmartIDELog.Debug(sshCommand + " >> ...")
+	SmartIDELog.Debug(fmt.Sprintf("SSH Console %v:%v -> %v ......", instance.SSHHost, instance.SSHPort, sshCommand))
 	out, err := session.CombinedOutput(sshCommand)
 	outContent = string(out)
 	defer session.Close()
@@ -689,7 +750,7 @@ func (instance *SSHRemote) ExeSSHCommandConsole(sshCommand string, isConsoleAndL
 	// 记录日志，有些情况下不想输出信息，比如cat id_rsa时
 	if isConsoleAndLog {
 		outContent = strings.Trim(outContent, "\n")
-		SmartIDELog.Debug(fmt.Sprintf("%v >> `%v`", sshCommand, outContent))
+		SmartIDELog.Debug(fmt.Sprintf("SSH Console %v:%v -> %v >> `%v`", instance.SSHHost, instance.SSHPort, sshCommand, outContent))
 	}
 
 	return outContent, err
@@ -702,9 +763,9 @@ func (instance *SSHRemote) ExecSSHCommandRealTime(sshCommand string) (err error)
 }
 
 // 实时执行，带函数
-func (instance *SSHRemote) ExecSSHCommandRealTimeFunc(sshCommand string, yamlExecuteFun func(output string) error) (err error) {
+func (instance *SSHRemote) ExecSSHCommandRealTimeFunc(sshCommand string, customExecuteFun func(output string) error) (err error) {
 
-	SmartIDELog.Debug("-> " + sshCommand)
+	SmartIDELog.Debug(fmt.Sprintf("SSH RealTime %v:%v -> %v", instance.SSHHost, instance.SSHPort, sshCommand))
 	if (*instance == SSHRemote{}) {
 		return errors.New(i18nInstance.Common.Err_ssh_dial_none)
 	}
@@ -722,33 +783,27 @@ func (instance *SSHRemote) ExecSSHCommandRealTimeFunc(sshCommand string, yamlExe
 	err = session.RequestPty("xterm", 80, 40, modes)
 	CheckError(err)
 
-	/* sshStdoutBytes := new(bytes.Buffer)
-	session.Stdout = sshStdoutBytes */
-	sshIn, _ := session.StdinPipe()
+	//sshIn, _ := session.StdinPipe()
 	sshOut, _ := session.StdoutPipe()
 
-	// 函数
-	if yamlExecuteFun == nil {
-		yamlExecuteFun = func(out string) error {
-			if strings.Contains(out, "error") || strings.Contains(out, "fatal") {
-				SmartIDELog.Error(out)
-			} else {
-				SmartIDELog.Console(out)
+	originExecuteFun := func(output string) error {
+		if strings.Contains(output, "error") || strings.Contains(output, "fatal") {
+			return fmt.Errorf(output)
+		} else {
+			SmartIDELog.Console(output)
+			if strings.Contains(output, "done.") {
+				fmt.Println()
 			}
-			return nil
 		}
+		return nil
 	}
 
-	var exit chan bool = make(chan bool)
-
-	go func(in io.Writer, out io.Reader, exit chan bool) {
-
-		//var t int = 0
+	chExit := make(chan bool)
+	func1 := func() error { //in io.Writer, out io.Reader, exit chan bool
 		for {
-
 			isExit := false
 			select {
-			case <-exit:
+			case <-chExit:
 				isExit = true
 			default:
 			}
@@ -759,19 +814,16 @@ func (instance *SSHRemote) ExecSSHCommandRealTimeFunc(sshCommand string, yamlExe
 
 			// https://gist.github.com/hivefans/ffeaf3964924c943dd7ed83b406bbdea#file-shell_output-go-L22
 			buf := make([]byte, 1000)
-			n, err := out.Read(buf)
+			n, err := sshOut.Read(buf)
 			if err != nil {
 				SmartIDELog.Debug(err.Error())
 			}
 			originMsg := string(buf[:n])
 
-			if originMsg == "" { //|| t > len(originMsg) {
+			if originMsg == "" {
 				continue
 			}
-			//	msg := originMsg[t:] // 获取 当前的字符串
-			//	t = len(originMsg)   // 为 下一次获取字符串做准备
 
-			//msg = strings.ReplaceAll(msg, "\x00", "") // ??
 			if originMsg == "" {
 				continue
 			}
@@ -782,17 +834,48 @@ func (instance *SSHRemote) ExecSSHCommandRealTimeFunc(sshCommand string, yamlExe
 					continue
 				}
 
-				err = yamlExecuteFun(sub)
-				CheckError(err)
+				err = originExecuteFun(sub)
+				if err != nil {
+					return err
+				}
+
+				if customExecuteFun != nil {
+					err = customExecuteFun(sub)
+					if err != nil {
+						return err
+					}
+				}
 			}
 
 		}
-	}(sshIn, sshOut, exit)
+		return nil
+	} // (sshIn, sshOut, chExit)
+
+	group := new(errgroup.Group)
+	group.Go(func1)
 
 	err = session.Run(sshCommand)
-	exit <- true
+	close(chExit)
+
+	err2 := group.Wait()
+	if (err != nil && os.IsNotExist(err)) && err2 != nil {
+		SmartIDELog.ImportanceWithError(err2)
+	} else {
+		err = err2
+	}
+
 	return err
 }
+
+/* func isChanClosed(ch chan bool) bool {
+	if len(ch) == 0 {
+		select {
+		case _, ok := <-ch:
+			return !ok
+		}
+	}
+	return false
+} */
 
 func (instance *SSHRemote) RemoteUpload(filesMaps map[string]string) (err error) {
 	// initialize SSH connection
@@ -930,4 +1013,58 @@ func connectionDial(sshHost string, sshPort int, sshUserName, sshPassword string
 
 	addr := fmt.Sprintf("%v:%v", sshHost, sshPort)
 	return ssh.Dial("tcp", addr, clientConfig)
+}
+
+type GVA_MODEL struct {
+	ID        uint      // 主键ID
+	CreatedAt time.Time // 创建时间
+	UpdatedAt time.Time // 更新时间
+}
+type WorkspacePolicy struct {
+	GVA_MODEL
+	Wid              string `json:"wid" form:"wid" `
+	Name             string `json:"name" form:"name"`
+	Status           *bool  `json:"status" form:"status" ` // 状态
+	JustOne          *bool  `json:"justone" form:"justone" `
+	Schdule          int    `json:"schdule" form:"schdule" `
+	Type             int    `json:"type" form:"type" `
+	Tasks            string `json:"tasks" form:"tasks" `
+	OwnerGUID        string `json:"ownerGuid" form:"ownerGuid"`
+	GitConifgContent string `json:"gitConfigContent" form:"gitConfigContent" `
+	IdRsA            string `json:"id_rsa" form:"id_rsa"`
+	IdRsAPub         string `json:"id_rsa_pub" form:"id_rsa_pub" `
+}
+
+type WSPolicyResponse struct {
+	Code int `json:"code"`
+	Data struct {
+		Workspacepolicies []WorkspacePolicy `json:"list"`
+	} `json:"data"`
+	Msg string `json:"msg"`
+}
+
+const (
+	Flags_ServerHost      = "serverhost"
+	Flags_ServerToken     = "servertoken"
+	Flags_ServerOwnerGuid = "serverownerguid"
+	Flags_ServerUserName  = "serverusername"
+)
+
+func GetWSPolicies(no string, t string, cmd *cobra.Command) (ws []WorkspacePolicy, err error) {
+	fflags := cmd.Flags()
+	host, _ := fflags.GetString(Flags_ServerHost)
+	token, _ := fflags.GetString(Flags_ServerToken)
+	ownerGuid, _ := fflags.GetString(Flags_ServerOwnerGuid)
+	var response = ""
+	url := fmt.Sprint(host, "/api/smartide/workspacepolicy/getList")
+	if response, err = Get(url, map[string]string{"ownerGuid": ownerGuid, "type": t}, map[string]string{"Content-Type": "application/json", "x-token": token}); response != "" {
+		l := &WSPolicyResponse{}
+		err = json.Unmarshal([]byte(response), l)
+		if err = json.Unmarshal([]byte(response), l); err == nil {
+			if l.Code == 0 && (len(l.Data.Workspacepolicies) != 0) {
+				return l.Data.Workspacepolicies, err
+			}
+		}
+	}
+	return []WorkspacePolicy{}, err
 }

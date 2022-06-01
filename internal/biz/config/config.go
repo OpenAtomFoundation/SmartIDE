@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description: config
  * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-06 16:20:22
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-05-25 15:31:12
  */
 package config
 
@@ -112,7 +112,7 @@ func (yamlFileConfig *SmartIdeConfig) LoadDockerComposeFromTempFile(sshRemote co
 
 // 把自定义的配置转换为docker compose
 func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SSHRemote, projectName string,
-	remoteConfigDir string, isCheckUnuesedPorts bool) (composeYaml compose.DockerComposeYml, ideBindingPort int, sshBindingPort int) {
+	remoteConfigDir string, isCheckUnuesedPorts bool, userName string) (composeYaml compose.DockerComposeYml, ideBindingPort int, sshBindingPort int) {
 
 	ideBindingPort = model.CONST_Local_Default_BindingPort_WebIDE // webide
 	sshBindingPort = model.CONST_Local_Default_BindingPort_SSH    // ssh
@@ -268,7 +268,8 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 		if serviceName == yamlFileConfig.Workspace.DevContainer.ServiceName {
 
 			if yamlFileConfig.Workspace.DevContainer.Volumes.HasSshKey.Value() {
-				SSHVolumesConfig(isRemoteMode, &service, sshRemote)
+
+				SSHVolumesConfig(isRemoteMode, &service, sshRemote, userName)
 			}
 
 			if yamlFileConfig.Workspace.DevContainer.Volumes.HasGitConfig.Value() {

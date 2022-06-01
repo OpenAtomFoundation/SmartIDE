@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-17 15:14:34
+ * @LastEditTime: 2022-05-31 10:24:11
  */
 package cmd
 
@@ -57,8 +57,9 @@ var startCmd = &cobra.Command{
   smartide start <git clone url>
   smartide start --host <host> --username <username> --password <password> --repourl <git clone url> --branch <branch name> --filepath <config file path>
   smartide start --host <host> <git clone url>
-  smartide start --k8s <context> --namespace <namespace> --repoUrl <git clone url> --branch master
-  smartide start --k8s <context> --namespace <namespace> <git clone url>`,
+  smartide start --k8s <context> --repoUrl <git clone url> --branch master
+  smartide start --k8s <context> <git clone url>`,
+	PreRunE: preRunValid,
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		if apiHost, _ := cmd.Flags().GetString(server.Flags_ServerHost); apiHost != "" {
@@ -114,26 +115,27 @@ var startCmd = &cobra.Command{
 
 		isUnforward, _ := cmd.Flags().GetBool("unforward")
 
+		executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
+			var imageNames []string
+			for _, service := range yamlConfig.Workspace.Servcies {
+				imageNames = append(imageNames, service.Image)
+			}
+			appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(workspaceInfo.Mode), strings.Join(imageNames, ","))
+		}
+
 		// 执行命令
 		if workspaceInfo.Mode == workspace.WorkingMode_Local { // 本地模式
-			executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
-				var imageNames []string
-				for _, service := range yamlConfig.Workspace.Servcies {
-					imageNames = append(imageNames, service.Image)
-				}
-				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(workspaceInfo.Mode), strings.Join(imageNames, ","))
-			}
 			start.ExecuteStartCmd(workspaceInfo, isUnforward, func(v string, d common.Docker) {}, executeStartCmdFunc)
 
 		} else if workspaceInfo.Mode == workspace.WorkingMode_K8s { // k8s 模式
-			executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
-				var imageNames []string
-				for _, service := range yamlConfig.Workspace.Servcies {
-					imageNames = append(imageNames, service.Image)
-				}
-				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(workspaceInfo.Mode), strings.Join(imageNames, ","))
+
+			if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server {
+				err := start.ExecuteK8sServerStartCmd(cmd, workspaceInfo, executeStartCmdFunc)
+				common.CheckError(err)
+			} else {
+				err := start.ExecuteK8sStartCmd(workspaceInfo, executeStartCmdFunc)
+				common.CheckError(err)
 			}
-			start.ExecuteK8sStartCmd(workspaceInfo, executeStartCmdFunc)
 
 			//99. 死循环进行驻守
 			if !isUnforward {
@@ -145,13 +147,7 @@ var startCmd = &cobra.Command{
 		} else if workspaceInfo.CliRunningEnv == workspace.CliRunningEnvEnum_Client &&
 			workspaceInfo.Mode == workspace.WorkingMode_Remote &&
 			workspaceInfo.ServerWorkSpace != nil { // server 工作区，在本地运行
-			executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
-				var imageNames []string
-				for _, service := range yamlConfig.Workspace.Servcies {
-					imageNames = append(imageNames, service.Image)
-				}
-				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(workspaceInfo.Mode), strings.Join(imageNames, ","))
-			}
+
 			err = start.ExecuteServerVmStartByClientEnvCmd(workspaceInfo, executeStartCmdFunc)
 			common.CheckError(err)
 
@@ -163,14 +159,6 @@ var startCmd = &cobra.Command{
 			}
 
 		} else { // vm 模式
-			executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
-				var imageNames []string
-				for _, service := range yamlConfig.Workspace.Servcies {
-					imageNames = append(imageNames, service.Image)
-				}
-				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(workspaceInfo.Mode), strings.Join(imageNames, ","))
-			}
-
 			disabelGitClone := false
 			if workspaceInfo.GitCloneRepoUrl == "" {
 				disabelGitClone = true
@@ -181,6 +169,25 @@ var startCmd = &cobra.Command{
 
 		return nil
 	},
+}
+
+// 运行前的参数验证
+func preRunValid(cmd *cobra.Command, args []string) error {
+	kubeconfig, _ := cmd.Flags().GetString(flag_kubeconfig)
+	context, _ := cmd.Flags().GetString(flag_k8s)
+	mode, _ := cmd.Flags().GetString("mode")
+
+	if mode == "server" {
+		if kubeconfig != "" {
+			common.SmartIDELog.Importance("server 模式下，--kubeconfig参数无效")
+		}
+	}
+
+	if kubeconfig != "" && context == "" {
+		return errors.New("k8s 参数为空！")
+	}
+
+	return nil
 }
 
 // 在某些情况下，参数填了也没有意义，比如指定了workspaceid，就不需要再填host
@@ -208,7 +215,7 @@ var (
 	flag_repourl     = "repourl"
 	flag_branch      = "branch"
 	flag_k8s         = "k8s"
-	flag_namespace   = "namespace"
+	flag_kubeconfig  = "kubeconfig"
 
 //	flag_loginurl    = "login_url"
 )
@@ -381,10 +388,11 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 				}
 
 				workingMode = workspace.WorkingMode_K8s
-				workspaceInfo.K8sInfo.Namespace = getFlagValue(fflags, flag_namespace)
+				/* workspaceInfo.K8sInfo.Namespace = (6) //getFlagValue(fflags, flag_namespace)
 				if workspaceInfo.K8sInfo.Namespace == "" {
 					workspaceInfo.K8sInfo.Namespace = "default"
-				}
+				} */
+				workspaceInfo.K8sInfo.KubeConfigFilePath = getFlagValue(fflags, flag_kubeconfig)
 				workspaceInfo.K8sInfo.Context = getFlagValue(fflags, flag_k8s)
 
 			} else { // 本地模式
@@ -636,7 +644,8 @@ func init() {
 	startCmd.Flags().StringVarP(&configYamlFileRelativePath, "filepath", "f", "", i18nInstance.Start.Info_help_flag_filepath)
 	startCmd.Flags().StringP("branch", "b", "", i18nInstance.Start.Info_help_flag_branch)
 	startCmd.Flags().StringP("k8s", "k", "", i18nInstance.Start.Info_help_flag_k8s)
-	startCmd.Flags().StringP("namespace", "n", "", i18nInstance.Start.Info_help_flag_k8s_namespace)
+	startCmd.Flags().StringP("kubeconfig", "", "", "自定义 kube config 文件的本地路径")
+	// startCmd.Flags().StringP("namespace", "n", "", i18nInstance.Start.Info_help_flag_k8s_namespace)
 	startCmd.Flags().StringP("serverownerguid", "g", "", i18nInstance.Start.Info_help_flag_ownerguid)
 }
 
