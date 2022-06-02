@@ -21,13 +21,12 @@
         - hugo server --bind 0.0.0.0 --disableFastRender --forceSyncStatic --buildDrafts --buildFuture 
     services:
       smartide-docs:
-        image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-hugo:latest
+        image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-v2-vscode:latest
         restart: always
         environment:
           ROOT_PASSWORD: root123
         volumes:
           - .:/home/project
-          - /var/run/docker.sock:/var/run/docker.sock
         ports:
           - 1313:1313
           - 6800:3000
