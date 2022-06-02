@@ -4,7 +4,7 @@
 # Copyright (C) leansoftX.com
 #################################################
 
-FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-php-v2:2802
+FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-php-v2:latest
 
 USER root
 

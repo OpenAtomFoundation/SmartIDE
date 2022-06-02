@@ -4,7 +4,7 @@
 # Copyright (C) leansoftX.com
 #################################################
 
-FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-python-v2:2848
+FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-python-v2:latest
 
 USER root
 

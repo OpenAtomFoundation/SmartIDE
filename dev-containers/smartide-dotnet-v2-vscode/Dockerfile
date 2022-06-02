@@ -4,7 +4,7 @@
 # Copyright (C) leansoftX.com
 #################################################
 
-FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-dotnet-v2:2798
+FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-dotnet-v2:latest
 
 USER root
 
