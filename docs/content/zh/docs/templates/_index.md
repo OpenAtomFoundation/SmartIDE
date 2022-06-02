@@ -162,7 +162,8 @@ SmartIDE开发者镜像分成3层提供，分别提供不同的能力。
 
 | **开发语言** | **镜像类型** | **tag**| **Pull命令**| **new指令**| **备注**|
 |----------|----------|---------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|----------------------------|-------------------------------------------------------------|
-| base     | 基础       | 2719,latest                                       | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-base-v2:2719`                                        | `se new base`              | 基于ubuntu:20.04，集成git、ssh server等基础库                         |
+| base     | 基础       | latest                                       | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-base-v2:latest`                                        | `se new base`              | 基于ubuntu:20.04，集成git、ssh server等基础库                         |
+| base     | 基础       | latest                                       | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-base-v2-vscode:latest`                                        | `se new base -t vscode`              | 基于ubuntu:20.04，集成git、ssh server等基础库，内置VSCode WebIDE                         |
 
 ### L1 - SDK镜像
 
@@ -170,7 +171,7 @@ SDK镜像提供开发语言环境支持能力，同时提供SDK Only的使用方
 
 | **开发语言** | **镜像类型** | **tag**| **Pull命令**| **new指令**| **备注**|
 |----------|----------|---------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|----------------------------|-------------------------------------------------------------|
-| node     | SDK      | all-version,2782,latest                           | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-v2:2782`                                        | `se new node`              | 在base 镜像的基础上，集成了Node V14.17.6(默认)、V12.22.7 V16.7.0 SDK及nvm  |
+| node     | SDK      | all-version,latest                           | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-v2:latest`                                        | `se new node`              | 在base 镜像的基础上，集成了Node V14.17.6(默认)、V12.22.7 V16.7.0 SDK及nvm  |
 | Java     | SDK      | openjdk-11-jdk,2801,latest                        | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-java-v2:2801`                                        | `se new java`              | 在Node SDK 镜像的基础上，集成Java Open JDK 11及maven                   |
 | golang   | SDK      | 1.17.5,2800,latest; 1.16.12,1745                  | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-golang-v2:2800`                                      | `se new golang`            | 在Node SDK 镜像的基础上，集成Go SDK，分为1.17.5、1.16.12两个版本              |
 | python   | SDK      | all-version,2848,latest                           | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-python-v2:2848`                                      | `se new python`            | 在Node SDK 镜像的基础上，集成python2和python3                          |

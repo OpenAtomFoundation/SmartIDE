@@ -4,7 +4,7 @@
 # Copyright (C) leansoftX.com
 #################################################
 
-FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-base-v2:2719
+FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-base-v2:latest
 
 USER root
 RUN apt-get update && \
