@@ -21,7 +21,7 @@
         - hugo server --bind 0.0.0.0 --disableFastRender --forceSyncStatic --buildDrafts --buildFuture 
     services:
       smartide-docs:
-        image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-v2-vscode:latest
+        image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-v2-vscode:all-version
         restart: always
         environment:
           ROOT_PASSWORD: root123
