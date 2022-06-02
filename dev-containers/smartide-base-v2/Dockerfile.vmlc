@@ -28,7 +28,13 @@ RUN apt-get update &&                            \
     # Prevents journald from reading kernel messages from /dev/kmsg
     echo "ReadKMsg=no" >> /etc/systemd/journald.conf &&               \
     # Create default user
-    useradd --create-home --shell /bin/bash $USERNAME && echo "$USERNAME:$USER_PASS" | chpasswd && adduser $USERNAME sudo
+    useradd --create-home --shell /bin/bash $USERNAME && echo "$USERNAME:$USER_PASS" | chpasswd && adduser $USERNAME sudo \
+    && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
+    && chmod 0440 /etc/sudoers.d/$USERNAME \
+    && chmod g+rw /home \
+    && mkdir -p /home/project \
+    && mkdir -p /home/opvscode \
+    && mkdir -p /idesh
 
 
 # Sshd install
