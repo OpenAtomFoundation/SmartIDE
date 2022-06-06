@@ -11,7 +11,7 @@ RUN sudo echo "Running 'sudo' for smartide: success" && \
 ENV HOME=/home/smartide
 WORKDIR $HOME
 
-ENV NODE_VERSION=14.17.6
+ENV NODE_VERSION=16.9.1
 ENV NVM_DIR /home/smartide/.nvm
 RUN curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | sh \
     && . $NVM_DIR/nvm.sh  \
@@ -42,7 +42,9 @@ ENV LANG=C.UTF-8 \
 
 RUN  ln -sf /home/smartide/.nvm/versions/node/v$NODE_VERSION/bin/node /home/opvscode
 
-COPY custom.service /lib/systemd/system/
-RUN chmod +x /home/opvscode/server.sh &&                               \
-    ln -sf /lib/systemd/system/custom.service                    \
-       /etc/systemd/system/multi-user.target.wants/custom.service
+COPY openvscode.service /lib/systemd/system/
+COPY startup-openvscode.sh /idesh/startup-openvscode.sh
+
+RUN chmod +x /idesh/startup-openvscode.sh &&                               \
+    ln -sf /lib/systemd/system/openvscode.service                    \
+       /etc/systemd/system/multi-user.target.wants/openvscode.service
