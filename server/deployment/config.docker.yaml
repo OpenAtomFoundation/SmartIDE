@@ -1,0 +1,147 @@
+aliyun-oss:
+  endpoint: yourEndpoint
+  access-key-id: yourAccessKeyId
+  access-key-secret: yourAccessKeySecret
+  bucket-name: yourBucketName
+  bucket-url: yourBucketUrl
+  base-path: ""
+autocode:
+  transfer-restart: true
+  root: /go/src/github.com/flipped-aurora/gin-vue-admin
+  server: /server
+  server-api: /api/v1
+  server-initialize: /initialize
+  server-model: /model
+  server-request: /model/request/
+  server-router: /router
+  server-service: /service
+  web: /web/src
+  web-api: /api
+  web-form: /view
+  web-table: /view
+aws-s3:
+  bucket: ""
+  region: ""
+  secret-id: ""
+  secret-key: ""
+  base-url: ""
+  path-prefix: ""
+captcha:
+  key-long: 6
+  img-width: 240
+  img-height: 80
+casbin:
+  model-path: ./resource/rbac_model.conf
+cors:
+  mode: whitelist
+  whitelist:
+  - allow-origin: example1.com
+    allow-methods: GET, POST
+    allow-headers: content-type
+    expose-headers: Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers,
+      Content-Type
+    allow-credentials: true
+  - allow-origin: example2.com
+    allow-methods: GET, POST
+    allow-headers: content-type
+    expose-headers: Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers,
+      Content-Type
+    allow-credentials: true
+db-list: []
+email:
+  to: xxx@qq.com
+  port: 465
+  from: xxx@163.com
+  host: smtp.163.com
+  is-ssl: true
+  secret: xxx
+  nickname: test
+excel:
+  dir: ./resource/excel/
+hua-wei-obs:
+  path: you-path
+  bucket: you-bucket
+  endpoint: you-endpoint
+  access-key: you-access-key
+  secret-key: you-secret-key
+jwt:
+  signing-key: 5dd123e0-d33f-40d1-a1f8-ba97a5509e87
+  expires-time: 604800
+  buffer-time: 86400
+  issuer: ""
+local:
+  path: uploads/file
+mysql:
+  path: gva-mysql
+  port: "3306"
+  config: charset=utf8mb4&parseTime=True&loc=Local
+  db-name: gva
+  username: root
+  password: SmartIDE@123
+  max-idle-conns: 0
+  max-open-conns: 0
+  log-mode: ""
+  log-zap: false
+pgsql:
+  path: ""
+  port: ""
+  config: ""
+  db-name: ""
+  username: ""
+  password: ""
+  max-idle-conns: 0
+  max-open-conns: 0
+  log-mode: ""
+  log-zap: false
+qiniu:
+  zone: ZoneHuaDong
+  bucket: ""
+  img-path: ""
+  use-https: false
+  access-key: ""
+  secret-key: ""
+  use-cdn-domains: false
+redis:
+  db: 0
+  addr: gva-redis:6379
+  password: ""
+smartide:
+  api-host: http://gva-web:8080
+  api-host-xtoken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVVUlEIjoiMDUxNWEzYjktOWM1MC00OGJhLTk2NmUtZWNiOTIxZmNkMjQyIiwiSUQiOjEsIlVzZXJuYW1lIjoic3VwZXJBZG1pbiIsIk5pY2tOYW1lIjoi6LaF57qn566h55CG5ZGYIiwiQXV0aG9yaXR5SWQiOiI4ODgiLCJCdWZmZXJUaW1lIjozMTEwNDAwMDAsImV4cCI6MTk2OTYwMTAwOCwibmJmIjoxNjUzOTgwODA4fQ.JI2_C0fJsE4ZH1Cf4X_cWWrfn22W3FqXKtEqAFNlQYw
+  tasks:
+  - name: templateinit
+    spec: '@hourly'
+    start: true
+  tekton-trigger-host: http://minikube
+  template-git-url: https://gitee.com/smartide/smartide-templates.git
+system:
+  env: public
+  addr: 8888
+  db-type: mysql
+  oss-type: local
+  use-multipoint: false
+  iplimit-count: 0
+  iplimit-time: 0
+tencent-cos:
+  bucket: xxxxx-10005608
+  region: ap-shanghai
+  secret-id: xxxxxxxx
+  secret-key: xxxxxxxx
+  base-url: https://gin.vue.admin
+  path-prefix: github.com/flipped-aurora/gin-vue-admin/server
+timer:
+  start: true
+  spec: '@daily'
+  detail:
+  - tableName: sys_operation_records
+    compareField: created_at
+    interval: 2160h
+zap:
+  level: info
+  format: console
+  prefix: '[github.com/flipped-aurora/gin-vue-admin/server]'
+  director: log
+  showLine: true
+  encode-level: LowercaseColorLevelEncoder
+  stacktrace-key: stacktrace
+  log-in-console: true
