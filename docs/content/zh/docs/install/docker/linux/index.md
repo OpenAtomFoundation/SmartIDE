@@ -93,7 +93,7 @@ docker-compose -version
 本文档针对 sysbox 社区版的安装过程进行说明，如果需要安装企业版，请自行参考 [sysbox](https://github.com/nestybox/sysbox)  官方文档。
 
 ```shell
-wget https://downloads.nestybox.com/sysbox/releases/v0.5.0/sysbox-ce_0.5.0-0.linux_amd64.deb
+wget https://downloads.nestybox.com/sysbox/releases/v0.5.2/sysbox-ce_0.5.2-0.linux_amd64.deb
 ```
 
 安装前需要通过执行以下命令移除当前正在运行的容器
@@ -105,7 +105,7 @@ docker rm $(docker ps -a -q) -f
 执行以下指令完成安装
 
 ```shell
-sudo apt-get install ./sysbox-ce_0.5.0-0.linux_amd64.deb
+sudo apt-get install ./sysbox-ce_0.5.2-0.linux_amd64.deb
 ```
 
 安装成功后通过执行以下命令来验证Sysbox是否安装成功并已启动服务，注意查看 active (running) 的提示信息
