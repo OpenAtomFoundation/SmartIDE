@@ -15,3 +15,5 @@ COPY install-dotnet.sh /idesh/install-dotnet.sh
 RUN chmod +x /idesh/install-dotnet.sh &&                               \
     ln -sf /lib/systemd/system/dotnet.service                    \
        /etc/systemd/system/multi-user.target.wants/dotnet.service
+
+EXPOSE 4000 5000 9001
