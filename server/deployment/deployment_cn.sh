@@ -15,10 +15,17 @@ colorEcho(){
 }
 
 echo -e "$(colorEcho $YELLOW SmartIDE Server Deployment Start...)"
-mkdir ~/smartide-install && cd ~/smartide-install
-echo -e "$(colorEcho $GREEN SmartIDE Server Deployment : 1.Basic Component)"
+
+# 0.初始化安装SmartIDE Server机器的IP地址
+echo -n -e "请输入本机对外服务的IP地址："
+read serverIp
+
+# 0.创建安装目录
+mkdir -p ~/smartide-install
+cd ~/smartide-install
 
 # 1.Basic Component
+echo -e "$(colorEcho $GREEN SmartIDE Server Deployment : 1.Basic Component)"
 echo -e "$(colorEcho $BLUE SmartIDE Server Deployment : 1.1 docker and docker-compose)"
 # 1.1 docker & docker-compose
 curl -o- https://smartidedl.blob.core.chinacloudapi.cn/docker/linux/docker-install.sh | bash
@@ -39,7 +46,6 @@ then
 else
   echo "Git Already Installed."
 fi
-
 # 1.3 Kubectl
 echo -e "$(colorEcho $BLUE SmartIDE Server Deployment : 1.3 Kubectl)"
 curl -LO https://smartidedl.blob.core.chinacloudapi.cn/kubectl/v1.23.0/bin/linux/amd64/kubectl
@@ -63,21 +69,20 @@ echo -e "$(colorEcho $GREEN SmartIDE Server Deployment : 3.Tekton Pipeline)"
 echo -e "$(colorEcho $BLUE SmartIDE Server Deployment : 3.1 Kubectl Apply Tekton Pipeline And DashBoard)"
 kubectl apply -f https://gitee.com/smartide/SmartIDE/raw/main/server/deployment/pipeline/v0.32.0/smartide-tekton-release.yaml
 kubectl apply -f https://gitee.com/smartide/SmartIDE/raw/main/server/deployment/dashboard/v0.32.0/smartide-tekton-dashboard-release.yaml
-echo ">>>>> SmartIDE Server Installing : Tekton Trigger"
 # 3.2 Tekton Trigger
 echo -e "$(colorEcho $BLUE SmartIDE Server Deployment : 3.2 Kubectl Apply Tekton Trigger)"
 kubectl apply -f https://gitee.com/smartide/SmartIDE/raw/main/server/deployment/trigger/v0.18.0/smartide-release.yaml
 kubectl apply -f https://gitee.com/smartide/SmartIDE/raw/main/server/deployment/trigger/v0.18.0/smartide-interceptor.yaml
 # 3.3 Tekton SmartIDE Pipeline Configrate
-echo -e "$(colorEcho $BLUE SmartIDE Server Deployment : 3.5 Kubectl Apply Tekton SmartIDE Pipeline Configrate)"
-sleep 8
+echo -e "$(colorEcho $BLUE SmartIDE Server Deployment : 3.3 Kubectl Apply Tekton SmartIDE Pipeline Configrate)"
+sleep 15
 kubectl apply -f https://gitee.com/smartide/SmartIDE/raw/main/server/deployment/smartide-pipeline/aliyun/trigger.yaml
 kubectl apply -f https://gitee.com/smartide/SmartIDE/raw/main/server/deployment/smartide-pipeline/aliyun/trigger-template.yaml
 kubectl apply -f https://gitee.com/smartide/SmartIDE/raw/main/server/deployment/smartide-pipeline/aliyun/trigger-binding.yaml
 kubectl apply -f https://gitee.com/smartide/SmartIDE/raw/main/server/deployment/smartide-pipeline/aliyun/trigger-event-listener.yaml
-sleep 8
+sleep 20
 kubectl apply -f https://gitee.com/smartide/SmartIDE/raw/main/server/deployment/smartide-pipeline/aliyun/pipeline-smartide-cli.yaml
-sleep 8
+sleep 20
 kubectl apply -f https://gitee.com/smartide/SmartIDE/raw/main/server/deployment/smartide-pipeline/aliyun/task-smartide-cli-release.yaml
 kubectl apply -f https://gitee.com/smartide/SmartIDE/raw/main/server/deployment/smartide-pipeline/ingress-el-trigger-listener-smartide-cli.yaml
 echo -e "$(colorEcho $GREEN SmartIDE Server Deployment : 3.Tekton Pipeline Installed Successfully.)"
@@ -87,6 +92,7 @@ echo -e "$(colorEcho $GREEN SmartIDE Server Deployment : 4.SmartIDE Server)"
 curl -LO https://gitee.com/smartide/SmartIDE/raw/main/server/deployment/docker-compose.yaml
 curl -LO https://gitee.com/smartide/SmartIDE/raw/main/server/deployment/docker-compose_cn.env
 curl -LO https://gitee.com/smartide/SmartIDE/raw/main/server/deployment/config.docker.yaml
+sed -i 's/gva-web/'"$serverIp"'/g' config.docker.yaml
 
 docker network create smartide-server-network
 docker-compose -f docker-compose.yaml --env-file docker-compose_cn.env down
@@ -97,4 +103,5 @@ echo -e "$(colorEcho $GREEN SmartIDE Server Deployment : 4.SmartIDE Server Insta
 echo -e "$(colorEcho $GREEN SmartIDE Server Deployment : 5.Build SmartIDE Server Network Connection With Minikube.)"
 docker network connect smartide-server-network minikube
 echo -e "$(colorEcho $GREEN SmartIDE Server Deployment : 5.Build SmartIDE Server Network Connection With Minikube Successfully.)"
+echo -e "$(colorEcho $YELLOW SmartIDE Server 服务地址：http://$serverIp:8080)"
 echo -e "$(colorEcho $YELLOW SmartIDE Server Deployment Successfully！)"
