@@ -3,14 +3,13 @@ title: "Server 部署手册"
 linkTitle: "Server"
 date: 2021-09-24
 weight: 30
-draft: true
 description: >
   SmartIDE Server 是面向团队和企业的云原生容器化远程工作区管理平台，可以为开发团队提供统一的开发测试资源管理，基于浏览器的开发环境访问以及团队协作能力。SmartIDE Server 的 团队基础版 功能是开源而且免费的，任何人都可以按照本手册所提供的方式完成部署并免费使用，没有使用期限限制，没有用户数限制，也没有资源数量限制。
 ---
 
 SmartIDE Server 是面向团队和企业的云原生容器化远程工作区管理平台，可以为开发团队提供统一的开发测试资源管理，基于浏览器的开发环境访问以及团队协作能力。SmartIDE Server 的 团队基础版 功能是开源而且免费的，任何人都可以按照本手册所提供的方式完成部署并免费使用，没有使用期限限制，没有用户数限制，也没有资源数量限制。
 
-如果您所使用的服务器环境可以连接互联网，可以使用我们以下提供的全自动一键安装方式完成安装部署；如果你处于隔离网络（无法访问互联网），我们也提供可供下载导入到隔离网络中的离线安装方式，可以通过[提交技术支持申请](https://leansoftx.feishu.cn/share/base/shrcntjR3kpuAZprfUTSWXar1pK)的方式获取这些资源。
+如果您所使用的服务器环境可以连接互联网，可以使用我们以下提供的全自动一键安装方式完成安装部署；如果你处于隔离网络（无法访问互联网），我们也提供可供下载导入到隔离网络中的离线安装方式，可以通过 <a href="https://leansoftx.feishu.cn/share/base/shrcntjR3kpuAZprfUTSWXar1pK" target="_blank">提交技术支持申请</a> 的方式获取这些资源。
 
 ## 架构图和组件说明
 
@@ -37,7 +36,7 @@ SmartIDE Server 提供三种不同的部署架构以便适应不同规模的团�
 - 集群安装：如果企业已经具备了现有的k8s环境，那么可以将SmartIDE Server的全部组件都部署到k8s集群中以提供高可用，弹性和可扩展性，满足中到大型团队的日常使用；同时在需要扩展用量的时候临时接入主机或者K8S集群来满足需求。
 
 ## 单机版安装操作
-以下操作过程针对单机版环境安装进行描述，如果需要进行多机或者集群安装部署，请 [提交技术支持申请](https://leansoftx.feishu.cn/share/base/shrcntjR3kpuAZprfUTSWXar1pK) 。
+以下操作过程针对单机版环境安装进行描述，如果需要进行多机或者集群安装部署，请 <a href="https://leansoftx.feishu.cn/share/base/shrcntjR3kpuAZprfUTSWXar1pK" target="_blank">提交技术支持申请</a> 。
 
 ### 环境要求
 单机版环境可以满足10-50人团队日常使用需求，根据团队规模情况，请选择以下环境最小化或者建议配置。
@@ -207,18 +206,18 @@ docker restart gva-server
 ```
 
 ### 验证Server工作情况
-可以参考 [Server快速开始](zh/docs/quickstart/server) 文档完成主机资源注册和工作区创建操作，即可验证当前SmartIDE Server的功能工作正常。
+可以参考 [Server快速开始](/zh/docs/quickstart/server) 文档完成主机资源注册和工作区创建操作，即可验证当前SmartIDE Server的功能工作正常。
 
 ## 技术支持
 如果您在以上安装过程或者日常使用过程中遇到问题，请通过提交 Issue 的方式与我们取得联系。
 
 也可以加入我们的 SmartIDE 早鸟群获取第一手的产品资料和技术支持。
-对于隔离网络或者中大型部署模式的技术支持，请 [提交技术支持申请](https://leansoftx.feishu.cn/share/base/shrcntjR3kpuAZprfUTSWXar1pK) ，我们会尽快与您取得联系。
+对于隔离网络或者中大型部署模式的技术支持，请 <a href="https://leansoftx.feishu.cn/share/base/shrcntjR3kpuAZprfUTSWXar1pK" target="_blank">提交技术支持申请</a> ，我们会尽快与您取得联系。
 
 
 ## 参考资料
-- Docker & Docker-Compose 官方安装手册(https://docs.docker.com/get-docker/)
+- <a href="https://docs.docker.com/get-docker/" target="_blank">Docker & Docker-Compose 官方安装手册</a>
 - [CLI 安装说明](/zh/docs/install/cli/) 
 - [Docker & Docker-Compose 安装手册 (Linux服务器)](/zh/docs/install/docker/linux/)
-- Tekton 流水线引擎官网(https://tekton.dev/)
-- Minikube 官网(https://minikube.sigs.k8s.io/docs/)
+- <a href="https://tekton.dev/" target="_blank">Tekton 流水线引擎官网</a>
+- <a href="https://minikube.sigs.k8s.io/docs/" target="_blank">` Minikube 官网 `</a>
