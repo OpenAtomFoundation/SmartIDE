@@ -1,7 +1,7 @@
 ---
 title: "SmartIDE v0.1.19 - Gitee GVP、工作区策略、类虚拟机镜像VMLC、Server安装手册"
 linkTitle: "v0.1.19 GVP & VMLC"
-date: 2022-06-16
+date: 2022-06-15
 description: >
   SmartIDE v0.1.19 (CLI Build 3909, Server Build 3890) 已经发布，本次Sprint主要完成2个重要特性，工作区策略和类虚拟机容器（VM Like Container - VMLC）的开发工作。工作区策略特性的目标是为远程工作区提供统一的配置管理机制，在这个sprint中主要实现了git-config和ssh-key两个常用的策略。类虚拟机容器（VMLC）是一项非常重要的特性，目标是要为开发者提供与虚拟机非常类似的容器化环境。这个Sprint中我们也首次发布了SmartIDE Server版的私有化部署安装手册，希望自行完成部署的小伙伴现在就可以开始尝试了。
 ---
