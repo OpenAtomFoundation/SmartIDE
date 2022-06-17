@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-26 16:50:51
+ * @LastEditTime: 2022-06-11 16:49:40
  */
 package common
 
@@ -144,6 +144,12 @@ func (instance *SSHRemote) CheckAndGetAvailableRemotePort(checkPort int, step in
 // 获取远程主机上的当前目录
 func (sshRemote *SSHRemote) GetRemotePwd() (currentDir string, err error) {
 	currentDir, err = sshRemote.ExeSSHCommand("pwd")
+	return currentDir, err
+}
+
+// 获取远程主机上的当前HOME目录
+func (sshRemote *SSHRemote) GetRemoteHome() (currentDir string, err error) {
+	currentDir, err = sshRemote.ExeSSHCommand("echo ${HOME}")
 	return currentDir, err
 }
 
@@ -790,7 +796,7 @@ func (instance *SSHRemote) ExecSSHCommandRealTimeFunc(sshCommand string, customE
 		if strings.Contains(output, "error") || strings.Contains(output, "fatal") {
 			return fmt.Errorf(output)
 		} else {
-			SmartIDELog.Console(output)
+			fmt.Print(output) // 进度信息不需要记录到日志
 			if strings.Contains(output, "done.") {
 				fmt.Println()
 			}
@@ -849,7 +855,7 @@ func (instance *SSHRemote) ExecSSHCommandRealTimeFunc(sshCommand string, customE
 
 		}
 		return nil
-	} // (sshIn, sshOut, chExit)
+	}
 
 	group := new(errgroup.Group)
 	group.Go(func1)
@@ -863,6 +869,7 @@ func (instance *SSHRemote) ExecSSHCommandRealTimeFunc(sshCommand string, customE
 	} else {
 		err = err2
 	}
+	fmt.Println()
 
 	return err
 }

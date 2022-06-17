@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-15 23:09:53
+ * @LastEditTime: 2022-06-11 09:40:39
  */
 package config
 
@@ -99,5 +99,5 @@ func (yamlFileConfig *SmartIdeConfig) GetConfigFileAbsolutePath() string {
 
 // 获取本地配置文件所在的路径
 func (c *SmartIdeConfig) getConfigYamlFilePath() string {
-	return common.PathJoin(c.Workspace.DevContainer.workingDirectoryPath, c.Workspace.DevContainer.configRelativeFilePath)
+	return filepath.Join(c.Workspace.DevContainer.workingDirectoryPath, c.Workspace.DevContainer.configRelativeFilePath)
 }

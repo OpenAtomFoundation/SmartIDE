@@ -139,7 +139,7 @@ stages:
               azureSubscription: 'integration-test-aks'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
-              inlineScript: 'az aks start --resource-group SmartIDEAKSTestGroup --name SmartIDEAKS --subscription 4603be58-9bf3-4aa4-bfb5-ac9c5462cf0e'
+              inlineScript: 'az aks start --resource-group smartide-k8s-test --name smartide-k8s-test --subscription 2d660de6-59b3-406f-a6a6-14e86441be5c'
 
   - stage: Integration_Test_windows
     dependsOn: AKS_Start
@@ -281,17 +281,16 @@ stages:
                 git clone https://github.com/idcf-boat-house/boathouse-calculator.git $FolderPath
                 cd boathouse-calculator
                 ..\$(cliname) start --unforward
-                cd ..
 
                 Write-Host 'stop ---------------------------------------------------------------------------------'
-                .\$(cliname) list -d 
-                .\$(cliname) get 1 -d
-                .\$(cliname) stop 1 -d
+                ..\$(cliname) list -d 
+                ..\$(cliname) get 1 -d
+                ..\$(cliname) stop -d
 
                 Write-Host 'stop && remove ---------------------------------------------------------------------------------'
-                .\$(cliname) start 1 -d --unforward
-                .\$(cliname) stop 1 -d
-                .\$(cliname) remove 1 -yfpi -d        
+                ..\$(cliname) start -d --unforward
+                ..\$(cliname) stop -d
+                ..\$(cliname) remove -yfpi -d        
               workingDirectory: $(Build.SourcesDirectory)
 
           - task: SSH@0
@@ -339,7 +338,7 @@ stages:
                 .\$(cliname) reset -ya -d
 
                 Write-Host 'create k8s workspace ---------------------------------------------------------------------------------'
-                .\$(cliname) start --k8s SmartIDEAKS -d --unforward --filepath k8s.ide.yaml --repourl https://github.com/idcf-boat-house/boathouse-calculator.git
+                .\$(cliname) start --k8s smartide-k8s-test -d --unforward  --repourl https://github.com/idcf-boat-house/boathouse-calculator.git
 
                 Write-Host 'show info ---------------------------------------------------------------------------------'
                 .\$(cliname) list -d 
@@ -485,6 +484,7 @@ stages:
   #             scriptLocation: 'inlineScript'
   #             inlineScript: 'az vm stop --resource-group INTEGRATION-TEST-001 --name INTEGRATION-TEST-001 --subscription 4603be58-9bf3-4aa4-bfb5-ac9c5462cf0e'
 
+
   - stage: Integration_Test_ubuntu
     dependsOn: AKS_Start
     jobs:
@@ -620,17 +620,16 @@ stages:
                 git clone https://github.com/idcf-boat-house/boathouse-calculator.git $FolderPath
                 cd $FolderPath
                 ../$(cliname) start --unforward
-                cd ..
 
                 echo 'stop ---------------------------------------------------------------------------------'
-                ./$(cliname) list -d 
-                ./$(cliname) get 1 -d
-                ./$(cliname) stop 1 -d
+                ../$(cliname) list -d 
+                ../$(cliname) get 1 -d
+                ../$(cliname) stop -d
 
                 echo 'stop && remove ---------------------------------------------------------------------------------'
-                ./$(cliname) start 1 -d --unforward
-                ./$(cliname) stop 1 -d
-                ./$(cliname) remove 1 -yfpi -d        
+                ../$(cliname) start -d --unforward
+                ../$(cliname) stop -d
+                ../$(cliname) remove -yfpi -d        
 
           - task: SSH@0
             displayName: clean up remote vitural machine 
@@ -677,7 +676,7 @@ stages:
                 ./$(cliname) reset -ya -d
 
                 echo 'create k8s workspace ---------------------------------------------------------------------------------'
-                ./$(cliname) start --k8s SmartIDEAKS -d --unforward --filepath k8s.ide.yaml --repourl https://github.com/idcf-boat-house/boathouse-calculator.git
+                ./$(cliname) start --k8s smartide-k8s-test -d --unforward  --repourl https://github.com/idcf-boat-house/boathouse-calculator.git
 
                 echo 'show info --------------------------------------------------------------------------------------------'
                 ./$(cliname) list -d 
@@ -726,19 +725,19 @@ stages:
               scriptLocation: 'inlineScript'
               inlineScript: 'az vm stop --resource-group experiment-007 --name experiment-007 --subscription 4603be58-9bf3-4aa4-bfb5-ac9c5462cf0e'
 
-  - stage: AKS_Stop
-    dependsOn: [ Integration_Test_windows,  Integration_Test_ubuntu ] ## Integration_Test_mac,
-    jobs:
-    - job: vmStop
-      displayName: "vm stop"
-      pool: SmartIDESub03-linux-agt
-      steps:
+  # - stage: AKS_Stop
+  #   dependsOn: [ Integration_Test_windows,  Integration_Test_ubuntu ] ## Integration_Test_mac,
+  #   jobs:
+  #   - job: vmStop
+  #     displayName: "vm stop"
+  #     pool: SmartIDESub03-linux-agt
+  #     steps:
 
-          - task: AzureCLI@2
-            displayName: stop aks
-            inputs:
-              azureSubscription: 'integration-test-aks'
-              scriptType: 'bash'
-              scriptLocation: 'inlineScript'
-              inlineScript: 'az aks stop --resource-group SmartIDEAKSTestGroup --name SmartIDEAKS --subscription 4603be58-9bf3-4aa4-bfb5-ac9c5462cf0e'
+  #         - task: AzureCLI@2
+  #           displayName: stop aks
+  #           inputs:
+  #             azureSubscription: 'integration-test-aks'
+  #             scriptType: 'bash'
+  #             scriptLocation: 'inlineScript'
+  #             inlineScript: 'az aks stop --resource-group smartide-k8s-test --name smartide-k8s-test --subscription 2d660de6-59b3-406f-a6a6-14e86441be5c'
 

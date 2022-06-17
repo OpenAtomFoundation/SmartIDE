@@ -313,6 +313,8 @@ func workspaceDataMap(workspaceInfo *workspace.WorkspaceInfo, do workspaceDo) er
 	} else {
 		panic("w_mode != string(WorkingMode_Local)")
 	}
+	workspaceInfo.CacheEnv = workspace.CacheEnvEnum_Local
+	workspaceInfo.CliRunningEnv = workspace.CliRunningEnvEnum_Client
 
 	//3. 初始化配置文件
 	if do.w_mode == string(workspace.WorkingMode_Remote) {

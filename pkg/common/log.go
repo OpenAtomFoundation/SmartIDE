@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-23 16:07:52
+ * @LastEditTime: 2022-06-06 11:05:43
  */
 package common
 
@@ -73,42 +73,44 @@ func (sLog *smartIDELogStruct) InitLogger(logLevel string) {
 //
 func (sLog *smartIDELogStruct) Error(err interface{}, headers ...string) (reErr error) {
 
-	if err != nil {
-		// 基本的信息
-		contents := headers
-		contents = append(contents, fmt.Sprint(err))
-
-		// 前缀
-		prefix := getPrefix(zapcore.ErrorLevel)
-		contents = RemoveDuplicatesAndEmpty(contents)
-
-		// 堆栈
-		stack := string(debug.Stack())
-		fullContents := append(contents, stack)
-		fullContents = RemoveDuplicatesAndEmpty(fullContents)
-		if sLog.Ws_id != "" {
-			go SendAndReceive("business", "workspaceLog", "", "", model.WorkspaceLog{
-				Title:    "",
-				ParentId: sLog.ParentId,
-				Content:  strings.Join(fullContents, ";"),
-				Ws_id:    sLog.Ws_id,
-				Level:    4,
-				Type:     1,
-				StartAt:  time.Now(),
-				EndAt:    time.Now(),
-			})
-		}
-		// 调试模式时向控制台输出堆栈
-		if isDebugLevel {
-			fmt.Println(prefix, strings.Join(fullContents, "; "))
-		} else {
-			fmt.Println(prefix, strings.Join(contents, "; "))
-		}
-
-		// 日志中一定输出完整的日志
-		sugarLogger.Error(fullContents)
-		os.Exit(1)
+	if err == nil {
+		return nil
 	}
+
+	// 基本的信息
+	contents := headers
+	contents = append(contents, fmt.Sprint(err))
+
+	// 前缀
+	prefix := getPrefix(zapcore.ErrorLevel)
+	contents = RemoveDuplicatesAndEmpty(contents)
+
+	// 堆栈
+	stack := string(debug.Stack())
+	fullContents := append(contents, stack)
+	fullContents = RemoveDuplicatesAndEmpty(fullContents)
+	if sLog.Ws_id != "" {
+		go SendAndReceive("business", "workspaceLog", "", "", model.WorkspaceLog{
+			Title:    "",
+			ParentId: sLog.ParentId,
+			Content:  strings.Join(fullContents, ";"),
+			Ws_id:    sLog.Ws_id,
+			Level:    4,
+			Type:     1,
+			StartAt:  time.Now(),
+			EndAt:    time.Now(),
+		})
+	}
+	// 调试模式时向控制台输出堆栈
+	if isDebugLevel {
+		fmt.Println(prefix, strings.Join(fullContents, "; "))
+	} else {
+		fmt.Println(prefix, strings.Join(contents, "; "))
+	}
+
+	// 日志中一定输出完整的日志
+	sugarLogger.Error(fullContents)
+	os.Exit(1)
 
 	return nil
 }
@@ -256,19 +258,6 @@ func (sLog *smartIDELogStruct) ConsoleDebug(args ...interface{}) (err error) {
 		return nil
 	}
 
-	sugarLogger.Info(args...)
-
-	return nil
-}
-
-// 输出到控制台，在一行
-func (sLog *smartIDELogStruct) ConsoleInLine(args ...interface{}) (err error) {
-
-	if len(args) <= 0 {
-		return nil
-	}
-
-	fmt.Printf("\r%v\r", args...)
 	sugarLogger.Info(args...)
 
 	return nil

@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-15 17:18:27
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-05 17:31:00
+ * @LastEditTime: 2022-06-13 14:09:54
  * @FilePath: /smartide-cli/internal/biz/workspace/workspace.go
  * @Description:
  *
@@ -32,6 +32,7 @@ func GetServerWorkspaceList(auth model.Auth, cliRunningEnv CliRunningEvnEnum) (w
 	}
 	response, err := common.Get(url, map[string]string{}, headers)
 
+	// respose valid
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +42,9 @@ func GetServerWorkspaceList(auth model.Auth, cliRunningEnv CliRunningEvnEnum) (w
 
 	l := &model.WorkspaceListResponse{}
 	err = json.Unmarshal([]byte(response), l)
-	common.CheckError(err)
+	if err != nil {
+		return ws, err
+	}
 	if l.Code != 0 {
 		err = errors.New(l.Msg)
 		return
@@ -51,7 +54,9 @@ func GetServerWorkspaceList(auth model.Auth, cliRunningEnv CliRunningEvnEnum) (w
 			for _, serverWorkSpace := range l.Data.List {
 				workspaceInfo, err := CreateWorkspaceInfoFromServer(serverWorkSpace)
 				workspaceInfo.CliRunningEnv = cliRunningEnv
-				common.CheckError(err)
+				if err != nil {
+					return ws, err
+				}
 				ws = append(ws, workspaceInfo)
 			}
 		}
@@ -60,7 +65,7 @@ func GetServerWorkspaceList(auth model.Auth, cliRunningEnv CliRunningEvnEnum) (w
 }
 
 // 获取工作区详情
-func GetWorkspaceFromServer(auth model.Auth, no string, cliRunningEnv CliRunningEvnEnum) (workspaceInfo WorkspaceInfo, err error) {
+func GetWorkspaceFromServer(auth model.Auth, no string, cliRunningEnv CliRunningEvnEnum) (workspaceInfo *WorkspaceInfo, err error) {
 	if (auth == model.Auth{}) {
 		err = errors.New("用户未登录！")
 		return
@@ -81,20 +86,22 @@ func GetWorkspaceFromServer(auth model.Auth, no string, cliRunningEnv CliRunning
 		})
 
 	if err != nil {
-		return WorkspaceInfo{}, err
+		return nil, err
 	}
 	if response == "" {
-		return WorkspaceInfo{}, errors.New("服务器访问空数据！")
+		return nil, errors.New("服务器访问空数据！")
 	}
 
 	l := &model.WorkspaceResponse{}
 	err = json.Unmarshal([]byte(response), l)
 	if err != nil {
-		return WorkspaceInfo{}, err
+		return nil, err
 	}
 
 	if l.Code == 0 {
-		workspaceInfo, err = CreateWorkspaceInfoFromServer(l.Data.ResmartideWorkspace)
+		var workspaceInfo_ WorkspaceInfo
+		workspaceInfo_, err = CreateWorkspaceInfoFromServer(l.Data.ResmartideWorkspace)
+		workspaceInfo = &workspaceInfo_
 		workspaceInfo.CliRunningEnv = cliRunningEnv
 	}
 	return workspaceInfo, err

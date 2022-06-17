@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors:
- * @LastEditTime:
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-06-02 23:43:15
  */
 package cmd
 
@@ -50,7 +50,7 @@ func (smartVersion *SmartVersion) ConvertToJson() string {
 
 	json := fmt.Sprintf(i18nInstance.Version.Info_template,
 		smartVersion.VersionNumber, systemInfo, smartVersion.BuildNumber,
-		smartVersion.BuildTime.Format("2006-01-02 15:04:05"), smartVersion.TargetCommitish, smartVersion.Company)
+		common.LocalTimeStr(smartVersion.BuildTime), smartVersion.TargetCommitish, smartVersion.Company)
 	return json
 }
 

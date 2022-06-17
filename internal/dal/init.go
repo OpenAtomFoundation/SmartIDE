@@ -113,7 +113,7 @@ func connection() (*sql.DB, error) {
 	}
 	sqliteFilePath := common.PathJoin(dirname, SqliteFilePath)
 
-	if !common.IsExit(sqliteFilePath) {
+	if !common.IsExist(sqliteFilePath) {
 		os.MkdirAll(common.PathJoin(dirname, ".ide"), os.ModePerm) // create dir
 		os.Create(sqliteFilePath)
 	}

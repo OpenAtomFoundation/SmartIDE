@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-05 17:40:20
+ * @LastEditTime: 2022-06-07 15:37:39
  */
 package cmd
 
@@ -94,45 +94,13 @@ func printWorkspaces(cliRunningEnv workspace.CliRunningEvnEnum) {
 		}
 		workspaceName := worksapce.Name
 		if worksapce.ServerWorkSpace != nil {
-			label := getWorkspaceStatusDesc(worksapce.ServerWorkSpace.Status)
+			label := worksapce.ServerWorkSpace.Status.GetDesc()
 			workspaceName = fmt.Sprintf("%v (%v)", workspaceName, label)
 		}
 		line := fmt.Sprintf("%v\t%v\t%v\t%v\t%v\t%v\t%v", worksapce.ID, workspaceName, worksapce.Mode, dir, config, host, createTime)
 		fmt.Fprintln(w, line)
 	}
 	w.Flush()
-}
-
-func getWorkspaceStatusDesc(workspaceStatus model.WorkspaceStatusEnum) string {
-
-	desc := ""
-	switch workspaceStatus {
-	case model.WorkspaceStatusEnum_Init:
-		desc = "Initialization"
-	case model.WorkspaceStatusEnum_Pending:
-		desc = "Pending"
-	case model.WorkspaceStatusEnum_Remove:
-		desc = "Cleaned"
-	case model.WorkspaceStatusEnum_Removing:
-		desc = "Cleaning"
-	case model.WorkspaceStatusEnum_ContainerRemoving:
-		desc = "Removing"
-	case model.WorkspaceStatusEnum_ContainerRemoved:
-		desc = "Removed"
-	case model.WorkspaceStatusEnum_Stop:
-		desc = "Stopped"
-	case model.WorkspaceStatusEnum_Stopping:
-		desc = "Stopping"
-	case model.WorkspaceStatusEnum_Start:
-		desc = "Running"
-	default:
-		desc = "Pending"
-	}
-	if int(workspaceStatus) < 0 {
-		desc = "Error"
-	}
-
-	return desc
 }
 
 func init() {

@@ -169,6 +169,7 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 		projectName = getRepoName(serverWorkSpace.GitRepoUrl)
 	}
 
+	// 基本信息
 	workspaceInfo := WorkspaceInfo{
 		ID:                     serverWorkSpace.NO,
 		Name:                   serverWorkSpace.Name, //+ fmt.Sprintf(" (%v)", label),
@@ -181,6 +182,7 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 		WorkingDirectoryPath:   common.PathJoin("~", model.CONST_REMOTE_REPO_ROOT, projectName),
 	}
 
+	// 关联的资源信息
 	switch serverWorkSpace.Resource.Type {
 	case model.ReourceTypeEnum_Remote:
 		workspaceInfo.Mode = WorkingMode_Remote
@@ -191,12 +193,14 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 			Password: serverWorkSpace.Resource.SSHPassword,
 			SSHPort:  serverWorkSpace.Resource.Port,
 		}
+		workspaceInfo.TempYamlFileAbsolutePath = workspaceInfo.GetTempDockerComposeFilePath()
 	case model.ReourceTypeEnum_K8S:
 		workspaceInfo.Mode = WorkingMode_K8s
 		workspaceInfo.K8sInfo = K8sInfo{
 			KubeConfigContent: serverWorkSpace.Resource.KubeConfigContent,
 			Context:           serverWorkSpace.Resource.Name,
 		}
+
 	}
 
 	switch serverWorkSpace.Resource.AuthenticationType {
@@ -204,14 +208,20 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 		workspaceInfo.Remote.AuthType = RemoteAuthType_Password
 	case model.AuthenticationTypeEnum_SSH:
 		workspaceInfo.Remote.AuthType = RemoteAuthType_SSH
+		/* 	case model.AuthenticationTypeEnum_KubeConfig:
+		workspaceInfo.Remote.AuthType = RemoteAuthType_Password */
 	}
 
 	if workspaceInfo.ConfigFileRelativePath == "" {
-		workspaceInfo.ConfigFileRelativePath = model.CONST_Default_ConfigRelativeFilePath
+		if workspaceInfo.Mode == WorkingMode_K8s {
+			workspaceInfo.ConfigFileRelativePath = model.CONST_Default_K8S_ConfigRelativeFilePath
+		} else {
+			workspaceInfo.ConfigFileRelativePath = model.CONST_Default_ConfigRelativeFilePath
+		}
+
 	}
 
 	workspaceInfo.ServerWorkSpace = &serverWorkSpace
-	workspaceInfo.TempYamlFileAbsolutePath = workspaceInfo.GetTempDockerComposeFilePath()
 
 	if serverWorkSpace.Extend != "" {
 		err := json.Unmarshal([]byte(serverWorkSpace.Extend), &workspaceInfo.Extend)
@@ -219,25 +229,43 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 			return WorkspaceInfo{}, err
 		}
 	}
-	if serverWorkSpace.LinkDockerCompose != "" {
-		err := yaml.Unmarshal([]byte(serverWorkSpace.LinkDockerCompose), &workspaceInfo.LinkDockerCompose)
-		if err != nil {
-			return WorkspaceInfo{}, err
-		}
-	}
-	if serverWorkSpace.TempDockerComposeContent != "" {
-		err := yaml.Unmarshal([]byte(serverWorkSpace.TempDockerComposeContent), &workspaceInfo.TempDockerCompose)
-		if err != nil {
-			return WorkspaceInfo{}, err
-		}
-	}
 	if serverWorkSpace.ConfigFileContent != "" {
-		//err := yaml.Unmarshal([]byte(serverWorkSpace.ConfigFileContent), &workspaceInfo.ConfigYaml)
 		tmpConfig := config.NewConfig(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath, serverWorkSpace.ConfigFileContent)
 		workspaceInfo.ConfigYaml = *tmpConfig
-		/* if err != nil {
-			return WorkspaceInfo{}, err
-		} */
+	}
+
+	// 配置文件
+	if workspaceInfo.Mode == WorkingMode_Remote {
+		if serverWorkSpace.LinkDockerCompose != "" {
+			err := yaml.Unmarshal([]byte(serverWorkSpace.LinkDockerCompose), &workspaceInfo.LinkDockerCompose)
+			if err != nil {
+				return WorkspaceInfo{}, err
+			}
+		}
+		if serverWorkSpace.TempDockerComposeContent != "" {
+			err := yaml.Unmarshal([]byte(serverWorkSpace.TempDockerComposeContent), &workspaceInfo.TempDockerCompose)
+			if err != nil {
+				return WorkspaceInfo{}, err
+			}
+		}
+	} else if workspaceInfo.Mode == WorkingMode_K8s {
+		if serverWorkSpace.LinkDockerCompose != "" {
+			originK8sYaml, err := config.NewK8SConfig("", []string{}, serverWorkSpace.ConfigFileContent, serverWorkSpace.LinkDockerCompose)
+			if err != nil {
+				return WorkspaceInfo{}, err
+			}
+			workspaceInfo.K8sInfo.OriginK8sYaml = *originK8sYaml
+		}
+		if serverWorkSpace.TempDockerComposeContent != "" {
+			tempK8sYaml, err := config.NewK8SConfig(workspaceInfo.ConfigFileRelativePath, []string{}, serverWorkSpace.ConfigFileContent, serverWorkSpace.TempDockerComposeContent)
+			if err != nil {
+				return WorkspaceInfo{}, err
+			}
+			workspaceInfo.K8sInfo.TempK8sConfig = *tempK8sYaml
+			workspaceInfo.K8sInfo.Namespace = (*tempK8sYaml).Workspace.Deployments[0].Namespace
+		}
+	} else {
+		return WorkspaceInfo{}, errors.New("所选模式不支持！")
 	}
 
 	workspaceInfo.ServerWorkSpace = &serverWorkSpace
@@ -248,7 +276,9 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 // 工作区数据为空
 func (w WorkspaceInfo) IsNil() bool {
 
-	return w.ID == "" || w.WorkingDirectoryPath == "" || w.ConfigFileRelativePath == "" || w.Name == "" || w.Mode == "" // || w.ProjectName == "" len(w.Extend.Ports) == 0 ||
+	return w.ID == "" || w.Name == "" ||
+		w.WorkingDirectoryPath == "" || w.ConfigFileRelativePath == "" ||
+		w.Mode == "" || w.CliRunningEnv == "" || w.CacheEnv == "" // || w.ProjectName == "" len(w.Extend.Ports) == 0 ||
 }
 
 // 工作区数据不为空

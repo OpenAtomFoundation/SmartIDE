@@ -76,7 +76,7 @@ var udpateCmd = &cobra.Command{
 		common.SmartIDELog.Info("update to v" + version)
 
 		// 删除文件
-		if common.IsExit("smartide") {
+		if common.IsExist("smartide") {
 			os.Remove("smartide")
 			common.SmartIDELog.Info(i18n.GetInstance().Update.Info_remove_repeat)
 		}

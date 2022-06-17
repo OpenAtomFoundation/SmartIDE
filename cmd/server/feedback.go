@@ -143,8 +143,13 @@ func Feedback_Finish(feedbackCommand FeedbackCommandEnum, cmd *cobra.Command,
 	}
 	serverFeedbackUrl, _ := common.UrlJoin(serverModeInfo.ServerHost, "/api/smartide/workspace/finish")
 	configFileContent, _ := workspaceInfo.ConfigYaml.ToYaml()
-	tempDockerComposeContent, _ := workspaceInfo.TempDockerCompose.ToYaml()
-	linkDockerCompose, _ := workspaceInfo.LinkDockerCompose.ToYaml()
+	tempYamlContent, _ := workspaceInfo.TempDockerCompose.ToYaml()
+	linkYmalContent, _ := workspaceInfo.LinkDockerCompose.ToYaml()
+	if workspaceInfo.Mode == workspace.WorkingMode_K8s {
+		tempYamlContent, _ = workspaceInfo.K8sInfo.TempK8sConfig.ConvertToK8sYaml()
+		linkYmalContent, _ = workspaceInfo.K8sInfo.OriginK8sYaml.ConvertToK8sYaml()
+	}
+
 	extend := workspaceInfo.Extend.ToJson()
 
 	if serverModeInfo.ServerUsername == "" {
@@ -168,8 +173,8 @@ func Feedback_Finish(feedbackCommand FeedbackCommandEnum, cmd *cobra.Command,
 	}
 	if feedbackCommand == FeedbackCommandEnum_Start { // 只有start的时候，才需要传递文件内容
 		datas["configFileContent"] = configFileContent
-		datas["tempDockerComposeContent"] = tempDockerComposeContent
-		datas["linkDockerCompose"] = linkDockerCompose
+		datas["tempDockerComposeContent"] = tempYamlContent
+		datas["linkDockerCompose"] = linkYmalContent
 		datas["extend"] = extend
 	}
 	headers := map[string]string{"Content-Type": "application/json", "x-token": serverModeInfo.ServerToken}

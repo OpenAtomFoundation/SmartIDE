@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-15 19:32:44
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-31 15:44:26
+ * @LastEditTime: 2022-06-07 15:37:15
  * @FilePath: /smartide-cli/internal/model/workspace.go
  * @Description:
  *
@@ -212,3 +212,35 @@ const (
 	WorkspaceStatusEnum_Error_Remove           WorkspaceStatusEnum = -301
 	WorkspaceStatusEnum_Error_ContainerRemoved WorkspaceStatusEnum = -302
 )
+
+func (workspaceStatus WorkspaceStatusEnum) GetDesc() string {
+
+	desc := ""
+	switch workspaceStatus {
+	case WorkspaceStatusEnum_Init:
+		desc = "Initialization"
+	case WorkspaceStatusEnum_Pending:
+		desc = "Pending"
+	case WorkspaceStatusEnum_Remove:
+		desc = "Cleaned"
+	case WorkspaceStatusEnum_Removing:
+		desc = "Cleaning"
+	case WorkspaceStatusEnum_ContainerRemoving:
+		desc = "Removing"
+	case WorkspaceStatusEnum_ContainerRemoved:
+		desc = "Removed"
+	case WorkspaceStatusEnum_Stop:
+		desc = "Stopped"
+	case WorkspaceStatusEnum_Stopping:
+		desc = "Stopping"
+	case WorkspaceStatusEnum_Start:
+		desc = "Running"
+	default:
+		desc = "Pending"
+	}
+	if int(workspaceStatus) < 0 {
+		desc = "Error"
+	}
+
+	return desc
+}

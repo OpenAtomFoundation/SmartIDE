@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-06 17:59:14
+ * @LastEditTime: 2022-06-08 16:42:45
  */
 package config
 
@@ -167,6 +167,9 @@ type SmartIdeK8SConfig struct {
 		KubeDeployFiles string `yaml:"kube-deploy-files,omitempty"`
 
 		//
+		//Namespace coreV1.Namespace
+
+		//
 		Services []coreV1.Service
 
 		//
@@ -197,8 +200,13 @@ type PortMapInfo struct {
 	// 类型
 	PortMapType PortMapTypeEnum `json:"PortMapType"`
 
-	ClientPort    int `json:"ClientPort"`
+	// 本地绑定的端口
+	ClientPort int `json:"ClientPort"`
+	// 本地绑定的旧端口
 	OldClientPort int `json:"OldClientPort"`
+
+	// 关联的目录
+	RefDirecotry string `json:"RefDirecotry"`
 }
 
 //
@@ -271,4 +279,21 @@ func (w SmartIdeConfig) GetContainerWebIDEPort() (port *int) {
 	}
 
 	return port
+}
+
+//
+func (originK8sConfig SmartIdeK8SConfig) GetProjectDirctory() string {
+	containerGitCloneDir := "/home/project"
+	for containerName, item := range originK8sConfig.Workspace.Containers { // git clone 的目录是否设置
+		if containerName == originK8sConfig.Workspace.DevContainer.ServiceName {
+			for _, volume := range item.PersistentVolumes {
+				if volume.DirectoryType == PersistentVolumeDirectoryTypeEnum_Project {
+					containerGitCloneDir = volume.MountPath
+					break
+				}
+			}
+			break
+		}
+	}
+	return containerGitCloneDir
 }

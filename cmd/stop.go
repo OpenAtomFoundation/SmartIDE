@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-06 16:23:35
+ * @LastEditTime: 2022-06-01 17:01:40
  */
 package cmd
 
@@ -85,6 +85,9 @@ var stopCmd = &cobra.Command{
 			isStop := false
 			for !isStop {
 				serverWorkSpace, err := workspace.GetWorkspaceFromServer(currentServerAuth, workspaceInfo.ID, workspace.CliRunningEnvEnum_Client)
+				if serverWorkSpace == nil {
+					common.SmartIDELog.Error("工作区数据查询为空！")
+				}
 				if err != nil {
 					common.SmartIDELog.ImportanceWithError(err)
 				}

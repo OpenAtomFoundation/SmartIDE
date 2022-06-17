@@ -133,7 +133,7 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 				localDockerComposeFilePath, _ := yamlFileConfig.GetLocalLinkDockerComposeFile() // 本地docker compose文件的路径
 
 				// 检查文件是否存在
-				if !common.IsExit(localDockerComposeFilePath) {
+				if !common.IsExist(localDockerComposeFilePath) {
 					message := fmt.Sprintf(i18nInstance.Config.Err_file_not_exit, yamlFileConfig.Workspace.DockerComposeFile)
 					common.SmartIDELog.Error(message)
 				}
@@ -407,7 +407,7 @@ func (yamlFileConfig SmartIdeConfig) getDockerCompose(sshRemote common.SSHRemote
 
 		if isRemoteMode {
 			// 获取docker-compose文件在远程主机上的路径
-			remoteDockerComposeFilePath := common.FilePahtJoin(common.OS_Linux, remoteConfigDir, yamlFileConfig.Workspace.DockerComposeFile)
+			remoteDockerComposeFilePath := common.FilePathJoin(common.OS_Linux, remoteConfigDir, yamlFileConfig.Workspace.DockerComposeFile)
 			common.SmartIDELog.InfoF(i18nInstance.Config.Info_read_docker_compose, remoteDockerComposeFilePath)
 
 			// 在远程主机上加载docker-compose文件

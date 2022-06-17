@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-04-07 11:23:55
+ * @LastEditTime: 2022-06-11 16:26:33
  */
 package config
 
@@ -102,14 +102,6 @@ func (c SmartIdeConfig) Valid() error {
 		return errors.New(i18nInstance.Config.Err_config_devcontainer_idetype_none)
 
 	} else {
-		/* 		if c.Workspace.DevContainer.IdeType != IdeTypeEnum_JbProjector &&
-			c.Workspace.DevContainer.IdeType != IdeTypeEnum_Opensumi &&
-			c.Workspace.DevContainer.IdeType != IdeTypeEnum_Theia &&
-			c.Workspace.DevContainer.IdeType != IdeTypeEnum_VsCode &&
-			c.Workspace.DevContainer.IdeType != IdeTypeEnum_SDKOnly {
-
-		} */
-
 		switch c.Workspace.DevContainer.IdeType {
 		case IdeTypeEnum_JbProjector, IdeTypeEnum_Opensumi, IdeTypeEnum_Theia, IdeTypeEnum_VsCode, IdeTypeEnum_SDKOnly:
 			break

@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-26 14:22:53
+ * @LastEditTime: 2022-06-15 16:15:14
  */
 package start
 
@@ -76,7 +76,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	//3. 获取配置文件的内容
 	var ideBindingPort int
 	var tempDockerCompose compose.DockerComposeYml
-	ideYamlFilePath := common.FilePahtJoin(common.OS_Linux, workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath) //fmt.Sprintf(`%v/.ide/.ide.yaml`, repoWorkspace)
+	ideYamlFilePath := common.FilePathJoin(common.OS_Linux, workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath) //fmt.Sprintf(`%v/.ide/.ide.yaml`, repoWorkspace)
 	common.SmartIDELog.Info(fmt.Sprintf(i18nInstance.VmStart.Info_read_config, ideYamlFilePath))
 	if !sshRemote.IsFileExist(ideYamlFilePath) {
 		message := fmt.Sprintf(i18nInstance.Main.Err_file_not_exit2, ideYamlFilePath)
@@ -183,8 +183,8 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	//6. 当前主机绑定到远程端口
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_tunnel_waiting) // log
 	var addrMapping map[string]string = map[string]string{}
-	remotePortBindings := tempDockerCompose.GetPortBindings()
-	unusedLocalPort4IdeBindingPort := ideBindingPort // 未使用的本地端口，与ide端口对应
+	remotePortBindings := tempDockerCompose.GetPortBindings() //
+	unusedLocalPort4IdeBindingPort := ideBindingPort          // 未使用的本地端口，与ide端口对应
 	//6.1. 查找所有远程主机的端口
 	for remoteBindingPort, containerPort := range remotePortBindings {
 		remoteBindingPortInt, _ := strconv.Atoi(remoteBindingPort)
@@ -356,7 +356,8 @@ func gitAction(sshRemote common.SSHRemote, workspace workspace.WorkspaceInfo, cm
 			checkoutCommand += fmt.Sprintf("&& %s git checkout ", GIT_SSH_COMMAND) + workspace.Branch
 		} else { // 有可能当前目录所处的分支非主分支
 			// 获取分支列表，确认主分支是master 还是 main
-			output, _ := sshRemote.ExeSSHCommand(fmt.Sprintf("cd %v && %s git branch", workspace.WorkingDirectoryPath, GIT_SSH_COMMAND))
+			command := fmt.Sprintf("cd %v && %s git branch", workspace.WorkingDirectoryPath, GIT_SSH_COMMAND)
+			output, _ := sshRemote.ExeSSHCommand(command)
 			branches := strings.Split(output, "\n")
 			//isContainMaster := false
 			for _, branch := range branches {

@@ -3,12 +3,13 @@
  * @Description:
  * @Date: 2022-02-25
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-27 15:58:57
+ * @LastEditTime: 2022-06-08 14:42:32
  */
 package cmd
 
 import (
 	"fmt"
+	"io"
 	"strings"
 	"sync"
 	"time"
@@ -55,12 +56,17 @@ var connectCmd = &cobra.Command{
 		isUnforward, _ := cmd.Flags().GetBool("unforward")
 		for {
 			startedServerWorkspaces, err := getServerWorkspaces(currentAuth, cliRunningEnv, []model.WorkspaceStatusEnum{})
-			common.CheckError(err)
-			connect(startedServerWorkspaces, cmd, args)
+			if err == io.EOF { // 排除EOF的错误
+				common.SmartIDELog.Importance("getServerWorkspaces EOF")
+			} else {
+				common.CheckError(err)
+				connect(startedServerWorkspaces, cmd, args)
 
-			if isUnforward {
-				return
+				if isUnforward {
+					return
+				}
 			}
+
 			time.Sleep(time.Second * 10)
 		}
 	},
@@ -109,8 +115,10 @@ func checkLogin(cmd *cobra.Command) (currentAuth model.Auth, err error) {
 	return
 }
 
+// 已经连接的工作区id 列表
 var connectedWorkspaceIds []string = []string{}
 
+// 获取远程的工作区列表
 func getServerWorkspaces(currentAuth model.Auth, cliRunningEnv workspace.CliRunningEvnEnum, filter []model.WorkspaceStatusEnum) ([]workspace.WorkspaceInfo, error) {
 	var startedServerWorkspaces []workspace.WorkspaceInfo
 	serverWorkSpaces, err := workspace.GetServerWorkspaceList(currentAuth, cliRunningEnv)
@@ -153,11 +161,17 @@ func connect(startedServerWorkspaces []workspace.WorkspaceInfo, cmd *cobra.Comma
 	}
 
 	var mutex sync.Mutex
-	// start
+	//0. start
 	forwardFunc := func(fixWorkspaceInfo workspace.WorkspaceInfo) {
 		mutex.Lock()
 		common.SmartIDELog.Info(fmt.Sprintf("-- workspace (%v) -------------------------------", fixWorkspaceInfo.ServerWorkSpace.NO))
-		err := start.ExecuteServerVmStartByClientEnvCmd(fixWorkspaceInfo, executeStartCmdFunc)
+		var err error
+		if fixWorkspaceInfo.Mode == workspace.WorkingMode_Remote {
+			err = start.ExecuteServerVmStartByClientEnvCmd(fixWorkspaceInfo, executeStartCmdFunc)
+		} else if fixWorkspaceInfo.Mode == workspace.WorkingMode_K8s {
+			err = start.ExecuteServerK8sStartByClientEnvCmd(fixWorkspaceInfo, executeStartCmdFunc)
+		}
+
 		if err != nil {
 			common.SmartIDELog.ImportanceWithError(err)
 			connectedWorkspaceIds = common.RemoveItem(connectedWorkspaceIds, fixWorkspaceInfo.ServerWorkSpace.NO)
@@ -176,7 +190,7 @@ func connect(startedServerWorkspaces []workspace.WorkspaceInfo, cmd *cobra.Comma
 
 	}
 
-	// 启动工作区
+	//2. 启动工作区
 	for _, workspaceInfo := range startedServerWorkspaces {
 		if workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Start {
 			if !common.Contains(connectedWorkspaceIds, workspaceInfo.ServerWorkSpace.NO) {

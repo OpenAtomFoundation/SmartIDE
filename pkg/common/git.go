@@ -3,11 +3,12 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-17 00:37:51
+ * @LastEditTime: 2022-06-02 11:31:03
  */
 package common
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"regexp"
@@ -35,6 +36,9 @@ func (g gitOperation) CheckGitRemoteUrl(url string) bool {
 
 // 使用git下载指定的文件
 func (g gitOperation) SparseCheckout(rootDir string, gitCloneUrl string, fileExpression string, branch string) ([]string, error) {
+	if gitCloneUrl == "" {
+		return []string{}, errors.New("git clone url is null!")
+	}
 	repoName := GetRepoName(gitCloneUrl)
 
 	//1. 配置

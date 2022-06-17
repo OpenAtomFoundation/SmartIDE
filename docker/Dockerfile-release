@@ -26,6 +26,11 @@ RUN wget --no-check-certificate https://smartidedl.blob.core.chinacloudapi.cn/re
     version=$(cat stable.txt) && \
     url="https://smartidedl.blob.core.chinacloudapi.cn/releases/$version/smartide-linux" && \
     wget --no-check-certificate "$url" -O /usr/local/bin/smartide 
+
+# install kubectl
+RUN mkdir ~/.ide && \
+    wget --no-check-certificate "https://smartidedl.blob.core.chinacloudapi.cn/kubectl/v1.23.0/bin/linux/amd64/kubectl" -O ~/.ide/kubectl && \
+    chmod +x ~/.ide/kubectl 
     
 # install smartide agent
 RUN wget --no-check-certificate 'https://smartidedl.blob.core.chinacloudapi.cn/smartide-agent/latest/smartide-agent-linux' -O /usr/local/bin/smartide-agent

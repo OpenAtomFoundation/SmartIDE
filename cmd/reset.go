@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-26 10:02:30
+ * @LastEditTime: 2022-06-07 17:19:38
  */
 package cmd
 
@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/leansoftX/smartide-cli/cmd/remove"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/dal"
 	"github.com/leansoftX/smartide-cli/pkg/common"
@@ -92,11 +93,11 @@ var resetCmd = &cobra.Command{
 					//1.1. 删除远程主机的工作区
 					if workspaceInfo.Mode == workspace.WorkingMode_Local { // 本地模式
 						// 删除对应的容器\镜像
-						removeLocalMode(workspaceInfo, resetCmdFalgs.IsRemoveAllComposeImages || resetCmdFalgs.IsAll, resetCmdFalgs.IsAll)
+						remove.RemoveLocal(workspaceInfo, resetCmdFalgs.IsRemoveAllComposeImages || resetCmdFalgs.IsAll, resetCmdFalgs.IsAll)
 
 					} else if workspaceInfo.Mode == workspace.WorkingMode_Remote { // 远程模式
 						// 删除对应的容器\镜像\工作目录
-						removeRemoteMode(workspaceInfo,
+						remove.RemoveRemote(workspaceInfo,
 							resetCmdFalgs.IsRemoveAllComposeImages || resetCmdFalgs.IsAll, resetCmdFalgs.IsRemoveDirectory || resetCmdFalgs.IsAll, resetCmdFalgs.IsAll, cmd)
 
 					}

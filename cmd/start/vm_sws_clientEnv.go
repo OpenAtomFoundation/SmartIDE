@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-16 17:44:45
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-27 15:59:20
+ * @LastEditTime: 2022-06-07 10:09:30
  * @FilePath: /smartide-cli/cmd/start/server_vm.go
  * @Description:
  *
@@ -28,7 +28,9 @@ import (
 // 远程服务器执行 start 命令
 func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) error {
 	currentAuth, err := workspace.GetCurrentUser()
-	common.CheckError(err)
+	if err != nil {
+		return err
+	}
 	if currentAuth != (model.Auth{}) && currentAuth.Token != "" && currentAuth.Token != nil {
 		wsURL := fmt.Sprint(strings.ReplaceAll(strings.ReplaceAll(currentAuth.LoginUrl, "https", "ws"), "http", "ws"), "/ws/smartide/ws")
 		common.WebsocketStart(wsURL)
@@ -47,7 +49,7 @@ func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo, y
 
 	}
 
-	// 从api 获取workspace
+	//
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_starting)
 	// 检查工作区的状态
 	if workspaceInfo.ServerWorkSpace.Status != model.WorkspaceStatusEnum_Start {

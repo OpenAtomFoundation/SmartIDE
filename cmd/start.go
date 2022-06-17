@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-31 10:24:11
+ * @LastEditTime: 2022-06-15 15:09:11
  */
 package cmd
 
@@ -20,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jinzhu/copier"
 	"github.com/leansoftX/smartide-cli/cmd/server"
 	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
 	"github.com/leansoftX/smartide-cli/cmd/start"
@@ -31,6 +32,7 @@ import (
 
 	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/pkg/common"
+	"github.com/leansoftX/smartide-cli/pkg/kubectl"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 
@@ -91,7 +93,7 @@ var startCmd = &cobra.Command{
 
 		//0.1. 从参数中获取结构体，并做基本的数据有效性校验
 		common.SmartIDELog.Info(i18nInstance.Main.Info_workspace_loading)
-		workspaceInfo, err := getWorkspaceFromCmd(cmd, args)
+		workspaceInfo, err := getWorkspaceFromCmd(cmd, args) // 获取 workspace 对象 ★★★★★
 		common.CheckErrorFunc(err, func(err error) {
 			mode, _ := cmd.Flags().GetString("mode")
 			isModeServer := strings.ToLower(mode) == "server"
@@ -99,6 +101,7 @@ var startCmd = &cobra.Command{
 				return
 			}
 			if err != nil {
+				common.SmartIDELog.Importance(err.Error())
 				smartideServer.Feedback_Finish(server.FeedbackCommandEnum_Start, cmd, false, nil, workspace.WorkspaceInfo{}, err.Error(), "")
 			}
 		})
@@ -123,50 +126,76 @@ var startCmd = &cobra.Command{
 			appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(workspaceInfo.Mode), strings.Join(imageNames, ","))
 		}
 
-		// 执行命令
-		if workspaceInfo.Mode == workspace.WorkingMode_Local { // 本地模式
+		//1. 执行命令
+		if workspaceInfo.Mode == workspace.WorkingMode_Local { //1.1. 本地模式
 			start.ExecuteStartCmd(workspaceInfo, isUnforward, func(v string, d common.Docker) {}, executeStartCmdFunc)
 
-		} else if workspaceInfo.Mode == workspace.WorkingMode_K8s { // k8s 模式
+		} else if workspaceInfo.Mode == workspace.WorkingMode_K8s { //1.2. k8s 模式
 
-			if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server {
-				err := start.ExecuteK8sServerStartCmd(cmd, workspaceInfo, executeStartCmdFunc)
-				common.CheckError(err)
-			} else {
-				err := start.ExecuteK8sStartCmd(workspaceInfo, executeStartCmdFunc)
-				common.CheckError(err)
-			}
+			k8sUtil, err := kubectl.NewK8sUtil(workspaceInfo.K8sInfo.KubeConfigFilePath,
+				workspaceInfo.K8sInfo.Context,
+				workspaceInfo.K8sInfo.Namespace)
+			common.SmartIDELog.Error(err)
 
-			//99. 死循环进行驻守
-			if !isUnforward {
-				for {
-					time.Sleep(time.Millisecond * 300)
+			if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server { //1.2.1. cli 在服务端运行
+				err = start.ExecuteK8sServerStartCmd(cmd, *k8sUtil, workspaceInfo, executeStartCmdFunc)
+				common.SmartIDELog.Error(err)
+
+			} else { //1.2.2. cli 在客户端运行
+
+				if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server { //1.2.2.1. 远程工作区 本地加载
+					err := start.ExecuteServerK8sStartByClientEnvCmd(workspaceInfo, executeStartCmdFunc)
+					common.CheckError(err)
+
+				} else { //1.2.2.2. 本地工作区，本地启动
+					_, err := start.ExecuteK8sStartCmd(*k8sUtil, workspaceInfo, executeStartCmdFunc)
+					common.CheckError(err)
 				}
-			}
 
-		} else if workspaceInfo.CliRunningEnv == workspace.CliRunningEnvEnum_Client &&
-			workspaceInfo.Mode == workspace.WorkingMode_Remote &&
-			workspaceInfo.ServerWorkSpace != nil { // server 工作区，在本地运行
-
-			err = start.ExecuteServerVmStartByClientEnvCmd(workspaceInfo, executeStartCmdFunc)
-			common.CheckError(err)
-
-			//99. 死循环进行驻守
-			if !isUnforward {
-				for {
-					time.Sleep(time.Millisecond * 300)
+				//99. 死循环进行驻守
+				if !isUnforward {
+					for {
+						time.Sleep(time.Millisecond * 300)
+					}
 				}
+
 			}
 
-		} else { // vm 模式
-			disabelGitClone := false
-			if workspaceInfo.GitCloneRepoUrl == "" {
-				disabelGitClone = true
-			}
-			start.ExecuteVmStartCmd(workspaceInfo, isUnforward, executeStartCmdFunc, cmd, disabelGitClone)
+		} else if workspaceInfo.Mode == workspace.WorkingMode_Remote { //1.3. 远程主机 模式
 
+			if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server { //1.3.1. cli 在服务端运行
+				disabelGitClone := false
+				if workspaceInfo.GitCloneRepoUrl == "" {
+					disabelGitClone = true
+				}
+				start.ExecuteVmStartCmd(workspaceInfo, isUnforward, executeStartCmdFunc, cmd, disabelGitClone)
+
+			} else { //1.3.2. cli 在客户端运行
+
+				if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server { //1.3.2.1. 远程工作区 本地加载
+					err = start.ExecuteServerVmStartByClientEnvCmd(workspaceInfo, executeStartCmdFunc)
+					common.CheckError(err)
+
+					//99. 死循环进行驻守
+					if !isUnforward {
+						for {
+							time.Sleep(time.Millisecond * 300)
+						}
+					}
+
+				} else { //1.3.2.2. 本地工作区，本地启动
+					disabelGitClone := false
+					if workspaceInfo.GitCloneRepoUrl == "" {
+						disabelGitClone = true
+					}
+					start.ExecuteVmStartCmd(workspaceInfo, isUnforward, executeStartCmdFunc, cmd, disabelGitClone)
+				}
+
+			}
+
+		} else {
+			return errors.New("暂不支持当前模式")
 		}
-
 		return nil
 	},
 }
@@ -284,7 +313,7 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 	}
 
 	//2. 获取基本的信息
-	// server 上的工作区
+	//2.1. 存储在 server 的工作区
 	if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server {
 		auth := model.Auth{}
 		if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server {
@@ -300,12 +329,26 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 
 		if auth.IsNotNil() {
 			// 从 api 获取 workspace
-			workspaceInfo, err = workspace.GetWorkspaceFromServer(auth, workspaceIdStr, workspaceInfo.CliRunningEnv)
+			var workspaceInfo_ *workspace.WorkspaceInfo
+			workspaceInfo_, err = workspace.GetWorkspaceFromServer(auth, workspaceIdStr, workspaceInfo.CliRunningEnv)
+			if workspaceInfo_ == nil {
+				return workspace.WorkspaceInfo{}, fmt.Errorf("get workspace (%v) is null", workspaceIdStr)
+			}
 
+			workspaceInfo = *workspaceInfo_
 			// 使用是否关联 server workspace 进行判断
 			if workspaceInfo.ServerWorkSpace == nil {
 				err = fmt.Errorf("没有查询到 (%v) 对应的工作区数据！", workspaceIdStr)
+			} else {
+				// 避免namespace为空
+				if workspaceInfo.Mode == workspace.WorkingMode_K8s {
+					if workspaceInfo.K8sInfo.Namespace == "" &&
+						len(workspaceInfo.K8sInfo.TempK8sConfig.Workspace.Deployments) > 0 {
+						workspaceInfo.K8sInfo.Namespace = workspaceInfo.K8sInfo.TempK8sConfig.Workspace.Deployments[0].Namespace
+					}
+				}
 			}
+
 		} else {
 			err = fmt.Errorf("请运行smartide login命令登录！")
 		}
@@ -313,7 +356,7 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 			return
 		}
 
-	} else { // 非 server 模式
+	} else { //2.2. 存储在本地的工作区
 		workspaceId, _ := strconv.Atoi(workspaceIdStr)
 		common.CheckError(err)
 		//1.1. 指定了从workspaceid，从sqlite中读取
@@ -322,7 +365,7 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 			checkFlagUnnecessary(fflags, flag_username, flag_workspaceid)
 			checkFlagUnnecessary(fflags, flag_password, flag_workspaceid)
 
-			workspaceInfo, err = getWorkspaceWithDbAndValid(workspaceId) // 从数据库中加载
+			err := getWorkspaceWithDbAndValid(workspaceId, &workspaceInfo) // 从数据库中加载
 			if err != nil {
 				return workspace.WorkspaceInfo{}, err
 			}
@@ -388,10 +431,6 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 				}
 
 				workingMode = workspace.WorkingMode_K8s
-				/* workspaceInfo.K8sInfo.Namespace = (6) //getFlagValue(fflags, flag_namespace)
-				if workspaceInfo.K8sInfo.Namespace == "" {
-					workspaceInfo.K8sInfo.Namespace = "default"
-				} */
 				workspaceInfo.K8sInfo.KubeConfigFilePath = getFlagValue(fflags, flag_kubeconfig)
 				workspaceInfo.K8sInfo.Context = getFlagValue(fflags, flag_k8s)
 
@@ -424,10 +463,8 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 			workspaceInfoDb, err := dal.GetSingleWorkspaceByParams(workspaceInfo.Mode, workspaceInfo.WorkingDirectoryPath,
 				workspaceInfo.GitCloneRepoUrl, workspaceInfo.Remote.ID, workspaceInfo.Remote.Addr)
 			common.CheckError(err)
-
-			if workspaceInfoDb.ID != "" && workspaceInfoDb.IsNotNil() {
-				workspaceInfo = workspaceInfoDb
-
+			if workspaceInfoDb.ID != "" { //&& workspaceInfoDb.IsNotNil()
+				copier.CopyWithOption(&workspaceInfo, workspaceInfoDb, copier.Option{IgnoreEmpty: false, DeepCopy: true})
 			} else {
 				if workspaceInfo.Mode != workspace.WorkingMode_K8s {
 					// docker-compose 文件路径
@@ -439,7 +476,7 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 	}
 
 	// 涉及到配置文件的改变
-	if fflags.Changed(flag_filepath) {
+	if tmp, _ := fflags.GetString(flag_filepath); tmp != "" {
 		configFilePath, err := fflags.GetString(flag_filepath)
 		common.CheckError(err)
 
@@ -453,9 +490,13 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 		}
 	}
 	if workspaceInfo.ConfigFileRelativePath == "" { // 避免配置文件的路径为空
-		workspaceInfo.ConfigFileRelativePath = model.CONST_Default_ConfigRelativeFilePath
+		if workspaceInfo.Mode == workspace.WorkingMode_K8s {
+			workspaceInfo.ConfigFileRelativePath = model.CONST_Default_K8S_ConfigRelativeFilePath
+		} else {
+			workspaceInfo.ConfigFileRelativePath = model.CONST_Default_ConfigRelativeFilePath
+		}
 	}
-	if fflags.Changed(flag_branch) {
+	if tmp, _ := fflags.GetString(flag_branch); tmp != "" {
 		branch, err := fflags.GetString(flag_branch)
 		common.CheckError(err)
 
@@ -478,7 +519,6 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 		if err != nil {
 			return workspaceInfo, err
 		}
-
 	}
 
 	// 提示 加载对应的workspace
@@ -535,41 +575,48 @@ func (e *FriendlyError) Error() string {
 }
 
 // 从数据库中加载工作区信息，并进行验证
-func getWorkspaceWithDbAndValid(workspaceId int) (workspaceInfo workspace.WorkspaceInfo, err error) {
+func getWorkspaceWithDbAndValid(workspaceId int, originWorkspaceInfo *workspace.WorkspaceInfo) error {
 
-	workspaceInfo, err = dal.GetSingleWorkspace(int(workspaceId))
-	common.CheckError(err)
+	workspaceInfo_, err := dal.GetSingleWorkspace(int(workspaceId))
+	if err != nil {
+		return err
+	}
+	workspaceInfo_.CacheEnv = workspace.CacheEnvEnum_Local
+	workspaceInfo_.CliRunningEnv = originWorkspaceInfo.CliRunningEnv
 
 	// 验证在workspace中是否存在
-	if workspaceInfo.IsNil() {
+	if workspaceInfo_.IsNil() {
 		msg := fmt.Sprintf(i18nInstance.Main.Err_workspace_none)
 		err = errors.New(msg)
-		return workspaceInfo, err
+		return err
 	}
 
 	// 如果扩展信息为空（通常是旧项目导致的），就从docker-compose文件中加载扩展信息
-	if workspaceInfo.Extend.IsNil() &&
-		workspaceInfo.ConfigYaml.IsNotNil() && workspaceInfo.TempDockerCompose.IsNotNil() {
-		workspaceInfo.Extend = workspaceInfo.GetWorkspaceExtend()
+	if workspaceInfo_.Extend.IsNil() &&
+		workspaceInfo_.ConfigYaml.IsNotNil() && workspaceInfo_.TempDockerCompose.IsNotNil() {
+		workspaceInfo_.Extend = workspaceInfo_.GetWorkspaceExtend()
 
 	}
 
 	// 当前目录下不需要再次录入workspaceid
 	twd, _ := os.Getwd()
-	if workspaceInfo.Mode == workspace.WorkingMode_Local && twd == workspaceInfo.WorkingDirectoryPath {
+	if workspaceInfo_.Mode == workspace.WorkingMode_Local && twd == workspaceInfo_.WorkingDirectoryPath {
 		common.SmartIDELog.Warning(i18nInstance.Main.Err_flag_value_invalid2)
 
 	}
 
 	// 临时compose文件路径
-	if workspaceInfo.TempYamlFileAbsolutePath == "" {
-		workspaceInfo.TempYamlFileAbsolutePath = workspaceInfo.GetTempDockerComposeFilePath()
+	if workspaceInfo_.TempYamlFileAbsolutePath == "" {
+		workspaceInfo_.TempYamlFileAbsolutePath = workspaceInfo_.GetTempDockerComposeFilePath()
 	}
 
 	// 验证数据
-	err = workspaceInfo.Valid()
+	err = workspaceInfo_.Valid()
 
-	return workspaceInfo, err
+	// 赋值
+	copier.CopyWithOption(originWorkspaceInfo, &workspaceInfo_, copier.Option{IgnoreEmpty: true, DeepCopy: true})
+
+	return err
 }
 
 // 根据参数，从数据库或者其他参数中加载远程服务器的信息

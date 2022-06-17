@@ -34,5 +34,4 @@ smartide-linux
 -linux--x64-origin
 .profile
 kubectl
-.vscode
 *.env

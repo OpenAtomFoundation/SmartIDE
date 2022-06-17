@@ -38,7 +38,7 @@ func (workspace WorkspaceInfo) SaveTempFiles() (err error) { // dockerComposeFil
 
 	// 创建 或者 清空文件夹
 	tempDirPath := filepath.Dir(tempDockerComposeFilePath) // 临时文件所在的目录
-	if !common.IsExit(tempDirPath) {                       // 创建文件夹
+	if !common.IsExist(tempDirPath) {                      // 创建文件夹
 		os.MkdirAll(tempDirPath, os.ModePerm)
 		common.SmartIDELog.InfoF(i18nInstance.Common.Info_temp_create_directory, tempDirPath)
 	} else { // 清空文件夹
@@ -50,7 +50,7 @@ func (workspace WorkspaceInfo) SaveTempFiles() (err error) { // dockerComposeFil
 	}
 
 	// create docker-compose file
-	if !common.IsExit(tempDockerComposeFilePath) {
+	if !common.IsExist(tempDockerComposeFilePath) {
 		os.Create(tempDockerComposeFilePath)
 	}
 	sYaml, err := workspace.TempDockerCompose.ToYaml()
@@ -64,7 +64,7 @@ func (workspace WorkspaceInfo) SaveTempFiles() (err error) { // dockerComposeFil
 	}
 
 	// create config file
-	if !common.IsExit(tempConfigFilePath) {
+	if !common.IsExist(tempConfigFilePath) {
 		os.Create(tempConfigFilePath)
 	}
 	sConfig, err := workspace.ConfigYaml.ToYaml()
@@ -199,10 +199,10 @@ func checkLocalGitignoreContainTmpDir(workingDir string) {
 
 	// ignore
 	gitignorePath := common.PathJoin(workingDir, tempParentDir, ".gitignore")
-	if !common.IsExit(gitignorePath) {
+	if !common.IsExist(gitignorePath) {
 		dirPath := filepath.Dir(gitignorePath)
 
-		if !common.IsExit(dirPath) {
+		if !common.IsExist(dirPath) {
 			os.Create(dirPath)
 		}
 

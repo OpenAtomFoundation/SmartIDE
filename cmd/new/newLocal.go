@@ -47,7 +47,7 @@ func LocalNew(cmd *cobra.Command, args []string, workspaceInfo workspace.Workspa
 	}
 
 	// 检测当前文件夹是否有.ide.yaml，有了返回
-	hasIdeConfigYaml := common.IsExit(".ide/.ide.yaml")
+	hasIdeConfigYaml := common.IsExist(".ide/.ide.yaml")
 	if hasIdeConfigYaml {
 		common.SmartIDELog.Info("当前目录已经完成初始化，无须再次进行！")
 	}
@@ -192,7 +192,7 @@ func copyTemplateToCurrentDir(modelType, newProjectType string) {
 		newProjectType = "_default"
 	}
 	templatePath := common.PathJoin(config.SmartIdeHome, TMEPLATE_DIR_NAME, modelType, newProjectType)
-	templatesFolderIsExist := common.IsExit(templatePath)
+	templatesFolderIsExist := common.IsExist(templatePath)
 	if !templatesFolderIsExist {
 		common.SmartIDELog.Error(i18nInstance.New.Info_type_no_exist)
 	}
@@ -227,7 +227,7 @@ func folderEmpty(dirPth string) (bool, error) {
 func templatesClone() error {
 	templatePath := common.PathJoin(config.SmartIdeHome, TMEPLATE_DIR_NAME)
 	templateGitPath := common.PathJoin(templatePath, ".git")
-	templatesGitIsExist := common.IsExit(templateGitPath)
+	templatesGitIsExist := common.IsExist(templateGitPath)
 
 	// 通过判断.git目录存在，执行git pull，保持最新
 	if templatesGitIsExist {
@@ -333,7 +333,7 @@ func copyFile(src, dest string) (w int64, err error) {
 	for index, dir := range destSplitPathDirs {
 		if index < len(destSplitPathDirs)-1 {
 			destSplitPath = destSplitPath + dir + "/"
-			b := common.IsExit(destSplitPath)
+			b := common.IsExist(destSplitPath)
 			if !b {
 				//创建目录
 				err := os.Mkdir(destSplitPath, os.ModePerm)

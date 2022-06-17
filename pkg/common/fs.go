@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2021-12-29 14:26:42
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-15 23:11:56
+ * @LastEditTime: 2022-06-13 11:25:51
  * @Description: file content
  */
 
@@ -11,7 +11,10 @@ package common
 import (
 	"bufio"
 	"bytes"
+	"errors"
+	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -28,13 +31,27 @@ func init() {
 
 // 跳过host检查
 func (fs *fileOperation) SkipStrictHostKeyChecking(sshDirectory string, isReset bool) error {
-	sshConfigPath := PathJoin(sshDirectory, "config")
-	if !IsExit(sshConfigPath) { // 是否存在
-		f, err := os.Create(sshConfigPath) // 创建
+	sshConfigPath := filepath.Join(sshDirectory, "config")
+
+	//  是否存在
+	if !IsExist(sshConfigPath) {
+		SmartIDELog.Debug(fmt.Sprintf("创建 %v 文件", sshConfigPath))
+
+		// 文件夹是否存在
+		dirPath := filepath.Dir(sshConfigPath)
+		if dirPath != "" && !IsExist(dirPath) {
+			err := os.MkdirAll(dirPath, os.ModePerm)
+			if err != nil {
+				return err
+			}
+		}
+
+		// 创建文件
+		f, err := os.Create(sshConfigPath)
 		if err != nil {
 			return err
 		}
-		f.Close()
+		defer f.Close()
 	}
 
 	// 写入配置
@@ -67,20 +84,69 @@ StrictHostKeyChecking no`
 	return nil
 }
 
+func (fs *fileOperation) CreateOrOverWrite(filePath string, content string) error {
+	return writeToFile(filePath, content, true)
+}
+
 // fileName:文件名字(带全路径)
 // content: 写入的内容
-func (fs *fileOperation) AppendToFile(fileName string, content string) error {
-	// 以只写的模式，打开文件
-	f, err := os.OpenFile(fileName, os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	} else {
+func (fs *fileOperation) AppendToFile(filePath string, content string) error {
+	return writeToFile(filePath, content, false)
+}
+
+func writeToFile(filePath string, content string, isOverWrite bool) (err error) {
+
+	if filePath == "" {
+		return errors.New("文件路径不能为空！")
+	}
+
+	// 替换当前用户目录
+	if filePath[0] == '~' {
+		home, _ := os.UserHomeDir()
+		if home != "" {
+			filePath = filepath.Join(home, filePath[1:])
+		}
+	}
+
+	// 文件是否存在
+	if !IsExist(filePath) {
+
+		// 文件夹是否存在
+		dirPath := filepath.Dir(filePath)
+		if dirPath != "" && !IsExist(dirPath) {
+			err := os.MkdirAll(dirPath, os.ModePerm)
+			if err != nil {
+				return err
+			}
+		}
+
+		// 创建文件
+		f, err := os.Create(filePath)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+	}
+
+	// 文件内容
+	if isOverWrite {
+		err = os.WriteFile(filePath, []byte(content), 0644)
+	} else { // 附加到文件中
+		// 以只写的模式，打开文件
+		f, err := os.OpenFile(filePath, os.O_WRONLY, 0644)
+		if err != nil {
+			return err
+		}
 		// 查找文件末尾的偏移量
 		n, _ := f.Seek(0, os.SEEK_END)
 		// 从末尾的偏移量开始写入内容
 		_, err = f.WriteAt([]byte(content), n)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
 	}
-	defer f.Close()
+
 	return err
 }
 

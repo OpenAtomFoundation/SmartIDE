@@ -3,21 +3,31 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-15 23:07:00
+ * @LastEditTime: 2022-06-06 00:20:29
  */
 package common
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
 // 判断所给路径文件/文件夹是否存在
-func IsExit(path string) bool {
+func IsExist(path string) bool {
+	// 替换当前用户目录
+	if path[0] == '~' {
+		home, _ := os.UserHomeDir()
+		if home != "" {
+			path = filepath.Join(home, path[1:])
+		}
+	}
+
+	// 检测是否存在
 	_, err := os.Stat(path) //os.Stat获取文件信息
-	if err != nil {
-		return os.IsExist(err)
+	if err != nil && errors.Is(err, os.ErrNotExist) {
+		return false
 	}
 	return true
 }
@@ -49,7 +59,7 @@ func PathJoin(paths ...string) string {
 }
 
 // 路径组合，参数 os 可以是windows
-func FilePahtJoin(osType OSType, paths ...string) string {
+func FilePathJoin(osType OSType, paths ...string) string {
 	result := filepath.Join(paths...)
 	switch osType {
 	case OS_Windows:
@@ -62,5 +72,5 @@ func FilePahtJoin(osType OSType, paths ...string) string {
 
 // 路径组合 for linux
 func FilePahtJoin4Linux(paths ...string) string {
-	return FilePahtJoin(OS_Linux, paths...)
+	return FilePathJoin(OS_Linux, paths...)
 }

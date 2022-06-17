@@ -41,7 +41,7 @@ func GetCurrentAuth(auths []model.Auth) model.Auth {
 //加载config配置文件
 func (c *GlobalConfig) LoadConfigYaml() *GlobalConfig {
 	ideConfigPath := common.PathJoin(SmartIdeHome, configFileName)
-	isIdeConfigExist := common.IsExit(ideConfigPath)
+	isIdeConfigExist := common.IsExist(ideConfigPath)
 	if isIdeConfigExist {
 		yamlByte, err := os.ReadFile(ideConfigPath)
 		common.SmartIDELog.Error(err, i18nInstance.Config.Err_read_config, ideConfigPath)
@@ -80,7 +80,7 @@ func init() {
 	SmartIdeHome = common.PathJoin(home, ".ide")
 
 	//创建userhome/.ide
-	templatesFolderIsExist := common.IsExit(SmartIdeHome)
+	templatesFolderIsExist := common.IsExist(SmartIdeHome)
 	if !templatesFolderIsExist {
 		err = os.MkdirAll(SmartIdeHome, os.ModePerm)
 		common.CheckError(err)

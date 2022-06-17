@@ -11,27 +11,27 @@ import (
 )
 
 // 从生成docker-compose 和 配置文件中获取扩展信息（端口绑定）
-func (workspace *WorkspaceInfo) GetWorkspaceExtend() WorkspaceExtend {
+func (workspaceInfo *WorkspaceInfo) GetWorkspaceExtend() WorkspaceExtend {
 
 	var extend WorkspaceExtend
-	if workspace.Mode != WorkingMode_K8s {
-		if workspace.TempDockerCompose.IsNil() || workspace.ConfigYaml.IsNil() {
+	if workspaceInfo.Mode != WorkingMode_K8s {
+		if workspaceInfo.TempDockerCompose.IsNil() || workspaceInfo.ConfigYaml.IsNil() {
 			return extend
 		}
 	}
 
 	// 兼容链接docker-compose 和 不链接docker-compose 两种方式
-	originServices := workspace.ConfigYaml.Workspace.Servcies
-	if workspace.ConfigYaml.IsLinkDockerComposeFile() {
-		originServices = workspace.LinkDockerCompose.Services
+	composeServices := workspaceInfo.ConfigYaml.Workspace.Servcies
+	if workspaceInfo.ConfigYaml.IsLinkDockerComposeFile() {
+		composeServices = workspaceInfo.LinkDockerCompose.Services
 	}
 
-	// 遍历 services
-	for serviceName, originService := range originServices {
-		isDevService := serviceName == workspace.ConfigYaml.Workspace.DevContainer.ServiceName // 是否开发容器
-		originServicePorts := originService.Ports                                              // 原始端口
+	//1. 遍历 compose 文件中的 services
+	for serviceName, originService := range composeServices {
+		isDevService := serviceName == workspaceInfo.ConfigYaml.Workspace.DevContainer.ServiceName // 是否开发容器
+		originServicePorts := originService.Ports                                                  // 原始端口
 
-		// 开发容器时
+		//1.1. 开发容器时
 		if isDevService {
 			// ssh 端口
 			portSSH := fmt.Sprintf("%v:%v", model.CONST_Local_Default_BindingPort_SSH, model.CONST_Container_SSHPort)
@@ -40,7 +40,7 @@ func (workspace *WorkspaceInfo) GetWorkspaceExtend() WorkspaceExtend {
 			}
 
 			// webide 端口
-			containerWebIDEPort := workspace.ConfigYaml.GetContainerWebIDEPort()
+			containerWebIDEPort := workspaceInfo.ConfigYaml.GetContainerWebIDEPort()
 			if containerWebIDEPort != nil { // 判断是否获取到webide的端口，在sdk-only模式下没有webide
 				portWebide := fmt.Sprintf("%v:%v", model.CONST_Local_Default_BindingPort_WebIDE, *containerWebIDEPort)
 				if !common.Contains(originServicePorts, portWebide) {
@@ -50,22 +50,22 @@ func (workspace *WorkspaceInfo) GetWorkspaceExtend() WorkspaceExtend {
 
 		}
 
-		// 遍历原始端口
+		//1.2. 遍历原始端口
 		for _, temp := range originServicePorts {
 			ports := strings.Split(temp, ":")
 			originLocalPort, _ := strconv.Atoi(ports[0])
 			containerPort, _ := strconv.Atoi(ports[1])
 			label := ""
 
-			// 从端口描述信息中查找
-			for key, port := range workspace.ConfigYaml.Workspace.DevContainer.Ports {
+			//1.2.1 从端口描述信息中查找
+			for key, port := range workspaceInfo.ConfigYaml.Workspace.DevContainer.Ports {
 				if port == originLocalPort {
 					label = key
 					break
 				}
 			}
 
-			// 如果是默认的端口，直接给描述
+			//1.2.2. 如果是默认的端口，直接给描述
 			if isDevService && label == "" {
 				if originLocalPort == model.CONST_Local_Default_BindingPort_WebIDE {
 					if containerPort == model.CONST_Container_JetBrainsIDEPort {
@@ -80,11 +80,11 @@ func (workspace *WorkspaceInfo) GetWorkspaceExtend() WorkspaceExtend {
 				}
 			}
 
-			// 如果描述信息不为空，就添加
+			//1.2.3. 如果描述信息不为空，就添加
 			if label != "" {
 				// 查找当前的绑定端口
 				currentLocalPort := -1
-				for currentServiceName, currentService := range workspace.TempDockerCompose.Services {
+				for currentServiceName, currentService := range workspaceInfo.TempDockerCompose.Services {
 					if currentServiceName == serviceName {
 						for _, str := range currentService.Ports {
 							currentPorts := strings.Split(str, ":")
@@ -101,14 +101,17 @@ func (workspace *WorkspaceInfo) GetWorkspaceExtend() WorkspaceExtend {
 
 				// 端口绑定信息
 				portMapInfo := config.NewPortMap(config.PortMapInfo_Full, originLocalPort, currentLocalPort, label, containerPort, serviceName)
+				if strings.Contains(portMapInfo.HostPortDesc, "tools-webide") {
+					portMapInfo.RefDirecotry = workspaceInfo.GetContainerWorkingPathWithVolumes()
+				}
 				extend.Ports = append(extend.Ports, *portMapInfo)
 			}
 
 		}
 	}
 
-	//
-	for label, port := range workspace.ConfigYaml.Workspace.DevContainer.Ports {
+	//2. 配置文件中的端口
+	for label, port := range workspaceInfo.ConfigYaml.Workspace.DevContainer.Ports {
 
 		hasContain := false
 		for _, item := range extend.Ports {

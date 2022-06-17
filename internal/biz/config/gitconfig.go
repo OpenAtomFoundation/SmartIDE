@@ -74,7 +74,7 @@ func SSHVolumesConfig(isVmCommand bool, service *compose.Service, sshRemote comm
 
 	// volumes
 	if runtime.GOOS == "windows" && !isVmCommand {
-		if common.IsExit(filepath.Join(os.Getenv("USERPROFILE"), "/.ssh")) {
+		if common.IsExist(filepath.Join(os.Getenv("USERPROFILE"), "/.ssh")) {
 			configPaths = []string{fmt.Sprintf("\\'%v\\.ssh:/home/smartide/.ssh\\'", os.Getenv("USERPROFILE"))}
 		}
 	} else {
@@ -83,7 +83,7 @@ func SSHVolumesConfig(isVmCommand bool, service *compose.Service, sshRemote comm
 		} else {
 
 			if homeDir, err := os.UserHomeDir(); err == nil {
-				if common.IsExit(filepath.Join(homeDir, "/.ssh")); err == nil {
+				if common.IsExist(filepath.Join(homeDir, "/.ssh")); err == nil {
 					configPaths = []string{"$HOME/.ssh:/home/smartide/.ssh"}
 
 				}
