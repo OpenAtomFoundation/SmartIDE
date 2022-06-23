@@ -46,7 +46,7 @@ c. 登录后，进入SmartIDE首页：
 到这里，我们就完成了SmartIDE Server端登录。
 
 d. CLI客户端登录
-> <i>**说明**：当前，SmartIDE仅支持通过cli建立安全隧道（SSH Tunnel）的方式的方式访问工作区，所以这里我们需要安装并通过CLI客户端完成登录，连接Server。未来我们会提供完全在线的方式，这样就可以通过一个简单的URL来访问你的工作区。<br>CLI具体安装操作见：[客户端安装](../../install)。</i>
+> <i>**说明**：当前，SmartIDE仅支持通过cli建立安全隧道（SSH Tunnel）的方式的方式访问工作区，所以这里我们需要安装并通过CLI客户端完成登录，连接Server。未来我们会提供完全在线的方式，这样就可以通过一个简单的URL来访问你的工作区。<br>CLI具体安装操作见：[客户端安装](/zh/docs/install/cli/)。</i>
 
 ![](images/server-020.png)
 
@@ -67,7 +67,7 @@ a. 点击左侧【资源管理】菜单，进入资源管理列表后，点击�
 
 ![](images/server-007.png)
 
-> <i>**说明**：添加主机前，需要主机已完成 [SmartIDE初始化配置](https://smartide.cn/zh/docs/install/docker-install-linux/) 。</i>
+> <i>**说明**：添加主机前，需要主机已完成 [SmartIDE初始化配置](/zh/docs/install/docker/linux/) 。</i>
 
 
 在这里，需要填写以下信息：
@@ -88,7 +88,7 @@ b. 创建成功后，列表中，可以看到刚刚添加的记录。
 
 工作区是SmartIDE中用于管理开发环境的单元，每个代码版本对应一个工作区。当你完成了资源创建后，就可以通过工作区管理，在这些资源上创建工作区了。
 
-> <i>**注意**：我们使用的Boathouse计算器中已经适配了SmartIDE工作区，如果你需要在SmartIDE中运行其他代码的开发环境，请参考 [项目适配](../../manual/adaption/) 文档。</i>
+> <i>**注意**：我们使用的Boathouse计算器中已经适配了SmartIDE工作区，如果你需要在SmartIDE中运行其他代码的开发环境，请参考 [项目适配](/zh/docs/manual/adaption/) 文档。</i>
 
 a. 资源创建完毕后，点击【工作区管理】，进入工作区列表，此时点击【新增工作区】按钮。
 
@@ -114,7 +114,7 @@ e. 这时，就可以在打开的WebIDE界面中，像使用本地IDE那样，�
 
 ![](images/server-025.png)
 
-> <i>**说明**：有关如何在WebIDE中开发和调试Node.js应用的方法，请参考 [cli快速启动](../../quickstart/cli) 和 [node快速启动](../../quickstart/node) 文档。</i>
+> <i>**说明**：有关如何在WebIDE中开发和调试Node.js应用的方法，请参考 [cli快速启动](/zh/docs/install/cli/) 和 [node快速启动](/zh/docs/quickstart/node/) 文档。</i>
 
 ## 私有化部署
 SmartIDE Server提供私有化部署，你可以在任何公有云/私有云，甚至虚拟机上完成私有部署。有关私有部署的详细操作手册，请持续关注此文档。
