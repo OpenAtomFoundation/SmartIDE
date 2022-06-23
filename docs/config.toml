@@ -63,7 +63,7 @@ weight = 1
 
 [languages.zh]
 title = "SmartIDE"
-description = "开发从未如此简单"
+description = "开源云原生IDE"
 languageName ="中文（简体）"
 contentDir = "content/zh"
 time_format_default = "2006.01.02"
