@@ -1,0 +1,15 @@
+#################################################
+# SmartIDE Developer Container Image
+# Licensed under GPL v3.0
+# Copyright (C) leansoftX.com
+#################################################
+
+FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-v2-vmlc:latest
+
+USER root
+RUN apt-get update && \
+    mkdir -p /usr/share/man/man1 && \
+    apt-get -y install --no-install-recommends tzdata openjdk-8-jdk openjdk-11-jdk maven libsecret-1-dev zip apt-utils && \
+    apt-get clean && \
+    apt-get autoremove -y && \
+    rm -rf /tmp/* /var/lib/apt/lists/* /var/tmp/*
