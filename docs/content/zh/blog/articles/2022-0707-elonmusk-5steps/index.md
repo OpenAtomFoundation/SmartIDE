@@ -121,6 +121,11 @@ description: >
 
 ![Elon Musk 5 Steps](images/elonmusk5steps-009.png)
 
+---
+徐磊
+
+2022年7月8日 于北京
+
 ## 参考资料
 
 - [Insights of Agile at Tesla with Joe Justice](https://www.linkedin.com/pulse/insights-agile-tesla-joe-justice-h%C3%A0o-l%C7%90/)
