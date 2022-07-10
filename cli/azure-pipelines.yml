@@ -408,7 +408,7 @@ stages:
               script: |
                 login -u $(DockerHublogin) -p $(DockerHubpassword)
                 docker  buildx build  -f ./Dockerfile-build -t "$(ImageRegistryNamespace)/$(ImageName):$(ImageTag)" --platform linux/amd64,linux/arm64 . --push
-              workingDirectory: '$(Build.SourcesDirectory)/docker/'
+              workingDirectory: '$(Build.SourcesDirectory)/$(ProjectRootDir)/docker/'
           - task: CmdLine@2
             enabled: true
             displayName: Image Build - $(ImageName)
@@ -416,7 +416,7 @@ stages:
               script: |
                 docker login -u $(aliyunlogin) -p $(aliyunpassword) $(ImageRegistry)
                 docker  buildx build  -f ./Dockerfile-build -t "$(ImageRegistry)/$(ImageRegistryNamespace)/$(ImageName):$(ImageTag)" --platform linux/amd64,linux/arm64 . --push
-              workingDirectory: '$(Build.SourcesDirectory)/docker/'
+              workingDirectory: '$(Build.SourcesDirectory)/$(ProjectRootDir)/docker/'
           - task: CmdLine@2
             enabled: true
             displayName: Clean up Image
@@ -502,7 +502,7 @@ stages:
               script: |
                 login -u $(DockerHublogin) -p $(DockerHubpassword)
                 docker  buildx build  -f ./Dockerfile-release -t "$(ImageRegistryNamespace)/$(ImageName):$(ImageTag)" --platform linux/amd64,linux/arm64 . --push
-              workingDirectory: '$(Build.SourcesDirectory)/docker/'
+              workingDirectory: '$(Build.SourcesDirectory)/$(ProjectRootDir)/docker/'
           - task: CmdLine@2
             enabled: true
             displayName: Image Build - $(ImageName)
@@ -510,7 +510,7 @@ stages:
               script: |
                 docker login -u $(aliyunlogin) -p $(aliyunpassword) $(ImageRegistry)
                 docker  buildx build  -f ./Dockerfile-release -t "$(ImageRegistry)/$(ImageRegistryNamespace)/$(ImageName):$(ImageTag)" --platform linux/amd64,linux/arm64 . --push
-              workingDirectory: '$(Build.SourcesDirectory)/docker/'
+              workingDirectory: '$(Build.SourcesDirectory)/$(ProjectRootDir)/docker/'
           - task: CmdLine@2
             enabled: true
             displayName: Clean up Image
