@@ -4,7 +4,7 @@ resources:
   repositories:
     - repository: self
       type: git
-      ref: refs/heads/main
+      ref: refs/heads/leixu/single-repo
 
 trigger:
   branches:
@@ -34,6 +34,8 @@ variables:
     value: "smartide-cli"
   - name: ImageTag
     value: $(Build.BuildId)
+  - name: ProjectRootDir
+    value: cli
 
 stages:
   - stage: Build
@@ -46,7 +48,7 @@ stages:
           - checkout: self
           - task: replacetokens@4
             inputs:
-              rootDirectory: "$(Build.SourcesDirectory)"
+              rootDirectory: "$(Build.SourcesDirectory)/$(ProjectRootDir)"
               targetFiles: |
                 **/stable*.txt
                 **/stable*.json
@@ -75,6 +77,7 @@ stages:
             displayName: go unit test
             inputs:
               targetType: "inline"
+              workingDirectory: "$(Build.SourcesDirectory)/$(ProjectRootDir)"
               script: |
 
                 go test ./...
@@ -83,6 +86,7 @@ stages:
             displayName: go build
             inputs:
               targetType: inline
+              workingDirectory: "$(Build.SourcesDirectory)/$(ProjectRootDir)"
               script: >-
                 echo "golang version"
 
@@ -120,7 +124,7 @@ stages:
           - task: CopyFiles@2
             displayName: Copy Files
             inputs:
-              SourceFolder: "$(Build.SourcesDirectory)"
+              SourceFolder: "$(Build.SourcesDirectory)/$(ProjectRootDir)"
               Contents: |
                 ##**/*$(cliname)-*-**[!'origin|origin.exe']
                 $(cliname)-win-$(Build.BuildNumber)-x64.exe
