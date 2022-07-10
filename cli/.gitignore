@@ -33,7 +33,6 @@ __debug_bin
 smartide-linux
 -linux--x64-origin
 .profile
-kubectl
 *.env
 .vscode/launch.json
 .vscode/launch.json
