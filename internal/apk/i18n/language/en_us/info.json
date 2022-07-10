@@ -275,5 +275,39 @@
         "info_help_flag_username": "SmartIDE server username",
         "info_help_flag_pasword": "SmartIDE server password",
         "info_help_flag_loginurl": "SmartIDE server loginurl"
+    },
+    "k8s": {
+        "info_start": "Workspace public URL setting start",
+        "info_help_short": "Workspace public URL setting",
+        "info_help_long": "Workspace public URL setting",
+        "info_help_flag_workspaceid": "Workspace ID",
+        "info_help_flag_publicurl": "Enable/disable web URL",
+        "info_help_flag_serverhost": "SmartIDE server host",
+        "info_help_flag_mode": "Execution mode",
+        "info_help_flag_servertoken": "SmartIDE server token",
+        "info_log_get_workspace_start":"[Start]Getting workspace details...",
+        "info_log_get_workspace_success":"[Success]Getting workspace details!",
+        "info_log_disable_publicurl_start":"[Start]Disable workspace public URL...",
+        "info_log_disable_publicurl_success":"[Success]Disable workspace public URL!",
+        "info_log_create_basic_secret_start":"[Start]Creating basic authentication secret...",
+        "info_log_create_basic_secret_success":"[Success]Creating basic authentication secret!",
+        "info_log_save_temp_yaml_start":"[Start]Saving ingress apply yaml...",
+        "info_log_save_temp_yaml_success":"[Success]Saving ingress apply yaml!",
+        "info_log_enable_publicurl_start":"[Start]Apply ingress yaml...",
+        "info_log_enable_publicurl_success":"[Success]Apply ingress yaml!"
+    },
+    "applyssh": {
+        "info_start": "Workspace service SSH ports setting start",
+        "info_help_short": "Workspace service SSH ports setting",
+        "info_help_long": "Workspace service SSH ports setting",
+        "Info_help_flag_resourceid": "K8s resource id",
+        "Info_help_flag_ports": "SSH ports",
+        "info_help_flag_mode": "Execution mode",
+        "info_help_flag_serverhost": "SmartIDE server host",
+        "info_help_flag_servertoken": "SmartIDE server token",
+        "info_log_enable_ssh_start" : "[Start] SSH ports setting",
+        "info_log_enable_ssh_success" : "[Success] SSH ports setting",
+        "info_log_service_enable_ssh_success" : "[Success] Workspace %v service %v enable SSH ports. Using external port %v !",
+        "info_log_service_disable_ssh_success" : "[Success] Workspace %v service %v remove SSH ports. Release external port %v!"
     }
 }

@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-15 16:15:14
+ * @LastEditTime: 2022-06-21 00:00:04
  */
 package start
 
@@ -19,7 +19,6 @@ import (
 	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
-	"github.com/leansoftX/smartide-cli/internal/dal"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/docker/compose"
 	"github.com/leansoftX/smartide-cli/pkg/tunnel"
@@ -87,6 +86,12 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	common.CheckErrorFunc(err, serverFeedback)
 	configYamlContent := output
 	currentConfig := config.NewRemoteConfig(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath, configYamlContent)
+
+	// addonEnable()
+	if workspaceInfo.Addon.IsEnable {
+		workspaceInfo = AddonEnable(workspaceInfo)
+		currentConfig.AddonWebTerminal(workspaceInfo.Name, workspaceInfo.WorkingDirectoryPath)
+	}
 
 	//3. docker-compose
 	//3.1. 获取 compose 数据
@@ -201,7 +206,15 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		unusedLocalPortStr := strconv.Itoa(unusedLocalPort)
 		// 【注意】这里非常的绕！！！ 远程主机的docker-compose才保存了端口的label信息，所以只能使用远程主机的端口
 		containerPortInt, _ := strconv.Atoi(containerPort)
-		label := currentConfig.GetLabelWithPort(remoteBindingPortInt, containerPortInt)
+		label := currentConfig.GetLabelWithPort(0, remoteBindingPortInt, containerPortInt)
+
+		for i, port := range workspaceInfo.Extend.Ports {
+			if port.HostPortDesc == label {
+				workspaceInfo.Extend.Ports[i].CurrentHostPort = unusedLocalPort
+				workspaceInfo.Extend.Ports[i].ClientPort = unusedLocalPort
+				break
+			}
+		}
 		if label != "" {
 			unusedLocalPortStr += fmt.Sprintf("(%v)", label)
 		}
@@ -224,12 +237,15 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		workspaceInfo.TempDockerCompose = tempDockerCompose
 		//7.2. save
 		if workspaceInfo.CliRunningEnv == workspace.CliRunningEnvEnum_Client {
-			workspaceId, err := dal.InsertOrUpdateWorkspace(workspaceInfo)
-			common.CheckErrorFunc(err, serverFeedback)
-			common.SmartIDELog.InfoF(i18nInstance.Start.Info_workspace_saved, workspaceId)
+			reloadWorkSpaceId(&workspaceInfo)
+			common.SmartIDELog.InfoF(i18nInstance.Start.Info_workspace_saved, workspaceInfo.ID)
+
 		} else {
 			common.SmartIDELog.Importance(fmt.Sprintf("当前运行环境为 %v，工作区不需要缓存到本地！", workspaceInfo.CliRunningEnv))
 		}
+
+		// 7.3 ssh config file update
+		workspaceInfo.UpdateSSHConfig()
 
 	}
 

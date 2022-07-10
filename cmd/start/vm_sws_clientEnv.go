@@ -119,7 +119,7 @@ func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo, y
 		common.SmartIDELog.Info(msg)
 
 	}
-
+	workspaceInfo.UpdateSSHConfig()
 	//6.2. 执行绑定
 	tunnel.TunnelMultiple(sshRemote.Connection, addrMapping)
 

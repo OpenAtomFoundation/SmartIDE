@@ -338,6 +338,42 @@ type I18nSource struct {
 		Info_help_flag_password string `json:"info_help_flag_pasword"`
 		Info_help_flag_loginurl string `json:"info_help_flag_loginurl"`
 	} `json:"login"`
+
+	K8s struct {
+		Info_start                           string `json:"info_start"`
+		Info_help_short                      string `json:"info_help_short"`
+		Info_help_long                       string `json:"info_help_long"`
+		Info_help_flag_workspaceid           string `json:"info_help_flag_workspaceid"`
+		Info_help_flag_publicurl             string `json:"info_help_flag_publicurl"`
+		Info_help_flag_serverhost            string `json:"info_help_flag_serverhost"`
+		Info_help_flag_mode                  string `json:"info_help_flag_mode"`
+		Info_help_flag_servertoken           string `json:"info_help_flag_servertoken"`
+		Info_log_get_workspace_start         string `json:"info_log_get_workspace_start"`
+		Info_log_get_workspace_success       string `json:"info_log_get_workspace_success"`
+		Info_log_disable_publicurl_start     string `json:"info_log_disable_publicurl_start"`
+		Info_log_disable_publicurl_success   string `json:"info_log_disable_publicurl_success"`
+		Info_log_create_basic_secret_start   string `json:"info_log_create_basic_secret_start"`
+		Info_log_create_basic_secret_success string `json:"info_log_create_basic_secret_success"`
+		Info_log_save_temp_yaml_start        string `json:"info_log_save_temp_yaml_start"`
+		Info_log_save_temp_yaml_success      string `json:"info_log_save_temp_yaml_success"`
+		Info_log_enable_publicurl_start      string `json:"info_log_enable_publicurl_start"`
+		Info_log_enable_publicurl_success    string `json:"info_log_enable_publicurl_success"`
+	} `json:"k8s"`
+
+	ApplySSH struct {
+		Info_start                           string `json:"info_start"`
+		Info_help_short                      string `json:"info_help_short"`
+		Info_help_long                       string `json:"info_help_long"`
+		Info_help_flag_resourceid            string `json:"Info_help_flag_resourceid"`
+		Info_help_flag_ports                 string `json:"Info_help_flag_ports"`
+		Info_help_flag_mode                  string `json:"info_help_flag_mode"`
+		Info_help_flag_serverhost            string `json:"info_help_flag_serverhost"`
+		Info_help_flag_servertoken           string `json:"info_help_flag_servertoken"`
+		Info_log_enable_ssh_start            string `json:"info_log_enable_ssh_start"`
+		Info_log_enable_ssh_success          string `json:"info_log_enable_ssh_success"`
+		Info_log_service_enable_ssh_success  string `json:"info_log_service_enable_ssh_success"`
+		Info_log_service_disable_ssh_success string `json:"info_log_service_disable_ssh_success"`
+	} `json:"applyssh"`
 }
 
 var instance *I18nSource

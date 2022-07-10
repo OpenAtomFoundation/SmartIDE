@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"regexp"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
@@ -15,39 +18,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/thedevsaddam/gojsonq"
 )
-
-//
-type feedbackRequest struct {
-	Command string `json:"command"`
-
-	ServerWorkspaceId string `json:"serverWorkspaceId"`
-	ServerUserName    string `json:"serverUserName"`
-	ServerUserGuid    string `json:"serverUserGuid"`
-	IsSuccess         bool   `json:"isSuccess"`
-	WebidePort        int    `json:"webidePort"`
-	Message           string `json:"message"`
-
-	ConfigFileContent        string `json:"configFileContent"`
-	TempDockerComposeContent string `json:"tempDockerComposeContent"`
-	LinkDockerCompose        string `json:"linkDockerComposeContent"`
-	Extend                   string `json:"extend"`
-}
-
-func (feedbackReq feedbackRequest) Check() error {
-	if feedbackReq.ServerUserName == "" {
-		return errors.New("ServerUserName is nil")
-	}
-
-	if feedbackReq.ServerUserGuid == "" {
-		return errors.New("ServerUserGuid is nil")
-	}
-
-	if feedbackReq.ServerWorkspaceId == "" {
-		return errors.New("ServerWorkspaceId is nil")
-	}
-
-	return nil
-}
 
 func FeeadbackExtend(auth model.Auth, workspaceInfo workspace.WorkspaceInfo) error {
 	var _feedbackRequest struct {
@@ -134,13 +104,21 @@ func Feedback_Finish(feedbackCommand FeedbackCommandEnum, cmd *cobra.Command,
 	}
 
 	// 验证参数是否有值
-	Check(cmd)
+	//Check(cmd)
 
-	// 从参数中获取相应值
+	//1. 从参数中获取相应值
 	serverModeInfo, err := GetServerModeInfo(cmd)
+	//1.1. validate
 	if err != nil {
 		return err
 	}
+	/* 	if serverModeInfo.ServerUsername == "" {
+		return errors.New("ServerUserName is nil")
+	} */
+	if serverModeInfo.ServerHost == "" {
+		return errors.New("ServerHost is nil")
+	}
+	//1.2.
 	serverFeedbackUrl, _ := common.UrlJoin(serverModeInfo.ServerHost, "/api/smartide/workspace/finish")
 	configFileContent, _ := workspaceInfo.ConfigYaml.ToYaml()
 	tempYamlContent, _ := workspaceInfo.TempDockerCompose.ToYaml()
@@ -149,41 +127,45 @@ func Feedback_Finish(feedbackCommand FeedbackCommandEnum, cmd *cobra.Command,
 		tempYamlContent, _ = workspaceInfo.K8sInfo.TempK8sConfig.ConvertToK8sYaml()
 		linkYmalContent, _ = workspaceInfo.K8sInfo.OriginK8sYaml.ConvertToK8sYaml()
 	}
-
+	//1.3. workspace id
+	worksspaceId := strconv.Itoa(int(workspaceInfo.ServerWorkSpace.ID))
+	if worksspaceId == "" {
+		worksspaceId = serverModeInfo.ServerWorkspaceid
+	}
+	if worksspaceId == "" {
+		return errors.New("workspace id is nil")
+	} else if strings.Contains(strings.ToLower(worksspaceId), "WS") {
+		flysnowRegexp := regexp.MustCompile(`[1-9]{1}[0-9].*`)
+		params := flysnowRegexp.FindStringSubmatch(worksspaceId)
+		worksspaceId = params[0]
+	}
+	//1.4. extend
 	extend := workspaceInfo.Extend.ToJson()
 
-	if serverModeInfo.ServerUsername == "" {
-		return errors.New("ServerUserName is nil")
-	}
-	if serverModeInfo.ServerWorkspaceid == "" {
-		return errors.New("ServerWorkspaceId is nil")
-	}
-	if serverModeInfo.ServerHost == "" {
-		return errors.New("ServerHost is nil")
-	}
-
+	//2.
 	datas := map[string]interface{}{
 		"command":           string(feedbackCommand),
-		"serverWorkspaceid": serverModeInfo.ServerWorkspaceid,
+		"serverWorkspaceid": worksspaceId,
 		"serverUserName":    serverModeInfo.ServerUsername,
 		"isSuccess":         isSuccess,
-		//"webidePort":        webidePort,
-		"message":     message,
-		"containerId": containerId,
+		"message":           message,
+		"containerId":       containerId,
 	}
 	if feedbackCommand == FeedbackCommandEnum_Start { // 只有start的时候，才需要传递文件内容
 		datas["configFileContent"] = configFileContent
 		datas["tempDockerComposeContent"] = tempYamlContent
 		datas["linkDockerCompose"] = linkYmalContent
 		datas["extend"] = extend
+	} else if feedbackCommand == FeedbackCommandEnum_Ingress || feedbackCommand == FeedbackCommandEnum_ApplySSH {
+		datas["extend"] = extend
 	}
 	headers := map[string]string{"Content-Type": "application/json", "x-token": serverModeInfo.ServerToken}
-	response, err := common.PostJson(serverFeedbackUrl.String(), datas, headers)
+	_, err = common.PostJson(serverFeedbackUrl.String(), datas, headers)
 
 	if err != nil {
 		return err
 	}
-	common.SmartIDELog.Info(response)
+	//common.SmartIDELog.Info(response)
 
 	return nil
 }

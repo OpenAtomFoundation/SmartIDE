@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-08 17:27:09
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-04-30 16:19:55
+ * @LastEditTime: 2022-07-06 21:56:55
  * @FilePath: /smartide-cli/cmd/server/args.go
  */
 package server
@@ -55,11 +55,11 @@ func Check(cmd *cobra.Command) (err error) {
 		return nil
 	}
 
-	// server workspace id 不能为空
-	err = checkFlagRequired(fflags, Flags_ServerWorkspaceid)
-	if err != nil {
-		return err
-	}
+	/* 	// server workspace id 不能为空
+	   	err = checkFlagRequired(fflags, Flags_ServerWorkspaceid)
+	   	if err != nil {
+	   		return err
+	   	} */
 
 	// 当为start时
 	if strings.EqualFold(cmd.Name(), "start") {

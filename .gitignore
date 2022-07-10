@@ -35,3 +35,5 @@ smartide-linux
 .profile
 kubectl
 *.env
+.vscode/launch.json
+.vscode/launch.json

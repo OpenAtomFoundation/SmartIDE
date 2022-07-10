@@ -129,6 +129,8 @@ func init() {
 	rootCmd.AddCommand(logoutCmd)
 	rootCmd.AddCommand(connectCmd)
 
+	rootCmd.AddCommand(k8sCmd)
+
 	// 不允许命令直接按照名称排序
 	cobra.EnableCommandSorting = false
 }

@@ -290,16 +290,16 @@ func copyDir(srcPath string, destPath string) error {
 		return err
 	} else {
 		if !srcInfo.IsDir() {
-			e := common.SmartIDELog.Debug("srcPath不是一个正确的目录！")
-			return e
+			common.SmartIDELog.Debug("srcPath不是一个正确的目录！")
+			return errors.New("srcPath不是一个正确的目录！")
 		}
 	}
 	if destInfo, err := os.Stat(destPath); err != nil {
 		return err
 	} else {
 		if !destInfo.IsDir() {
-			e := common.SmartIDELog.Debug("destInfo不是一个正确的目录！")
-			return e
+			common.SmartIDELog.Debug("destInfo不是一个正确的目录！")
+			return errors.New("destInfo不是一个正确的目录！")
 		}
 	}
 	err := filepath.Walk(srcPath, func(path string, f os.FileInfo, err error) error {

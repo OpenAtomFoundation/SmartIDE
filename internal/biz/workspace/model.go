@@ -70,9 +70,17 @@ const (
 	WorkspaceType_Local  GitRepoAuthType = "local"
 )
 
+// addon
+type Addon struct {
+	IsEnable bool
+	Type     string
+}
+
 type WorkspaceInfo struct {
 	ID   string
 	Name string
+	// addon
+	Addon Addon
 	// 即repo clone到本地时的文件夹路径
 	WorkingDirectoryPath string
 	// 配置文件相对路径，相对于 WorkingDirectoryPath
@@ -189,8 +197,8 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 		workspaceInfo.Remote = RemoteInfo{
 			ID:       int(serverWorkSpace.Resource.ID),
 			Addr:     serverWorkSpace.Resource.IP,
-			UserName: serverWorkSpace.Resource.SSHUserName,
-			Password: serverWorkSpace.Resource.SSHPassword,
+			UserName: serverWorkSpace.Resource.UserName,
+			Password: serverWorkSpace.Resource.Password,
 			SSHPort:  serverWorkSpace.Resource.Port,
 		}
 		workspaceInfo.TempYamlFileAbsolutePath = workspaceInfo.GetTempDockerComposeFilePath()
@@ -198,7 +206,14 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 		workspaceInfo.Mode = WorkingMode_K8s
 		workspaceInfo.K8sInfo = K8sInfo{
 			KubeConfigContent: serverWorkSpace.Resource.KubeConfigContent,
-			Context:           serverWorkSpace.Resource.Name,
+			Context:           serverWorkSpace.Resource.KubeContext,
+			Namespace:         serverWorkSpace.KubeNamespace,
+
+			IngressBaseDnsName:   serverWorkSpace.Resource.KubeBaseDNS,
+			IngressName:          serverWorkSpace.Resource.Name,
+			IngressAuthType:      serverWorkSpace.KubeIngressAuthenticationType,
+			IngressLoginUserName: serverWorkSpace.KubeIngressLoginUserName,
+			IngressLoginPassword: serverWorkSpace.KubeIngressLoginPassword,
 		}
 
 	}
@@ -557,13 +572,28 @@ type RemoteInfo struct {
 }
 
 type K8sInfo struct {
-	ID             int
-	CreatedTime    time.Time
-	Context        string
+	ID          int
+	CreatedTime time.Time
+
+	// cluster + auth
+	Context string
+	// 对应集合的名称
+	ClusterName string
+
 	Namespace      string
 	DeploymentName string
 	PVCName        string
 
+	IngressAuthType      model.KubeIngressAuthenticationTypeEnum
+	IngressLoginUserName string
+	IngressLoginPassword string
+
+	// server绑定的域名，比如 xxx.com
+	IngressBaseDnsName string
+	// 别名，与 “IngressBaseDnsName” 组合在一起，比如 custom_name.xxx.com
+	IngressName string
+
+	// kubeconfig 文件路径，工作区缓存在本地的时候有效
 	KubeConfigFilePath string
 	// kubeconfig 的文件内容
 	KubeConfigContent string

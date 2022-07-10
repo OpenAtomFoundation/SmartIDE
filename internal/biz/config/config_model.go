@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-08 16:42:45
+ * @LastEditTime: 2022-06-28 16:31:47
  */
 package config
 
@@ -189,9 +189,9 @@ type SmartIdeK8SConfig struct {
 type PortMapInfo struct {
 	// 对应的service名称，对应 docker-compose的service 或 k8s的service
 	ServiceName string `json:"ServiceName"`
-	// 宿主机的预设端口
+	// 宿主机的预设 SSH 端口, Origin ==> Preset/Default, not Remote
 	OriginHostPort int `json:"OriginLocalPort"`
-	// 宿主机的当前端口
+	// 宿主机的当前 SSH 端口
 	CurrentHostPort int `json:"CurrentLocalPort"`
 	// 端口描述
 	HostPortDesc string `json:"LocalPortDesc"`
@@ -207,6 +207,20 @@ type PortMapInfo struct {
 
 	// 关联的目录
 	RefDirecotry string `json:"RefDirecotry"`
+
+	// 是否允许开放Ingress
+	//EnableIngressUrl bool `json:"EnableIngressUrl"`
+
+	// 关联的ingress url（公网地址）
+	IngressUrl string `json:"IngressUrl"`
+
+	// 关联的SSH External Port
+	SSHPort string `json:"SSHPort"`
+}
+
+// GetSSHPortAtLocalHost 获取localhost上的ssh端口
+func (p PortMapInfo) GetSSHPortAtLocalHost() int {
+	return p.ClientPort
 }
 
 //

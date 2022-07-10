@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-05-31 09:36:33
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-13 14:35:23
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-06-21 15:14:58
  * @FilePath: /smartide-cli/cmd/start/k8s_sws_serverEnv.go
  */
 
@@ -35,7 +35,7 @@ func ExecuteK8sServerStartCmd(cmd *cobra.Command, k8sUtil kubectl.KubernetesUtil
 	serverFeedback(err)
 
 	// 工作区
-	workspaceInfo_, err := ExecuteK8sStartCmd(k8sUtil, workspaceInfo, yamlExecuteFun)
+	workspaceInfo_, err := ExecuteK8sStartCmd(cmd, k8sUtil, workspaceInfo, yamlExecuteFun)
 	serverFeedback(err)
 
 	workspaceInfo = *workspaceInfo_

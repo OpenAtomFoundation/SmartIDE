@@ -29,7 +29,8 @@ func (workspaceInfo *WorkspaceInfo) GetWorkspaceExtend() WorkspaceExtend {
 	//1. 遍历 compose 文件中的 services
 	for serviceName, originService := range composeServices {
 		isDevService := serviceName == workspaceInfo.ConfigYaml.Workspace.DevContainer.ServiceName // 是否开发容器
-		originServicePorts := originService.Ports                                                  // 原始端口
+		isWebTerminal := serviceName == fmt.Sprintf("%v_smartide-webterminal", workspaceInfo.Name)
+		originServicePorts := originService.Ports // 原始端口
 
 		//1.1. 开发容器时
 		if isDevService {
@@ -63,6 +64,11 @@ func (workspaceInfo *WorkspaceInfo) GetWorkspaceExtend() WorkspaceExtend {
 					label = key
 					break
 				}
+			}
+
+			// webterminal的端口lablel赋值
+			if isWebTerminal {
+				label = "tools-webterminal"
 			}
 
 			//1.2.2. 如果是默认的端口，直接给描述
@@ -104,6 +110,9 @@ func (workspaceInfo *WorkspaceInfo) GetWorkspaceExtend() WorkspaceExtend {
 				if strings.Contains(portMapInfo.HostPortDesc, "tools-webide") {
 					portMapInfo.RefDirecotry = workspaceInfo.GetContainerWorkingPathWithVolumes()
 				}
+				// set client port
+				portMapInfo.OldClientPort = originLocalPort
+				portMapInfo.ClientPort = currentLocalPort
 				extend.Ports = append(extend.Ports, *portMapInfo)
 			}
 

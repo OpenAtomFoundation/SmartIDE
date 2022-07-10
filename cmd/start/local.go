@@ -10,15 +10,16 @@ package start
 import (
 	"context"
 	"fmt"
+	"github.com/leansoftX/smartide-cli/internal/dal"
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
-	"github.com/leansoftX/smartide-cli/internal/dal"
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/docker/compose"
@@ -29,6 +30,12 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 )
+
+func reloadWorkSpaceId(workspace *workspace.WorkspaceInfo) {
+	workspaceId, err := dal.InsertOrUpdateWorkspace(*workspace)
+	workspace.ID = strconv.Itoa(int(workspaceId))
+	common.CheckError(err)
+}
 
 // 本地执行 start
 func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
@@ -51,6 +58,12 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 	//1.3. 初始化配置文件对象
 	currentConfig := config.NewConfig(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath, "")
+
+	// addonEnable()
+	if workspaceInfo.Addon.IsEnable {
+		workspaceInfo = AddonEnable(workspaceInfo)
+		currentConfig.AddonWebTerminal(workspaceInfo.Name, workspaceInfo.WorkingDirectoryPath)
+	}
 
 	//2. docker-compose
 	//2.1. 获取compose数据
@@ -76,7 +89,8 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 		// 链接的docker-compose文件
 		if workspaceInfo.ConfigYaml.IsLinkDockerComposeFile() {
-			yaml.Unmarshal([]byte(linkComposeFileContent), workspaceInfo.LinkDockerCompose)
+			err := yaml.Unmarshal([]byte(linkComposeFileContent), workspaceInfo.LinkDockerCompose)
+			common.CheckError(err)
 		}
 
 		// 保存 docker-compose 、config 文件到临时文件夹
@@ -114,7 +128,8 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 				}
 			}
 			if !isContain {
-				cli.NetworkCreate(ctx, network, types.NetworkCreate{})
+				_, err = cli.NetworkCreate(ctx, network, types.NetworkCreate{})
+				common.CheckError(err)
 				common.SmartIDELog.InfoF(i18nInstance.Start.Info_create_network, network)
 			}
 		}
@@ -130,8 +145,9 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		}
 	}
 
+	cc := currentConfig.GetServiceNames()
 	//4. 获取启动的容器列表
-	dockerComposeContainers := GetLocalContainersWithServices(ctx, cli, currentConfig.GetServiceNames())
+	dockerComposeContainers := GetLocalContainersWithServices(ctx, cli, cc)
 	devContainerName := getDevContainerName(dockerComposeContainers, currentConfig.Workspace.DevContainer.ServiceName)
 	if currentConfig.Workspace.DevContainer.Volumes.HasGitConfig.Value() {
 		config.GitConfig(false, devContainerName, cli, &compose.Service{}, common.SSHRemote{}, kubectl.ExecInPodRequest{})
@@ -148,11 +164,15 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 			workspaceInfo.Name = devContainerName
 		}
 		workspaceInfo.TempDockerCompose = tempDockerCompose
-		//5.2.
-		workspaceId, err := dal.InsertOrUpdateWorkspace(workspaceInfo)
-		common.CheckError(err)
-		common.SmartIDELog.InfoF(i18nInstance.Start.Info_workspace_saved, workspaceId)
+
+		common.SmartIDELog.InfoF(i18nInstance.Start.Info_workspace_saved, workspaceInfo.ID)
 	}
+
+	//5.2.
+	reloadWorkSpaceId(&workspaceInfo)
+
+	// ssh config
+	workspaceInfo.UpdateSSHConfig()
 
 	// 如果是不进行端口转发，后续就不需要运行
 	if isUnforward {

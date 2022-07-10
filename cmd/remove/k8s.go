@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-06-07 14:02:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-11 09:27:24
+ * @LastEditTime: 2022-07-07 13:07:44
  * @FilePath: /smartide-cli/cmd/remove/k8s.go
  */
 /*
@@ -16,7 +16,6 @@ package remove
 import (
 	"os"
 
-	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/kubectl"
@@ -60,13 +59,13 @@ func RemoveServerK8s(k8sUtil kubectl.KubernetesUtil,
 		return err
 	}
 
-	//9. 反馈给smartide server
-	common.SmartIDELog.Info("feedback...")
-	containerWebIDEPort := workspaceInfo.ConfigYaml.GetContainerWebIDEPort()
-	err = smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_Remove, cmd, true, containerWebIDEPort, workspaceInfo, "", podName)
-	if err != nil {
-		return err
-	}
+	/* 	//9. 反馈给smartide server
+	   	common.SmartIDELog.Info("feedback...")
+	   	containerWebIDEPort := workspaceInfo.ConfigYaml.GetContainerWebIDEPort()
+	   	err = smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_Remove, cmd, true, containerWebIDEPort, workspaceInfo, "", podName)
+	   	if err != nil {
+	   		return err
+	   	} */
 
 	return nil
 }

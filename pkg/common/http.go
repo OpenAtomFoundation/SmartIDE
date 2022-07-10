@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-10 18:11:42
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-23 16:09:15
+ * @LastEditTime: 2022-07-08 11:36:35
  * @FilePath: /smartide-cli/pkg/common/http.go
  * @Description:
  *
@@ -70,6 +70,7 @@ func Get(reqUrl string, reqParams map[string]string, headers map[string]string) 
 	}
 
 	response, _ := ioutil.ReadAll(resp.Body)
+	SmartIDELog.Debug(string(response))
 	return string(response), nil
 }
 
@@ -157,7 +158,7 @@ func post(reqUrl string, reqParams map[string]interface{}, contentType string, f
 		return "", errors.New(resp.Status)
 	}
 	response, err := ioutil.ReadAll(resp.Body)
-	SmartIDELog.Debug(string(response))
+	SmartIDELog.Debug("response: " + string(response))
 	return string(response), err
 }
 
@@ -235,5 +236,5 @@ func formatRequest(r *http.Request, reqParams map[string]interface{}) string {
 	}
 
 	// Return the request as a string
-	return strings.Join(request, "\n")
+	return "request: " + strings.Join(request, "\n")
 }

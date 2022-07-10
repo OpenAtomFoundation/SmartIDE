@@ -37,7 +37,7 @@ func (c *DockerComposeYml) IsNotNil() bool {
 	return !c.IsNil()
 }
 
-// 获取本地端口 和 容器端口的绑定关系
+// 从compose中 获取宿主端口（可能会变） 和 容器端口的绑定关系
 func (c *DockerComposeYml) GetPortBindings() map[string]string {
 	var result map[string]string = map[string]string{}
 	for _, service := range c.Services {
@@ -54,7 +54,7 @@ func (c *DockerComposeYml) GetPortBindings() map[string]string {
 }
 
 // 获取被绑定的本地端口
-func (c *DockerComposeYml) GetLocalBindingPorts() []int {
+func (c *DockerComposeYml) GetHostBindingPorts() []int {
 	portBindings := c.GetPortBindings()
 	resultLocalPorts := []int{}
 

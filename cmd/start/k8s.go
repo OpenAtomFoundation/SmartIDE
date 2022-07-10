@@ -1,13 +1,15 @@
 /*
  * @Date: 2022-03-23 16:15:38
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-13 15:25:41
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-07-04 16:48:31
  * @FilePath: /smartide-cli/cmd/start/k8s.go
  */
 
 package start
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -20,11 +22,10 @@ import (
 
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
-	"github.com/leansoftX/smartide-cli/internal/dal"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/kubectl"
+	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
-
 	k8sScheme "k8s.io/client-go/kubernetes/scheme"
 
 	appV1 "k8s.io/api/apps/v1"
@@ -32,7 +33,7 @@ import (
 )
 
 // 执行k8s start
-func ExecuteK8sStartCmd(k8sUtil kubectl.KubernetesUtil, workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) (*workspace.WorkspaceInfo, error) {
+func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil kubectl.KubernetesUtil, workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) (*workspace.WorkspaceInfo, error) {
 	common.SmartIDELog.Info(i18nInstance.Start.Info_k8s_init)
 
 	if workspaceInfo.K8sInfo.Namespace == "" {
@@ -122,7 +123,7 @@ func ExecuteK8sStartCmd(k8sUtil kubectl.KubernetesUtil, workspaceInfo workspace.
 
 		//4.5. 执行相关操作， git config + ssh config + git clone + agent
 		//e.g. kubectl exec -it pod-name -- /bin/bash -c "command(s)"
-		err = execPod(workspaceInfo, &k8sUtil, originK8sConfig, tempK8sConfig) // ★★★★★
+		err = execPod(cmd, workspaceInfo, &k8sUtil, originK8sConfig, tempK8sConfig) // ★★★★★
 		if err != nil {
 			return nil, err
 		}
@@ -164,16 +165,6 @@ func ExecuteK8sStartCmd(k8sUtil kubectl.KubernetesUtil, workspaceInfo workspace.
 	}
 
 	function1 := func(k8sServiceName string, availableClientPort, hostOriginPort, index int) {
-		if availableClientPort != hostOriginPort {
-			common.SmartIDELog.InfoF("[端口转发] localhost:%v( %v 被占用) -> Service: %v  ", availableClientPort, hostOriginPort, hostOriginPort)
-		} else {
-			common.SmartIDELog.InfoF("[端口转发] localhost:%v -> Service: %v  ", availableClientPort, hostOriginPort)
-		}
-
-		portMapInfo := workspaceInfo.Extend.Ports[index]
-		portMapInfo.OldClientPort = portMapInfo.ClientPort
-		portMapInfo.ClientPort = availableClientPort
-		workspaceInfo.Extend.Ports[index] = portMapInfo
 
 		forwardCommand := fmt.Sprintf("port-forward svc/%v %v:%v --address 0.0.0.0 ",
 			k8sServiceName, availableClientPort, hostOriginPort)
@@ -192,18 +183,16 @@ func ExecuteK8sStartCmd(k8sUtil kubectl.KubernetesUtil, workspaceInfo workspace.
 	for index, portMapInfo := range workspaceInfo.Extend.Ports {
 		unusedClientPort, err := common.CheckAndGetAvailableLocalPort(portMapInfo.ClientPort, 100)
 		common.SmartIDELog.Error(err)
-
+		updatePortInfo(unusedClientPort, portMapInfo.CurrentHostPort, &workspaceInfo, index)
 		go function1(portMapInfo.ServiceName, unusedClientPort, portMapInfo.CurrentHostPort, index)
 
 	}
 
 	if workspaceInfo.CliRunningEnv == workspace.CliRunningEnvEnum_Client {
 		//8. 保存到db
-		workspaceId, err := dal.InsertOrUpdateWorkspace(workspaceInfo) //TODO 使用新的方法，保存config 和 关联的k8syaml，以及生成的yaml
-		if err != nil {
-			return nil, err
-		}
-		common.SmartIDELog.InfoF(i18nInstance.Start.Info_workspace_saved, workspaceId)
+		reloadWorkSpaceId(&workspaceInfo)
+
+		common.SmartIDELog.InfoF(i18nInstance.Start.Info_workspace_saved, workspaceInfo.ID)
 
 		//9. 使用浏览器打开web ide
 		common.SmartIDELog.Info(i18nInstance.Start.Info_running_openbrower)
@@ -213,12 +202,29 @@ func ExecuteK8sStartCmd(k8sUtil kubectl.KubernetesUtil, workspaceInfo workspace.
 		}
 	}
 
+	// ssh config update
+	workspaceInfo.UpdateSSHConfig()
+
 	//99. 结束
 	common.SmartIDELog.Info(i18nInstance.Start.Info_end)
 	return &workspaceInfo, nil
 }
 
-func execPod(workspaceInfo workspace.WorkspaceInfo,
+// 更新Port信息
+func updatePortInfo(availableClientPort int, hostOriginPort int, workspaceInfo *workspace.WorkspaceInfo, index int) {
+	if availableClientPort != hostOriginPort {
+		common.SmartIDELog.InfoF("[端口转发] localhost:%v( %v 被占用) -> Service: %v  ", availableClientPort, hostOriginPort, hostOriginPort)
+	} else {
+		common.SmartIDELog.InfoF("[端口转发] localhost:%v -> Service: %v  ", availableClientPort, hostOriginPort)
+	}
+
+	portMapInfo := workspaceInfo.Extend.Ports[index]
+	portMapInfo.OldClientPort = portMapInfo.ClientPort
+	portMapInfo.ClientPort = availableClientPort
+	workspaceInfo.Extend.Ports[index] = portMapInfo
+}
+
+func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 	kubernetes *kubectl.KubernetesUtil,
 	originK8sConfig *config.SmartIdeK8SConfig, tempK8sConfig config.SmartIdeK8SConfig) error {
 	// 等待启动
@@ -238,6 +244,24 @@ func execPod(workspaceInfo workspace.WorkspaceInfo,
 	devContainerPod, _, err := GetDevContainerPod(*kubernetes, tempK8sConfig)
 	if err != nil {
 		return err
+	}
+
+	//5.5. agent
+	//TODO:
+	common.SmartIDELog.Info("install agent")
+	if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server {
+		err := kubernetes.CopyToPod(*devContainerPod, common.PathJoin("/usr/local/bin", "smartide-agent"), common.PathJoin("/", "smartide-agent"))
+		if err != nil {
+			return err
+		}
+
+		err = FeeadbackContainerId(cmd, workspaceInfo, devContainerPod.Name)
+		if err != nil {
+			return err
+		}
+
+		go kubernetes.StartAgent(cmd, *devContainerPod)
+
 	}
 
 	//5.1. git config
@@ -273,9 +297,6 @@ func execPod(workspaceInfo workspace.WorkspaceInfo,
 	if err != nil {
 		return err
 	}
-
-	//5.5. agent
-	//TODO:
 
 	return nil
 }
@@ -341,6 +362,40 @@ func copyConfigToPod(k kubectl.KubernetesUtil, pod coreV1.Pod, podDestGitRepoPat
 	if err != nil {
 		return err
 	}
+	err = k.CopyToPod(pod, tempDirPath, destDir)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// 复制config文件到pod
+func copyAgentToPod(k kubectl.KubernetesUtil, pod coreV1.Pod, podDestGitRepoPath string, agentFilePath string) error {
+	// 目录
+	configFileDir := path.Dir(agentFilePath)
+	tempDirPath := common.PathJoin(configFileDir, ".temp")
+	if !common.IsExist(tempDirPath) {
+		err := os.MkdirAll(tempDirPath, os.ModePerm)
+		if err != nil {
+			return err
+		}
+	}
+
+	// 把文件写入到临时文件中
+	input, err := ioutil.ReadFile(agentFilePath)
+	if err != nil {
+		return err
+	}
+	tempAgentFilePath := common.PathJoin(tempDirPath, "smartide-agent")
+	err = ioutil.WriteFile(tempAgentFilePath, input, 0775)
+	if err != nil {
+		return err
+	}
+
+	// copy
+	destDir := common.PathJoin("/", "smartide-agent")
+
 	err = k.CopyToPod(pod, tempDirPath, destDir)
 	if err != nil {
 		return err
@@ -578,4 +633,60 @@ func downloadFilesByGit(gitCloneUrl string, branch string, filePathExpression st
 		fileRelativePaths[index] = strings.Replace(fileRelativePaths[index], gitRepoRootDirPath, "", -1) // 把绝对路径改为相对路径
 	}
 	return gitRepoRootDirPath, fileRelativePaths, nil
+}
+
+const (
+	Flags_ServerHost      = "serverhost"
+	Flags_ServerToken     = "servertoken"
+	Flags_ServerOwnerGuid = "serverownerguid"
+)
+
+func FeeadbackContainerId(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo, containerId string) error {
+
+	fflags := cmd.Flags()
+	host, _ := fflags.GetString(Flags_ServerHost)
+	token, _ := fflags.GetString(Flags_ServerToken)
+	// ownerguid, _ := fflags.GetString(Flags_ServerOwnerGuid)
+	var _feedbackRequest struct {
+		ID          uint
+		ContainerId string
+	}
+	_feedbackRequest.ID = workspaceInfo.ServerWorkSpace.ID
+	_feedbackRequest.ContainerId = containerId
+
+	// 请求体
+	jsonBytes, err := json.Marshal(_feedbackRequest)
+	if err != nil {
+		return err
+	}
+	url := fmt.Sprint(host, "/api/smartide/workspace/update")
+	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(jsonBytes))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("x-token", token)
+
+	//
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+	resp, err := client.Do(req)
+
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// request
+	reqBody, _ := ioutil.ReadAll(req.Body)
+	printReqStr := fmt.Sprintf("request head: %v, body: %s", req.Header, reqBody)
+	common.SmartIDELog.Debug(printReqStr)
+
+	// response
+	respBody, _ := ioutil.ReadAll(resp.Body)
+	printRespStr := fmt.Sprintf("response status code: %v, head: %v, body: %s", resp.StatusCode, resp.Header, string(respBody))
+	common.SmartIDELog.Debug(printRespStr)
+
+	return nil
 }

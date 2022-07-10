@@ -139,7 +139,7 @@ stages:
               azureSubscription: 'integration-test-aks'
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
-              inlineScript: 'az aks start --resource-group smartide-k8s-test --name smartide-k8s-test --subscription 2d660de6-59b3-406f-a6a6-14e86441be5c'
+              inlineScript: 'az aks start --resource-group jason-aks --name jason-aks --subscription 43cb168b-901c-49be-9e6c-37a4d0940b33'
 
   - stage: Integration_Test_windows
     dependsOn: AKS_Start

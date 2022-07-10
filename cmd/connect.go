@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2022-02-25
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-08 14:42:32
+ * @LastEditTime: 2022-07-07 09:31:15
  */
 package cmd
 
@@ -119,13 +119,19 @@ func checkLogin(cmd *cobra.Command) (currentAuth model.Auth, err error) {
 var connectedWorkspaceIds []string = []string{}
 
 // 获取远程的工作区列表
-func getServerWorkspaces(currentAuth model.Auth, cliRunningEnv workspace.CliRunningEvnEnum, filter []model.WorkspaceStatusEnum) ([]workspace.WorkspaceInfo, error) {
+func getServerWorkspaces(currentAuth model.Auth, cliRunningEnv workspace.CliRunningEvnEnum, allowStatuses []model.WorkspaceStatusEnum) ([]workspace.WorkspaceInfo, error) {
 	var startedServerWorkspaces []workspace.WorkspaceInfo
 	serverWorkSpaces, err := workspace.GetServerWorkspaceList(currentAuth, cliRunningEnv)
 	for _, item := range serverWorkSpaces {
-		if len(filter) > 0 {
+		// k8s 工作区不进行connect
+		if item.Mode == workspace.WorkingMode_K8s {
+			continue
+		}
+
+		// 是否包含在过滤状态中
+		if len(allowStatuses) > 0 {
 			isContain := false
-			for _, filterItem := range filter {
+			for _, filterItem := range allowStatuses {
 				if filterItem == item.ServerWorkSpace.Status {
 					isContain = true
 					break
@@ -136,6 +142,7 @@ func getServerWorkspaces(currentAuth model.Auth, cliRunningEnv workspace.CliRunn
 			}
 		}
 
+		// 添加到已启动工作区列表
 		startedServerWorkspaces = append(startedServerWorkspaces, item)
 	}
 
@@ -168,9 +175,9 @@ func connect(startedServerWorkspaces []workspace.WorkspaceInfo, cmd *cobra.Comma
 		var err error
 		if fixWorkspaceInfo.Mode == workspace.WorkingMode_Remote {
 			err = start.ExecuteServerVmStartByClientEnvCmd(fixWorkspaceInfo, executeStartCmdFunc)
-		} else if fixWorkspaceInfo.Mode == workspace.WorkingMode_K8s {
+		} /* else if fixWorkspaceInfo.Mode == workspace.WorkingMode_K8s {
 			err = start.ExecuteServerK8sStartByClientEnvCmd(fixWorkspaceInfo, executeStartCmdFunc)
-		}
+		} */
 
 		if err != nil {
 			common.SmartIDELog.ImportanceWithError(err)

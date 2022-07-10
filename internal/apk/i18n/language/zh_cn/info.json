@@ -278,5 +278,39 @@
         "info_help_flag_username": "SmartIDE server 登录用户",
         "info_help_flag_pasword": "SmartIDE server 登录密码",
         "info_help_flag_loginurl": "SmartIDE server 登录地址"
+    },
+    "k8s": {
+        "info_start": "工作区公共访问地址设置开始...",
+        "info_help_short": "工作区公共访问地址设置",
+        "info_help_long": "工作区公共访问地址设置",
+        "info_help_flag_workspaceid": "使用此Id指定需要操作的工作区",
+        "info_help_flag_publicurl": "开启或关闭公共访问地址",
+        "info_help_flag_mode": "运行模式",
+        "info_help_flag_serverhost": "SmartIDE 服务地址",
+        "info_help_flag_servertoken": "SmartIDE 服务密钥",
+        "info_log_get_workspace_start":"开始获取工作区信息...",
+        "info_log_get_workspace_success":"获取工作区信息成功！",
+        "info_log_disable_publicurl_start":"开始关闭公共访问地址...",
+        "info_log_disable_publicurl_success":"关闭公共访问地址成功！",
+        "info_log_create_basic_secret_start":"开始创建Basic认证密钥...",
+        "info_log_create_basic_secret_success":"创建Basic认证密钥成功！",
+        "info_log_save_temp_yaml_start":"开始保存部署临时文件...",
+        "info_log_save_temp_yaml_success":"保存部署临时文件成功！",
+        "info_log_enable_publicurl_start":"开始开启公共访问地址...",
+        "info_log_enable_publicurl_success":"开启公共访问地址成功！"
+    },
+    "applyssh": {
+        "info_start": "工作区服务 SSH 端口设置开始",
+        "info_help_short": "工作区服务 SSH 端口设置",
+        "info_help_long": "工作区服务 SSH 端口设置",
+        "Info_help_flag_resourceid": "K8s 资源ID",
+        "Info_help_flag_ports": "SSH 端口全集",
+        "info_help_flag_mode": "运行模式",
+        "info_help_flag_serverhost": "SmartIDE 服务地址",
+        "info_help_flag_servertoken": "SmartIDE 服务密钥",
+        "info_log_enable_ssh_start" : "开始设置 SSH 端口...",
+        "info_log_enable_ssh_success" : "设置 SSH 端口成功！",
+        "info_log_service_enable_ssh_success" : "工作区 %v 服务 %v 开启 SSH 端口成功, 使用端口为 %v!",
+        "info_log_service_disable_ssh_success" : "工作区 %v 服务 %v 关闭 SSH 端口成功, 释放端口 %v!"
     }
 }

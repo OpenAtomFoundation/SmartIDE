@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description: config
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2022-05-25 15:31:12
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-06-15 17:07:39
  */
 package config
 
@@ -110,7 +110,7 @@ func (yamlFileConfig *SmartIdeConfig) LoadDockerComposeFromTempFile(sshRemote co
 	return composeYaml, ideBindingPort, sshBindingPort
 }
 
-// 把自定义的配置转换为docker compose
+// 把自定义的配置转换为 docker compose
 func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SSHRemote, projectName string,
 	remoteConfigDir string, isCheckUnuesedPorts bool, userName string) (composeYaml compose.DockerComposeYml, ideBindingPort int, sshBindingPort int) {
 

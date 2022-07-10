@@ -1,3 +1,10 @@
+<!--
+ * @Date: 2022-03-08 17:27:09
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-07-01 16:42:20
+ * @FilePath: /smartide-cli/readme.md
+-->
+
 # SmartIDE CLI 
  
 [![Go](https://github.com/leansoftX/smartide-cli/actions/workflows/go.yml/badge.svg)](https://github.com/leansoftX/smartide-cli/actions/workflows/go.yml)
@@ -34,4 +41,4 @@ Command | Description |
 `smartide remove` | Remove Your Development Environment
 
 Demo Branch Policy
-
+ 

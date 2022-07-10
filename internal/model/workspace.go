@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-15 19:32:44
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-07 15:37:15
+ * @LastEditTime: 2022-06-28 17:53:54
  * @FilePath: /smartide-cli/internal/model/workspace.go
  * @Description:
  *
@@ -94,8 +94,9 @@ type GVA_MODEL struct {
 // 工作区
 type ServerWorkspace struct {
 	GVA_MODEL
-	NO                       string `json:"no" `
-	Name                     string `json:"name" `
+	NO   string `json:"no" `
+	Name string `json:"name" `
+
 	GitRepoUrl               string `json:"gitRepoUrl" `
 	Branch                   string `json:"branch"`
 	ConfigFilePath           string `json:"configFilePath"`
@@ -111,6 +112,11 @@ type ServerWorkspace struct {
 
 	OwnerGUID string `json:"ownerGuid" `
 	OwnerName string `json:"ownerName" `
+
+	KubeNamespace                 string                            `json:"namespace" `
+	KubeIngressAuthenticationType KubeIngressAuthenticationTypeEnum `json:"kubeIngressAuthenticationType"`
+	KubeIngressLoginUserName      string                            `json:"kubeIngressUserName" `
+	KubeIngressLoginPassword      string                            `json:"kubeIngressPassword" `
 }
 
 // "ID": 1,
@@ -148,12 +154,21 @@ type Resource struct {
 	IP                 string                 `json:"ip" `
 	Port               int                    `json:"port" `
 	Status             ResourceStatusEnum     `json:"status" `
-	SSHUserName        string                 `json:"username" `
-	SSHPassword        string                 `json:"password" `
-	SSHKey             string                 `json:"sshkey" `
-	KubeConfigContent  string                 `json:"kube_config" `
-	OwnerGUID          string                 `json:"ownerGuid" `
-	OwnerName          string                 `json:"ownerName" `
+	// ssh 模式下的用户名 && k8s ingress 用户名
+	UserName string `json:"username" `
+	// ssh 模式 用户名密码验证方式的密码 && k8s ingress 密码
+	Password string `json:"password" `
+	SSHKey   string `json:"sshkey" `
+
+	KubeConfigContent string `json:"kube_config"`
+	KubeBaseDNS       string `json:"kube_ingress_base_dns" `
+	KubeContext       string `json:"kube_context" `
+
+	//KubeUserName           string                     `json:"kube_ingress_user_name"`
+	//KubePassword           string                     `json:"kube_ingress_password"`
+
+	OwnerGUID string `json:"ownerGuid" `
+	OwnerName string `json:"ownerName" `
 }
 
 // 资源类型
@@ -173,6 +188,15 @@ const (
 	AuthenticationTypeEnum_PAT        AuthenticationTypeEnum = 2
 	AuthenticationTypeEnum_Password   AuthenticationTypeEnum = 3
 	AuthenticationTypeEnum_KubeConfig AuthenticationTypeEnum = 4
+)
+
+// kube认证方式
+type KubeIngressAuthenticationTypeEnum int
+
+const (
+	KubeAuthenticationTypeEnum_None  KubeIngressAuthenticationTypeEnum = 1
+	KubeAuthenticationTypeEnum_Basic KubeIngressAuthenticationTypeEnum = 2
+	KubeAuthenticationTypeEnum_Oauth KubeIngressAuthenticationTypeEnum = 3
 )
 
 // 资源状态

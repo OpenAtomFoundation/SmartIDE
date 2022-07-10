@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-15 15:09:11
+ * @LastEditTime: 2022-07-01 09:53:57
  */
 package cmd
 
@@ -148,7 +148,7 @@ var startCmd = &cobra.Command{
 					common.CheckError(err)
 
 				} else { //1.2.2.2. 本地工作区，本地启动
-					_, err := start.ExecuteK8sStartCmd(*k8sUtil, workspaceInfo, executeStartCmdFunc)
+					_, err := start.ExecuteK8sStartCmd(cmd, *k8sUtil, workspaceInfo, executeStartCmdFunc)
 					common.CheckError(err)
 				}
 
@@ -246,7 +246,7 @@ var (
 	flag_k8s         = "k8s"
 	flag_kubeconfig  = "kubeconfig"
 
-//	flag_loginurl    = "login_url"
+	//	flag_loginurl    = "login_url"
 )
 
 // 获取工作区id
@@ -259,7 +259,7 @@ func getWorkspaceIdFromFlagsOrArgs(cmd *cobra.Command, args []string) string {
 		checkFlagUnnecessary(fflags, flag_workspaceid, tmpWorkspaceId)
 
 		// 是否为数字，或者包含sw
-		if common.IsNumber(tmpWorkspaceId) || strings.Index(strings.ToLower(tmpWorkspaceId), "sw") == 0 {
+		if common.IsNumber(tmpWorkspaceId) || strings.Index(strings.ToLower(tmpWorkspaceId), "ws") == 1 {
 			return tmpWorkspaceId
 		}
 	}
@@ -270,7 +270,7 @@ func getWorkspaceIdFromFlagsOrArgs(cmd *cobra.Command, args []string) string {
 		common.CheckError(err)
 
 		// 是否为数字，或者包含sw
-		if common.IsNumber(tmpWorkspaceId) || strings.Index(strings.ToLower(tmpWorkspaceId), "sw") == 0 {
+		if common.IsNumber(tmpWorkspaceId) || strings.Index(strings.ToLower(tmpWorkspaceId), "ws") == 1 {
 			return tmpWorkspaceId
 		}
 	}
@@ -281,7 +281,7 @@ func getWorkspaceIdFromFlagsOrArgs(cmd *cobra.Command, args []string) string {
 		common.CheckError(err)
 
 		// 是否为数字，或者包含sw
-		if common.IsNumber(serverWorkspaceId) || strings.Index(strings.ToLower(serverWorkspaceId), "sw") == 0 {
+		if common.IsNumber(serverWorkspaceId) || strings.Index(strings.ToLower(serverWorkspaceId), "ws") == 1 {
 			return serverWorkspaceId
 		}
 	}
@@ -303,10 +303,10 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 		CacheEnv:      workspace.CacheEnvEnum_Local,
 	}
 	// 运行环境
-	if value, _ := fflags.GetString("mode"); strings.ToLower(value) == "server" { // || strings.Index(strings.ToLower(workspaceIdStr), "sw") == 0
+	if value, _ := fflags.GetString("mode"); strings.ToLower(value) == "server" { // || strings.Index(strings.ToLower(workspaceIdStr), "ws") == 1
 		workspaceInfo.CliRunningEnv = workspace.CliRunningEvnEnum_Server
 	}
-	if strings.Index(strings.ToLower(workspaceIdStr), "sw") == 0 {
+	if strings.Index(strings.ToLower(workspaceIdStr), "ws") == 1 {
 		workspaceInfo.CacheEnv = workspace.CacheEnvEnum_Server
 	} else if value, _ := fflags.GetString("serverworkspaceid"); value != "" {
 		workspaceInfo.CacheEnv = workspace.CacheEnvEnum_Server
@@ -338,7 +338,11 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 			workspaceInfo = *workspaceInfo_
 			// 使用是否关联 server workspace 进行判断
 			if workspaceInfo.ServerWorkSpace == nil {
-				err = fmt.Errorf("没有查询到 (%v) 对应的工作区数据！", workspaceIdStr)
+				errMsg := ""
+				if err != nil {
+					errMsg = err.Error()
+				}
+				err = fmt.Errorf("没有查询到 (%v) 对应的工作区数据！"+errMsg, workspaceIdStr)
 			} else {
 				// 避免namespace为空
 				if workspaceInfo.Mode == workspace.WorkingMode_K8s {
@@ -471,6 +475,27 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 					workspaceInfo.TempYamlFileAbsolutePath = workspaceInfo.GetTempDockerComposeFilePath()
 				}
 
+			}
+		}
+	}
+	//todo: repoName可能重复
+	if workspaceInfo.Name == "" {
+		workspaceInfo.Name = common.GetRepoName(workspaceInfo.GitCloneRepoUrl)
+	}
+	// addon,处理已经addon webterminal后再次运行不加aadon
+	addon, _ := fflags.GetString("addon")
+	if addon != "" {
+		workspaceInfo.Addon = workspace.Addon{
+			Type:     addon,
+			IsEnable: true,
+		}
+	} else {
+		// 仅对本地模式有效
+		webterminServiceName := fmt.Sprintf("%v_smartide-webterminal", workspaceInfo.Name)
+		if _, ok := workspaceInfo.TempDockerCompose.Services[webterminServiceName]; ok {
+			workspaceInfo.Addon = workspace.Addon{
+				Type:     "webterminal",
+				IsEnable: true,
 			}
 		}
 	}
@@ -694,6 +719,7 @@ func init() {
 	startCmd.Flags().StringP("kubeconfig", "", "", "自定义 kube config 文件的本地路径")
 	// startCmd.Flags().StringP("namespace", "n", "", i18nInstance.Start.Info_help_flag_k8s_namespace)
 	startCmd.Flags().StringP("serverownerguid", "g", "", i18nInstance.Start.Info_help_flag_ownerguid)
+	startCmd.Flags().StringP("addon", "", "", "addon webterminal")
 }
 
 // get repo name

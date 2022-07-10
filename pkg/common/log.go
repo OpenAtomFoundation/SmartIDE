@@ -115,8 +115,7 @@ func (sLog *smartIDELogStruct) Error(err interface{}, headers ...string) (reErr 
 	return nil
 }
 
-//
-func (sLog *smartIDELogStruct) Fatal(fatal interface{}, headers ...string) (reErr error) {
+func (sLog *smartIDELogStruct) Fatal(fatal interface{}, headers ...string) {
 	if fatal != nil {
 		// 基本信息
 		contents := headers
@@ -140,15 +139,12 @@ func (sLog *smartIDELogStruct) Fatal(fatal interface{}, headers ...string) (reEr
 		sugarLogger.Fatal(strings.Join(contents, "; "))
 		os.Exit(1)
 	}
-
-	return nil
 }
 
-//
-func (sLog *smartIDELogStruct) Info(args ...string) (err error) {
+func (sLog *smartIDELogStruct) Info(args ...string) {
 	args = RemoveDuplicatesAndEmpty(args)
 	if len(args) <= 0 {
-		return nil
+		return
 	}
 
 	msg := strings.Join(args, " ")
@@ -171,18 +167,15 @@ func (sLog *smartIDELogStruct) Info(args ...string) (err error) {
 		})
 	}
 	sugarLogger.Info(msg)
-
-	return nil
 }
 
-//
-func (sLog *smartIDELogStruct) InfoF(format string, args ...interface{}) (err error) {
+func (sLog *smartIDELogStruct) InfoF(format string, args ...interface{}) {
 
 	validF(format, args...)
 
 	msg := fmt.Sprintf(format, args...)
 
-	return SmartIDELog.Info(msg)
+	SmartIDELog.Info(msg)
 }
 
 func validF(format string, args ...interface{}) {
@@ -193,20 +186,20 @@ func validF(format string, args ...interface{}) {
 }
 
 //
-func (sLog *smartIDELogStruct) DebugF(format string, args ...interface{}) (err error) {
+func (sLog *smartIDELogStruct) DebugF(format string, args ...interface{}) {
 
 	validF(format, args...)
 
 	msg := fmt.Sprintf(format, args...)
 
-	return SmartIDELog.Debug(msg)
+	SmartIDELog.Debug(msg)
 }
 
-func (sLog *smartIDELogStruct) Debug(args ...string) (err error) {
+func (sLog *smartIDELogStruct) Debug(args ...string) {
 
 	args = RemoveDuplicatesAndEmpty(args)
 	if len(args) <= 0 {
-		return nil
+		return
 	}
 
 	msg := strings.Join(args, " ")
@@ -234,33 +227,38 @@ func (sLog *smartIDELogStruct) Debug(args ...string) (err error) {
 		})
 	}
 	sugarLogger.Debug(msg)
-
-	return nil
 }
 
 // 输出到控制台，但是不加任何的修饰
-func (sLog *smartIDELogStruct) Console(args ...interface{}) (err error) {
+func (sLog *smartIDELogStruct) Console(args ...interface{}) {
 
 	if len(args) <= 0 {
-		return nil
+		return
 	}
 
 	fmt.Println(args...)
 	sugarLogger.Info(args...)
-
-	return nil
 }
 
 // 输出到控制台，但是不加任何的修饰
-func (sLog *smartIDELogStruct) ConsoleDebug(args ...interface{}) (err error) {
+func (sLog *smartIDELogStruct) ConsoleDebug(args ...interface{}) {
 
 	if len(args) <= 0 {
-		return nil
+		return
 	}
 
 	sugarLogger.Info(args...)
+}
 
-	return nil
+// 输出到控制台，在一行
+func (sLog *smartIDELogStruct) ConsoleInLine(args ...interface{}) {
+
+	if len(args) <= 0 {
+		return
+	}
+
+	fmt.Printf("\r%v\r", args...)
+	sugarLogger.Info(args...)
 }
 
 //
@@ -294,12 +292,11 @@ func (sLog *smartIDELogStruct) WaitingForAnother() {
 	_lastMsg.TimeOut = -1
 }
 
-//
-func (sLog *smartIDELogStruct) Warning(warning ...string) (err error) {
+func (sLog *smartIDELogStruct) Warning(warning ...string) {
 
 	msg := strings.Join(warning, " ")
 	if len(msg) <= 0 {
-		return nil
+		return
 	}
 
 	prefix := getPrefix(zapcore.WarnLevel)
@@ -319,17 +316,14 @@ func (sLog *smartIDELogStruct) Warning(warning ...string) (err error) {
 		})
 	}
 	sugarLogger.Warn(msg)
-
-	return nil
 }
 
-//
-func (sLog *smartIDELogStruct) WarningF(format string, args ...interface{}) (err error) {
+func (sLog *smartIDELogStruct) WarningF(format string, args ...interface{}) {
 
 	validF(format, args...)
 
 	msg := fmt.Sprintf(format, args...)
-	return SmartIDELog.Warning(msg)
+	SmartIDELog.Warning(msg)
 }
 
 //var logger *zap.Logger

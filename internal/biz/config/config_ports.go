@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors:
- * @LastEditTime:
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-06-20 17:41:48
  */
 package config
 
@@ -64,7 +64,7 @@ func (yamlFileConfig *SmartIdeConfig) setPort4Label(containerPort int, oldPort i
 	}
 
 	if oldPort > 0 && newPort > 0 && containerPort > 0 {
-		label := yamlFileConfig.GetLabelWithPort(oldPort, containerPort)
+		label := yamlFileConfig.GetLabelWithPort(oldPort, newPort, containerPort)
 
 		//
 		isExit := false
@@ -93,12 +93,12 @@ func (yamlFileConfig *SmartIdeConfig) setPort4Label(containerPort int, oldPort i
 }
 
 // 获取 本地端口 对应的描述
-func (yamlFileConfig *SmartIdeConfig) GetLabelWithPort(localPort, containerPort int) string {
+func (yamlFileConfig *SmartIdeConfig) GetLabelWithPort(originHostPort, currentHostPort, containerPort int) string {
 	label := ""
 
 	// 先到变更中查找
 	for _, value := range yamlFileConfig.Workspace.DevContainer.bindingPorts {
-		if value.OriginHostPort == localPort {
+		if value.OriginHostPort == originHostPort || value.CurrentHostPort == currentHostPort {
 			label = value.HostPortDesc
 			break
 		}
@@ -107,7 +107,7 @@ func (yamlFileConfig *SmartIdeConfig) GetLabelWithPort(localPort, containerPort 
 	// 去初始配置中查找
 	if len(label) <= 0 {
 		for key, value := range yamlFileConfig.Workspace.DevContainer.Ports {
-			if value == localPort {
+			if value == originHostPort {
 				label = key
 				break
 			}
@@ -116,7 +116,7 @@ func (yamlFileConfig *SmartIdeConfig) GetLabelWithPort(localPort, containerPort 
 
 	// 是否为默认的端口，比如ide、ssh
 	if label == "" {
-		if localPort == model.CONST_Local_Default_BindingPort_WebIDE {
+		if originHostPort == model.CONST_Local_Default_BindingPort_WebIDE {
 			if containerPort == model.CONST_Container_JetBrainsIDEPort {
 				label = "tools-webide-jb"
 			} else if containerPort == model.CONST_Container_OpensumiIDEPort {
@@ -124,7 +124,7 @@ func (yamlFileConfig *SmartIdeConfig) GetLabelWithPort(localPort, containerPort 
 			} else {
 				label = "tools-webide-vscode"
 			}
-		} else if localPort == model.CONST_Local_Default_BindingPort_SSH {
+		} else if originHostPort == model.CONST_Local_Default_BindingPort_SSH {
 			label = "tools-ssh"
 		}
 	}
