@@ -75,6 +75,7 @@ stages:
 
           - task: Bash@3
             displayName: go unit test
+            enabled: false
             inputs:
               targetType: "inline"
               workingDirectory: "$(Build.SourcesDirectory)/$(ProjectRootDir)"
