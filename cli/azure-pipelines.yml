@@ -4,7 +4,7 @@ resources:
   repositories:
     - repository: self
       type: git
-      ref: refs/heads/leixu/single-repo
+      ref: refs/heads/main
 
 trigger:
   branches:
