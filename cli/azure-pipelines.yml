@@ -75,12 +75,13 @@ stages:
 
           - task: Bash@3
             displayName: go unit test
-            enabled: false
+            enabled: true
             inputs:
               targetType: "inline"
               workingDirectory: "$(Build.SourcesDirectory)/$(ProjectRootDir)"
               script: |
 
+                go mod tidy
                 go test ./...
 
           - task: Bash@3
@@ -92,6 +93,8 @@ stages:
                 echo "golang version"
 
                 go version
+                
+                go mod tidy
 
                 echo "build for linux  amd64..."
 
