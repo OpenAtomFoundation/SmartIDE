@@ -175,7 +175,7 @@ func GitConfig(isVmCommand bool, containerName string, cli *client.Client,
 
 func AddPublicKeyIntoAuthorizedkeys(dockerContainerName string) {
 
-	cmdStr := fmt.Sprint("docker exec ", dockerContainerName, " bash -c \"cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys\"")
+	cmdStr := fmt.Sprint("docker exec ", dockerContainerName, " bash -c \"cat ~/.ssh/id_rsa.pub > ~/.ssh/authorized_keys\"")
 	cmd := exec.Command("/bin/sh", "-c", cmdStr)
 
 	cmd.Stdout = os.Stdout

@@ -1078,7 +1078,7 @@ func GetWSPolicies(no string, t string, cmd *cobra.Command) (ws []WorkspacePolic
 
 // Add publickey to .ssh/authorized_keys file on remote host(vm mode)
 func (instance *SSHRemote) AddPublicKeyIntoAuthorizedkeys() {
-	execCommand := "cat ~/.ssh/id_rsa.pub__ >> ~/.ssh/authorized_keys__"
+	execCommand := "cat ~/.ssh/id_rsa.pub__ > ~/.ssh/authorized_keys__"
 	output, err := instance.ExeSSHCommand(execCommand)
 	if err != nil {
 		if output != "" || err.Error() != "Process exited with status 1" {

@@ -68,11 +68,12 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 			// 执行ssh-key 策略
 			sshRemote.ExecSSHkeyPolicy(common.SmartIDELog.Ws_id, cmd)
 			// Generate Authorizedkeys
-			sshRemote.AddPublicKeyIntoAuthorizedkeys()
 			err = gitAction(sshRemote, workspaceInfo, cmd)
 			common.CheckErrorFunc(err, serverFeedback)
 		}
 	}
+
+	sshRemote.AddPublicKeyIntoAuthorizedkeys()
 
 	//3. 获取配置文件的内容
 	var ideBindingPort int
