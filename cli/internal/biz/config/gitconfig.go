@@ -79,7 +79,7 @@ func SSHVolumesConfig(isVmCommand bool, service *compose.Service, sshRemote comm
 		}
 	} else {
 		if isVmCommand {
-			configPaths = []string{fmt.Sprintf("$HOME/.ssh/id_rsa_%s_%s:/home/smartide/.ssh/id_rsa", userName, common.SmartIDELog.Ws_id), fmt.Sprintf("$HOME/.ssh/id_rsa.pub_%s_%s:/home/smartide/.ssh/id_rsa.pub", userName, common.SmartIDELog.Ws_id)}
+			configPaths = []string{fmt.Sprintf("$HOME/.ssh/id_rsa_%s_%s:/home/smartide/.ssh/id_rsa", userName, common.SmartIDELog.Ws_id), fmt.Sprintf("$HOME/.ssh/id_rsa.pub_%s_%s:/home/smartide/.ssh/id_rsa.pub", userName, common.SmartIDELog.Ws_id), fmt.Sprintf("$HOME/.ssh/authorized_keys_%s_%s:/home/smartide/.ssh/authorized_keys", userName, common.SmartIDELog.Ws_id)}
 		} else {
 
 			if homeDir, err := os.UserHomeDir(); err == nil {
@@ -171,6 +171,18 @@ func GitConfig(isVmCommand bool, containerName string, cli *client.Client,
 	}
 
 	//return
+}
+
+func AddPublicKeyIntoAuthorizedkeys(dockerContainerName string) {
+
+	cmdStr := fmt.Sprint("docker exec ", dockerContainerName, " bash -c \"cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys\"")
+	cmd := exec.Command("/bin/sh", "-c", cmdStr)
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if cmdErr := cmd.Run(); cmdErr != nil {
+		common.SmartIDELog.Fatal(cmdErr)
+	}
 }
 
 func LocalContainerGitSet(docker common.Docker, dockerContainerName string) {

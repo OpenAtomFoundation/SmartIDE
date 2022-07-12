@@ -67,6 +67,8 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		} else {
 			// 执行ssh-key 策略
 			sshRemote.ExecSSHkeyPolicy(common.SmartIDELog.Ws_id, cmd)
+			// Generate Authorizedkeys
+			sshRemote.AddPublicKeyIntoAuthorizedkeys()
 			err = gitAction(sshRemote, workspaceInfo, cmd)
 			common.CheckErrorFunc(err, serverFeedback)
 		}
@@ -244,10 +246,10 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 			common.SmartIDELog.Importance(fmt.Sprintf("当前运行环境为 %v，工作区不需要缓存到本地！", workspaceInfo.CliRunningEnv))
 		}
 
-		// 7.3 ssh config file update
-		workspaceInfo.UpdateSSHConfig()
-
 	}
+
+	// ssh config file update
+	workspaceInfo.UpdateSSHConfig()
 
 	//7. 如果是不进行端口映射，直接退出
 	if isUnforward {

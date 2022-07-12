@@ -1,8 +1,10 @@
 package workspace
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -94,6 +96,59 @@ func (workspaceInfo WorkspaceInfo) UpdateSSHConfig() {
 		updateRecord(record, cfg, configMap, configPath)
 	}
 }
+
+func (workspaceInfo WorkspaceInfo) RemoveSSHConfig() {
+
+	// check workspace id
+	if workspaceInfo.ID == "" {
+		logger.Warning("workspaceID is empty, skip to operate ssh config")
+		return
+	}
+
+	logger.DebugF("find port map info....\n")
+	portMapInfo, err := workspaceInfo.Extend.Ports.Find("tools-ssh")
+	common.CheckError(err)
+	sshPort := portMapInfo.GetSSHPortAtLocalHost()
+	logger.InfoF("workspaceID: %v, ssh port : %v\n", workspaceInfo.ID, sshPort)
+
+	// check config file
+	logger.DebugF("find ssh file path....")
+
+	configPath, err := getSSHConfigPath()
+	common.CheckError(err)
+	logger.DebugF("ssh file path: %v\n", configPath)
+
+	IdentityFile := getIdentityFile()
+
+	logger.DebugF("private key file path: %v\n", IdentityFile)
+
+	// get file/ create file
+	logger.Debug("ensure config file exist...")
+	err = ensureSSHConfigFileExist(configPath)
+	common.CheckError(err)
+
+	// check host is exist?
+	logger.Debug("decoding file content to ssh config...")
+	file, _ := os.Open(configPath)
+
+	cfg, _ := ssh_config.Decode(file)
+
+	logger.DebugF("decoded config: %v", cfg.String())
+	configMap := GenerateConfigMap(workspaceInfo.ID, IdentityFile, sshPort)
+	record := configMap.ConvertToRecord()
+	logger.Debug("config record:", record.ToString())
+
+	logger.DebugF("check host %v is exist in config file...\n", record.Host)
+	isHostExistInConfig := isHostExistInConfig(cfg, record.Host)
+	logger.DebugF("check result:%v\n", isHostExistInConfig)
+	if isHostExistInConfig {
+		line := getLineNumber(configPath, record.Host)
+		if line > 0 {
+			removeLines(configPath, line, 6)
+		}
+	}
+}
+
 func (record SSHConfigRecord) ToString() string {
 	// 不要随意修改下面的模板， 里面包含了首尾换行和首行2个空格缩进的格式
 	var templateText string
@@ -173,6 +228,12 @@ func appendRecord(record SSHConfigRecord, configPath string) {
 	_ = file.Close()
 
 	logger.Info("update config success, your can view it in VSCode's remote SSH target list")
+}
+
+func removeRecord(configPath string, start int, end int) {
+	if err := removeLines(configPath, start, end); err != nil {
+		fmt.Println(err)
+	}
 }
 
 func GenerateConfigMap(workspaceId string, IdentityFile string, sshPort int) SSHConfigMap {
@@ -359,4 +420,83 @@ func isPathContainSpace(pathString string) bool {
 		return true
 	}
 	return false
+}
+
+func removeLines(fn string, start, n int) (err error) {
+	if start < 1 {
+		return
+	}
+	if n < 0 {
+		return
+	}
+	var f *os.File
+	if f, err = os.OpenFile(fn, os.O_RDWR, 0); err != nil {
+		return
+	}
+	defer func() {
+		if cErr := f.Close(); err == nil {
+			err = cErr
+		}
+	}()
+	var b []byte
+	if b, err = ioutil.ReadAll(f); err != nil {
+		return
+	}
+	cut, ok := skip(b, start-1)
+	if !ok {
+		return fmt.Errorf("less than %d lines", start)
+	}
+	if n == 0 {
+		return nil
+	}
+	tail, ok := skip(cut, n)
+	if !ok {
+		return fmt.Errorf("less than %d lines after line %d", n, start)
+	}
+	t := int64(len(b) - len(cut))
+	if err = f.Truncate(t); err != nil {
+		return
+	}
+	if len(tail) > 0 {
+		_, err = f.WriteAt(tail, t)
+	}
+	return
+}
+
+func skip(b []byte, n int) ([]byte, bool) {
+	for ; n > 0; n-- {
+		if len(b) == 0 {
+			return nil, false
+		}
+		x := bytes.IndexByte(b, '\n')
+		if x < 0 {
+			x = len(b)
+		} else {
+			x++
+		}
+		b = b[x:]
+	}
+	return b, true
+}
+
+func getLineNumber(path string, host string) int {
+	f, err := os.Open(path)
+	if err != nil {
+		return 0
+	}
+	defer f.Close()
+
+	// Splits on newlines by default.
+	scanner := bufio.NewScanner(f)
+
+	line := 1
+	// https://golang.org/pkg/bufio/#Scanner.Scan
+	for scanner.Scan() {
+		if strings.Contains(scanner.Text(), host) {
+			return line
+		}
+
+		line++
+	}
+	return 0
 }
