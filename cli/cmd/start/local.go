@@ -176,7 +176,7 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	workspaceInfo.UpdateSSHConfig()
 
 	// add publickey content into .ssh/authorized_keys
-	config.AddPublicKeyIntoAuthorizedkeys(dockerContainerName)
+	config.AddPublicKeyIntoAuthorizedkeys(docker, dockerContainerName)
 
 	// 如果是不进行端口转发，后续就不需要运行
 	if isUnforward {

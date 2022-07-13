@@ -173,16 +173,11 @@ func GitConfig(isVmCommand bool, containerName string, cli *client.Client,
 	//return
 }
 
-func AddPublicKeyIntoAuthorizedkeys(dockerContainerName string) {
+func AddPublicKeyIntoAuthorizedkeys(docker common.Docker, dockerContainerName string) {
 
-	cmdStr := fmt.Sprint("docker exec ", dockerContainerName, " bash -c \"cat ~/.ssh/id_rsa.pub > ~/.ssh/authorized_keys\"")
-	cmd := exec.Command("/bin/sh", "-c", cmdStr)
-
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if cmdErr := cmd.Run(); cmdErr != nil {
-		common.SmartIDELog.Fatal(cmdErr)
-	}
+	out, err := docker.Exec(context.Background(), dockerContainerName, "/usr/bin", []string{"docker exec ", dockerContainerName, " bash -c \"cat ~/.ssh/id_rsa.pub > ~/.ssh/authorized_keys\""}, []string{})
+	common.CheckError(err)
+	common.SmartIDELog.Debug(out)
 }
 
 func LocalContainerGitSet(docker common.Docker, dockerContainerName string) {
