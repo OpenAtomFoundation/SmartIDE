@@ -39,7 +39,6 @@ services:
   mysql:
     image: ${SMARTIDE_SERVER_MYSQL_IMAGE}
     container_name: gva-mysql
-    platform: linux/amd64
     command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci #设置utf8字符集
     healthcheck:
       test: "/usr/bin/mysql --user=root --password=$SMARTIDE_SERVER_MYSQL_PASSWORD --execute \"SHOW DATABASES;\""

@@ -4,8 +4,8 @@
 # Copyright (C) leansoftX.com
 #################################################
 
-FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-base-v2:latest
-
+FROM --platform=$TARGETPLATFORM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-base-v2:latest
+ARG TARGETPLATFORM 
 USER root
 RUN apt-get update && \
     apt-get -y install --no-install-recommends python build-essential make libxss1 libsecret-1-dev && \
@@ -30,7 +30,7 @@ RUN curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh |
     && . $NVM_DIR/nvm.sh  \
     && nvm install $NODE_VERSION \
     && nvm install 12.22.7 \
-    && nvm install 16.7.0 \
+    && nvm install 16.9.1 \
     && nvm alias default $NODE_VERSION \
     && nvm use $NODE_VERSION \
     && npm install -g yarn node-gyp \

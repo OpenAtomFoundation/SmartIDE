@@ -1,4 +1,14 @@
 #!/bin/bash
+###
+ # @Author: kenan
+ # @Date: 2022-05-24 14:46:00
+ # @LastEditors: kenan
+ # @LastEditTime: 2022-07-11 14:18:06
+ # @FilePath: /smartide/dev-containers/smartide-base-v2-vscode/gosu_entrypoint_base.sh
+ # @Description: 
+ # 
+ # Copyright (c) 2022 by kenanlu@leansoftx.com, All Rights Reserved. 
+### 
 
 USER_UID=${LOCAL_USER_UID:-1000}
 USER_GID=${LOCAL_USER_GID:-1000}
@@ -31,7 +41,7 @@ if [ $USER_UID == '0' ]; then
     /usr/sbin/sshd
 
     echo "-----------Starting ide"
-    exec /home/opvscode/server.sh "$@"
+    exec /home/smartide/.nvm/versions/node/v16.9.1/bin/node /home/opvscode/out/server-main.js --host 0.0.0.0 --without-connection-token
 
 else
 
@@ -59,7 +69,7 @@ else
     chown -R $USERNAME:$USERNAME /home/project
     chown -R $USERNAME:$USERNAME /home/opvscode
     chown -R $USERNAME:$USERNAME /home/$USERNAME/.ssh
-    chmod +x /home/opvscode/server.sh
+    # chmod +x /home/opvscode/server.sh
 
     echo "root:$USER_PASS" | chpasswd
     echo "smartide:$USER_PASS" | chpasswd
@@ -73,6 +83,8 @@ else
     /usr/sbin/sshd
 
     echo "-----smartide-----Starting gosu ide"
-    exec gosu smartide /home/opvscode/server.sh "$@"
+    #su smartide -c  "/home/smartide/.nvm/versions/node/v16.9.1/bin/node /home/opvscode/out/server-main.js --host 0.0.0.0 --without-connection-token"
+    exec su smartide -c "/home/smartide/.nvm/versions/node/v16.9.1/bin/node /home/opvscode/out/server-main.js --host 0.0.0.0 --without-connection-token"
+    # exec gosu smartide /home/opvscode/server.sh "$@"
 
 fi

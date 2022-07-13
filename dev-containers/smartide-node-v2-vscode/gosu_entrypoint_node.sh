@@ -3,7 +3,7 @@
  # @Author: kenan
  # @Date: 2022-05-24 14:37:27
  # @LastEditors: kenan
- # @LastEditTime: 2022-05-24 15:14:38
+ # @LastEditTime: 2022-07-11 17:11:39
  # @FilePath: /smartide/dev-containers/smartide-node-v2-vscode/gosu_entrypoint_node.sh
  # @Description: 
  # 
@@ -32,7 +32,7 @@ if [ $USER_UID == '0' ]; then
     chown -R $USERNAMEROOT:$USERNAMEROOT /home/project
     chown -R $USERNAMEROOT:$USERNAMEROOT /home/opvscode
 
-    chmod +x /home/opvscode/server.sh
+    # chmod +x /home/opvscode/server.sh
     ln -sf /home/$USERNAME/.nvm/versions/node/v$NODE_VERSION/bin/node /home/opvscode
 
     export HOME=/root
@@ -43,7 +43,8 @@ if [ $USER_UID == '0' ]; then
     /usr/sbin/sshd
 
     echo "-----------Starting ide"
-    exec /home/opvscode/server.sh "$@"
+    exec /home/smartide/.nvm/versions/node/v16.9.1/bin/node /home/opvscode/out/server-main.js --host 0.0.0.0 --without-connection-token
+
 
 else
 
@@ -72,7 +73,7 @@ else
     chown -R $USERNAME:$USERNAME /home/opvscode
     chown -R $USERNAME:$USERNAME /home/$USERNAME/.ssh
 
-    chmod +x /home/opvscode/server.sh
+    # chmod +x /home/opvscode/server.sh
 
     echo "root:$USER_PASS" | chpasswd
     echo "smartide:$USER_PASS" | chpasswd
@@ -86,6 +87,6 @@ else
     /usr/sbin/sshd
 
     echo "-----smartide-----Starting gosu ide"
-    exec gosu smartide /home/opvscode/server.sh "$@"
+    exec su smartide -c "/home/smartide/.nvm/versions/node/v16.9.1/bin/node /home/opvscode/out/server-main.js --host 0.0.0.0 --without-connection-token"
 
 fi

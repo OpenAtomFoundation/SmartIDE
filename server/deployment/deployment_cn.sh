@@ -27,13 +27,35 @@ cd ~/smartide-install
 # 1.Basic Component
 echo -e "$(colorEcho $GREEN SmartIDE Server Deployment : 1.Basic Component)"
 echo -e "$(colorEcho $BLUE SmartIDE Server Deployment : 1.1 docker and docker-compose)"
+
+# get cpu architectures
+arch=$(uname -m)
+
 # 1.1 docker & docker-compose
+
+
 curl -o- https://smartidedl.blob.core.chinacloudapi.cn/docker/linux/docker-install.sh | bash
 sudo groupadd docker
 sudo usermod -aG docker ${USER}
 newgrp docker <<EONG
 echo "Docker Will Restart..."
 EONG
+
+if [ "$arch" == 'arm64' ];
+then 
+sudo curl -L https://smartidedl.blob.core.chinacloudapi.cn/docker/compose/releases/download/2.6.1/docker-compose-linux-aarch64 -o /usr/local/bin/docker-compose
+elif [ "$arch" == 'aarch64' ];
+then
+sudo curl -L https://smartidedl.blob.core.chinacloudapi.cn/docker/compose/releases/download/2.6.1/docker-compose-linux-aarch64 -o /usr/local/bin/docker-compose
+elif [ "$arch" == 'x86_64' ];
+then
+sudo curl -L https://smartidedl.blob.core.chinacloudapi.cn/docker/compose/releases/download/2.6.1/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+else
+sudo curl -L https://smartidedl.blob.core.chinacloudapi.cn/docker/compose/releases/download/2.6.1/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+fi
+sudo chmod +x /usr/local/bin/docker-compose
+
+
 sudo chown $USER /var/run/docker.sock
 sudo systemctl restart docker
 docker ps
@@ -48,7 +70,18 @@ else
 fi
 # 1.3 Kubectl
 echo -e "$(colorEcho $BLUE SmartIDE Server Deployment : 1.3 Kubectl)"
-curl -LO https://smartidedl.blob.core.chinacloudapi.cn/kubectl/v1.23.0/bin/linux/amd64/kubectl
+if [ "$arch" == 'arm64' ];
+then 
+curl -LO "https://smartidedl.blob.core.chinacloudapi.cn/kubectl/v1.23.0/bin/linux/arm64/kubectl"
+elif [ "$arch" == 'aarch64' ];
+then
+curl -LO "https://smartidedl.blob.core.chinacloudapi.cn/kubectl/v1.23.0/bin/linux/arm64/kubectl"
+elif [ "$arch" == 'x86_64' ];
+then
+curl -LO "https://smartidedl.blob.core.chinacloudapi.cn/kubectl/v1.23.0/bin/linux/amd64/kubectl"
+else
+curl -LO "https://smartidedl.blob.core.chinacloudapi.cn/kubectl/v1.23.0/bin/linux/amd64/kubectl"
+fi
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 echo -e "$(colorEcho $GREEN SmartIDE Server Deployment : 1.Basic Component Installed Successfully.)"
 
@@ -56,8 +89,22 @@ echo -e "$(colorEcho $GREEN SmartIDE Server Deployment : 2.MiniKube)"
 # 2.MiniKube Install And Configrate
 # 2.1 Minikube
 echo -e "$(colorEcho $BLUE SmartIDE Server Deployment : 2.1 Minikube Install)"
+if [ "$arch" == 'arm64' ];
+then 
+curl -LO https://smartidedl.blob.core.chinacloudapi.cn/minikube/v1.24.0/minikube-linux-arm64
+sudo install minikube-linux-arm64 /usr/local/bin/minikube
+elif [ "$arch" == 'aarch64' ];
+then
+curl -LO https://smartidedl.blob.core.chinacloudapi.cn/minikube/v1.24.0/minikube-linux-arm64
+sudo install minikube-linux-arm64 /usr/local/bin/minikube
+elif [ "$arch" == 'x86_64' ];
+then
 curl -LO https://smartidedl.blob.core.chinacloudapi.cn/minikube/v1.24.0/minikube-linux-amd64
 sudo install minikube-linux-amd64 /usr/local/bin/minikube
+else
+curl -LO https://smartidedl.blob.core.chinacloudapi.cn/minikube/v1.24.0/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+fi
 echo -e "$(colorEcho $BLUE SmartIDE Server Deployment : 2.2 Build Minikube Env)"
 # 2.2 Build Minikube Env
 minikube delete
@@ -99,7 +146,7 @@ docker-compose -f docker-compose.yaml --env-file docker-compose_cn.env down
 docker-compose -f docker-compose.yaml --env-file docker-compose_cn.env up -d
 echo -e "$(colorEcho $GREEN SmartIDE Server Deployment : 4.SmartIDE Server Installed Successfully.)"
 
-# 5.Build SmartIDE Server Network Connection With Minikube 
+# 5.Build SmartIDE Server Network Connection With Minikube
 echo -e "$(colorEcho $GREEN SmartIDE Server Deployment : 5.Build SmartIDE Server Network Connection With Minikube.)"
 docker network connect smartide-server-network minikube
 echo -e "$(colorEcho $GREEN SmartIDE Server Deployment : 5.Build SmartIDE Server Network Connection With Minikube Successfully.)"

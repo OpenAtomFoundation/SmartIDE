@@ -1,4 +1,4 @@
-FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-base-v2-vmlc
+FROM --platform=$TARGETPLATFORM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-base-v2-vmlc
 
 USER smartide
 

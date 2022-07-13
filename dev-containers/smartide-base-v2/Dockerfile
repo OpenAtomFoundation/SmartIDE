@@ -4,7 +4,7 @@
 # Copyright (C) leansoftX.com
 #################################################
 
-FROM ubuntu:20.04
+FROM --platform=$TARGETPLATFORM ubuntu:20.04
 
 
 ENV DEBIAN_FRONTEND=noninteractive
