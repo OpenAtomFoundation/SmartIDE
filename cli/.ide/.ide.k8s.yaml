@@ -1,0 +1,24 @@
+version: smartide/v0.2
+orchestrator:
+  type: k8s  
+workspace:
+  dev-container:
+    service-name: smartide-cli-dev
+    webide-port: 6800
+
+    ports: # 申明端口
+      tools-webide-vscode: 6800
+      tools-ssh: 6822
+
+    ide-type: vscode #vscode/theia
+    volumes:
+      git-config: true
+      ssh-key: true
+
+  #  containers:
+  #   smartide-cli-dev:
+  #    persistentVolumes:
+  #     - mountPath: "test"
+  #      directoryType: other
+
+  kube-deploy-files: ”*.deploy.yaml“ # 采用通配符的方式匹配“.ide”目录下的文件

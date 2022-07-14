@@ -1,0 +1,15 @@
+version: smartide/v0.2
+orchestrator:
+  type: docker-compose
+  # version: 3 # docker compose文件链接模式下，这个可以省略
+  
+workspace:
+  dev-container:
+    service-name: smartide-go # 定义docker-compose文件中的哪个容器是入口
+    webide-port: 6800 # 主容器中的webide对外暴露的端口
+    volumes: 
+        git-config: true 
+        ssh-key: true
+    command: go env -w GOPROXY=https://goproxy.cn,direct  # 容器启动后，到项目目录下运行的命令 TODO: 待实现
+
+  docker-compose-file: docker-compose.yaml  # 链接的docker-compose文件的相对路径
