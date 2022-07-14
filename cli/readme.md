@@ -39,6 +39,4 @@ Command | Description |
 `smartide start` | Run Your Development Environment
 `smartide stop` | Stop Your Development Environment
 `smartide remove` | Remove Your Development Environment
-
-Demo Branch Policy
  
