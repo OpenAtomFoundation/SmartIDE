@@ -1,0 +1,56 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartide-go
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      smartide-cli.service: smartide-go
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        smartide-cli.service: smartide-go
+    spec:
+      containers:
+        - env:
+            - name: LOCAL_USER_GID
+              value: "0"
+            - name: LOCAL_USER_PASSWORD
+              value: root123
+            - name: LOCAL_USER_UID
+              value: "0"
+            - name: ROOT_PASSWORD
+              value: root123
+          image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-golang-v2-vscode:1749
+          name: smartide-go-dev
+          ports:
+            - containerPort: 3000
+            - containerPort: 22
+          resources: {}
+      restartPolicy: Always
+
+status: {}
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartide-go
+spec:
+  type: LoadBalancer
+  ports:
+    - name: "6900"
+      port: 6900
+      targetPort: 3000
+    - name: "6922"
+      port: 6922
+      targetPort: 22
+  selector:
+    smartide-cli.service: smartide-go
+status:
+  loadBalancer: {}

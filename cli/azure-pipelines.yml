@@ -1,0 +1,523 @@
+name: $(date:yyyyMMdd)$(rev:.r)_$(Build.BuildId)_$(SourceBranchName)_$(Build.Reason)
+
+resources:
+  repositories:
+    - repository: self
+      type: git
+      ref: refs/heads/main
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    exclude:
+      - azure-pipelines.yml
+
+schedules:
+  - cron: "0 12 * * *"
+    displayName: Daily Build
+    branches:
+      include:
+        - releases/*
+    always: true
+
+variables:
+  - group: Aliyun
+  - name: cliname
+    value: "smartide"
+  - name: buildConfiguration
+    value: "Release"
+  - name: QuqueTime
+    value: $(date:yyyyMMdd)
+  - name: ImageName
+    value: "smartide-cli"
+  - name: ImageTag
+    value: $(Build.BuildId)
+  - name: ProjectRootDir
+    value: cli
+
+stages:
+  - stage: Build
+    jobs:
+
+      - job: build
+        displayName: build
+        pool: SmartIDESub03-linux-agt
+        steps:
+          - checkout: self
+          - task: replacetokens@4
+            inputs:
+              rootDirectory: "$(Build.SourcesDirectory)/$(ProjectRootDir)"
+              targetFiles: |
+                **/stable*.txt
+                **/stable*.json
+                internal/apk/appinsight/run.go
+              encoding: "auto"
+              tokenPattern: "azpipelines"
+              writeBOM: true
+              actionOnMissing: "warn"
+              keepToken: false
+              actionOnNoFiles: "continue"
+              enableTransforms: false
+              useLegacyPattern: false
+              enableTelemetry: true
+
+          - task: Bash@3
+            displayName: install tools
+            inputs:
+              targetType: "inline"
+              script: |
+                echo "upx installing ... "
+
+                sudo apt sudo apt update -y
+
+                sudo apt install -y upx
+
+          - task: Bash@3
+            displayName: go unit test
+            enabled: true
+            inputs:
+              targetType: "inline"
+              workingDirectory: "$(Build.SourcesDirectory)/$(ProjectRootDir)"
+              script: |
+
+                go mod tidy
+                go test ./...
+
+          - task: Bash@3
+            displayName: go build
+            inputs:
+              targetType: inline
+              workingDirectory: "$(Build.SourcesDirectory)/$(ProjectRootDir)"
+              script: >-
+                echo "golang version"
+
+                go version
+                
+                go mod tidy
+
+                echo "build for linux  amd64..."
+
+                CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o $(cliname)-linux-$(Build.BuildNumber)-amd64-origin  -ldflags="-X 'main.BuildTime=$(date "+%Y-%m-%d %H:%M:%S")'"
+              
+                upx -9 -o $(cliname)-linux-$(Build.BuildNumber)-amd64 $(cliname)-linux-$(Build.BuildNumber)-amd64-origin
+                
+                echo "build for linux  arm64..."
+
+                CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o $(cliname)-linux-$(Build.BuildNumber)-arm64-origin  -ldflags="-X 'main.BuildTime=$(date "+%Y-%m-%d %H:%M:%S")'"
+              
+                upx -9 -o $(cliname)-linux-$(Build.BuildNumber)-arm64 $(cliname)-linux-$(Build.BuildNumber)-arm64-origin
+
+                echo "build for windows ..."
+
+                CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o $(cliname)-win-$(Build.BuildNumber)-x64-origin.exe  -ldflags="-X 'main.BuildTime=$(date "+%Y-%m-%d %H:%M:%S")'"
+
+                upx -9 -o $(cliname)-win-$(Build.BuildNumber)-x64.exe $(cliname)-win-$(Build.BuildNumber)-x64-origin.exe
+
+
+                echo "build for macos ..."
+
+                ##CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o $(cliname)-osx-$(Build.BuildNumber)-x64-origin  -ldflags="-X 'main.BuildTime=$(date "+%Y-%m-%d %H:%M:%S")'"
+
+                ##upx -9 -o $(cliname)-osx-$(Build.BuildNumber)-x64 $(cliname)-osx-$(Build.BuildNumber)-x64-origin
+
+                CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o $(cliname)-osx-$(Build.BuildNumber)-x64  -ldflags="-X 'main.BuildTime=$(date "+%Y-%m-%d %H:%M:%S")'"
+
+                #sudo ls **/*$(cliname)-*-**
+
+          - task: CopyFiles@2
+            displayName: Copy Files
+            inputs:
+              SourceFolder: "$(Build.SourcesDirectory)/$(ProjectRootDir)"
+              Contents: |
+                ##**/*$(cliname)-*-**[!'origin|origin.exe']
+                $(cliname)-win-$(Build.BuildNumber)-x64.exe
+                $(cliname)-linux-$(Build.BuildNumber)-arm64
+                 $(cliname)-linux-$(Build.BuildNumber)-amd64
+                $(cliname)-osx-$(Build.BuildNumber)-x64
+                **/stable*.txt
+                **/stable*.json
+              TargetFolder: "$(Build.ArtifactStagingDirectory)"
+          - task: PublishBuildArtifacts@1
+            displayName: Publish artifact
+            condition: succeededOrFailed()
+
+  - stage: CodeSign
+    condition: and(succeeded(), or(contains(variables['Build.SourceBranch'], 'refs/heads/releases/'), eq(variables['Build.SourceBranch'], 'refs/heads/main')))
+    dependsOn: Build
+    jobs:
+      - job: osx
+        displayName: osx
+        pool: Mac
+        workspace:
+          clean: all
+        steps:
+          - checkout: none
+          - task: DownloadSecureFile@1
+            name: p12SecureFile
+            inputs:
+              secureFile: "smartIDE.p12"
+          - task: DownloadSecureFile@1
+            name: signConfig
+            inputs:
+              secureFile: "sign.json"
+          - task: DownloadBuildArtifacts@1
+            inputs:
+              buildType: "current"
+              downloadType: "single"
+              artifactName: "drop"
+              itemPattern: "**/*$(cliname)-osx-**-x64*"
+              downloadPath: "$(Build.SourcesDirectory)"
+          - task: Bash@3
+            inputs:
+              targetType: "inline"
+              script: "mv $(cliname)-osx-**-x64 $(cliname)"
+              workingDirectory: $(Build.SourcesDirectory)/drop
+            displayName: renamecli
+          - task: replacetokens@4
+            inputs:
+              rootDirectory: "$(Build.SourcesDirectory)"
+              targetFiles: "$(signConfig.secureFilePath)"
+              encoding: "auto"
+              tokenPattern: "azpipelines"
+              writeBOM: true
+              actionOnMissing: "warn"
+              keepToken: false
+              actionOnNoFiles: "continue"
+              enableTransforms: false
+              useLegacyPattern: false
+              enableTelemetry: true
+          - task: Bash@3
+            inputs:
+              targetType: "inline"
+              script: |
+                security import $(p12SecureFile.secureFilePath) -k ~/Library/Keychains/login.keychain-db -P $(osx-codeSignPWD)
+                gon -log-level=info -log-json $(signConfig.secureFilePath)
+              workingDirectory: "$(Build.SourcesDirectory)"
+            displayName: osx-codesign
+          - task: Bash@3
+            inputs:
+              targetType: "inline"
+              script: "unzip $(Build.SourcesDirectory)/$(cliname)-osx-x64.zip -d $(Build.ArtifactStagingDirectory)"
+          - task: Bash@3
+            displayName: rename cli (osx)
+            inputs:
+              targetType: "inline"
+              script: "mv $(cliname) $(cliname)-osx"
+              workingDirectory: $(Build.ArtifactStagingDirectory)
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: "$(Build.ArtifactStagingDirectory)"
+              ArtifactName: "drop-sign"
+              publishLocation: "Container"
+
+      - job: win10
+        displayName: win10
+        pool: win10
+        steps:
+          - checkout: git://smartide/_git/smartide-Wix
+          - task: DownloadBuildArtifacts@1
+            inputs:
+              buildType: "current"
+              downloadType: "single"
+              artifactName: "drop"
+              itemPattern: "**/*$(cliname)-win-**-x64*"
+              downloadPath: "$(Build.SourcesDirectory)"
+
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: "$(Build.SourcesDirectory)"
+              Contents: "**/*$(cliname)-win-**-x64*"
+              TargetFolder: 'C:\tools\codesign\all_files'
+              CleanTargetFolder: true
+              OverWrite: true
+              flattenFolders: true
+
+          - task: PowerShell@2
+            displayName: sign-exe
+            inputs:
+              targetType: "inline"
+              script: |
+                Get-ChildItem **\*$(cliname)-win-**-x64* |rename-item -newname smartide.exe
+                .\signtool_sys.bat
+              workingDirectory: 'C:\tools\codesign'
+
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: 'C:\tools\codesign\all_files'
+              Contents: "smartide.exe"
+              TargetFolder: "$(Build.SourcesDirectory)"
+              OverWrite: true
+              flattenFolders: true
+          - task: replacetokens@4
+            inputs:
+              rootDirectory: "$(Build.SourcesDirectory)"
+              targetFiles: "Product.wxs"
+              encoding: "auto"
+              tokenPattern: "azpipelines"
+              writeBOM: true
+              actionOnMissing: "warn"
+              keepToken: false
+              actionOnNoFiles: "continue"
+              enableTransforms: false
+              useLegacyPattern: false
+              enableTelemetry: true
+
+          - task: MSBuild@1
+            inputs:
+              solution: "**/*.wixproj"
+              configuration: "$(buildConfiguration)"
+              msbuildArguments: "/p:RunWixToolsOutOfProc=true"
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: "$(Build.SourcesDirectory)"
+              Contents: "**/**.msi**"
+              TargetFolder: 'C:\tools\codesign\all_files'
+              CleanTargetFolder: true
+              OverWrite: true
+              flattenFolders: true
+          - task: PowerShell@2
+            displayName: sign-msi
+            inputs:
+              targetType: "inline"
+              script: |
+                .\signtool_sys.bat
+              workingDirectory: 'C:\tools\codesign'
+
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: 'C:\tools\codesign\all_files'
+              Contents: "**/*.msi"
+              TargetFolder: "$(Build.ArtifactStagingDirectory)"
+              CleanTargetFolder: true
+              OverWrite: true
+              flattenFolders: true
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: "$(Build.ArtifactStagingDirectory)"
+              ArtifactName: "drop-sign"
+              publishLocation: "Container"
+
+      - job: linux
+        displayName: linux
+        pool: SmartIDESub03-linux-agt
+        workspace:
+          clean: all
+        steps:
+          - checkout: none
+          - task: DownloadBuildArtifacts@1
+            inputs:
+              buildType: "current"
+              downloadType: "single"
+              artifactName: "drop"
+              itemPattern: "**/*$(cliname)-linux-**-**"
+              downloadPath: "$(Build.SourcesDirectory)"
+
+          - task: Bash@3
+            displayName: rename cli (linux)
+            inputs:
+              targetType: 'inline'
+              script: |
+                mv $(cliname)-linux-**-amd64 $(cliname)-linux-amd64
+                mv $(cliname)-linux-**-arm64 $(cliname)-linux-arm64
+              workingDirectory: '$(Build.SourcesDirectory)/drop'
+
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)/drop'
+              Contents: '$(cliname)-linux-**'
+              TargetFolder: '$(Build.ArtifactStagingDirectory)'
+              CleanTargetFolder: true
+              OverWrite: true
+              flattenFolders: true
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: "$(Build.ArtifactStagingDirectory)"
+              ArtifactName: "drop-sign"
+              publishLocation: "Container"
+
+  - stage: PublishBuilds
+    condition: and(succeeded(), or(contains(variables['Build.SourceBranch'], 'refs/heads/releases/'), eq(variables['Build.SourceBranch'], 'refs/heads/main')))
+    dependsOn: CodeSign
+    jobs:
+      - job: upload
+        displayName: "Upload Installer Files"
+        pool:
+          vmImage: windows-latest
+        steps:
+          - checkout: none
+          - task: DownloadBuildArtifacts@1
+            inputs:
+              buildType: "current"
+              downloadType: "single"
+              artifactName: "drop-sign"
+              downloadPath: "$(Build.SourcesDirectory)"
+
+          - task: AzureFileCopy@4
+            inputs:
+              SourcePath: "$(Build.SourcesDirectory)/drop-sign/**"
+              azureSubscription: "ls-mc-production"
+              Destination: "AzureBlob"
+              storage: "smartidedl"
+              ContainerName: "builds"
+              BlobPrefix: "$(version)"
+
+      - job: update
+        displayName: "Update Version Mainfest File"
+        pool:
+          vmImage: windows-latest
+        steps:
+          - checkout: none
+          - task: DownloadBuildArtifacts@1
+            inputs:
+              buildType: "current"
+              downloadType: "single"
+              artifactName: "drop"
+              itemPattern: "**/stable*.*"
+              downloadPath: "$(Build.SourcesDirectory)"
+          - task: AzureFileCopy@4
+            inputs:
+              SourcePath: "$(Build.SourcesDirectory)/drop/stable*.*"
+              azureSubscription: "ls-mc-production"
+              Destination: "AzureBlob"
+              storage: "smartidedl"
+              ContainerName: "builds"
+
+      - job: docker
+        displayName: Build&Push
+        dependsOn: ["upload", "update"]
+        pool: SmartIDESub03-linux-agt
+        steps:
+          - checkout: self
+          - task: CmdLine@2
+            enabled: true
+            displayName: 输出组变量
+            inputs:
+              script: |
+                echo -e $(ImageRegistry)
+                echo -e $(ImageRegistryNamespace)
+                echo -e $(aliyunlogin)
+                echo -e $(aliyunpassword)
+                echo -e "-------------------------------\n" 
+                echo -e $(pwd)
+
+          - task: CmdLine@2
+            enabled: true
+            displayName: Image Build - $(ImageName)
+            inputs:
+              script: |
+                login -u $(DockerHublogin) -p $(DockerHubpassword)
+                docker  buildx build  -f ./Dockerfile-build -t "$(ImageRegistryNamespace)/$(ImageName):$(ImageTag)" --platform linux/amd64,linux/arm64 . --push
+              workingDirectory: '$(Build.SourcesDirectory)/$(ProjectRootDir)/docker/'
+          - task: CmdLine@2
+            enabled: true
+            displayName: Image Build - $(ImageName)
+            inputs:
+              script: |
+                docker login -u $(aliyunlogin) -p $(aliyunpassword) $(ImageRegistry)
+                docker  buildx build  -f ./Dockerfile-build -t "$(ImageRegistry)/$(ImageRegistryNamespace)/$(ImageName):$(ImageTag)" --platform linux/amd64,linux/arm64 . --push
+              workingDirectory: '$(Build.SourcesDirectory)/$(ProjectRootDir)/docker/'
+          - task: CmdLine@2
+            enabled: true
+            displayName: Clean up Image
+            inputs:
+              script: |
+                echo -e "-------清理镜像-------\n"
+                docker images | grep -E "($(ImageRegistryNamespace)/$(ImageName)|$(ImageRegistry)/$(ImageRegistryNamespace)/$(ImageName))" | awk '{print $3"-------"$1}' 
+                docker images | grep -E "($(ImageRegistryNamespace)/$(ImageName)|$(ImageRegistry)/$(ImageRegistryNamespace)/$(ImageName))" | awk '{print $3}' | uniq | xargs -I {} docker rmi --force {}
+                [[ -n  $(docker images -q -f dangling=true) ]] && docker rmi $(docker images -q -f dangling=true) || echo "images is none"
+
+  - stage: PublishRelease
+    condition: and(succeeded(), contains(variables['Build.SourceBranch'], 'refs/heads/main'))
+    dependsOn: PublishBuilds
+    jobs:
+      - deployment: upload
+        displayName: "Upload Installer Files"
+        pool:
+          vmImage: windows-latest
+        environment: "smartide-cli-prod"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: none
+                - task: DownloadBuildArtifacts@1
+                  inputs:
+                    buildType: "current"
+                    downloadType: "single"
+                    artifactName: "drop-sign"
+                    downloadPath: "$(Build.SourcesDirectory)"
+
+                - task: AzureFileCopy@4
+                  inputs:
+                    SourcePath: "$(Build.SourcesDirectory)/drop-sign/**"
+                    azureSubscription: "ls-mc-production"
+                    Destination: "AzureBlob"
+                    storage: "smartidedl"
+                    ContainerName: "releases"
+                    BlobPrefix: "$(version)"
+
+      - job: update
+        displayName: "Update Version Mainfest File"
+        pool:
+          vmImage: windows-latest
+        steps:
+          - checkout: none
+          - task: DownloadBuildArtifacts@1
+            inputs:
+              buildType: "current"
+              downloadType: "single"
+              artifactName: "drop"
+              itemPattern: "**/stable*.*"
+              downloadPath: "$(Build.SourcesDirectory)"
+          - task: AzureFileCopy@4
+            inputs:
+              SourcePath: "$(Build.SourcesDirectory)/drop/stable*.*"
+              azureSubscription: "ls-mc-production"
+              Destination: "AzureBlob"
+              storage: "smartidedl"
+              ContainerName: "releases"
+
+      - job: docker
+        displayName: Build&Push
+        dependsOn: ["upload", "update"]
+        pool: SmartIDESub03-linux-agt
+        steps:
+          - checkout: self
+          - task: CmdLine@2
+            enabled: true
+            displayName: 输出组变量
+            inputs:
+              script: |
+                echo -e $(ImageRegistry)
+                echo -e $(ImageRegistryNamespace)
+                echo -e $(aliyunlogin)
+                echo -e $(aliyunpassword)
+                echo -e "-------------------------------\n" 
+                echo -e $(pwd)
+          - task: CmdLine@2
+            enabled: true
+            displayName: Image Build - $(ImageName)
+            inputs:
+              script: |
+                login -u $(DockerHublogin) -p $(DockerHubpassword)
+                docker  buildx build  -f ./Dockerfile-release -t "$(ImageRegistryNamespace)/$(ImageName):$(ImageTag)" --platform linux/amd64,linux/arm64 . --push
+              workingDirectory: '$(Build.SourcesDirectory)/$(ProjectRootDir)/docker/'
+          - task: CmdLine@2
+            enabled: true
+            displayName: Image Build - $(ImageName)
+            inputs:
+              script: |
+                docker login -u $(aliyunlogin) -p $(aliyunpassword) $(ImageRegistry)
+                docker  buildx build  -f ./Dockerfile-release -t "$(ImageRegistry)/$(ImageRegistryNamespace)/$(ImageName):$(ImageTag)" --platform linux/amd64,linux/arm64 . --push
+              workingDirectory: '$(Build.SourcesDirectory)/$(ProjectRootDir)/docker/'
+          - task: CmdLine@2
+            enabled: true
+            displayName: Clean up Image
+            inputs:
+              script: |
+                echo -e "-------清理镜像-------\n"
+                docker images | grep -E "($(ImageRegistryNamespace)/$(ImageName)|$(ImageRegistry)/$(ImageRegistryNamespace)/$(ImageName))" | awk '{print $3"-------"$1}' 
+                docker images | grep -E "($(ImageRegistryNamespace)/$(ImageName)|$(ImageRegistry)/$(ImageRegistryNamespace)/$(ImageName))" | awk '{print $3}' | uniq | xargs -I {} docker rmi --force {}
+                [[ -n  $(docker images -q -f dangling=true) ]] && docker rmi $(docker images -q -f dangling=true) || echo "images is none"

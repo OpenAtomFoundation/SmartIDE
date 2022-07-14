@@ -1,0 +1,33 @@
+version: smartide/v0.3
+orchestrator:
+  type: docker-compose
+  version: 3
+workspace:
+  dev-container:
+    service-name: smartide-go-dev
+    ports: # 申明端口
+      tools-webide-vscode: 6800
+      tools-ssh: 6822
+    ide-type: vscode  #vscode/theia
+    volumes: 
+        git-config: true
+        ssh-key: true
+    command: 
+        - go env -w GOPROXY=https://goproxy.cn,direct
+    
+  services:
+    smartide-go-dev:
+      container_name: smartide-go
+      image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-golang-v2-vscode:1749
+      restart: always
+      environment:
+        ROOT_PASSWORD: root123
+        LOCAL_USER_PASSWORD: root123
+      volumes:
+        - .:/home/project
+        ## - /var/run/docker.sock:/var/run/docker.sock
+      espose:
+        - 3000
+      ports:
+        - 6800:3000
+        - "6822:22"

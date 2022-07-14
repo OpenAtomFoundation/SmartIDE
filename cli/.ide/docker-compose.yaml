@@ -1,0 +1,13 @@
+version: "3"
+services:
+  smartide-go:
+    container_name: smartide-go
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      ROOT_PASSWORD: root123
+    image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-go:latest
+    export:
+      - 3000
+    restart: always
+    volumes:
+      - .:/home/project

@@ -1,0 +1,26 @@
+version: smartide/v0.2-theia
+orchestrator:
+  type: docker-compose
+  version: 3
+workspace:
+  dev-container:
+    service-name: smartide-theia
+    ports:
+      webide: 6800
+      ssh: 6822
+    ide-type: theia  #vscode/theia
+    volumes: 
+        git-config: true
+        ssh-key: true
+    command: 
+      - go env -w GOPROXY=https://goproxy.cn,direct
+  services:
+    smartide-theia:
+      image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-go:latest
+      restart: always
+      environment:
+        ROOT_PASSWORD: root123
+      volumes:
+        - .:/home/project
+      espose:
+        - 3000
