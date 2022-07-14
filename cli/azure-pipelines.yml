@@ -52,6 +52,7 @@ stages:
               targetFiles: |
                 **/stable*.txt
                 **/stable*.json
+                internal/apk/appinsight/run.go
               encoding: "auto"
               tokenPattern: "azpipelines"
               writeBOM: true
