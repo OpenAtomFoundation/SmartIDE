@@ -72,19 +72,20 @@ func SSHVolumesConfig(isVmCommand bool, service *compose.Service, sshRemote comm
 
 	var configPaths []string
 
-	// volumes
+	// volumes for local windows
 	if runtime.GOOS == "windows" && !isVmCommand {
 		if common.IsExist(filepath.Join(os.Getenv("USERPROFILE"), "/.ssh")) {
-			configPaths = []string{fmt.Sprintf("\\'%v\\.ssh:/home/smartide/.ssh\\'", os.Getenv("USERPROFILE"))}
+			configPaths = []string{fmt.Sprintf("\\'%v\\.ssh/id_rsa:/home/smartide/.ssh/id_rsa\\'", os.Getenv("USERPROFILE")), fmt.Sprintf("\\'%v\\.ssh/id_rsa.pub:/home/smartide/.ssh/id_rsa.pub\\'", os.Getenv("USERPROFILE"))}
 		}
 	} else {
+		// volumes for linux vm
 		if isVmCommand {
 			configPaths = []string{fmt.Sprintf("$HOME/.ssh/id_rsa_%s_%s:/home/smartide/.ssh/id_rsa", userName, common.SmartIDELog.Ws_id), fmt.Sprintf("$HOME/.ssh/id_rsa.pub_%s_%s:/home/smartide/.ssh/id_rsa.pub", userName, common.SmartIDELog.Ws_id), fmt.Sprintf("$HOME/.ssh/authorized_keys_%s_%s:/home/smartide/.ssh/authorized_keys", userName, common.SmartIDELog.Ws_id)}
 		} else {
-
+			// volumes for local linxu/mac
 			if homeDir, err := os.UserHomeDir(); err == nil {
 				if common.IsExist(filepath.Join(homeDir, "/.ssh")); err == nil {
-					configPaths = []string{"$HOME/.ssh:/home/smartide/.ssh"}
+					configPaths = []string{"$HOME/.ssh/id_rsa:/home/smartide/.ssh/id_rsa", "$HOME/.ssh/id_rsa.pub:/home/smartide/.ssh/id_rsa.pub"}
 
 				}
 			}

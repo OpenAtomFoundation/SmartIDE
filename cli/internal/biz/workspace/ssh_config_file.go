@@ -105,22 +105,12 @@ func (workspaceInfo WorkspaceInfo) RemoveSSHConfig() {
 		return
 	}
 
-	logger.DebugF("find port map info....\n")
-	portMapInfo, err := workspaceInfo.Extend.Ports.Find("tools-ssh")
-	common.CheckError(err)
-	sshPort := portMapInfo.GetSSHPortAtLocalHost()
-	logger.InfoF("workspaceID: %v, ssh port : %v\n", workspaceInfo.ID, sshPort)
-
 	// check config file
 	logger.DebugF("find ssh file path....")
 
 	configPath, err := getSSHConfigPath()
 	common.CheckError(err)
 	logger.DebugF("ssh file path: %v\n", configPath)
-
-	IdentityFile := getIdentityFile()
-
-	logger.DebugF("private key file path: %v\n", IdentityFile)
 
 	// get file/ create file
 	logger.Debug("ensure config file exist...")
@@ -130,21 +120,18 @@ func (workspaceInfo WorkspaceInfo) RemoveSSHConfig() {
 	// check host is exist?
 	logger.Debug("decoding file content to ssh config...")
 	file, _ := os.Open(configPath)
-
 	cfg, _ := ssh_config.Decode(file)
+	hostName := fmt.Sprintf("SmartIDE-%v", workspaceInfo.ID)
+	host := searchHostFromConfig(cfg, hostName)
 
-	logger.DebugF("decoded config: %v", cfg.String())
-	configMap := GenerateConfigMap(workspaceInfo.ID, IdentityFile, sshPort)
-	record := configMap.ConvertToRecord()
-	logger.Debug("config record:", record.ToString())
-
-	logger.DebugF("check host %v is exist in config file...\n", record.Host)
-	isHostExistInConfig := isHostExistInConfig(cfg, record.Host)
+	isHostExistInConfig := isHostExistInConfig(cfg, hostName)
 	logger.DebugF("check result:%v\n", isHostExistInConfig)
 	if isHostExistInConfig {
-		line := getLineNumber(configPath, record.Host)
+		line := getLineNumber(configPath, hostName)
 		if line > 0 {
-			removeLines(configPath, line, 6)
+			end := len(host.Nodes) + 1
+			removeLines(configPath, line, end)
+
 		}
 	}
 }
@@ -228,12 +215,6 @@ func appendRecord(record SSHConfigRecord, configPath string) {
 	_ = file.Close()
 
 	logger.Info("update config success, your can view it in VSCode's remote SSH target list")
-}
-
-func removeRecord(configPath string, start int, end int) {
-	if err := removeLines(configPath, start, end); err != nil {
-		fmt.Println(err)
-	}
 }
 
 func GenerateConfigMap(workspaceId string, IdentityFile string, sshPort int) SSHConfigMap {
