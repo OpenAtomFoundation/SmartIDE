@@ -712,6 +712,7 @@ func init() {
 	startCmd.Flags().StringP("username", "u", "", i18nInstance.Start.Info_help_flag_username)
 	startCmd.Flags().StringP("password", "t", "", i18nInstance.Start.Info_help_flag_password)
 	startCmd.Flags().StringP("repourl", "r", "", i18nInstance.Start.Info_help_flag_repourl)
+	startCmd.Flags().StringP("callback-api-address", "", "", i18nInstance.Start.Info_help_flag_callback_api_address)
 
 	startCmd.Flags().StringVarP(&configYamlFileRelativePath, "filepath", "f", "", i18nInstance.Start.Info_help_flag_filepath)
 	startCmd.Flags().StringP("branch", "b", "", i18nInstance.Start.Info_help_flag_branch)

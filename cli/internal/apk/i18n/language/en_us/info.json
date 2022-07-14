@@ -69,6 +69,7 @@
         "Info_k8s_port_forward_end": "k8s port-forward end... ",
         "info_k8s_updated": "Updated deployment... ",
         "info_help_flag_host": "Host IP / DNS name or hostId",
+        "info_help_flag_callback_api_address": "Callback API Address",
         "info_help_flag_port": "SSH port，default to 22",
         "info_help_flag_username": "SSH username",
         "info_help_flag_pasword": "SSH password",

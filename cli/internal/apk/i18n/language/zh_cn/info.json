@@ -60,10 +60,10 @@
         "info_help_long": "快速创建并启动SmartIDE开发环境",
         "info_start": "SmartIDE启动中 ...",
         "info_help_flag_host": "可以指定 host 的 IP地址、域名，或者 hostId",
+        "info_help_flag_callback_api_address": "可以设置工作区创建完成后的回调接口地址",
         "info_help_flag_k8s": "可以指定 k8s 的 context",
         "info_help_flag_k8s_namespace": "可以指定 k8s 的 info_help_flag_namespace",
         "info_help_flag_ownerguid": "可以指定 ownerguid",
-
         "info_k8s_init": "初始化环境，包括k8s 配置文件校验、.ide.yaml 文件获取...",
         "info_k8s_inited": "环境初始化结束...",
         "info_k8s_creating": "k8s deployment 创建中... ",

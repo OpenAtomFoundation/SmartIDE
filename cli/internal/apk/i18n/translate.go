@@ -114,18 +114,19 @@ type I18nSource struct {
 	} `json:"update"`
 
 	Start struct {
-		Info_help_short              string `json:"info_help_short"`
-		Info_help_long               string `json:"info_help_long"`
-		Info_help_flag_host          string `json:"info_help_flag_host"`
-		Info_help_flag_port          string `json:"info_help_flag_port"`
-		Info_help_flag_username      string `json:"info_help_flag_username"`
-		Info_help_flag_password      string `json:"info_help_flag_pasword"`
-		Info_help_flag_repourl       string `json:"info_help_flag_repourl"`
-		Info_help_flag_branch        string `json:"info_help_flag_branch"`
-		Info_help_flag_filepath      string `json:"info_help_flag_filepath"`
-		Info_help_flag_k8s           string `json:"info_help_flag_k8s"`
-		Info_help_flag_k8s_namespace string `json:"info_help_flag_k8s_namespace"`
-		Info_help_flag_ownerguid     string `json:"info_help_flag_ownerguid"`
+		Info_help_short                     string `json:"info_help_short"`
+		Info_help_long                      string `json:"info_help_long"`
+		Info_help_flag_host                 string `json:"info_help_flag_host"`
+		Info_help_flag_port                 string `json:"info_help_flag_port"`
+		Info_help_flag_username             string `json:"info_help_flag_username"`
+		Info_help_flag_password             string `json:"info_help_flag_pasword"`
+		Info_help_flag_repourl              string `json:"info_help_flag_repourl"`
+		Info_help_flag_callback_api_address string `json:"info_help_flag_callback_api_address"`
+		Info_help_flag_branch               string `json:"info_help_flag_branch"`
+		Info_help_flag_filepath             string `json:"info_help_flag_filepath"`
+		Info_help_flag_k8s                  string `json:"info_help_flag_k8s"`
+		Info_help_flag_k8s_namespace        string `json:"info_help_flag_k8s_namespace"`
+		Info_help_flag_ownerguid            string `json:"info_help_flag_ownerguid"`
 
 		Info_start                   string `json:"info_start"`
 		Info_end                     string `json:"info_end"`
