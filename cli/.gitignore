@@ -34,5 +34,5 @@ smartide-linux
 -linux--x64-origin
 .profile
 *.env
-.vscode/launch.json
-.vscode/launch.json
+.vscode
+.idea
