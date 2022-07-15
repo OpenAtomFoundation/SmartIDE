@@ -10,13 +10,14 @@ package start
 import (
 	"context"
 	"fmt"
-	"github.com/leansoftX/smartide-cli/internal/dal"
 	"net/http"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/leansoftX/smartide-cli/internal/dal"
 
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
@@ -171,8 +172,11 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	//5.2.
 	reloadWorkSpaceId(&workspaceInfo)
 
-	// ssh config
+	// update .ssh/config file for vscode remote
 	workspaceInfo.UpdateSSHConfig()
+
+	// add publickey content into .ssh/authorized_keys
+	config.AddPublicKeyIntoAuthorizedkeys(docker, dockerContainerName)
 
 	// 如果是不进行端口转发，后续就不需要运行
 	if isUnforward {

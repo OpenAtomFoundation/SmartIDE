@@ -32,8 +32,10 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_starting)
 
 	mode, _ := cmd.Flags().GetString("mode")
+	calbackAPI, _ := cmd.Flags().GetString("callback-api-address")
 	userName, _ := cmd.Flags().GetString("serverusername")
 	isModeServer := strings.ToLower(mode) == "server"
+	isModePipeline := strings.ToLower(mode) == "pipeline"
 
 	// 错误反馈
 	serverFeedback := func(err error) {
@@ -67,10 +69,13 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		} else {
 			// 执行ssh-key 策略
 			sshRemote.ExecSSHkeyPolicy(common.SmartIDELog.Ws_id, cmd)
+			// Generate Authorizedkeys
 			err = gitAction(sshRemote, workspaceInfo, cmd)
 			common.CheckErrorFunc(err, serverFeedback)
 		}
 	}
+
+	sshRemote.AddPublicKeyIntoAuthorizedkeys()
 
 	//3. 获取配置文件的内容
 	var ideBindingPort int
@@ -244,13 +249,23 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 			common.SmartIDELog.Importance(fmt.Sprintf("当前运行环境为 %v，工作区不需要缓存到本地！", workspaceInfo.CliRunningEnv))
 		}
 
-		// 7.3 ssh config file update
-		workspaceInfo.UpdateSSHConfig()
+	}
 
+	// ssh config file update
+	workspaceInfo.UpdateSSHConfig()
+
+	//calback external api
+	if calbackAPI != "" {
+		postWorkspaceInfo(workspaceInfo, calbackAPI)
 	}
 
 	//7. 如果是不进行端口映射，直接退出
 	if isUnforward {
+		return
+	}
+
+	//7.1 如果mode=pipeline，也不需要端口映射，直接退出
+	if isModePipeline {
 		return
 	}
 
@@ -416,4 +431,15 @@ func gitAction(sshRemote common.SSHRemote, workspace workspace.WorkspaceInfo, cm
 	}
 	err = sshRemote.ExecSSHCommandRealTime(gitPullCommand)
 	return err
+}
+
+//post workspace info to callback api
+func postWorkspaceInfo(workspaceInfo workspace.WorkspaceInfo, apiURL string) error {
+	postJson := workspaceInfo.Extend.ToJson()
+	response, err := common.PostJson(apiURL, map[string]interface{}{"data": postJson}, map[string]string{"Content-Type": "application/json"})
+	if err != nil {
+		return err
+	}
+	common.SmartIDELog.Info(response)
+	return nil
 }

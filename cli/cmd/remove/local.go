@@ -92,5 +92,8 @@ func RemoveLocal(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeImages
 		}
 	}
 
+	//remove config note from .ssh/config file
+	workspaceInfo.RemoveSSHConfig()
+
 	return nil
 }
