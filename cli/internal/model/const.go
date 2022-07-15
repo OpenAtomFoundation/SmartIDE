@@ -2,8 +2,8 @@
  * @Author: kenan
  * @Date: 2021-12-30 19:48:33
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-02 11:57:13
- * @FilePath: /smartide-cli/internal/model/const.go
+ * @LastEditTime: 2022-07-15 09:46:22
+ * @FilePath: /cli/internal/model/const.go
  * @Description:
  *
  * Copyright (c) 2022 by kenanlu@leansoftx.com, All Rights Reserved.
@@ -48,7 +48,7 @@ const CONST_Local_Default_BindingPort_WebIDE int = 6800
 // 默认的配置文件相对路径
 const CONST_Default_ConfigRelativeFilePath = ".ide/.ide.yaml"
 
-const CONST_Default_K8S_ConfigRelativeFilePath = ".ide/.k8s.ide.yaml"
+//const CONST_Default_K8S_ConfigRelativeFilePath = ".ide/.k8s.ide.yaml"
 
 //环境变量名称，映射到容器里面，当前用户uid,windows默认1000
 const CONST_LOCAL_USER_UID = "LOCAL_USER_UID"

@@ -2,8 +2,8 @@
  * @Author: kenan
  * @Date: 2022-02-10 18:11:42
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-08 11:36:35
- * @FilePath: /smartide-cli/pkg/common/http.go
+ * @LastEditTime: 2022-07-15 17:28:28
+ * @FilePath: /cli/pkg/common/http.go
  * @Description:
  *
  * Copyright (c) 2022 by kenanlu@leansoftx.com, All Rights Reserved.
@@ -33,6 +33,14 @@ type UploadFile struct {
 	Name string
 	// 文件全路径
 	Filepath string
+}
+
+var timeout time.Duration = 10 * time.Second
+
+func SetTimeOut(timeDuration time.Duration) {
+	if timeDuration != 0 {
+		timeout = timeDuration
+	}
 }
 
 func Get(reqUrl string, reqParams map[string]string, headers map[string]string) (string, error) {
@@ -70,7 +78,7 @@ func Get(reqUrl string, reqParams map[string]string, headers map[string]string) 
 	}
 
 	response, _ := ioutil.ReadAll(resp.Body)
-	SmartIDELog.Debug(string(response))
+	SmartIDELog.Debug("response: " + string(response))
 	return string(response), nil
 }
 
@@ -112,11 +120,9 @@ func Put(reqUrl string, reqParams map[string]interface{}, headers map[string]str
 		return "", errors.New(resp.Status)
 	}
 	response, err := ioutil.ReadAll(resp.Body)
-	SmartIDELog.Debug(string(response))
+	SmartIDELog.Debug("response: " + string(response))
 	return string(response), err
 }
-
-var timeout time.Duration = 10 * time.Second
 
 //
 func getClient(url string) *http.Client {

@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-03-23 16:15:38
- * @LastEditors: kenan
- * @LastEditTime: 2022-07-04 16:48:31
- * @FilePath: /smartide-cli/cmd/start/k8s.go
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-07-15 16:27:23
+ * @FilePath: /cli/cmd/start/k8s.go
  */
 
 package start
