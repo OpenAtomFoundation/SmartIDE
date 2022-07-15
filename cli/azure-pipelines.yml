@@ -425,6 +425,7 @@ stages:
             inputs:
               script: |
                 echo -e "-------清理镜像-------\n"
+                docker buildx prune -af
                 docker images | grep -E "($(ImageRegistryNamespace)/$(ImageName)|$(ImageRegistry)/$(ImageRegistryNamespace)/$(ImageName))" | awk '{print $3"-------"$1}' 
                 docker images | grep -E "($(ImageRegistryNamespace)/$(ImageName)|$(ImageRegistry)/$(ImageRegistryNamespace)/$(ImageName))" | awk '{print $3}' | uniq | xargs -I {} docker rmi --force {}
                 [[ -n  $(docker images -q -f dangling=true) ]] && docker rmi $(docker images -q -f dangling=true) || echo "images is none"
@@ -514,6 +515,7 @@ stages:
             inputs:
               script: |
                 echo -e "-------清理镜像-------\n"
+                docker buildx prune -af
                 docker images | grep -E "($(ImageRegistryNamespace)/$(ImageName)|$(ImageRegistry)/$(ImageRegistryNamespace)/$(ImageName))" | awk '{print $3"-------"$1}' 
                 docker images | grep -E "($(ImageRegistryNamespace)/$(ImageName)|$(ImageRegistry)/$(ImageRegistryNamespace)/$(ImageName))" | awk '{print $3}' | uniq | xargs -I {} docker rmi --force {}
                 [[ -n  $(docker images -q -f dangling=true) ]] && docker rmi $(docker images -q -f dangling=true) || echo "images is none"
