@@ -104,7 +104,5 @@ func RemoveRemote(workspaceInfo workspace.WorkspaceInfo,
 		common.SmartIDELog.InfoF(i18nInstance.Remove.Info_project_dir_removed, workingDirectoryPath)
 	}
 
-	//remove ssh config node from .ssh/config
-	workspaceInfo.RemoveSSHConfig()
 	return nil
 }
