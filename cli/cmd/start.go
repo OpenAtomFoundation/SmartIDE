@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-01 09:53:57
+ * @LastEditTime: 2022-07-15 09:46:40
  */
 package cmd
 
@@ -515,11 +515,7 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 		}
 	}
 	if workspaceInfo.ConfigFileRelativePath == "" { // 避免配置文件的路径为空
-		if workspaceInfo.Mode == workspace.WorkingMode_K8s {
-			workspaceInfo.ConfigFileRelativePath = model.CONST_Default_K8S_ConfigRelativeFilePath
-		} else {
-			workspaceInfo.ConfigFileRelativePath = model.CONST_Default_ConfigRelativeFilePath
-		}
+		workspaceInfo.ConfigFileRelativePath = model.CONST_Default_ConfigRelativeFilePath
 	}
 	if tmp, _ := fflags.GetString(flag_branch); tmp != "" {
 		branch, err := fflags.GetString(flag_branch)

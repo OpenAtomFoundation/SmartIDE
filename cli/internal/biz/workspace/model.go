@@ -228,11 +228,7 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 	}
 
 	if workspaceInfo.ConfigFileRelativePath == "" {
-		if workspaceInfo.Mode == WorkingMode_K8s {
-			workspaceInfo.ConfigFileRelativePath = model.CONST_Default_K8S_ConfigRelativeFilePath
-		} else {
-			workspaceInfo.ConfigFileRelativePath = model.CONST_Default_ConfigRelativeFilePath
-		}
+		workspaceInfo.ConfigFileRelativePath = model.CONST_Default_ConfigRelativeFilePath
 
 	}
 
