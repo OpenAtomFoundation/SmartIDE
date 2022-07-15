@@ -25,7 +25,7 @@
         "info_help_long": "SmartIDE - 开发从未如此简单！\n- SmartIDE 可以帮助开发人员快速搭建开发环境，包括本地以及云端环境。",
         "info_usage_template": "使用:{{if .Runnable}}\n  {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}\n  {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}\nAliases:\n  {{.NameAndAliases}}{{end}}{{if .HasExample}}\n示例:\n{{.Example}}{{end}}{{if .HasAvailableSubCommands}}\n命令:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name \"help\"))}}\n  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}\n标记:\n{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}\nGlobal Flags:\n{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasHelpSubCommands}}\nAdditional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}\n  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}\n使用 \"{{.CommandPath}} [command] --help\" 可以看到命令的详细帮助信息.{{end}}\n",
         "info_help_flag_debug": "是否开启Debug模式，在该模式下将显示更多的日志信息",
-        "info_help_flag_mode": "smartide 的运行模式，是在服务端（server）还是客户端（client）",
+        "info_help_flag_mode": "smartide 的运行模式，是在服务端（server）还是客户端（client）或者流水线模式（pipeline）",
         "info_help_flag_server_workspace_id": "smartide server工作区ID",
         "info_help_flag_server_token": "smartide server的token",
         "info_help_flag_server_username": "smartide server登录账号",
@@ -85,6 +85,7 @@
         "info_ssh_tunnel": "[SSH] 转发端口：%v",
         "info_create_network": "[Docker] 创建网络 %v",
         "info_workspace_saving": "[Workspace] 保存工作区(Workspace)信息 ...",
+        "info_pipeline_mode_success": "已使用流水线模式完成环境启动，您可以使用以下地址进行开发调试",
         "info_workspace_saved": "[Workspace] 保存成功，可以通过 WorkspaceId（smartide start %v）直接再次启动此工作区。",
         "info_workspace_record_load": "从工作区（%v）中读取数据",
         "info_workspace_changed": "工作区配置改变！",
@@ -187,7 +188,8 @@
         "info_warting_for_webide": "[WebIDE] 等待 WebIDE 启动 ...",
         "info_open_brower": "[WebIDE] 打开浏览器访问WebIDE : %v ",
         "info_git_cloned": "[Git]当前工作区中已经完成代码克隆，不再执行 git checkout。",
-        "info_tunnel_waiting": "端口转发中..."
+        "info_tunnel_waiting": "端口转发中...",
+        "info_callback_msg": "已将工作区相关信息发送至以下接口: %v"
     },
     "update": {
         "info_help_short": "自动升级 或者 更新到指定的版本",
