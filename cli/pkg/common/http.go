@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-10 18:11:42
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-15 17:23:46
+ * @LastEditTime: 2022-07-15 17:28:28
  * @FilePath: /cli/pkg/common/http.go
  * @Description:
  *
@@ -78,7 +78,7 @@ func Get(reqUrl string, reqParams map[string]string, headers map[string]string) 
 	}
 
 	response, _ := ioutil.ReadAll(resp.Body)
-	SmartIDELog.Debug(string(response))
+	SmartIDELog.Debug("response: " + string(response))
 	return string(response), nil
 }
 
@@ -120,7 +120,7 @@ func Put(reqUrl string, reqParams map[string]interface{}, headers map[string]str
 		return "", errors.New(resp.Status)
 	}
 	response, err := ioutil.ReadAll(resp.Body)
-	SmartIDELog.Debug(string(response))
+	SmartIDELog.Debug("response: " + string(response))
 	return string(response), err
 }
 
