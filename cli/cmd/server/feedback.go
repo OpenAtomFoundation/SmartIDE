@@ -160,7 +160,9 @@ func Feedback_Finish(feedbackCommand FeedbackCommandEnum, cmd *cobra.Command,
 		datas["extend"] = extend
 	}
 	headers := map[string]string{"Content-Type": "application/json", "x-token": serverModeInfo.ServerToken}
-	_, err = common.PostJson(serverFeedbackUrl.String(), datas, headers)
+
+	common.SetTimeOut(3 * time.Minute)                                   // 设置超时时间
+	_, err = common.PostJson(serverFeedbackUrl.String(), datas, headers) // post 请求
 
 	if err != nil {
 		return err
