@@ -120,6 +120,7 @@ var k8sCmd = &cobra.Command{
 
 			for index, _ := range workspaceInfo.Extend.Ports {
 				workspaceInfo.Extend.Ports[index].IngressUrl = ""
+				workspaceInfo.Extend.Ports[index].IsConnected = false
 			}
 
 			common.SmartIDELog.Info(i18nInstance.K8s.Info_log_disable_publicurl_success)
@@ -326,6 +327,7 @@ var k8sCmd = &cobra.Command{
 
 			//Set Public URL
 			workspaceInfo.Extend.Ports[index].IngressUrl = host
+			workspaceInfo.Extend.Ports[index].IsConnected = host != ""
 		}
 
 		//7. Save AllInOne Ingress to Temp Yaml
