@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-05-31 09:36:33
  * @LastEditors: kenan
- * @LastEditTime: 2022-06-21 15:14:58
- * @FilePath: /smartide-cli/cmd/start/k8s_sws_serverEnv.go
+ * @LastEditTime: 2022-07-15 10:40:02
+ * @FilePath: /smartide/cli/cmd/start/k8s_sws_serverEnv.go
  */
 
 package start

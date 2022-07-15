@@ -1,9 +1,9 @@
 /*
  * @Author: kenan
  * @Date: 2022-02-16 17:44:45
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-07 10:09:30
- * @FilePath: /smartide-cli/cmd/start/server_vm.go
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-07-15 10:34:58
+ * @FilePath: /smartide/cli/cmd/start/vm_sws_clientEnv.go
  * @Description:
  *
  * Copyright (c) 2022 by kenanlu@leansoftx.com, All Rights Reserved.
@@ -117,6 +117,8 @@ func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo, y
 		msg := fmt.Sprintf("localhost:%v -> %v:%v -> container:%v",
 			unusedClientPortStr, workspaceInfo.Remote.Addr, pmi.OriginHostPort, pmi.ContainerPort)
 		common.SmartIDELog.Info(msg)
+
+		port.IsConnected = true
 
 	}
 	workspaceInfo.UpdateSSHConfig()
