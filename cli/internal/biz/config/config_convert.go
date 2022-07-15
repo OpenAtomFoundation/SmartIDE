@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-03-30 23:10:52
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-17 14:22:05
- * @FilePath: /smartide-cli/internal/biz/config/config_convert.go
+ * @LastEditTime: 2022-07-15 09:47:33
+ * @FilePath: /cli/internal/biz/config/config_convert.go
  */
 
 package config
@@ -69,7 +69,6 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(repoName string, n
 	//0.
 	k8sConfig := SmartIdeK8SConfig{}
 	copier.CopyWithOption(&k8sConfig, &originK8sConfig, copier.Option{IgnoreEmpty: true, DeepCopy: true}) // 把一个对象赋值给另外一个对象
-	repoName = strings.TrimSpace(strings.ToLower(repoName))
 
 	//1. namespace
 	//1.1. 创建kind
@@ -103,7 +102,10 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(repoName string, n
 
 	}
 
+	return k8sConfig
+
 	//2. 创建 一个pvc
+	repoName = strings.TrimSpace(strings.ToLower(repoName))
 	pvc := coreV1.PersistentVolumeClaim{}
 	pvcName := fmt.Sprintf("%v-pvc-claim", repoName)
 	storageClassName := "smartide-file-storageclass" //TODO: const
