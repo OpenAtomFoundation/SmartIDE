@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-03-23 16:13:54
- * @LastEditors: kenan
- * @LastEditTime: 2022-07-04 16:33:36
- * @FilePath: /smartide-cli/pkg/kubectl/k8s.go
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-07-15 09:50:42
+ * @FilePath: /cli/pkg/kubectl/k8s.go
  */
 
 package kubectl
@@ -417,6 +417,7 @@ func (k *KubernetesUtil) GetPod(selector string, namespace string) (*coreV1.Pod,
 // 在pod中实时执行shell命令
 // example: kubectl -it exec podname -- bash/sh -c
 func (k *KubernetesUtil) ExecuteCommandRealtimeInPod(pod coreV1.Pod, command string) error {
+	command = "su smartide && " + command
 	kubeCommand := fmt.Sprintf(` -it exec %v -- /bin/bash -c "%v"`, pod.Name, command)
 
 	err := k.ExecKubectlCommandRealtime(kubeCommand, "", false)
@@ -429,6 +430,7 @@ func (k *KubernetesUtil) ExecuteCommandRealtimeInPod(pod coreV1.Pod, command str
 
 // 在pod中一次性执行shell命令
 func (k *KubernetesUtil) ExecuteCommandCombinedInPod(pod coreV1.Pod, command string) (string, error) {
+	command = "su smartide && " + command
 	kubeCommand := fmt.Sprintf(` -it exec %v -- /bin/bash -c "%v"`, pod.Name, command)
 	output, err := k.ExecKubectlCommandCombined(kubeCommand, "")
 	return output, err
@@ -436,6 +438,7 @@ func (k *KubernetesUtil) ExecuteCommandCombinedInPod(pod coreV1.Pod, command str
 
 // 在pod中一次性执行shell命令
 func (k *KubernetesUtil) ExecuteCommandCombinedBackgroundInPod(pod coreV1.Pod, command string) {
+	command = "su smartide && " + command
 	kubeCommand := fmt.Sprintf(` exec  %v -- /bin/bash -c "%v"`, pod.Name, command)
 	k.ExecKubectlCommandCombined(kubeCommand, "")
 }
