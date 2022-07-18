@@ -204,12 +204,12 @@ func Send_WorkspaceInfo(callbackAPI string, feedbackCommand FeedbackCommandEnum,
 
 	common.SetTimeOut(3 * time.Minute)                           // 设置超时时间
 	_, err := common.PostJson(serverFeedbackUrl, datas, headers) // post 请求
-	common.SmartIDELog.InfoF(i18nInstance.VmStart.Info_callback_msg, callbackAPI)
 
 	if err != nil {
 		return err
 	}
-	//common.SmartIDELog.Info(response)
+
+	common.SmartIDELog.InfoF(i18nInstance.VmStart.Info_callback_msg, callbackAPI)
 
 	return nil
 }
