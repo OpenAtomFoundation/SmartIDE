@@ -251,12 +251,13 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 	}
 
-	// ssh config file update
-	workspaceInfo.UpdateSSHConfig()
-
 	//calback external api
 	if calbackAPI != "" {
-		postWorkspaceInfo(workspaceInfo, calbackAPI)
+
+		containerWebIDEPort := workspaceInfo.ConfigYaml.GetContainerWebIDEPort()
+		err = smartideServer.Send_WorkspaceInfo(calbackAPI, smartideServer.FeedbackCommandEnum_Start, cmd, true, containerWebIDEPort, workspaceInfo)
+		common.CheckError(err)
+
 	}
 
 	//7. 如果是不进行端口映射，直接退出
@@ -267,11 +268,14 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	//7.1 如果mode=pipeline，也不需要端口映射，直接退出
 	if isModePipeline {
 		common.SmartIDELog.InfoF(i18nInstance.Start.Info_pipeline_mode_success)
-		IDEAddress := fmt.Sprintf("http://%v:%v", workspaceInfo.Remote.Addr, ideBindingPort)
+		IDEAddress := fmt.Sprintf("http://%v:%v/?folder=vscode-remote://%v:%v%v", workspaceInfo.Remote.Addr, ideBindingPort, workspaceInfo.Remote.Addr, ideBindingPort, workspaceInfo.GetContainerWorkingPathWithVolumes())
 		common.SmartIDELog.InfoF(IDEAddress)
 
 		return
 	}
+
+	// ssh config file update
+	workspaceInfo.UpdateSSHConfig()
 
 	//8. 端口绑定
 	//8.1. 执行绑定
