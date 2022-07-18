@@ -266,6 +266,10 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 	//7.1 如果mode=pipeline，也不需要端口映射，直接退出
 	if isModePipeline {
+		common.SmartIDELog.InfoF(i18nInstance.Start.Info_pipeline_mode_success)
+		IDEAddress := fmt.Sprintf("http://%v:%v", workspaceInfo.Remote.Addr, ideBindingPort)
+		common.SmartIDELog.InfoF(IDEAddress)
+
 		return
 	}
 
@@ -440,6 +444,7 @@ func postWorkspaceInfo(workspaceInfo workspace.WorkspaceInfo, apiURL string) err
 	if err != nil {
 		return err
 	}
-	common.SmartIDELog.Info(response)
+	common.SmartIDELog.InfoF(i18nInstance.VmStart.Info_callback_msg, apiURL)
+	common.SmartIDELog.Debug(response)
 	return nil
 }

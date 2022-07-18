@@ -95,6 +95,7 @@ type I18nSource struct {
 		Info_open_brower           string `json:"info_open_brower"`
 		Info_git_cloned            string `json:"info_git_cloned"`
 		Info_tunnel_waiting        string `json:"info_tunnel_waiting"`
+		Info_callback_msg          string `json:"info_callback_msg"`
 	} `json:"vm_start"`
 
 	Version struct {
@@ -127,6 +128,7 @@ type I18nSource struct {
 		Info_help_flag_k8s                  string `json:"info_help_flag_k8s"`
 		Info_help_flag_k8s_namespace        string `json:"info_help_flag_k8s_namespace"`
 		Info_help_flag_ownerguid            string `json:"info_help_flag_ownerguid"`
+		Info_pipeline_mode_success          string `json:"info_pipeline_mode_success"`
 
 		Info_start                   string `json:"info_start"`
 		Info_end                     string `json:"info_end"`
@@ -287,24 +289,23 @@ type I18nSource struct {
 		Err_ssh_dial_none                     string `json:"err_ssh_dial_none"`
 		Err_dal_remote_reference_by_workspace string `json:"err_dal_remote_reference_by_workspace"`
 
-		Info_privatekey_is_overwrite      string `json:"info_privatekey_is_overwrite"`
-		Info_whether_overwrite            string `json:"info_whether_overwrite"`
-		Info_gitrepo_clone_done           string `json:"info_gitrepo_clone_done"`
-		Info_gitrepo_cloned               string `json:"info_gitrepo_cloned"`
-		Info_please_enter_password        string `json:"info_please_enter_password"`
-		Info_canel_privatekey_password    string `json:"info_canel_privatekey_password"`
-		Info_port_is_binding              string `json:"info_port_is_binding"`
-		Info_port_binding_result2         string `json:"info_port_binding_result2"`
-		Info_port_binding_result          string `json:"info_port_binding_result"`
-		Info_find_new_port                string `json:"info_find_new_port"`
-		Info_ssh_webide_host_port         string `json:"info_ssh_webide_host_port"`
-		Info_ssh_host_port                string `json:"info_ssh_host_port"`
-		Info_temp_create_directory        string `json:"info_temp_create_directory"`
-		Info_temp_created_docker_compose  string `json:"info_temp_created_docker_compose"`
-		Info_temp_created_config          string `json:"info_temp_created_config"`
-		Info_table_header_containers      string `json:"info_table_header_containers"`
-		Info_ssh_rsa_cancel_pwd_successed string `json:"info_ssh_rsa_cancel_pwd_successed"`
-
+		Info_privatekey_is_overwrite       string `json:"info_privatekey_is_overwrite"`
+		Info_whether_overwrite             string `json:"info_whether_overwrite"`
+		Info_gitrepo_clone_done            string `json:"info_gitrepo_clone_done"`
+		Info_gitrepo_cloned                string `json:"info_gitrepo_cloned"`
+		Info_please_enter_password         string `json:"info_please_enter_password"`
+		Info_canel_privatekey_password     string `json:"info_canel_privatekey_password"`
+		Info_port_is_binding               string `json:"info_port_is_binding"`
+		Info_port_binding_result2          string `json:"info_port_binding_result2"`
+		Info_port_binding_result           string `json:"info_port_binding_result"`
+		Info_find_new_port                 string `json:"info_find_new_port"`
+		Info_ssh_webide_host_port          string `json:"info_ssh_webide_host_port"`
+		Info_ssh_host_port                 string `json:"info_ssh_host_port"`
+		Info_temp_create_directory         string `json:"info_temp_create_directory"`
+		Info_temp_created_docker_compose   string `json:"info_temp_created_docker_compose"`
+		Info_temp_created_config           string `json:"info_temp_created_config"`
+		Info_table_header_containers       string `json:"info_table_header_containers"`
+		Info_ssh_rsa_cancel_pwd_successed  string `json:"info_ssh_rsa_cancel_pwd_successed"`
 		Warn_dal_record_not_exit_condition string `json:"warn_dal_record_not_exit_condition"` // 没有查询到对应的数据
 		Warn_dal_record_not_exit           string `json:"warn_dal_record_not_exit"`           // 没有查询到对应的数据
 		Warn_param_is_null                 string `json:"warn_param_is_null"`                 // 参数为空

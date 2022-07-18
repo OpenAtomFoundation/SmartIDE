@@ -176,7 +176,7 @@ func GitConfig(isVmCommand bool, containerName string, cli *client.Client,
 
 func AddPublicKeyIntoAuthorizedkeys(docker common.Docker, dockerContainerName string) {
 
-	out, err := docker.Exec(context.Background(), dockerContainerName, "/usr/bin", []string{"bash", "-c", "cat /home/smartide/.ssh/id_rsa.pub > /home/smartide/.ssh/authorized_keys"}, []string{})
+	out, err := docker.Exec(context.Background(), dockerContainerName, "/usr/bin", []string{"bash", "-c", "[[ -f /home/smartide/.ssh/id_rsa.pub ]] && cat /home/smartide/.ssh/id_rsa.pub > /home/smartide/.ssh/authorized_keys"}, []string{})
 	common.CheckError(err)
 	common.SmartIDELog.Debug(out)
 }
