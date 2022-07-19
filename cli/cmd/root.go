@@ -55,7 +55,7 @@ var rootCmd = &cobra.Command{
 			config.GlobalSmartIdeConfig.IsInsightEnabled == config.IsInsightEnabledEnum_None {
 
 			var isInsightEnabled bool
-			common.SmartIDELog.ConsoleInLine("是否允许 Application Insights 收集您的运行信息？(y/n)")
+			common.SmartIDELog.ConsoleInLine("是否允许发送运行信息到SmartIDE，用以提升使用体验？(y/n)")
 			fmt.Scanln(&isInsightEnabled)
 			if isInsightEnabled {
 				config.GlobalSmartIdeConfig.IsInsightEnabled = config.IsInsightEnabledEnum_Enabled
