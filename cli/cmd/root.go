@@ -49,13 +49,13 @@ var rootCmd = &cobra.Command{
 	Long:  instanceI18nMain.Info_help_long, // logo only show in init
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 
-		// appInsight配置
+		// appInsight 是否开启收集
 		mode, _ := cmd.Flags().GetString("mode")
 		if !common.Contains([]string{"pipeline", "server"}, strings.ToLower(mode)) &&
 			config.GlobalSmartIdeConfig.IsInsightEnabled == config.IsInsightEnabledEnum_None {
 
 			var isInsightEnabled bool
-			common.SmartIDELog.Console("是否允许 Application Insights 收集您的运行信息？(y/n)")
+			common.SmartIDELog.ConsoleInLine("是否允许 Application Insights 收集您的运行信息？(y/n)")
 			fmt.Scanln(&isInsightEnabled)
 			if isInsightEnabled {
 				config.GlobalSmartIdeConfig.IsInsightEnabled = config.IsInsightEnabledEnum_Enabled
