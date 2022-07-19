@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-10 18:11:42
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-15 17:28:28
+ * @LastEditTime: 2022-07-19 11:18:24
  * @FilePath: /cli/pkg/common/http.go
  * @Description:
  *
@@ -27,6 +27,34 @@ import (
 	"strings"
 	"time"
 )
+
+type HttpClient struct {
+	RetryMax uint
+	TimeOut  time.Duration
+}
+
+func CreateHttpClient(retryMax uint, timeOut time.Duration) HttpClient {
+	return HttpClient{
+		RetryMax: retryMax,
+		TimeOut:  timeOut,
+	}
+}
+
+func (target HttpClient) PostJson(reqUrl string, reqParams map[string]interface{}, headers map[string]string) (string, error) {
+
+	result := ""
+	var err error = nil
+
+	var retryCount uint = 0
+	for {
+		result, err = post(reqUrl, reqParams, "application/json", nil, headers)
+		if err != nil && target.RetryMax > retryCount {
+			retryCount++
+		}
+	}
+
+	return result, err
+}
 
 type UploadFile struct {
 	// 表单名称
