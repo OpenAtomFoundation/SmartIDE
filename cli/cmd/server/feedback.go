@@ -171,3 +171,45 @@ func Feedback_Finish(feedbackCommand FeedbackCommandEnum, cmd *cobra.Command,
 
 	return nil
 }
+
+// 反馈server工作区的创建情况
+func Send_WorkspaceInfo(callbackAPI string, feedbackCommand FeedbackCommandEnum, cmd *cobra.Command,
+	isSuccess bool, webidePort *int, workspaceInfo workspace.WorkspaceInfo) error {
+
+	serverFeedbackUrl := callbackAPI
+	configFileContent, _ := workspaceInfo.ConfigYaml.ToYaml()
+	tempYamlContent, _ := workspaceInfo.TempDockerCompose.ToYaml()
+	linkYmalContent, _ := workspaceInfo.LinkDockerCompose.ToYaml()
+	if workspaceInfo.Mode == workspace.WorkingMode_K8s {
+		tempYamlContent, _ = workspaceInfo.K8sInfo.TempK8sConfig.ConvertToK8sYaml()
+		linkYmalContent, _ = workspaceInfo.K8sInfo.OriginK8sYaml.ConvertToK8sYaml()
+	}
+
+	extend := workspaceInfo.Extend.ToJson()
+
+	//2.
+	datas := map[string]interface{}{
+		"command":   string(feedbackCommand),
+		"isSuccess": isSuccess,
+	}
+	if feedbackCommand == FeedbackCommandEnum_Start { // 只有start的时候，才需要传递文件内容
+		datas["configFileContent"] = configFileContent
+		datas["tempDockerComposeContent"] = tempYamlContent
+		datas["linkDockerCompose"] = linkYmalContent
+		datas["extend"] = extend
+	} else if feedbackCommand == FeedbackCommandEnum_Ingress || feedbackCommand == FeedbackCommandEnum_ApplySSH {
+		datas["extend"] = extend
+	}
+	headers := map[string]string{"Content-Type": "application/json"}
+
+	common.SetTimeOut(3 * time.Minute)                           // 设置超时时间
+	_, err := common.PostJson(serverFeedbackUrl, datas, headers) // post 请求
+
+	if err != nil {
+		return err
+	}
+
+	common.SmartIDELog.InfoF(i18nInstance.VmStart.Info_callback_msg, callbackAPI)
+
+	return nil
+}
