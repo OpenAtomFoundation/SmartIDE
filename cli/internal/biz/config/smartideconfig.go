@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-19 11:41:06
+ * @LastEditTime: 2022-07-19 15:10:51
  */
 package config
 
@@ -24,9 +24,9 @@ var GlobalSmartIdeConfig GlobalConfig
 type IsInsightEnabledEnum string
 
 const (
-	IsInsightEnabledEnum_None      IsInsightEnabledEnum = ""
-	IsInsightEnabledEnum_Enabled   IsInsightEnabledEnum = "true"
-	IsInsightEnabledEnum_UnEnabled IsInsightEnabledEnum = "false"
+	IsInsightEnabledEnum_None     IsInsightEnabledEnum = ""
+	IsInsightEnabledEnum_Enabled  IsInsightEnabledEnum = "true"
+	IsInsightEnabledEnum_Disabled IsInsightEnabledEnum = "false"
 )
 
 //userhome下的config

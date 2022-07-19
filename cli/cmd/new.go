@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-04-20 17:08:53
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-19 11:53:00
+ * @LastEditTime: 2022-07-19 15:05:51
  * @FilePath: /cli/cmd/new.go
  */
 package cmd
@@ -36,6 +36,7 @@ var newCmd = &cobra.Command{
 		common.CheckError(err)
 		executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
 			if config.GlobalSmartIdeConfig.IsInsightEnabled != config.IsInsightEnabledEnum_Enabled {
+				common.SmartIDELog.Debug("Application Insights Unabled")
 				return
 			}
 			var imageNames []string

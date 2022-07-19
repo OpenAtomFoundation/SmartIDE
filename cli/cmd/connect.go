@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2022-02-25
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-19 11:52:42
+ * @LastEditTime: 2022-07-19 15:06:31
  */
 package cmd
 
@@ -161,6 +161,7 @@ func connect(startedServerWorkspaces []workspace.WorkspaceInfo, cmd *cobra.Comma
 	// appinsight
 	executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
 		if config.GlobalSmartIdeConfig.IsInsightEnabled != config.IsInsightEnabledEnum_Enabled {
+			common.SmartIDELog.Debug("Application Insights Unabled")
 			return
 		}
 		var imageNames []string

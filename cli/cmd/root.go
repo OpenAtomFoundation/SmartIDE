@@ -55,19 +55,18 @@ var rootCmd = &cobra.Command{
 			config.GlobalSmartIdeConfig.IsInsightEnabled == config.IsInsightEnabledEnum_None {
 
 			var isInsightEnabled bool
-			common.SmartIDELog.Console("是否允许我们收集您的执行信息！")
+			common.SmartIDELog.Console("是否允许 Application Insights 收集您的运行信息？(y/n)")
 			fmt.Scanln(&isInsightEnabled)
 			if isInsightEnabled {
 				config.GlobalSmartIdeConfig.IsInsightEnabled = config.IsInsightEnabledEnum_Enabled
 			} else {
-				config.GlobalSmartIdeConfig.IsInsightEnabled = config.IsInsightEnabledEnum_UnEnabled
+				config.GlobalSmartIdeConfig.IsInsightEnabled = config.IsInsightEnabledEnum_Disabled
 			}
 			config.GlobalSmartIdeConfig.SaveConfigYaml()
 		}
 
 		// appInsight
 		if cmd.Use == "start" || cmd.Use == "new" {
-
 		} else {
 			if config.GlobalSmartIdeConfig.IsInsightEnabled == config.IsInsightEnabledEnum_Enabled {
 				//ai记录
@@ -76,6 +75,8 @@ var rootCmd = &cobra.Command{
 					trackEvent = trackEvent + " " + val
 				}
 				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, "no", "no")
+			} else {
+				common.SmartIDELog.Debug("Application Insights Unabled")
 			}
 
 		}
