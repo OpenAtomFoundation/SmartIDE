@@ -54,10 +54,11 @@ var rootCmd = &cobra.Command{
 		if !common.Contains([]string{"pipeline", "server"}, strings.ToLower(mode)) &&
 			config.GlobalSmartIdeConfig.IsInsightEnabled == config.IsInsightEnabledEnum_None {
 
-			var isInsightEnabled bool
+			var isInsightEnabled string
 			fmt.Print("是否允许发送运行信息到SmartIDE，用以提升使用体验？(y/n)")
 			fmt.Scanln(&isInsightEnabled)
-			if isInsightEnabled {
+			isInsightEnabled = strings.ToLower(isInsightEnabled)
+			if isInsightEnabled == "y" || isInsightEnabled == "yes" {
 				config.GlobalSmartIdeConfig.IsInsightEnabled = config.IsInsightEnabledEnum_Enabled
 			} else {
 				config.GlobalSmartIdeConfig.IsInsightEnabled = config.IsInsightEnabledEnum_Disabled
@@ -76,7 +77,7 @@ var rootCmd = &cobra.Command{
 				}
 				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, "no", "no")
 			} else {
-				common.SmartIDELog.Debug("Application Insights Unabled")
+				common.SmartIDELog.Debug("Application Insights disabled")
 			}
 
 		}

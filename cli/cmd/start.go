@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-19 15:06:20
+ * @LastEditTime: 2022-07-19 16:59:11
  */
 package cmd
 
@@ -120,7 +120,7 @@ var startCmd = &cobra.Command{
 
 		executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
 			if config.GlobalSmartIdeConfig.IsInsightEnabled != config.IsInsightEnabledEnum_Enabled {
-				common.SmartIDELog.Debug("Application Insights Unabled")
+				common.SmartIDELog.Debug("Application Insights disabled")
 				return
 			}
 			var imageNames []string

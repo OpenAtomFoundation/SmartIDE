@@ -161,7 +161,7 @@ func connect(startedServerWorkspaces []workspace.WorkspaceInfo, cmd *cobra.Comma
 	// appinsight
 	executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
 		if config.GlobalSmartIdeConfig.IsInsightEnabled != config.IsInsightEnabledEnum_Enabled {
-			common.SmartIDELog.Debug("Application Insights Unabled")
+			common.SmartIDELog.Debug("Application Insights disabled")
 			return
 		}
 		var imageNames []string
