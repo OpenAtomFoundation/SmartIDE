@@ -29,6 +29,7 @@ import (
 
 	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
+	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
@@ -47,17 +48,39 @@ var rootCmd = &cobra.Command{
 	Short: instanceI18nMain.Info_help_short,
 	Long:  instanceI18nMain.Info_help_long, // logo only show in init
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+
+		// appInsight配置
+		mode, _ := cmd.Flags().GetString("mode")
+		if !common.Contains([]string{"pipeline", "server"}, strings.ToLower(mode)) &&
+			config.GlobalSmartIdeConfig.IsInsightEnabled == config.IsInsightEnabledEnum_None {
+
+			var isInsightEnabled bool
+			common.SmartIDELog.Console("是否允许我们收集您的执行信息！")
+			fmt.Scanln(&isInsightEnabled)
+			if isInsightEnabled {
+				config.GlobalSmartIdeConfig.IsInsightEnabled = config.IsInsightEnabledEnum_Enabled
+			} else {
+				config.GlobalSmartIdeConfig.IsInsightEnabled = config.IsInsightEnabledEnum_UnEnabled
+			}
+			config.GlobalSmartIdeConfig.SaveConfigYaml()
+		}
+
+		// appInsight
 		if cmd.Use == "start" || cmd.Use == "new" {
 
 		} else {
-			//ai记录
-			var trackEvent string
-			for _, val := range args {
-				trackEvent = trackEvent + " " + val
+			if config.GlobalSmartIdeConfig.IsInsightEnabled == config.IsInsightEnabledEnum_Enabled {
+				//ai记录
+				var trackEvent string
+				for _, val := range args {
+					trackEvent = trackEvent + " " + val
+				}
+				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, "no", "no")
 			}
-			appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, "no", "no")
+
 		}
-		// 初始化
+
+		// 初始化 log
 		logLevel := ""
 		if isDebug {
 			logLevel = "debug"

@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-04-20 17:08:53
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-11 15:26:40
- * @FilePath: /smartide-cli/cmd/new.go
+ * @LastEditTime: 2022-07-19 11:53:00
+ * @FilePath: /cli/cmd/new.go
  */
 package cmd
 
@@ -35,6 +35,9 @@ var newCmd = &cobra.Command{
 		workspaceInfo, err := getWorkspaceFromCmd(cmd, args)
 		common.CheckError(err)
 		executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
+			if config.GlobalSmartIdeConfig.IsInsightEnabled != config.IsInsightEnabledEnum_Enabled {
+				return
+			}
 			var imageNames []string
 			for _, service := range yamlConfig.Workspace.Servcies {
 				imageNames = append(imageNames, service.Image)
