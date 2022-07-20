@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-15 09:46:40
+ * @LastEditTime: 2022-07-19 16:59:11
  */
 package cmd
 
@@ -119,6 +119,10 @@ var startCmd = &cobra.Command{
 		isUnforward, _ := cmd.Flags().GetBool("unforward")
 
 		executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
+			if config.GlobalSmartIdeConfig.IsInsightEnabled != config.IsInsightEnabledEnum_Enabled {
+				common.SmartIDELog.Debug("Application Insights disabled")
+				return
+			}
 			var imageNames []string
 			for _, service := range yamlConfig.Workspace.Servcies {
 				imageNames = append(imageNames, service.Image)

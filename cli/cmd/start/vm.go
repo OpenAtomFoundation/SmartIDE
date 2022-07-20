@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-21 00:00:04
+ * @LastEditTime: 2022-07-19 15:00:33
  */
 package start
 
@@ -191,7 +191,6 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	}
 
 	//6. 当前主机绑定到远程端口
-	common.SmartIDELog.Info(i18nInstance.VmStart.Info_tunnel_waiting) // log
 	var addrMapping map[string]string = map[string]string{}
 	remotePortBindings := tempDockerCompose.GetPortBindings() //
 	unusedLocalPort4IdeBindingPort := ideBindingPort          // 未使用的本地端口，与ide端口对应
@@ -208,24 +207,18 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		addrMapping["localhost:"+strconv.Itoa(unusedLocalPort)] = "localhost:" + remoteBindingPort
 
 		// 日志
-		unusedLocalPortStr := strconv.Itoa(unusedLocalPort)
 		// 【注意】这里非常的绕！！！ 远程主机的docker-compose才保存了端口的label信息，所以只能使用远程主机的端口
 		containerPortInt, _ := strconv.Atoi(containerPort)
 		label := currentConfig.GetLabelWithPort(0, remoteBindingPortInt, containerPortInt)
 
 		for i, port := range workspaceInfo.Extend.Ports {
 			if port.HostPortDesc == label {
-				workspaceInfo.Extend.Ports[i].CurrentHostPort = unusedLocalPort
+				workspaceInfo.Extend.Ports[i].CurrentHostPort = remoteBindingPortInt
+				workspaceInfo.Extend.Ports[i].OldClientPort = port.ClientPort
 				workspaceInfo.Extend.Ports[i].ClientPort = unusedLocalPort
 				break
 			}
 		}
-		if label != "" {
-			unusedLocalPortStr += fmt.Sprintf("(%v)", label)
-		}
-		msg := fmt.Sprintf("localhost:%v -> %v:%v -> container:%v",
-			unusedLocalPortStr, workspaceInfo.Remote.Addr, remoteBindingPort, containerPort)
-		common.SmartIDELog.Info(msg)
 	}
 
 	//7. 保存数据
@@ -274,10 +267,24 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		return
 	}
 
-	// ssh config file update
+	//7.2. ssh config file update
 	workspaceInfo.UpdateSSHConfig()
 
 	//8. 端口绑定
+	common.SmartIDELog.Info(i18nInstance.VmStart.Info_tunnel_waiting) // log
+	for _, item := range workspaceInfo.Extend.Ports {
+		unusedLocalPortStr := strconv.Itoa(item.ContainerPort)
+
+		// 【注意】这里非常的绕！！！ 远程主机的docker-compose才保存了端口的label信息，所以只能使用远程主机的端口
+		label := currentConfig.GetLabelWithPort(0, item.CurrentHostPort, item.ContainerPort)
+		if label != "" {
+			unusedLocalPortStr += fmt.Sprintf("(%v)", label)
+		}
+
+		msg := fmt.Sprintf("localhost:%v -> %v:%v -> container:%v",
+			unusedLocalPortStr, workspaceInfo.Remote.Addr, item.CurrentHostPort, item.ContainerPort)
+		common.SmartIDELog.Info(msg)
+	}
 	//8.1. 执行绑定
 	tunnel.TunnelMultiple(sshRemote.Connection, addrMapping) // 端口转发
 	//8.2. 打开浏览器

@@ -29,6 +29,7 @@ import (
 
 	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
+	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
@@ -47,17 +48,41 @@ var rootCmd = &cobra.Command{
 	Short: instanceI18nMain.Info_help_short,
 	Long:  instanceI18nMain.Info_help_long, // logo only show in init
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		if cmd.Use == "start" || cmd.Use == "new" {
 
-		} else {
-			//ai记录
-			var trackEvent string
-			for _, val := range args {
-				trackEvent = trackEvent + " " + val
+		// appInsight 是否开启收集
+		mode, _ := cmd.Flags().GetString("mode")
+		if !common.Contains([]string{"pipeline", "server"}, strings.ToLower(mode)) &&
+			config.GlobalSmartIdeConfig.IsInsightEnabled == config.IsInsightEnabledEnum_None {
+
+			var isInsightEnabled string
+			fmt.Print("是否允许发送运行信息到SmartIDE，用以提升使用体验？(y/n)")
+			fmt.Scanln(&isInsightEnabled)
+			isInsightEnabled = strings.ToLower(isInsightEnabled)
+			if isInsightEnabled == "y" || isInsightEnabled == "yes" {
+				config.GlobalSmartIdeConfig.IsInsightEnabled = config.IsInsightEnabledEnum_Enabled
+			} else {
+				config.GlobalSmartIdeConfig.IsInsightEnabled = config.IsInsightEnabledEnum_Disabled
 			}
-			appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, "no", "no")
+			config.GlobalSmartIdeConfig.SaveConfigYaml()
 		}
-		// 初始化
+
+		// appInsight
+		if cmd.Use == "start" || cmd.Use == "new" {
+		} else {
+			if config.GlobalSmartIdeConfig.IsInsightEnabled == config.IsInsightEnabledEnum_Enabled {
+				//ai记录
+				var trackEvent string
+				for _, val := range args {
+					trackEvent = trackEvent + " " + val
+				}
+				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, "no", "no")
+			} else {
+				common.SmartIDELog.Debug("Application Insights disabled")
+			}
+
+		}
+
+		// 初始化 log
 		logLevel := ""
 		if isDebug {
 			logLevel = "debug"

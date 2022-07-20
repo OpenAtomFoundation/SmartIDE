@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-15 23:10:16
+ * @LastEditTime: 2022-07-19 16:21:19
  */
 package config
 
@@ -21,12 +21,21 @@ const configFileName = ".ide.config"
 var SmartIdeHome string
 var GlobalSmartIdeConfig GlobalConfig
 
+type IsInsightEnabledEnum string
+
+const (
+	IsInsightEnabledEnum_None     IsInsightEnabledEnum = ""
+	IsInsightEnabledEnum_Enabled  IsInsightEnabledEnum = "true"
+	IsInsightEnabledEnum_Disabled IsInsightEnabledEnum = "false"
+)
+
 //userhome下的config
 type GlobalConfig struct {
-	TemplateRepo    string       `yaml:"template-repo"`
-	ImagesRegistry  string       `yaml:"images-registry"`
-	DefaultLoginUrl string       `yaml:"default-login-url"`
-	Auths           []model.Auth `yaml:"auths"`
+	TemplateRepo     string               `yaml:"template-repo"`
+	ImagesRegistry   string               `yaml:"images-registry"`
+	DefaultLoginUrl  string               `yaml:"default-login-url"`
+	Auths            []model.Auth         `yaml:"auths"`
+	IsInsightEnabled IsInsightEnabledEnum `yaml:"isInsightEnabled"`
 }
 
 func GetCurrentAuth(auths []model.Auth) model.Auth {
