@@ -70,19 +70,20 @@ func Trigger_Action(action string, serverWorkspaceNo string, auth model.Auth, da
 	if action != "stop" && action != "remove" {
 		return errors.New("当前方法仅支持stop 或 remove")
 	}
+	datas["no"] = serverWorkspaceNo
+
+	headers := map[string]string{
+		"Content-Type": "application/json",
+		"x-token":      auth.Token.(string),
+	}
 
 	url, err := common.UrlJoin(auth.LoginUrl, "/api/smartide/workspace/", action)
 	if err != nil {
 		return err
 	}
-	datas["no"] = serverWorkspaceNo
 
-	header := map[string]string{
-		"Content-Type": "application/json",
-		"x-token":      auth.Token.(string),
-	}
-
-	response, err := common.Put(url.String(), datas, header)
+	httpClient := common.CreateHttpClient(6, 30*time.Second, common.ResponseBodyTypeEnum_JSON)
+	response, err := httpClient.Put(url.String(), datas, headers) // post 请求
 	if err != nil {
 		return err
 	}
@@ -161,8 +162,8 @@ func Feedback_Finish(feedbackCommand FeedbackCommandEnum, cmd *cobra.Command,
 	}
 	headers := map[string]string{"Content-Type": "application/json", "x-token": serverModeInfo.ServerToken}
 
-	common.SetTimeOut(3 * time.Minute)                                   // 设置超时时间
-	_, err = common.PostJson(serverFeedbackUrl.String(), datas, headers) // post 请求
+	httpClient := common.CreateHttpClient(6, 30*time.Second, common.ResponseBodyTypeEnum_JSON)
+	_, err = httpClient.PostJson(serverFeedbackUrl.String(), datas, headers) // post 请求
 
 	if err != nil {
 		return err
@@ -202,8 +203,8 @@ func Send_WorkspaceInfo(callbackAPI string, feedbackCommand FeedbackCommandEnum,
 	}
 	headers := map[string]string{"Content-Type": "application/json"}
 
-	common.SetTimeOut(3 * time.Minute)                           // 设置超时时间
-	_, err := common.PostJson(serverFeedbackUrl, datas, headers) // post 请求
+	httpClient := common.CreateHttpClient(6, 30*time.Second, common.ResponseBodyTypeEnum_JSON)
+	_, err := httpClient.PostJson(serverFeedbackUrl, datas, headers) // post 请求
 
 	if err != nil {
 		return err

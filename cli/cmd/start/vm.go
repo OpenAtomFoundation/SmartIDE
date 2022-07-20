@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-19 15:00:33
+ * @LastEditTime: 2022-07-20 16:28:00
  */
 package start
 
@@ -175,12 +175,12 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 			if strings.Contains(output, ":error") || strings.Contains(output, ":fatal") {
 				common.SmartIDELog.Error(output)
 
-			} else {
-				//common.SmartIDELog.ConsoleInLine(output)
-				if strings.Contains(output, "Pulling") {
+			} /*else {
+				 if strings.Contains(output, "Pulling") || strings.Contains(output, "Running") {
 					fmt.Println()
 				}
-			}
+				//common.SmartIDELog.ConsoleInLine(output)
+			}*/
 
 			return nil
 		}
@@ -246,7 +246,6 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 	//calback external api
 	if calbackAPI != "" {
-
 		containerWebIDEPort := workspaceInfo.ConfigYaml.GetContainerWebIDEPort()
 		err = smartideServer.Send_WorkspaceInfo(calbackAPI, smartideServer.FeedbackCommandEnum_Start, cmd, true, containerWebIDEPort, workspaceInfo)
 		common.CheckError(err)
