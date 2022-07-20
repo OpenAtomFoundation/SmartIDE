@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-19 16:59:11
+ * @LastEditTime: 2022-07-20 15:26:28
  */
 package cmd
 
@@ -307,8 +307,13 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 		CacheEnv:      workspace.CacheEnvEnum_Local,
 	}
 	// 运行环境
-	if value, _ := fflags.GetString("mode"); strings.ToLower(value) == "server" { // || strings.Index(strings.ToLower(workspaceIdStr), "ws") == 1
-		workspaceInfo.CliRunningEnv = workspace.CliRunningEvnEnum_Server
+	if value, _ := fflags.GetString("mode"); value != "" { // || strings.Index(strings.ToLower(workspaceIdStr), "ws") == 1
+		if strings.ToLower(value) == "server" {
+			workspaceInfo.CliRunningEnv = workspace.CliRunningEvnEnum_Server
+		} else if strings.ToLower(value) == "pipeline" {
+			workspaceInfo.CliRunningEnv = workspace.CliRunningEvnEnum_Pipeline
+		}
+
 	}
 	if strings.Index(strings.ToLower(workspaceIdStr), "ws") == 1 {
 		workspaceInfo.CacheEnv = workspace.CacheEnvEnum_Server
