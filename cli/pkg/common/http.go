@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-10 18:11:42
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-20 11:30:22
+ * @LastEditTime: 2022-07-20 15:35:57
  * @FilePath: /cli/pkg/common/http.go
  * @Description:
  *
@@ -28,15 +28,24 @@ import (
 	"time"
 )
 
+type ResponseBodyTypeEnum string
+
+const (
+	ResponseBodyTypeEnum_JSON ResponseBodyTypeEnum = "json"
+	ResponseBodyTypeEnum_HTML ResponseBodyTypeEnum = "html"
+)
+
 type HttpClient struct {
-	RetryMax uint
-	TimeOut  time.Duration
+	RetryMax         uint
+	TimeOut          time.Duration
+	ResponseBodyType ResponseBodyTypeEnum
 }
 
-func CreateHttpClient(retryMax uint, timeOut time.Duration) HttpClient {
+func CreateHttpClient(retryMax uint, timeOut time.Duration, responseBodyType ResponseBodyTypeEnum) HttpClient {
 	return HttpClient{
-		RetryMax: retryMax,
-		TimeOut:  timeOut,
+		RetryMax:         retryMax,
+		TimeOut:          timeOut,
+		ResponseBodyType: responseBodyType,
 	}
 }
 

@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-11 16:49:40
+ * @LastEditTime: 2022-07-20 16:21:21
  */
 package common
 
@@ -834,7 +834,19 @@ func (instance *SSHRemote) ExecSSHCommandRealTimeFunc(sshCommand string, customE
 				continue
 			}
 
-			array := strings.Split(originMsg, "\r\n")
+			err = originExecuteFun(originMsg)
+			if err != nil {
+				return err
+			}
+
+			if customExecuteFun != nil {
+				err = customExecuteFun(originMsg)
+				if err != nil {
+					return err
+				}
+			}
+
+			/* array := strings.Split(originMsg, "\r\n")
 			for _, sub := range array {
 				if len(sub) == 0 || sub == "\r\n" { //|| sub == "\r"
 					continue
@@ -851,7 +863,7 @@ func (instance *SSHRemote) ExecSSHCommandRealTimeFunc(sshCommand string, customE
 						return err
 					}
 				}
-			}
+			} */
 
 		}
 		return nil
