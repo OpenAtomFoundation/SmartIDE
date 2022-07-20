@@ -307,7 +307,7 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 		CacheEnv:      workspace.CacheEnvEnum_Local,
 	}
 	// 运行环境
-	if value, _ := fflags.GetString("mode"); value != "" { // || strings.Index(strings.ToLower(workspaceIdStr), "ws") == 1
+	if value, _ := fflags.GetString("mode"); value != "" {
 		if strings.ToLower(value) == "server" {
 			workspaceInfo.CliRunningEnv = workspace.CliRunningEvnEnum_Server
 		} else if strings.ToLower(value) == "pipeline" {
