@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-10 18:11:42
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-19 11:18:24
+ * @LastEditTime: 2022-07-20 11:30:22
  * @FilePath: /cli/pkg/common/http.go
  * @Description:
  *
@@ -40,16 +40,60 @@ func CreateHttpClient(retryMax uint, timeOut time.Duration) HttpClient {
 	}
 }
 
+func (target HttpClient) Put(reqUrl string, reqParams map[string]interface{}, headers map[string]string) (string, error) {
+
+	result := ""
+	var err error = nil
+
+	if target.TimeOut > 0 {
+		timeout = target.TimeOut
+	}
+
+	var retryCount uint = 0
+	for {
+		result, err = put(reqUrl, reqParams, headers)
+		if err == nil {
+			if result == "" {
+				err = errors.New("response body is empty")
+			} else if !IsJSON(result) {
+				err = errors.New("response body is not json")
+			}
+		}
+		if err != nil && target.RetryMax > retryCount {
+			SmartIDELog.Warning(err.Error())
+			retryCount++
+		} else {
+			break
+		}
+	}
+
+	return result, err
+}
+
 func (target HttpClient) PostJson(reqUrl string, reqParams map[string]interface{}, headers map[string]string) (string, error) {
 
 	result := ""
 	var err error = nil
 
+	if target.TimeOut > 0 {
+		timeout = target.TimeOut
+	}
+
 	var retryCount uint = 0
 	for {
 		result, err = post(reqUrl, reqParams, "application/json", nil, headers)
+		if err == nil {
+			if result == "" {
+				err = errors.New("response body is empty")
+			} else if !IsJSON(result) {
+				err = errors.New("response body is not json")
+			}
+		}
 		if err != nil && target.RetryMax > retryCount {
+			SmartIDELog.Warning(err.Error())
 			retryCount++
+		} else {
+			break
 		}
 	}
 
@@ -123,6 +167,11 @@ func PostFile(reqUrl string, reqParams map[string]interface{}, files []UploadFil
 }
 
 func Put(reqUrl string, reqParams map[string]interface{}, headers map[string]string) (string, error) {
+	return put(reqUrl, reqParams, headers)
+
+}
+
+func put(reqUrl string, reqParams map[string]interface{}, headers map[string]string) (string, error) {
 	requestBody, realContentType := getReader(reqParams, "application/json", nil)
 	httpRequest, _ := http.NewRequest("PUT", reqUrl, requestBody)
 
@@ -150,6 +199,7 @@ func Put(reqUrl string, reqParams map[string]interface{}, headers map[string]str
 	response, err := ioutil.ReadAll(resp.Body)
 	SmartIDELog.Debug("response: " + string(response))
 	return string(response), err
+
 }
 
 //
