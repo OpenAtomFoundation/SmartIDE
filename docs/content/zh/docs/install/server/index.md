@@ -88,11 +88,11 @@ ssh smartide@<server ip address> -p <server SSH port>
 国内网络一键安装
 
 ```bash
-curl -LO https://gitee.com/smartide/SmartIDE/raw/main/server/deployment/deployment_cn.sh -o deployment_cn.sh&& bash deployment_cn.sh
+curl -LO https://gitee.com/smartide/SmartIDE/raw/main/deployment/deployment_cn.sh -o deployment_cn.sh&& bash deployment_cn.sh
 ```
 国际网络一键安装
 ```bash
-curl -s https://gitee.com/smartide/SmartIDE/raw/main/server/deployment/deployment.sh -o deployment.sh&& bash deployment.sh
+curl -s https://gitee.com/smartide/SmartIDE/raw/main/deployment/deployment.sh -o deployment.sh&& bash deployment.sh
 ```
 安装步骤中，需要输入SmartIDE Server对外服务的IP地址，在这里输入本地对外服务的IP：
 
@@ -103,7 +103,7 @@ curl -s https://gitee.com/smartide/SmartIDE/raw/main/server/deployment/deploymen
 安装过程一般需要持续10分钟左右，以下是安装的完整日志
 
 ```bash
-localadmin@Private-Online-Deploy:~$ curl -LO https://gitee.com/smartide/SmartIDE/raw/main/server/deployment/deployment_cn.sh -o deployment_cn.sh&& bash deployment_cn.sh
+localadmin@Private-Online-Deploy:~$ curl -LO https://gitee.com/smartide/SmartIDE/raw/main/deployment/deployment_cn.sh -o deployment_cn.sh&& bash deployment_cn.sh
 SmartIDE Server Deployment Start...
 请输入本机对外服务的IP地址：20.2.72.212
 SmartIDE Server Deployment : 1.Basic Component
