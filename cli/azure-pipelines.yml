@@ -11,8 +11,10 @@ trigger:
     include:
       - main
   paths:
+   include:
+     - cli
     exclude:
-      - azure-pipelines.yml
+      - cli/azure-pipelines.yml
 
 schedules:
   - cron: "0 12 * * *"
