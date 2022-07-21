@@ -57,7 +57,7 @@ var rootCmd = &cobra.Command{
 				common.SmartIDELog.Error("--isInsightDisabled [true|false] 在 --mode server|pipeline 时必须设置")
 			} else {
 				isInsightDisabled = strings.ToLower(isInsightDisabled)
-				if isInsightDisabled == "true" || isInsightDisabled == "yes" || isInsightDisabled == "y" || isInsightDisabled == "1" {
+				if isInsightDisabled == "false" || isInsightDisabled == "no" || isInsightDisabled == "n" || isInsightDisabled == "0" {
 					config.GlobalSmartIdeConfig.IsInsightEnabled = config.IsInsightEnabledEnum_Enabled
 				} else {
 					config.GlobalSmartIdeConfig.IsInsightEnabled = config.IsInsightEnabledEnum_Disabled
