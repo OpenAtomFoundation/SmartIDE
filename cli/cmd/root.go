@@ -54,7 +54,7 @@ var rootCmd = &cobra.Command{
 		if common.Contains([]string{"pipeline", "server"}, strings.ToLower(mode)) {
 			isInsightDisabled, _ := cmd.Flags().GetString("isInsightDisabled")
 			if isInsightDisabled == "" {
-				common.SmartIDELog.Error("isInsightDisabled 参数在 mode = server|pipeline 时必须设置")
+				common.SmartIDELog.Error("--isInsightDisabled [true|false] 在 --mode server|pipeline 时必须设置")
 			} else {
 				isInsightDisabled = strings.ToLower(isInsightDisabled)
 				if isInsightDisabled == "true" || isInsightDisabled == "yes" || isInsightDisabled == "y" || isInsightDisabled == "1" {
