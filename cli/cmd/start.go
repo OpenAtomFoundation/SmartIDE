@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-20 15:26:28
+ * @LastEditTime: 2022-07-21 10:42:22
  */
 package cmd
 
@@ -135,7 +135,6 @@ var startCmd = &cobra.Command{
 			start.ExecuteStartCmd(workspaceInfo, isUnforward, func(v string, d common.Docker) {}, executeStartCmdFunc)
 
 		} else if workspaceInfo.Mode == workspace.WorkingMode_K8s { //1.2. k8s 模式
-
 			k8sUtil, err := kubectl.NewK8sUtil(workspaceInfo.K8sInfo.KubeConfigFilePath,
 				workspaceInfo.K8sInfo.Context,
 				workspaceInfo.K8sInfo.Namespace)
