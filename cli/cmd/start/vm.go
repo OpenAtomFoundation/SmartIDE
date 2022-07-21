@@ -175,12 +175,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 			if strings.Contains(output, ":error") || strings.Contains(output, ":fatal") {
 				common.SmartIDELog.Error(output)
 
-			} /*else {
-				 if strings.Contains(output, "Pulling") || strings.Contains(output, "Running") {
-					fmt.Println()
-				}
-				//common.SmartIDELog.ConsoleInLine(output)
-			}*/
+			}
 
 			return nil
 		}

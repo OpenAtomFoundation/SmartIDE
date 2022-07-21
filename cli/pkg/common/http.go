@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-10 18:11:42
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-20 15:35:57
+ * @LastEditTime: 2022-07-20 22:00:05
  * @FilePath: /cli/pkg/common/http.go
  * @Description:
  *
