@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-20 17:41:48
+ * @LastEditTime: 2022-07-22 16:30:07
  */
 package config
 
@@ -98,14 +98,15 @@ func (yamlFileConfig *SmartIdeConfig) GetLabelWithPort(originHostPort, currentHo
 
 	// 先到变更中查找
 	for _, value := range yamlFileConfig.Workspace.DevContainer.bindingPorts {
-		if value.OriginHostPort == originHostPort || value.CurrentHostPort == currentHostPort {
+		if (originHostPort > 0 && value.OriginHostPort == originHostPort) ||
+			(currentHostPort > 0 && value.CurrentHostPort == currentHostPort) {
 			label = value.HostPortDesc
 			break
 		}
 	}
 
 	// 去初始配置中查找
-	if len(label) <= 0 {
+	if len(label) <= 0 && originHostPort > 0 {
 		for key, value := range yamlFileConfig.Workspace.DevContainer.Ports {
 			if value == originHostPort {
 				label = key

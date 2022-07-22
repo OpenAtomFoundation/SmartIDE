@@ -60,7 +60,8 @@ spec:
 
   steps:
     - name: smartide-cli
-      image: smartide/smartide-cli:3909
+      image: smartide/smartide-cli:4498
+
       script: |
         #!/bin/bash
 
@@ -71,29 +72,36 @@ spec:
 
         if [ "$(params.COMMAND)" == "start" ]; then 
           echo "smartide start running"
-          smartide start $(params.ARGS) --debug --mode server --host '$(params.HOST)' --username '$(params.SSH_USER_NAME)' --password '$(params.SSH_USER_PASSWORD)' --repourl '$(params.GIT_CLONE_URL)' --serverhost '$(params.SERVER_HOST)' --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)' --serverownerguid '$(params.SERVER_USER_GUID)'
+          echo "smartide start $(params.ARGS) --debug --mode server --isInsightDisabled false --host '$(params.HOST)' --username '$(params.SSH_USER_NAME)' --password '$(params.SSH_USER_PASSWORD)' --repourl '$(params.GIT_CLONE_URL)' --serverhost '$(params.SERVER_HOST)' --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)' --serverownerguid '$(params.SERVER_USER_GUID)'"
+          smartide start $(params.ARGS) --debug --mode server --isInsightDisabled false --host '$(params.HOST)' --username '$(params.SSH_USER_NAME)' --password '$(params.SSH_USER_PASSWORD)' --repourl '$(params.GIT_CLONE_URL)' --serverhost '$(params.SERVER_HOST)' --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)' --serverownerguid '$(params.SERVER_USER_GUID)'
         elif [ "$(params.COMMAND)" == "new" ]; then 
           echo "smartide new running"
-          echo "smartide new $(params.ARGS) --debug --mode server --host '$(params.HOST)' --username '$(params.SSH_USER_NAME)' --password '$(params.SSH_USER_PASSWORD)' --serverhost '$(params.SERVER_HOST)' --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)' "
-          smartide new $(params.ARGS) -y --debug --mode server --host '$(params.HOST)' --username '$(params.SSH_USER_NAME)' --password '$(params.SSH_USER_PASSWORD)' --serverhost '$(params.SERVER_HOST)' --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)'  
+          echo "smartide new $(params.ARGS) --debug --mode server --isInsightDisabled false --host '$(params.HOST)' --username '$(params.SSH_USER_NAME)' --password '$(params.SSH_USER_PASSWORD)' --serverhost '$(params.SERVER_HOST)' --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)' "
+          smartide new $(params.ARGS) -y --debug --mode server --isInsightDisabled false --host '$(params.HOST)' --username '$(params.SSH_USER_NAME)' --password '$(params.SSH_USER_PASSWORD)' --serverhost '$(params.SERVER_HOST)' --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)'  
         elif [ "$(params.COMMAND)" == "k8s" ]; then 
           echo "smartide k8s running"
-          echo "smartide start $(params.ARGS) --debug --mode server --serverhost '$(params.SERVER_HOST)' --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)' "
-          smartide start $(params.ARGS) --debug --mode server --serverhost '$(params.SERVER_HOST)' --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)'
+          echo "smartide start $(params.ARGS) --debug --mode server --isInsightDisabled false --serverhost '$(params.SERVER_HOST)' --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)' "
+          smartide start $(params.ARGS) --debug --mode server --isInsightDisabled false --serverhost '$(params.SERVER_HOST)' --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)' --serverownerguid '$(params.SERVER_USER_GUID)'
+        elif [ "$(params.COMMAND)" == "ingress" ]; then 
+          echo "smartide k8s ingress running"
+          echo "smartide k8s $(params.ARGS) --debug --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --mode server --isInsightDisabled false --serverhost '$(params.SERVER_HOST)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)' "
+          smartide k8s $(params.ARGS) --debug --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --mode server --isInsightDisabled false --serverhost '$(params.SERVER_HOST)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)'
+        elif [ "$(params.COMMAND)" == "applyssh" ]; then 
+          echo "smartide k8s applyssh running"
+          echo "smartide k8s applyssh $(params.ARGS) --debug --mode server --isInsightDisabled false --serverhost '$(params.SERVER_HOST)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)' "
+          smartide k8s applyssh $(params.ARGS) --debug --mode server --isInsightDisabled false --serverhost '$(params.SERVER_HOST)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)'
         else
           echo "smartide $(params.COMMAND) $(params.SERVER_WORK_SPACE_NO) running"
 
           if [ "$(params.COMMAND)" == "stop" ]; then
-            smartide $(params.COMMAND) $(params.ARGS) $(params.SERVER_WORK_SPACE_NO) --debug --mode server --serverhost '$(params.SERVER_HOST)' --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)'
+            smartide $(params.COMMAND) $(params.ARGS) $(params.SERVER_WORK_SPACE_NO) --debug --mode server --isInsightDisabled false --serverhost '$(params.SERVER_HOST)' --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)'
           elif [ "$(params.COMMAND)" == "remove" ]; then   
-            smartide $(params.COMMAND) $(params.ARGS) $(params.SERVER_WORK_SPACE_NO) -pyfi --debug --mode server --serverhost '$(params.SERVER_HOST)' --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)'
+            smartide $(params.COMMAND) $(params.ARGS) $(params.SERVER_WORK_SPACE_NO) -pyfi --debug --mode server --isInsightDisabled false --serverhost '$(params.SERVER_HOST)' --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)'
           elif [ "$(params.COMMAND)" == "remove_container" ]; then   
-            smartide remove $(params.SERVER_WORK_SPACE_NO) $(params.ARGS) -y -c --debug --mode server --serverhost '$(params.SERVER_HOST)' --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)'
+            smartide remove $(params.SERVER_WORK_SPACE_NO) $(params.ARGS) -y -c --debug --mode server --isInsightDisabled false --serverhost '$(params.SERVER_HOST)' --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)'
           else
             echo "未知的命令！"
           fi
         fi
 
         echo "end"
-
-        

@@ -22,9 +22,6 @@ spec:
   - name: GIT_CLONE_URL
     description: The git clone url
     default: 
-  - name: GIT_BRANCH
-    description: The git revision
-    default: 
 
   - name: SERVER_WORK_SPACE_ID
     description: 服务端工作区ID
