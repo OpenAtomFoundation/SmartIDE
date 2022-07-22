@@ -92,9 +92,9 @@ kubectl get nodes
 kubectl label nodes <节点名称> sysbox-install=yes
 ## 安装 sysbox container runtime
 ### 国内安装地址
-kubectl apply -f https://gitee.com/smartide/SmartIDE/raw/main/server/deployment/k8s-manifest/sysbox-install.yaml
+kubectl apply -f https://gitee.com/smartide/SmartIDE/raw/main/deployment/k8s/sysbox-install.yaml
 ### 国际安装地址
-kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/server/deployment/k8s-manifest/sysbox-install.yaml
+kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/deployment/k8s/sysbox-install.yaml
 ```
 
 执行后可以在k9s中实时查看安装进度，等待以下这个安装进程结束即可开始使用。

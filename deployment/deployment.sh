@@ -68,30 +68,30 @@ minikube addons enable ingress
 echo -e "$(colorEcho $GREEN SmartIDE Server Deployment : 3.Tekton Pipeline)"
 echo -e "$(colorEcho $BLUE SmartIDE Server Deployment : 3.1 Kubectl Apply Tekton Pipeline And DashBoard)"
 
-kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/server/deployment/pipeline/v0.32.0/tekton-release.yaml
-kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/server/deployment/dashboard/v0.32.0/tekton-dashboard-release.yaml
+kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/deployment/pipeline/v0.32.0/tekton-release.yaml
+kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/deployment/dashboard/v0.32.0/tekton-dashboard-release.yaml
 # 3.2 Tekton Trigger
 echo -e "$(colorEcho $BLUE SmartIDE Server Deployment : 3.2 Kubectl Apply Tekton Trigger)"
-kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/server/deployment/trigger/v0.18.0/release.yaml
-kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/server/deployment/trigger/v0.18.0/interceptors.yaml
+kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/deployment/trigger/v0.18.0/release.yaml
+kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/deployment/trigger/v0.18.0/interceptors.yaml
 # 3.3 Tekton SmartIDE Pipeline Configrate
 echo -e "$(colorEcho $BLUE SmartIDE Server Deployment : 3.3 Kubectl Apply Tekton SmartIDE Pipeline Configrate)"
 sleep 15
-kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/server/deployment/smartide-pipeline/dockerhub/trigger.yaml
-kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/server/deployment/smartide-pipeline/dockerhub/trigger-template.yaml
-kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/server/deployment/smartide-pipeline/dockerhub/trigger-binding.yaml
-kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/server/deployment/smartide-pipeline/dockerhub/trigger-event-listener.yaml
+kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/deployment/smartide-pipeline/dockerhub/trigger.yaml
+kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/deployment/smartide-pipeline/dockerhub/trigger-template.yaml
+kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/deployment/smartide-pipeline/dockerhub/trigger-binding.yaml
+kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/deployment/smartide-pipeline/dockerhub/trigger-event-listener.yaml
 sleep 20
-kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/server/deployment/smartide-pipeline/dockerhub/pipeline-smartide-cli.yaml
+kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/deployment/smartide-pipeline/dockerhub/pipeline-smartide-cli.yaml
 sleep 20
-kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/server/deployment/smartide-pipeline/dockerhub/task-smartide-cli-release.yaml
-kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/server/deployment/smartide-pipeline/ingress-el-trigger-listener-smartide-cli.yaml
+kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/deployment/smartide-pipeline/dockerhub/task-smartide-cli-release.yaml
+kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/deployment/smartide-pipeline/ingress-el-trigger-listener-smartide-cli.yaml
 echo -e "$(colorEcho $GREEN SmartIDE Server Deployment : 3.Tekton Pipeline Installed Successfully.)"
 # 4.SmartIDE Server
 echo -e "$(colorEcho $GREEN SmartIDE Server Deployment : 4.SmartIDE Server)"
-curl -LO https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/server/deployment/docker-compose.yaml
-curl -LO https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/server/deployment/docker-compose.env
-curl -LO https://gitee.com/smartide/SmartIDE/raw/main/server/deployment/config.docker.yaml
+curl -LO https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/deployment/docker-compose.yaml
+curl -LO https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/deployment/docker-compose.env
+curl -LO https://gitee.com/smartide/SmartIDE/raw/main/deployment/config.docker.yaml
 sed -i 's/gva-web/'"$serverIp"'/g' config.docker.yaml
 docker network create smartide-server-network
 docker-compose -f docker-compose.yaml --env-file docker-compose.env down

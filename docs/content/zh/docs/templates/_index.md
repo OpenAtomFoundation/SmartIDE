@@ -37,7 +37,7 @@ SmartIDE模版库本身是开源的，地址为
 完整的指令列表如下
 ```shell
 ## 完整技术栈和IDE匹配列表
-smartide new node|java|golang|dotnet|python|php|cpp [-t vscode|(webstorm|idea|rider|goland|pycharm｜phpstorm|clion)|opensumi]
+smartide new node|java|golang|dotnet|python|php|cpp [-t (vscode|vscode-vmlc)|(webstorm|(idea|idea-vmlc)|rider|goland|pycharm｜phpstorm|clion)|opensumi|vmlc]
 ```
 
 各个技术栈相关的模版启动指令如下：
@@ -51,8 +51,12 @@ smartide new node|java|golang|dotnet|python|php|cpp [-t vscode|(webstorm|idea|ri
 
 ## 创建带有node全版本sdk的开发容器，无IDE，可通过VSCode SSH Remote或者JetBrains Gateway接入
 smartide new node
+## 创建带有node全版本sdk的VMLC开发容器，无IDE，可通过VSCode SSH Remote或者JetBrains Gateway接入。只支持linux操作系统
+smartide new node -t vmlc
 ## 创建带有node全版本sdk的开发容器，使用VSCode WebIDE
 smartide new node -t vscode
+## 创建带有node全版本sdk的VMLC开发容器，使用VSCode WebIDE。只支持linux操作系统
+smartide new node -t vscode-vmlc
 ## 创建带有node全版本sdk的开发容器，使用JetBrains WebStorm WebIDE
 smartide new node -t webstorm
 ## 创建带有node全版本sdk的开发容器，使用Opensumi WebIDE
@@ -68,10 +72,16 @@ smartide new node -t opensumi
 
 ## 创建带有JDK的开发容器，无IDE，可通过VSCode SSH Remote或者JetBrains Gateway接入
 smartide new java
+## 创建带有JDK的VMLC开发容器，无IDE，可通过VSCode SSH Remote或者JetBrains Gateway接入。只支持linux操作系统
+smartide new java -t vmlc
 ## 创建带有JDK开发容器，使用VSCode WebIDE
 smartide new java -t vscode
+## 创建带有JDK的VMLC开发容器，使用VSCode WebIDE。只支持linux操作系统
+smartide new java -t vscode-vmlc
 ## 创建带有JDK开发容器，使用JetBrains IntelliJ IDEA WebIDE
 smartide new java -t idea
+## 创建带有JDK的VMLC开发容器，使用JetBrains IntelliJ IDEA WebIDE。只支持linux操作系统
+smartide new java -t idea-vmlc
 ```
 
 ### Go语言
@@ -162,22 +172,26 @@ SmartIDE开发者镜像分成3层提供，分别提供不同的能力。
 
 | **开发语言** | **镜像类型** | **tag**| **Pull命令**| **new指令**| **备注**|
 |----------|----------|---------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|----------------------------|-------------------------------------------------------------|
-| base     | 基础       | latest                                       | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-base-v2:latest`                                        | `se new base`              | 基于ubuntu:20.04，集成git、ssh server等基础库                         |
-| base     | 基础       | latest                                       | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-base-v2-vscode:latest`                                        | `se new base -t vscode`              | 基于ubuntu:20.04，集成git、ssh server等基础库，内置VSCode WebIDE                         |
+| base     | 基础       | latest                                       | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-base-v2:latest`                                        | `se new base`                  | 基于ubuntu:20.04，集成git、ssh server等基础库                         |
+| base     | 基础+VMLC  | latest                                       | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-base-v2-vmlc:latest`                                   | `se new base -t vmlc`          | 基于ubuntu:20.04，支持VMLC容器。集成git、ssh server等基础库，并包括Kind、Kubectl、Helm、K9S等基础库。只支持linux操作系统。  |
+| base     | 基础       | latest                                       | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-base-v2-vscode:latest`                                 | `se new base -t vscode`        | 基于ubuntu:20.04，集成git、ssh server等基础库，内置VSCode WebIDE       |
+| base     | 基础+VMLC  | latest                                       | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-base-v2-vscode-vmlc:latest`                            | `se new base -t vscode-vmlc`   | 基于ubuntu:20.04，支持VMLC容器。集成git、ssh server等基础库，内置VSCode WebIDE，并包括Kind、Kubectl、Helm、K9S等基础库。只支持linux操作系统。        |
 
 ### L1 - SDK镜像
 
 SDK镜像提供开发语言环境支持能力，同时提供SDK Only的使用方式，允许本地IDE将SDK镜像作为开发环境直接使用，不嵌入WebIDE
 
 | **开发语言** | **镜像类型** | **tag**| **Pull命令**| **new指令**| **备注**|
-|----------|----------|---------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|----------------------------|-------------------------------------------------------------|
-| node     | SDK      | all-version,latest                           | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-v2:latest`                                        | `se new node`              | 在base 镜像的基础上，集成了Node V14.17.6(默认)、V12.22.7 V16.7.0 SDK及nvm  |
-| Java     | SDK      | openjdk-11-jdk,latest                        | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-java-v2:latest`                                        | `se new java`              | 在Node SDK 镜像的基础上，集成Java Open JDK 11及maven                   |
-| golang   | SDK      | 1.17.5,latest; 1.16.12,1745                  | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-golang-v2:latest`                                      | `se new golang`            | 在Node SDK 镜像的基础上，集成Go SDK，分为1.17.5、1.16.12两个版本              |
-| python   | SDK      | all-version,latest                           | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-python-v2:latest`                                      | `se new python`            | 在Node SDK 镜像的基础上，集成python2和python3                          |
-| dotnet   | SDK      | 6.0,latest                                   | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-dotnet-v2:latest`                                      | `se new dotnet`            | 在Node SDK 镜像的基础上，集成Net6.0 SDK 和asp.net core                 |
-| php      | SDK      | php7.4,latest                                | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-php-v2:latest`                                             | `se new php`               | 在Node SDK 镜像的基础上，集成php7.4和Apache2                           |
-| C++ | SDK    | clang,latest          | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-cpp-v2:latest`                          | `se new cpp`           | 在Node SDK 镜像的基础上,集成cmake、clang       |
+|----------|----------|---------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|----------------------------|-------------------------------------------------------------------|
+| node     | SDK      | all-version,latest                           | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-v2:latest`                                        | `se new node`              | 在base 镜像的基础上，集成了Node V14.17.6(默认)、V12.22.7 V16.7.0 SDK及nvm |
+| node     | SDK+VMLC | all-version,latest                           | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-v2-vmlc:latest`                                   | `se new node -t vmlc`      | 在base vmlc 镜像的基础上，集成了Node V14.17.6(默认)、V12.22.7 V16.7.0 SDK及nvm。 只支持linux操作系统。|
+| Java     | SDK      | openjdk-11-jdk,latest                        | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-java-v2:latest`                                        | `se new java`              | 在Node SDK 镜像的基础上，集成Java Open JDK 11及maven                     |
+| Java     | SDK+VMLC | openjdk-11-jdk,latest                        | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-java-v2-vmlc:latest`                                   | `se new java -t vmlc`      | 在Node SDK VMLC 镜像的基础上，集成Java Open JDK 11及maven。只支持linux操作系统。 |
+| golang   | SDK      | 1.17.5,latest; 1.16.12,1745                  | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-golang-v2:latest`                                      | `se new golang`            | 在Node SDK 镜像的基础上，集成Go SDK，分为1.17.5、1.16.12两个版本           |
+| python   | SDK      | all-version,latest                           | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-python-v2:latest`                                      | `se new python`            | 在Node SDK 镜像的基础上，集成python2和python3                            |
+| dotnet   | SDK      | 6.0,latest                                   | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-dotnet-v2:latest`                                      | `se new dotnet`            | 在Node SDK 镜像的基础上，集成Net6.0 SDK 和asp.net core                   |
+| php      | SDK      | php7.4,latest                                | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-php-v2:latest`                                         | `se new php`               | 在Node SDK 镜像的基础上，集成php7.4和Apache2                             |
+| C++      | SDK      | clang,latest                                 | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-cpp-v2:latest`                                         | `se new cpp`               | 在Node SDK 镜像的基础上,集成cmake、clang                                 |
 
 ### L2 - WebIDE镜像
 
@@ -186,26 +200,29 @@ WebIDE镜像，在SDK镜像的基础上嵌入常用的IDE
 VSCode WebIDE
 
 | **开发语言** | **镜像类型** | **tag**| **Pull命令**| **new指令**| **备注**|
-|----------|----------|---------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|----------------------------|-------------------------------------------------------------|
-| node     | VSCode   | all-version,latest                           | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-v2-vscode:latest`                                 | `se new node -t vscode`    | 在SDK镜像的基础上集成VSCode WebIDE                                   |
-| Java     | VSCode   | openjdk-11-jdk,latest                        | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-java-v2-vscode:latest`                                 | `se new java -t vscode`    | 在SDK镜像的基础上集成VSCode WebIDE                                   |
-| golang   | VSCode   | 1.17.5,latest;1.16.12,1747                   | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-golang-v2-vscode:latest`                               | `se new golang -t vscode`  | 在SDK镜像的基础上集成VSCode WebIDE                                   |
-| python   | VSCode   | all-version,latest                           | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-python-v2-vscode:latest`                               | `se new python -t vscode`  | 在SDK镜像的基础上集成VSCode WebIDE                                   |
-| dotnet   | VSCode   | 6.0,latest                                   | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-dotnet-v2-vscode:latest`                               | `se new dotnet -t vscode`  | 在SDK镜像的基础上集成VSCode WebIDE                                   |
-| php      | VSCode   | php7.4,latest                                      | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-php-v2-vscode:latest`                                  | `se new php -t vscode`     | 在SDK镜像的基础上集成VSCode WebIDE                                   |
-| C++ | VSCode | clang,latest          | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-cpp-v2-vscode:latest`                   | `se new cpp -t vscode` | 在SDK镜像的基础上集成VSCode WebIDE            |
+|----------|--------------|----------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|-------------------------------|-------------------------------------------------------------|
+| node     | VSCode       | all-version,latest                           | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-v2-vscode:latest`                               | `se new node -t vscode`       | 在Node SDK镜像的基础上集成VSCode WebIDE                             |
+| node     | VSCode+VMLC  | all-version,latest                           | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-v2-vscode-vmlc:latest`                          | `se new node -t vscode-vmlc`  | 在Node SDK VMLC镜像的基础上集成VSCode WebIDE。只支持linux操作系统。    |
+| Java     | VSCode       | openjdk-11-jdk,latest                        | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-java-v2-vscode:latest`                               | `se new java -t vscode`       | 在Java SDK镜像的基础上集成VSCode WebIDE                             |
+| Java     | VSCode+VMLC  | openjdk-11-jdk,latest                        | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-java-v2-vscode:latest`                               | `se new java -t vscode-vmlc`  | 在Java SDK VMLC镜像的基础上集成VSCode WebIDE。只支持linux操作系统。    |
+| golang   | VSCode       | 1.17.5,latest;1.16.12,1747                   | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-golang-v2-vscode:latest`                             | `se new golang -t vscode`     | 在GoLang SDK镜像的基础上集成VSCode WebIDE                           |
+| python   | VSCode       | all-version,latest                           | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-python-v2-vscode:latest`                             | `se new python -t vscode`     | 在Python SDK镜像的基础上集成VSCode WebIDE                           |
+| dotnet   | VSCode       | 6.0,latest                                   | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-dotnet-v2-vscode:latest`                             | `se new dotnet -t vscode`     | 在DotNet SDK镜像的基础上集成VSCode WebIDE                           |
+| php      | VSCode       | php7.4,latest                                | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-php-v2-vscode:latest`                                | `se new php -t vscode`        | 在PHP SDK镜像的基础上集成VSCode WebIDE                              |
+| C++      | VSCode       | clang,latest                                 | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-cpp-v2-vscode:latest`                                | `se new cpp -t vscode`        | 在C++ SDK镜像的基础上集成VSCode WebIDE                              |
 
 JetBrains Projector WebIDE
 
 | **开发语言** | **镜像类型** | **tag**| **Pull命令**| **new指令**| **备注**|
-|----------|----------|---------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|----------------------------|-------------------------------------------------------------|
-| node     | WebStorm | 2021.3.2-2834,3.2-latest,latest              | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-v2-jetbrains-webstorm:latest`            | `se new node -t webstorm`  | 在SDK镜像的基础上集成WebStorm V2021.3.2 WebIDE                       |
-| Java     | IDEA     | 2021.2.3-openjdk-11-jdk-2832,2021.2.3-2832,2021.2.3-latest,latest | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-java-v2-jetbrains-idea:latest` | `se new java -t idea`      | 在SDK镜像的基础上集成IDEA社区版 V2021.2.3 WebIDE                        |
-| golang   | Goland   | 2021.3.3-2830,2021.3.3-latest,latest              | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-golang-v2-jetbrains-goland:latest`            | `se new golang -t goland`  | 在SDK镜像的基础上集成Goland  V2021.3.3 WebIDE                        |
-| python   | Pycharm  | all-version,2021.2.3-2850,latest                  | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-python-v2-jetbrains-pycharm:latest`          | `se new python -t pycharm` | 在SDK镜像的基础上集成 Pycharm  V2021.2.5 WebIDE                      |
-| dotnet   | Rider    | 6.0,2021.3.3-2828,latest                          | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-dotnet-v2-jetbrains-rider:latest`             | `se new dotnet -t rider`   | 在SDK镜像的基础上集成 Rider V2021.3.3 WebIDE                         |
-| php      | PhpStorm | 2021.3.2-php7.4-2837,2021.3.2-2837,2021.3.2-latest,latest       | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-php-v2-jetbrains-phpstorm:latest`      | `se new php -t phpstorm`   | 在SDK镜像的基础上集成PhpStorm社区版 V2021.2.7 WebIDE                    |
-| C++ | Clion  | clang,2021.3.3-2827,latest | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-cpp-v2-jetbrains-clion:latest` | `se new cpp -t clion`  | 在SDK镜像的基础上集成 Clion V2021.3.3 WebIDE  |
+|----------|------------|---------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|----------------------------------|--------------------------------------------------------------------|
+| node     | WebStorm   | 2021.3.2-2834,3.2-latest,latest                   | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-v2-jetbrains-webstorm:latest`                   | `se new node -t webstorm`        | 在Node SDK镜像的基础上集成WebStorm V2021.3.2 WebIDE                   |
+| Java     | IDEA       | 2021.2.3-openjdk-11-jdk-4108,2021.2.3-4108,2021.2.3-latest,latest | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-java-v2-jetbrains-idea:latest`       | `se new java -t idea`            | 在Java SDK镜像的基础上集成IDEA社区版 V2021.2.3 WebIDE                  |
+| Java     | IDEA+VMLC  | 2021.2.3-openjdk-11-jdk-4108,2021.2.3-4108,2021.2.3-latest,latest | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-java-v2-jetbrains-idea-vmlc:latest`  | `se new java -t idea-vmlc`       | 在Java SDK VMLC镜像的基础上集成IDEA社区版 V2021.2.3 WebIDE。只支持linux操作系统。  |
+| golang   | Goland     | 2021.3.3-2830,2021.3.3-latest,latest              | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-golang-v2-jetbrains-goland:latest`                   | `se new golang -t goland`        | 在SDK镜像的基础上集成Goland  V2021.3.3 WebIDE                         |
+| python   | Pycharm    | all-version,2021.2.3-2850,latest                  | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-python-v2-jetbrains-pycharm:latest`                  | `se new python -t pycharm`       | 在SDK镜像的基础上集成 Pycharm  V2021.2.5 WebIDE                       |
+| dotnet   | Rider      | 6.0,2021.3.3-2828,latest                          | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-dotnet-v2-jetbrains-rider:latest`                    | `se new dotnet -t rider`         | 在SDK镜像的基础上集成 Rider V2021.3.3 WebIDE                          |
+| php      | PhpStorm   | 2021.3.2-php7.4-2837,2021.3.2-2837,2021.3.2-latest,latest       | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-php-v2-jetbrains-phpstorm:latest`      | `se new php -t phpstorm`         | 在SDK镜像的基础上集成PhpStorm社区版 V2021.2.7 WebIDE                   |
+| C++      | Clion      | clang,2021.3.3-2827,latest                        | `docker pull registry.cn-hangzhou.aliyuncs.com/smartide/smartide-cpp-v2-jetbrains-clion:latest`                       | `se new cpp -t clion`            | 在SDK镜像的基础上集成 Clion V2021.3.3 WebIDE                          |
 
 OpenSumi WebIDE
 
