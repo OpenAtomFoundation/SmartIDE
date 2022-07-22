@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-22 16:52:23
+ * @LastEditTime: 2022-07-22 17:02:40
  */
 package start
 
@@ -263,7 +263,10 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	//7.1 如果mode=pipeline，也不需要端口映射，直接退出
 	if isModePipeline {
 		common.SmartIDELog.InfoF(i18nInstance.Start.Info_pipeline_mode_success)
-		IDEAddress := fmt.Sprintf("http://%v:%v/?folder=vscode-remote://%v:%v%v", workspaceInfo.Remote.Addr, ideBindingPort, workspaceInfo.Remote.Addr, ideBindingPort, workspaceInfo.GetContainerWorkingPathWithVolumes())
+		IDEAddress := fmt.Sprintf("http://%v:%v/?folder=vscode-remote://%v:%v%v",
+			workspaceInfo.Remote.Addr, ideBindingPort,
+			workspaceInfo.Remote.Addr, ideBindingPort,
+			workspaceInfo.GetContainerWorkingPathWithVolumes())
 		common.SmartIDELog.InfoF(IDEAddress)
 
 		return
