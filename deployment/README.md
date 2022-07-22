@@ -27,11 +27,11 @@ smartide   ALL=(ALL) NOPASSWD: ALL
 这里已为你准备好一键安装脚本，执行以下命令，即可完成全部安装过程。
 - 国内：
 ```language=bash
-curl -o- https://gitee.com/chileeb/SmartIDE/raw/main/server/deployment/online/deployment_cn.sh | bash
+curl -o- https://gitee.com/chileeb/SmartIDE/raw/main/deployment/online/deployment_cn.sh | bash
 ```
 - 国外：
 ```language=bash
-curl -o- https://gitee.com/chileeb/SmartIDE/raw/main/server/deployment/online/deployment.sh | bash
+curl -o- https://gitee.com/chileeb/SmartIDE/raw/main/deployment/online/deployment.sh | bash
 ```
 安装完成后，我们可以看到命令行中显示：
 SmartIDE Server Deployment Success！

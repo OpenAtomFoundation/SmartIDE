@@ -1,14 +1,6 @@
 # $(github_pat) is in pipeline varialbes
 name: $(date:yyyyMMdd)$(rev:.r)_$(Build.BuildId)_$(SourceBranchName)_$(Build.Reason)
 
-trigger:
-  branches:
-   include:
-     - main
-  paths:
-   exclude:
-     - azure-pipelines.yml
-
 resources:
   repositories:
   - repository: self
