@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-20 16:28:00
+ * @LastEditTime: 2022-07-22 09:50:01
  */
 package start
 
@@ -140,7 +140,6 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		// 从临时文件中加载docker-compose
 		tempDockerCompose, ideBindingPort, _ = currentConfig.LoadDockerComposeFromTempFile(sshRemote, workspaceInfo.TempYamlFileAbsolutePath)
 	}
-
 	//3.2. 扩展信息
 	workspaceInfo.Extend = workspaceInfo.GetWorkspaceExtend()
 
@@ -267,7 +266,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	//8. 端口绑定
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_tunnel_waiting) // log
 	for _, item := range workspaceInfo.Extend.Ports {
-		unusedLocalPortStr := strconv.Itoa(item.ContainerPort)
+		unusedLocalPortStr := strconv.Itoa(item.ClientPort)
 
 		// 【注意】这里非常的绕！！！ 远程主机的docker-compose才保存了端口的label信息，所以只能使用远程主机的端口
 		label := currentConfig.GetLabelWithPort(0, item.CurrentHostPort, item.ContainerPort)
