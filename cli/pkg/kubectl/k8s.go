@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:13:54
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-15 16:32:33
+ * @LastEditTime: 2022-07-25 17:43:21
  * @FilePath: /cli/pkg/kubectl/k8s.go
  */
 
@@ -133,14 +133,14 @@ func (k *KubernetesUtil) CreateKubeConfig(kubeConfigContent string) error {
 }
 
 // 拷贝本地ssh config到pod
-func (k *KubernetesUtil) CopyLocalSSHConfigToPod(pod coreV1.Pod) error {
+func (k *KubernetesUtil) CopyLocalSSHConfigToPod(pod coreV1.Pod, runAsUser string) error {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return err
 	}
 
 	// current user dir
-	podCurrentUserHomeDir, err := k.GetPodCurrentUserHomeDirection(pod)
+	podCurrentUserHomeDir, err := k.GetPodCurrentUserHomeDirection(pod, runAsUser)
 	if err != nil {
 		return err
 	}
@@ -150,22 +150,20 @@ func (k *KubernetesUtil) CopyLocalSSHConfigToPod(pod coreV1.Pod) error {
 	if runtime.GOOS == "windows" {
 		sshPath = filepath.Join(home, ".ssh\\")
 	}
-	err = k.CopyToPod(pod, sshPath, podCurrentUserHomeDir) //.ssh
+	err = k.CopyToPod(pod, sshPath, podCurrentUserHomeDir, runAsUser) //.ssh
 	if err != nil {
 		return err
 	}
 
 	// chmod
-	commad := `sudo echo -e 'Host *\n	StrictHostKeyChecking no' >>  ~/.ssh/config
- sudo chown smartide:smartide ~/.ssh/*
- sudo chmod 700 ~/.ssh/*`
-	k.ExecuteCommandRealtimeInPod(pod, commad)
+	commad := fmt.Sprintf(`sudo echo -e 'Host *\n	StrictHostKeyChecking no' >>  ~/.ssh/config`)
+	k.ExecuteCommandRealtimeInPod(pod, commad, runAsUser)
 
 	return nil
 }
 
 // 拷贝本地git config到pod
-func (k *KubernetesUtil) CopyLocalGitConfigToPod(pod coreV1.Pod) error {
+func (k *KubernetesUtil) CopyLocalGitConfigToPod(pod coreV1.Pod, runAsUser string) error {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return err
@@ -192,7 +190,7 @@ func (k *KubernetesUtil) CopyLocalGitConfigToPod(pod coreV1.Pod) error {
 		var value = str[index+1:]
 		if strings.Contains(key, "user.name") || strings.Contains(key, "user.email") {
 			gitConfigCmd := fmt.Sprintf(`git config --global --replace-all %v '%v'`, key, value)
-			err = k.ExecuteCommandRealtimeInPod(pod, gitConfigCmd)
+			err = k.ExecuteCommandRealtimeInPod(pod, gitConfigCmd, runAsUser)
 			if err != nil {
 				return err
 			}
@@ -203,7 +201,9 @@ func (k *KubernetesUtil) CopyLocalGitConfigToPod(pod coreV1.Pod) error {
 }
 
 // git clone
-func (k *KubernetesUtil) GitClone(pod coreV1.Pod, gitCloneUrl string, containerCloneDir string, branch string) error {
+func (k *KubernetesUtil) GitClone(pod coreV1.Pod,
+	runAsUser string,
+	gitCloneUrl string, containerCloneDir string, branch string) error {
 	// 设置目录为空时，使用默认的
 	if containerCloneDir == "" {
 		return errors.New("容器内克隆目录为空！")
@@ -212,12 +212,11 @@ func (k *KubernetesUtil) GitClone(pod coreV1.Pod, gitCloneUrl string, containerC
 	// 直接 git clone
 	cloneCommand := fmt.Sprintf(`	    
 		 [[ -d '%v' ]] && echo 'git repo existed！' || ( ([[ -d '%v' ]] && rm -rf %v) && git clone %v %v)
-		 sudo chown -R smartide:smartide %v`,
+		 `, //sudo chown -R smartide:smartide %v
 		filepath.Join(containerCloneDir, ".git"),
 		containerCloneDir, containerCloneDir+"/*",
-		gitCloneUrl, containerCloneDir,
-		containerCloneDir)
-	err := k.ExecuteCommandRealtimeInPod(pod, cloneCommand)
+		gitCloneUrl, containerCloneDir)
+	err := k.ExecuteCommandRealtimeInPod(pod, cloneCommand, runAsUser)
 	if err != nil {
 		return err
 	}
@@ -225,7 +224,7 @@ func (k *KubernetesUtil) GitClone(pod coreV1.Pod, gitCloneUrl string, containerC
 	// 切换到指定的分支
 	if branch != "" {
 		command := fmt.Sprintf("cd %v && git checkout %v", containerCloneDir, branch)
-		err := k.ExecuteCommandRealtimeInPod(pod, command)
+		err := k.ExecuteCommandRealtimeInPod(pod, command, runAsUser)
 		return err
 	}
 
@@ -233,7 +232,7 @@ func (k *KubernetesUtil) GitClone(pod coreV1.Pod, gitCloneUrl string, containerC
 }
 
 // 拷贝文件到pod
-func (k *KubernetesUtil) CopyToPod(pod coreV1.Pod, srcPath string, destPath string) error {
+func (k *KubernetesUtil) CopyToPod(pod coreV1.Pod, srcPath string, destPath string, runAsUser string) error {
 	//e.g. kubectl cp /tmp/foo <some-namespace>/<some-pod>:/tmp/bar
 	workingDir := ""
 	commnad := fmt.Sprintf("cp %v %v/%v:%v", srcPath, k.Namespace, pod.Name, destPath)
@@ -242,12 +241,23 @@ func (k *KubernetesUtil) CopyToPod(pod coreV1.Pod, srcPath string, destPath stri
 		workingDir = strings.Replace(srcPath, baseDir, "", -1)
 		commnad = fmt.Sprintf("cp %v %v/%v:%v", baseDir, k.Namespace, pod.Name, destPath)
 	}
-	return k.ExecKubectlCommandRealtime(commnad, workingDir, false)
+	err := k.ExecKubectlCommandRealtime(commnad, workingDir, false)
+	if err != nil {
+		return err
+	}
+
+	if runAsUser != "" {
+		podCommand := fmt.Sprintf(`sudo chown %v:%v ~/.ssh/*
+sudo chmod 700 ~/.ssh/*`, runAsUser, runAsUser)
+		k.ExecuteCommandCombinedInPod(pod, podCommand, "")
+	}
+
+	return nil
 }
 
 // 拷贝文件到pod
-func (k *KubernetesUtil) GetPodCurrentUserHomeDirection(pod coreV1.Pod) (string, error) {
-	tmp, err := k.ExecuteCommandCombinedInPod(pod, "cd ~ && pwd")
+func (k *KubernetesUtil) GetPodCurrentUserHomeDirection(pod coreV1.Pod, runAsUser string) (string, error) {
+	tmp, err := k.ExecuteCommandCombinedInPod(pod, "cd ~ && pwd", runAsUser)
 	if err != nil && !common.IsExitError(err) {
 		return "", err
 	}
@@ -277,7 +287,7 @@ const (
 	Flags_ServerOwnerGuid = "serverownerguid"
 )
 
-func (k *KubernetesUtil) StartAgent(cmd *cobra.Command, pod coreV1.Pod) error {
+func (k *KubernetesUtil) StartAgent(cmd *cobra.Command, pod coreV1.Pod, runAsUser string) error {
 	fflags := cmd.Flags()
 	host, _ := fflags.GetString(Flags_ServerHost)
 	token, _ := fflags.GetString(Flags_ServerToken)
@@ -285,7 +295,7 @@ func (k *KubernetesUtil) StartAgent(cmd *cobra.Command, pod coreV1.Pod) error {
 
 	commad := fmt.Sprintf("sudo chmod +x /smartide-agent && cd /;./smartide-agent --serverhost %s --servertoken %s --serverownerguid %s", host, token, ownerguid)
 
-	err := k.ExecuteCommandRealtimeInPod(pod, commad)
+	err := k.ExecuteCommandRealtimeInPod(pod, commad, runAsUser)
 	if err != nil {
 		return err
 	}
@@ -327,11 +337,9 @@ func (k *KubernetesUtil) ExecKubectlCommandRealtime(command string, dirctory str
 
 	if dirctory != "" {
 		execCommand.Dir = dirctory
-	} /* else {
-		 execCommand.Dir = path.Base(k.KubectlFilePath)
-	 } */
+	}
 
-	execCommand.Stdout = os.Stdin
+	//execCommand.Stdout = os.Stdin
 	execCommand.Stdout = NewProxyWriter(os.Stdout)
 	execCommand.Stderr = NewProxyWriter(os.Stderr)
 	return execCommand.Run()
@@ -354,9 +362,7 @@ func (k *KubernetesUtil) ExecKubectlCommand(command string, dirctory string, isL
 
 	if dirctory != "" {
 		execCommand.Dir = dirctory
-	} /* else {
-		 execCommand.Dir = path.Base(k.KubectlFilePath)
-	 } */
+	}
 
 	return execCommand.Run()
 }
@@ -418,8 +424,12 @@ func (k *KubernetesUtil) GetPod(selector string, namespace string) (*coreV1.Pod,
 
 // 在pod中实时执行shell命令
 // example: kubectl -it exec podname -- bash/sh -c
-func (k *KubernetesUtil) ExecuteCommandRealtimeInPod(pod coreV1.Pod, command string) error {
+func (k *KubernetesUtil) ExecuteCommandRealtimeInPod(pod coreV1.Pod, command string, runAsUser string) error {
 	//command = "su smartide -c " + command
+	if runAsUser != "" && runAsUser != "root" {
+		command = strings.ReplaceAll(command, "'", "\\\"")
+		command = fmt.Sprintf(`su %v -c '%v'`, runAsUser, command)
+	}
 	kubeCommand := fmt.Sprintf(` -it exec %v -- /bin/bash -c "%v"`, pod.Name, command)
 
 	err := k.ExecKubectlCommandRealtime(kubeCommand, "", false)
@@ -431,16 +441,24 @@ func (k *KubernetesUtil) ExecuteCommandRealtimeInPod(pod coreV1.Pod, command str
 }
 
 // 在pod中一次性执行shell命令
-func (k *KubernetesUtil) ExecuteCommandCombinedInPod(pod coreV1.Pod, command string) (string, error) {
+func (k *KubernetesUtil) ExecuteCommandCombinedInPod(pod coreV1.Pod, command string, runAsUser string) (string, error) {
 	//command = "su smartide -c " + command
+	if runAsUser != "" && runAsUser != "root" {
+		command = strings.ReplaceAll(command, "'", "\\\"")
+		command = fmt.Sprintf(`su %v -c '%v'`, runAsUser, command)
+	}
 	kubeCommand := fmt.Sprintf(` -it exec %v -- /bin/bash -c "%v"`, pod.Name, command)
 	output, err := k.ExecKubectlCommandCombined(kubeCommand, "")
 	return output, err
 }
 
 // 在pod中一次性执行shell命令
-func (k *KubernetesUtil) ExecuteCommandCombinedBackgroundInPod(pod coreV1.Pod, command string) {
+func (k *KubernetesUtil) ExecuteCommandCombinedBackgroundInPod(pod coreV1.Pod, command string, runAsUser string) {
 	//command = fmt.Sprintf("su smartide -c '%v'", command)
+	if runAsUser != "" && runAsUser != "root" {
+		command = strings.ReplaceAll(command, "'", "\\\"")
+		command = fmt.Sprintf(`su %v -c '%v'`, runAsUser, command)
+	}
 	kubeCommand := fmt.Sprintf(` exec  %v -- /bin/bash -c "%v"`, pod.Name, command)
 	k.ExecKubectlCommandCombined(kubeCommand, "")
 }
