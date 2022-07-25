@@ -21,12 +21,12 @@ description: >
 
 - Linux/MacOS一键初始化指令：
   ```shell
-  kubectl --namespace tekton-pipelines port-forward svc/tekton-dashboard 9097:9097 --address 0.0.0.0 &
+  curl -o- https://gitee.com/smartide/SmartIDE/raw/main/deployment/k8s/smartide-k8s-init.sh | bash
   ```
 
 - Windows一键初始化指令
   ```shell
-    Invoke-WebRequest -Uri https://gitee.com/smartide/SmartIDE/raw/main/deployment/k8s/smartide-k8s-init.ps1  -OutFile "smartide-k8s-init.ps1";powershell -File "smartide-k8s-init.ps1"
+  Invoke-WebRequest -Uri https://gitee.com/smartide/SmartIDE/raw/main/deployment/k8s/smartide-k8s-init.ps1  -OutFile "smartide-k8s-init.ps1";powershell -File "smartide-k8s-init.ps1"
   ```
   *注意：服务部署中，若出现以下错误提示，重复执行脚本即可：*
   ```shell
