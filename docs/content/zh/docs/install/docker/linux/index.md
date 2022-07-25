@@ -58,6 +58,27 @@ smartide   ALL=(ALL) NOPASSWD: ALL
 
 ![](images/sudoer_nopwd.png)
 
+## 配置用户使用bash作为默认的shell
+
+SmartIDE 使用一些特定的bash指令完成工作区调度，因此请确保你所使用的用户或者以上所创建的smartide用户的默认shell为bash。
+
+```shell
+vim /etc/passwd
+```
+
+更新 
+
+```shell
+smartide:x:1000:1000::/home/smartide:/bin/sh 
+```
+
+改为
+
+```shell
+smartide:x:1000:1000::/home/smartide:/bin/bash
+```
+
+
 ## 一键安装docker和docker-compose工具
 
 > 使用以上创建的smartide用户或者其他符合要求的非root用户登陆服务器。
