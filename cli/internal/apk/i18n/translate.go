@@ -376,6 +376,16 @@ type I18nSource struct {
 		Info_log_service_enable_ssh_success  string `json:"info_log_service_enable_ssh_success"`
 		Info_log_service_disable_ssh_success string `json:"info_log_service_disable_ssh_success"`
 	} `json:"applyssh"`
+
+	Init struct {
+		Info_help_short          string `json:"info_help_short"`
+		Info_help_long           string `json:"info_help_long"`
+		Info_exist_template      string `json:"info_exist_template"`
+		Info_choose_templatetype string `json:"info_choose_template"`
+		Info_choose_idetype      string `json:"info_choose_idetype"`
+		Info_available_templates string `json:"info_available_templates"`
+		Info_available_ides      string `json:"info_available_ides"`
+	} `json:"init"`
 }
 
 var instance *I18nSource
