@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-30 23:10:52
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-15 09:47:33
+ * @LastEditTime: 2022-07-25 11:23:09
  * @FilePath: /cli/internal/biz/config/config_convert.go
  */
 
@@ -80,6 +80,16 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(repoName string, n
 	//1.2. 挂载到这个namespace上
 	for i := 0; i < len(k8sConfig.Workspace.Deployments); i++ {
 		k8sConfig.Workspace.Deployments[i].ObjectMeta.Namespace = namespace
+		isRunAsNonRoot := true
+		userID := int64(1000)
+		userGroupID := int64(1000)
+		k8sConfig.Workspace.Deployments[i].Spec.Template.Spec.SecurityContext = &coreV1.PodSecurityContext{
+			RunAsNonRoot: &isRunAsNonRoot,
+			RunAsUser:    &userID,
+			RunAsGroup:   &userGroupID,
+			FSGroup:      &userGroupID,
+		}
+
 	}
 	for i := 0; i < len(k8sConfig.Workspace.Services); i++ {
 		k8sConfig.Workspace.Services[i].ObjectMeta.Namespace = namespace
