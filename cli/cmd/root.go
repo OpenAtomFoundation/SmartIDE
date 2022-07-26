@@ -155,6 +155,8 @@ func init() {
 	rootCmd.SetUsageTemplate(usage_tempalte)
 
 	// custom command
+	rootCmd.AddCommand(initCmd)
+
 	rootCmd.AddCommand(startCmd)
 	rootCmd.AddCommand(newCmd)
 	rootCmd.AddCommand(stopCmd)
