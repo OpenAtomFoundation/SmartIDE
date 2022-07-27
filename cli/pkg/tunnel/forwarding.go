@@ -84,7 +84,7 @@ func AutoTunnel(clientConn *ssh.Client, options AutoTunnelMultipleOptions) {
 							common.SmartIDELog.InfoF(i18n.GetInstance().Common.Info_port_is_binding, localPortStr)
 
 							if item.CurrentLocalPort != item.OriginLocalPort {
-								common.SmartIDELog.InfoF(i18n.GetInstance().Common.Info_port_binding_result2, localPortStr, item.CurrentLocalPort, item.ContainerPort)
+								common.SmartIDELog.InfoF(i18n.GetInstance().Common.Info_port_binding_result2, localPortStr, item.OriginLocalPort, item.ContainerPort)
 							} else {
 								common.SmartIDELog.InfoF(i18n.GetInstance().Common.Info_port_binding_result, localPortStr, item.ContainerPort)
 							}
