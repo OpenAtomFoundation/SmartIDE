@@ -356,7 +356,7 @@ func (instance *SSHRemote) ConvertFilePath(filepath string) (newFilepath string)
 }
 
 // 检测远程服务器的环境，是否安装docker、docker-compose、git
-func (instance *SSHRemote) CheckRemoveEnv() error {
+func (instance *SSHRemote) CheckRemoteEnv() error {
 	var errMsg []string
 
 	//1. 环境监测

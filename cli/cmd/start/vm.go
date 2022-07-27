@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-22 17:02:40
+ * @LastEditTime: 2022-07-27 15:52:50
  */
 package start
 
@@ -54,7 +54,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	common.CheckErrorFunc(err, serverFeedback)
 
 	//1. 检查远程主机是否有docker、docker-compose、git
-	err = sshRemote.CheckRemoveEnv()
+	err = sshRemote.CheckRemoteEnv()
 	common.CheckErrorFunc(err, serverFeedback)
 
 	//2. git clone & checkout

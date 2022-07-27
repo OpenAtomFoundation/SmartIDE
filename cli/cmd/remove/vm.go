@@ -28,7 +28,7 @@ func RemoveRemote(workspaceInfo workspace.WorkspaceInfo,
 	}
 
 	// 检查环境
-	err = sshRemote.CheckRemoveEnv()
+	err = sshRemote.CheckRemoteEnv()
 	if err != nil {
 		return err
 	}
