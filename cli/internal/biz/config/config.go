@@ -3,7 +3,7 @@
  * @Description: config
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-15 17:07:39
+ * @LastEditTime: 2022-07-27 09:28:36
  */
 package config
 
@@ -165,8 +165,8 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 		// 绑定端口被占用的问题
 		if isCheckUnuesedPorts {
 			hasChange := false
-			for index, port := range service.Ports {
-				binding := strings.Split(port, ":")
+			for index, portMapStr := range service.Ports {
+				binding := strings.Split(portMapStr, ":")
 				bindingPortOld, err := strconv.Atoi(binding[0])
 				common.CheckError(err)
 
@@ -177,7 +177,8 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 				common.CheckError(err)
 				if bindingPortOld != bindingPortNew {
 					service.Ports[index] = fmt.Sprintf("%v:%v", bindingPortNew, containerPort)
-					common.SmartIDELog.InfoF("%v -> %v", port, service.Ports[index])
+
+					common.SmartIDELog.InfoF("localhost:%v (%v 被占用) -> container:%v", bindingPortNew, bindingPortOld, containerPort)
 					hasChange = true
 
 					// ide、ssh端口更新
@@ -189,6 +190,8 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 							sshBindingPort = bindingPortNew
 						}
 					}
+				} else {
+					common.SmartIDELog.InfoF("localhost:%v -> container:%v", bindingPortOld, containerPort)
 				}
 				yamlFileConfig.setPort4Label(containerPort, bindingPortOld, bindingPortNew, serviceName)
 			}

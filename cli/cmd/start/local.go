@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-15 17:51:07
+ * @LastEditTime: 2022-07-27 09:22:43
  */
 package start
 
@@ -103,7 +103,8 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		err = workspaceInfo.SaveTempFiles()
 		common.CheckError(err)
 
-		tempDockerCompose, ideBindingPort, sshBindingPort = currentConfig.LoadDockerComposeFromTempFile(common.SSHRemote{}, workspaceInfo.TempYamlFileAbsolutePath)
+		tempDockerCompose, ideBindingPort, sshBindingPort =
+			currentConfig.LoadDockerComposeFromTempFile(common.SSHRemote{}, workspaceInfo.TempYamlFileAbsolutePath)
 	}
 	//2.2. 扩展信息
 	workspaceInfo.Extend = workspaceInfo.GetWorkspaceExtend()
