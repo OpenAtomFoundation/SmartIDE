@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-20 16:21:21
+ * @LastEditTime: 2022-07-27 15:30:49
  */
 package common
 
@@ -357,23 +357,28 @@ func (instance *SSHRemote) ConvertFilePath(filepath string) (newFilepath string)
 
 // 检测远程服务器的环境，是否安装docker、docker-compose、git
 func (instance *SSHRemote) CheckRemoveEnv() error {
-	var msg []string
+	var errMsg []string
 
-	// 环境监测
+	//1. 环境监测
+	//1.1. GIT
 	output, err := instance.ExeSSHCommand("git version")
 	if err != nil || strings.Contains(strings.ToLower(output), "error:") {
 		if err != nil {
 			SmartIDELog.Debug(err.Error(), output)
 		}
-		msg = append(msg, i18nInstance.Main.Err_env_git_check)
+		errMsg = append(errMsg, i18nInstance.Main.Err_env_git_check)
 	}
+
+	//1.2. docker
 	output, err = instance.ExeSSHCommand("docker version")
 	if err != nil || strings.Contains(strings.ToLower(output), "error:") {
 		if err != nil {
 			SmartIDELog.Debug(err.Error(), output)
 		}
-		msg = append(msg, i18nInstance.Main.Err_env_docker)
+		errMsg = append(errMsg, i18nInstance.Main.Err_env_docker)
 	}
+
+	//1.3. docker-compose
 	output, err = instance.ExeSSHCommand("docker-compose version")
 	if err != nil ||
 		(!strings.Contains(strings.ToLower(output), "docker-compose version") && !strings.Contains(strings.ToLower(output), "docker compose version")) ||
@@ -381,12 +386,21 @@ func (instance *SSHRemote) CheckRemoveEnv() error {
 		if err != nil {
 			SmartIDELog.Debug(err.Error(), output)
 		}
-		msg = append(msg, i18nInstance.Main.Err_env_Docker_Compose)
+		errMsg = append(errMsg, i18nInstance.Main.Err_env_Docker_Compose)
 	}
 
-	// 错误判断
-	if len(msg) > 0 {
-		return errors.New(strings.Join(msg, "; "))
+	//1.4. 默认的shell 是否为bash
+	output, err = instance.ExeSSHCommand("echo $SHELL")
+	if err != nil {
+		SmartIDELog.Warning(err.Error())
+	}
+	if !strings.Contains(output, "/bash") {
+		errMsg = append(errMsg, "当前用户的默认shell必须为bash，您可以通过 “sudo usermod -s /bin/bash {username}” 或者 “sudo vim /etc/passwd” 进行设置")
+	}
+
+	//2. 错误判断
+	if len(errMsg) > 0 {
+		return errors.New(strings.Join(errMsg, "\\n "))
 	}
 
 	// 把当前用户加到docker用户组里面
