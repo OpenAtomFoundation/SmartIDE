@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-21 10:42:22
+ * @LastEditTime: 2022-07-26 15:25:22
  */
 package cmd
 
@@ -657,12 +657,16 @@ func getRemoteAndValid(fflags *pflag.FlagSet) (remoteInfo workspace.RemoteInfo, 
 	// 指定了host信息，尝试从数据库中加载
 	if common.IsNumber(host) {
 		remoteId, err := strconv.Atoi(host)
-		common.CheckError(err)
+		if err != nil {
+			return workspace.RemoteInfo{}, err
+		}
 		remoteInfo, err = dal.GetRemoteById(remoteId)
-		common.CheckError(err)
+		if err != nil {
+			return workspace.RemoteInfo{}, err
+		}
 
 		if (workspace.RemoteInfo{} == remoteInfo) {
-			common.SmartIDELog.Warning(i18nInstance.Host.Err_host_data_not_exit)
+			return workspace.RemoteInfo{}, errors.New(i18nInstance.Host.Err_host_data_not_exit)
 		}
 	} else {
 		remoteInfo, err = dal.GetRemoteByHost(host)

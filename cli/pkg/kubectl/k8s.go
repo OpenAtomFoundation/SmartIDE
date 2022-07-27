@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:13:54
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-25 17:43:21
+ * @LastEditTime: 2022-07-26 16:27:00
  * @FilePath: /cli/pkg/kubectl/k8s.go
  */
 
@@ -247,8 +247,8 @@ func (k *KubernetesUtil) CopyToPod(pod coreV1.Pod, srcPath string, destPath stri
 	}
 
 	if runAsUser != "" {
-		podCommand := fmt.Sprintf(`sudo chown %v:%v ~/.ssh/*
-sudo chmod 700 ~/.ssh/*`, runAsUser, runAsUser)
+		podCommand := fmt.Sprintf(`sudo chown -R %v:%v ~/.ssh
+sudo chmod -R 700 ~/.ssh`, runAsUser, runAsUser)
 		k.ExecuteCommandCombinedInPod(pod, podCommand, "")
 	}
 
