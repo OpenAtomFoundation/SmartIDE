@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-26 15:25:22
+ * @LastEditTime: 2022-07-27 16:45:08
  */
 package cmd
 
@@ -58,7 +58,7 @@ var startCmd = &cobra.Command{
   smartide start <workspaceid>
   smartide start <git clone url>
   smartide start --host <host> --username <username> --password <password> --repourl <git clone url> --branch <branch name> --filepath <config file path>
-  smartide start --host <host> <git clone url>
+  smartide start --host <hostid> <git clone url>
   smartide start --k8s <context> --repoUrl <git clone url> --branch master
   smartide start --k8s <context> <git clone url>`,
 	PreRunE: preRunValid,

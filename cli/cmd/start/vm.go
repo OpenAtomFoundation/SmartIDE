@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-27 15:52:50
+ * @LastEditTime: 2022-07-28 08:23:16
  */
 package start
 
@@ -453,7 +453,7 @@ func gitAction(sshRemote common.SSHRemote, workspace workspace.WorkspaceInfo, cm
 	return err
 }
 
-//post workspace info to callback api
+/* //post workspace info to callback api
 func postWorkspaceInfo(workspaceInfo workspace.WorkspaceInfo, apiURL string) error {
 	postJson := workspaceInfo.Extend.ToJson()
 	response, err := common.PostJson(apiURL, map[string]interface{}{"data": postJson}, map[string]string{"Content-Type": "application/json"})
@@ -464,3 +464,4 @@ func postWorkspaceInfo(workspaceInfo workspace.WorkspaceInfo, apiURL string) err
 	common.SmartIDELog.Debug(response)
 	return nil
 }
+*/
