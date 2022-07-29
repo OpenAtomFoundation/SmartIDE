@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-03-30 23:10:52
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-17 14:22:05
- * @FilePath: /smartide-cli/internal/biz/config/config_convert.go
+ * @LastEditTime: 2022-07-25 14:38:36
+ * @FilePath: /cli/internal/biz/config/config_convert.go
  */
 
 package config
@@ -69,7 +69,6 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(repoName string, n
 	//0.
 	k8sConfig := SmartIdeK8SConfig{}
 	copier.CopyWithOption(&k8sConfig, &originK8sConfig, copier.Option{IgnoreEmpty: true, DeepCopy: true}) // 把一个对象赋值给另外一个对象
-	repoName = strings.TrimSpace(strings.ToLower(repoName))
 
 	//1. namespace
 	//1.1. 创建kind
@@ -80,7 +79,31 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(repoName string, n
 	k8sConfig.Workspace.Others = append(k8sConfig.Workspace.Others, namespaceKind)
 	//1.2. 挂载到这个namespace上
 	for i := 0; i < len(k8sConfig.Workspace.Deployments); i++ {
+		// namespace
 		k8sConfig.Workspace.Deployments[i].ObjectMeta.Namespace = namespace
+
+		/* 		// 是否包含dev container
+		   		hasDevContainer := false
+		   		for _, container := range k8sConfig.Workspace.Deployments[i].Spec.Template.Spec.Containers {
+		   			if container.Name == k8sConfig.Workspace.DevContainer.ServiceName {
+		   				hasDevContainer = true
+		   				break
+		   			}
+		   		}
+
+		   		// run as non root
+		   		if hasDevContainer {
+		   			isRunAsNonRoot := true
+		   			userID := int64(1000)
+		   			userGroupID := int64(1000)
+		   			k8sConfig.Workspace.Deployments[i].Spec.Template.Spec.SecurityContext = &coreV1.PodSecurityContext{
+		   				RunAsNonRoot: &isRunAsNonRoot,
+		   				RunAsUser:    &userID,
+		   				RunAsGroup:   &userGroupID,
+		   				FSGroup:      &userGroupID,
+		   			}
+		   		} */
+
 	}
 	for i := 0; i < len(k8sConfig.Workspace.Services); i++ {
 		k8sConfig.Workspace.Services[i].ObjectMeta.Namespace = namespace
@@ -103,7 +126,10 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(repoName string, n
 
 	}
 
+	return k8sConfig
+
 	//2. 创建 一个pvc
+	repoName = strings.TrimSpace(strings.ToLower(repoName))
 	pvc := coreV1.PersistentVolumeClaim{}
 	pvcName := fmt.Sprintf("%v-pvc-claim", repoName)
 	storageClassName := "smartide-file-storageclass" //TODO: const

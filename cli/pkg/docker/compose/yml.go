@@ -1,11 +1,16 @@
 /*
+ * @Date: 2022-07-11 15:38:06
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-07-22 16:45:51
+ * @FilePath: /cli/pkg/docker/compose/yml.go
+ */
+/*
 docker-compose 文件解携，https://docs.docker.com/compose/compose-file/
 */
 
 package compose
 
 import (
-	"strconv"
 	"strings"
 
 	"github.com/leansoftX/smartide-cli/internal/model"
@@ -37,7 +42,7 @@ func (c *DockerComposeYml) IsNotNil() bool {
 	return !c.IsNil()
 }
 
-// 从compose中 获取宿主端口（可能会变） 和 容器端口的绑定关系
+/* // 从compose中 获取宿主端口（可能会变） 和 容器端口的绑定关系
 func (c *DockerComposeYml) GetPortBindings() map[string]string {
 	var result map[string]string = map[string]string{}
 	for _, service := range c.Services {
@@ -51,9 +56,9 @@ func (c *DockerComposeYml) GetPortBindings() map[string]string {
 		}
 	}
 	return result
-}
+} */
 
-// 获取被绑定的本地端口
+/* // 获取被绑定的本地端口
 func (c *DockerComposeYml) GetHostBindingPorts() []int {
 	portBindings := c.GetPortBindings()
 	resultLocalPorts := []int{}
@@ -69,7 +74,7 @@ func (c *DockerComposeYml) GetHostBindingPorts() []int {
 	}
 
 	return resultLocalPorts
-}
+} */
 
 func (c *DockerComposeYml) GetSSHPassword(devService string) string {
 	for serviceName, service := range c.Services {

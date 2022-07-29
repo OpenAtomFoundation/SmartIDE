@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2022-05-25 15:32:13
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-07-27 09:22:43
  */
 package start
 
@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -104,7 +103,8 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		err = workspaceInfo.SaveTempFiles()
 		common.CheckError(err)
 
-		tempDockerCompose, ideBindingPort, sshBindingPort = currentConfig.LoadDockerComposeFromTempFile(common.SSHRemote{}, workspaceInfo.TempYamlFileAbsolutePath)
+		tempDockerCompose, ideBindingPort, sshBindingPort =
+			currentConfig.LoadDockerComposeFromTempFile(common.SSHRemote{}, workspaceInfo.TempYamlFileAbsolutePath)
 	}
 	//2.2. 扩展信息
 	workspaceInfo.Extend = workspaceInfo.GetWorkspaceExtend()
@@ -138,12 +138,10 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		// 运行docker-compose命令
 		// e.g. docker-compose -f {docker-compose文件路径} --project-directory {工作目录} up -d
 		pwd, _ := os.Getwd()
-		composeCmd := exec.Command("docker-compose", "-f", workspaceInfo.TempYamlFileAbsolutePath, "--project-directory", pwd, "up", "-d")
-		composeCmd.Stdout = os.Stdout
-		composeCmd.Stderr = os.Stderr
-		if composeCmdErr := composeCmd.Run(); composeCmdErr != nil {
-			common.CheckError(composeCmdErr)
-		}
+		commands := []string{"docker-compose", "-f", workspaceInfo.TempYamlFileAbsolutePath, "--project-directory", pwd, "up", "-d"}
+		common.SmartIDELog.Debug(strings.Join(commands, " "))
+		err := common.EXEC.Realtime(strings.Join(commands, " "), "")
+		common.CheckError(err)
 	}
 
 	cc := currentConfig.GetServiceNames()

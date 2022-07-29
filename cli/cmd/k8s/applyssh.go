@@ -167,6 +167,7 @@ var ApplySSHCmd = &cobra.Command{
 					for index, portDetail := range workspaceInfo.Extend.Ports {
 						if portDetail.HostPortDesc == "tools-ssh" && portDetail.ServiceName == addWorkspaceService {
 							workspaceInfo.Extend.Ports[index].SSHPort = addWorkspaceExternalPort
+							workspaceInfo.Extend.Ports[index].IsConnected = true
 						}
 					}
 					err = server.Feedback_Finish(server.FeedbackCommandEnum_ApplySSH, cmd, true, nil, *workspaceInfo, "", "") //(currentAuth, *workspaceInfo)
@@ -198,6 +199,7 @@ var ApplySSHCmd = &cobra.Command{
 					for index, portDetail := range workspaceInfo.Extend.Ports {
 						if portDetail.HostPortDesc == "tools-ssh" && portDetail.ServiceName == removeWorkspaceService {
 							workspaceInfo.Extend.Ports[index].SSHPort = ""
+							workspaceInfo.Extend.Ports[index].IsConnected = false
 						}
 					}
 

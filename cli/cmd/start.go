@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-01 09:53:57
+ * @LastEditTime: 2022-07-27 16:45:08
  */
 package cmd
 
@@ -58,7 +58,7 @@ var startCmd = &cobra.Command{
   smartide start <workspaceid>
   smartide start <git clone url>
   smartide start --host <host> --username <username> --password <password> --repourl <git clone url> --branch <branch name> --filepath <config file path>
-  smartide start --host <host> <git clone url>
+  smartide start --host <hostid> <git clone url>
   smartide start --k8s <context> --repoUrl <git clone url> --branch master
   smartide start --k8s <context> <git clone url>`,
 	PreRunE: preRunValid,
@@ -119,6 +119,10 @@ var startCmd = &cobra.Command{
 		isUnforward, _ := cmd.Flags().GetBool("unforward")
 
 		executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
+			if config.GlobalSmartIdeConfig.IsInsightEnabled != config.IsInsightEnabledEnum_Enabled {
+				common.SmartIDELog.Debug("Application Insights disabled")
+				return
+			}
 			var imageNames []string
 			for _, service := range yamlConfig.Workspace.Servcies {
 				imageNames = append(imageNames, service.Image)
@@ -131,7 +135,6 @@ var startCmd = &cobra.Command{
 			start.ExecuteStartCmd(workspaceInfo, isUnforward, func(v string, d common.Docker) {}, executeStartCmdFunc)
 
 		} else if workspaceInfo.Mode == workspace.WorkingMode_K8s { //1.2. k8s 模式
-
 			k8sUtil, err := kubectl.NewK8sUtil(workspaceInfo.K8sInfo.KubeConfigFilePath,
 				workspaceInfo.K8sInfo.Context,
 				workspaceInfo.K8sInfo.Namespace)
@@ -303,8 +306,13 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 		CacheEnv:      workspace.CacheEnvEnum_Local,
 	}
 	// 运行环境
-	if value, _ := fflags.GetString("mode"); strings.ToLower(value) == "server" { // || strings.Index(strings.ToLower(workspaceIdStr), "ws") == 1
-		workspaceInfo.CliRunningEnv = workspace.CliRunningEvnEnum_Server
+	if value, _ := fflags.GetString("mode"); value != "" {
+		if strings.ToLower(value) == "server" {
+			workspaceInfo.CliRunningEnv = workspace.CliRunningEvnEnum_Server
+		} else if strings.ToLower(value) == "pipeline" {
+			workspaceInfo.CliRunningEnv = workspace.CliRunningEvnEnum_Pipeline
+		}
+
 	}
 	if strings.Index(strings.ToLower(workspaceIdStr), "ws") == 1 {
 		workspaceInfo.CacheEnv = workspace.CacheEnvEnum_Server
@@ -515,11 +523,7 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 		}
 	}
 	if workspaceInfo.ConfigFileRelativePath == "" { // 避免配置文件的路径为空
-		if workspaceInfo.Mode == workspace.WorkingMode_K8s {
-			workspaceInfo.ConfigFileRelativePath = model.CONST_Default_K8S_ConfigRelativeFilePath
-		} else {
-			workspaceInfo.ConfigFileRelativePath = model.CONST_Default_ConfigRelativeFilePath
-		}
+		workspaceInfo.ConfigFileRelativePath = model.CONST_Default_ConfigRelativeFilePath
 	}
 	if tmp, _ := fflags.GetString(flag_branch); tmp != "" {
 		branch, err := fflags.GetString(flag_branch)
@@ -653,12 +657,16 @@ func getRemoteAndValid(fflags *pflag.FlagSet) (remoteInfo workspace.RemoteInfo, 
 	// 指定了host信息，尝试从数据库中加载
 	if common.IsNumber(host) {
 		remoteId, err := strconv.Atoi(host)
-		common.CheckError(err)
+		if err != nil {
+			return workspace.RemoteInfo{}, err
+		}
 		remoteInfo, err = dal.GetRemoteById(remoteId)
-		common.CheckError(err)
+		if err != nil {
+			return workspace.RemoteInfo{}, err
+		}
 
 		if (workspace.RemoteInfo{} == remoteInfo) {
-			common.SmartIDELog.Warning(i18nInstance.Host.Err_host_data_not_exit)
+			return workspace.RemoteInfo{}, errors.New(i18nInstance.Host.Err_host_data_not_exit)
 		}
 	} else {
 		remoteInfo, err = dal.GetRemoteByHost(host)
@@ -712,6 +720,7 @@ func init() {
 	startCmd.Flags().StringP("username", "u", "", i18nInstance.Start.Info_help_flag_username)
 	startCmd.Flags().StringP("password", "t", "", i18nInstance.Start.Info_help_flag_password)
 	startCmd.Flags().StringP("repourl", "r", "", i18nInstance.Start.Info_help_flag_repourl)
+	startCmd.Flags().StringP("callback-api-address", "", "", i18nInstance.Start.Info_help_flag_callback_api_address)
 
 	startCmd.Flags().StringVarP(&configYamlFileRelativePath, "filepath", "f", "", i18nInstance.Start.Info_help_flag_filepath)
 	startCmd.Flags().StringP("branch", "b", "", i18nInstance.Start.Info_help_flag_branch)

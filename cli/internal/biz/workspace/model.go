@@ -35,8 +35,10 @@ const (
 type CliRunningEvnEnum string
 
 const (
-	CliRunningEvnEnum_Server CliRunningEvnEnum = "server"
-	CliRunningEnvEnum_Client CliRunningEvnEnum = "client"
+	// mode=server会调用我们的server的各种api，mode=pipeline不会这样做，而是通过通用的方法，比如传参和回调 的方式和其他系统集成
+	CliRunningEvnEnum_Pipeline CliRunningEvnEnum = "pipeline"
+	CliRunningEvnEnum_Server   CliRunningEvnEnum = "server"
+	CliRunningEnvEnum_Client   CliRunningEvnEnum = "client"
 )
 
 type CacheEnvEnum string
@@ -228,11 +230,7 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 	}
 
 	if workspaceInfo.ConfigFileRelativePath == "" {
-		if workspaceInfo.Mode == WorkingMode_K8s {
-			workspaceInfo.ConfigFileRelativePath = model.CONST_Default_K8S_ConfigRelativeFilePath
-		} else {
-			workspaceInfo.ConfigFileRelativePath = model.CONST_Default_ConfigRelativeFilePath
-		}
+		workspaceInfo.ConfigFileRelativePath = model.CONST_Default_ConfigRelativeFilePath
 
 	}
 

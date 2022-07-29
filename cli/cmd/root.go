@@ -29,6 +29,7 @@ import (
 
 	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
+	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
@@ -47,17 +48,59 @@ var rootCmd = &cobra.Command{
 	Short: instanceI18nMain.Info_help_short,
 	Long:  instanceI18nMain.Info_help_long, // logo only show in init
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		if cmd.Use == "start" || cmd.Use == "new" {
 
-		} else {
-			//ai记录
-			var trackEvent string
-			for _, val := range args {
-				trackEvent = trackEvent + " " + val
+		// appInsight 是否开启收集
+		mode, _ := cmd.Flags().GetString("mode")
+		if common.Contains([]string{"pipeline", "server"}, strings.ToLower(mode)) {
+			isInsightDisabled, _ := cmd.Flags().GetString("isInsightDisabled")
+			if isInsightDisabled == "" {
+				common.SmartIDELog.Error("--isInsightDisabled [true|false] 在 --mode server|pipeline 时必须设置")
+			} else {
+				isInsightDisabled = strings.ToLower(isInsightDisabled)
+				if isInsightDisabled == "false" || isInsightDisabled == "no" || isInsightDisabled == "n" || isInsightDisabled == "0" {
+					config.GlobalSmartIdeConfig.IsInsightEnabled = config.IsInsightEnabledEnum_Enabled
+				} else {
+					config.GlobalSmartIdeConfig.IsInsightEnabled = config.IsInsightEnabledEnum_Disabled
+				}
+				config.GlobalSmartIdeConfig.SaveConfigYaml()
 			}
-			appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, "no", "no")
+		} else {
+			isInsightDisabled, _ := cmd.Flags().GetString("isInsightDisabled")
+			if isInsightDisabled != "" {
+				common.SmartIDELog.Importance("isInsightDisabled 参数仅在 mode = server|pipeline 下生效")
+			}
+
+			if config.GlobalSmartIdeConfig.IsInsightEnabled == config.IsInsightEnabledEnum_None {
+				var isInsightEnabled string
+				fmt.Print("SmartIDE会收集部分运行信息用于改进产品，您可以通过 https://smartide.cn/zh/docs/eula 了解我们的信息收集策略或者直接通过开源的源码查看更多细节。请确认是否允许发送（y/n）？")
+				fmt.Scanln(&isInsightEnabled)
+				isInsightEnabled = strings.ToLower(isInsightEnabled)
+				if isInsightEnabled == "y" || isInsightEnabled == "yes" {
+					config.GlobalSmartIdeConfig.IsInsightEnabled = config.IsInsightEnabledEnum_Enabled
+				} else {
+					config.GlobalSmartIdeConfig.IsInsightEnabled = config.IsInsightEnabledEnum_Disabled
+				}
+				config.GlobalSmartIdeConfig.SaveConfigYaml()
+			}
 		}
-		// 初始化
+
+		// appInsight
+		if cmd.Use == "start" || cmd.Use == "new" {
+		} else {
+			if config.GlobalSmartIdeConfig.IsInsightEnabled == config.IsInsightEnabledEnum_Enabled {
+				//ai记录
+				var trackEvent string
+				for _, val := range args {
+					trackEvent = trackEvent + " " + val
+				}
+				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, "no", "no")
+			} else {
+				common.SmartIDELog.Debug("Application Insights disabled")
+			}
+
+		}
+
+		// 初始化 log
 		logLevel := ""
 		if isDebug {
 			logLevel = "debug"
@@ -93,6 +136,7 @@ func init() {
 	rootCmd.Flags().BoolP("help", "h", false, i18n.GetInstance().Help.Info_help_short)
 	rootCmd.PersistentFlags().BoolVarP(&isDebug, "debug", "d", false, i18n.GetInstance().Main.Info_help_flag_debug)
 	rootCmd.PersistentFlags().StringP("mode", "m", string(model.RuntimeModeEnum_Client), i18n.GetInstance().Main.Info_help_flag_mode)
+	rootCmd.PersistentFlags().StringP("isInsightDisabled", "", "", "在mode = server|pipeline 模式下是否禁用“收集部分运行信息用于改进产品”")
 
 	rootCmd.PersistentFlags().StringP("serverworkspaceid", "", "", i18n.GetInstance().Main.Info_help_flag_server_workspace_id)
 	rootCmd.PersistentFlags().StringP("servertoken", "", "", i18n.GetInstance().Main.Info_help_flag_server_token)
@@ -111,6 +155,8 @@ func init() {
 	rootCmd.SetUsageTemplate(usage_tempalte)
 
 	// custom command
+	rootCmd.AddCommand(initCmd)
+
 	rootCmd.AddCommand(startCmd)
 	rootCmd.AddCommand(newCmd)
 	rootCmd.AddCommand(stopCmd)

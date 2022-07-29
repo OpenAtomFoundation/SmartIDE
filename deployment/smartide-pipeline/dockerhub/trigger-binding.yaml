@@ -18,8 +18,6 @@ spec:
     value: $(body.SSH_USER_PASSWORD)
   - name: GIT_CLONE_URL
     value: $(body.GIT_CLONE_URL)
-  - name: GIT_BRANCH
-    value: $(body.GIT_BRANCH)
 
   - name: SERVER_WORK_SPACE_ID
     value: $(body.SERVER_WORK_SPACE_ID)

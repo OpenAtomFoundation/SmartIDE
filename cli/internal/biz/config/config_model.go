@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-28 16:31:47
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-07-15 10:34:10
  */
 package config
 
@@ -216,6 +216,9 @@ type PortMapInfo struct {
 
 	// 关联的SSH External Port
 	SSHPort string `json:"SSHPort"`
+
+	//端口号是否已连接
+	IsConnected bool `json:"isConnected"`
 }
 
 // GetSSHPortAtLocalHost 获取localhost上的ssh端口

@@ -1,4 +1,13 @@
 {
+    "init":{
+        "info_help_short":"Detect and initialize smartide workspace configuration information",
+        "info_help_long":"Detect and initialize smartide workspace configuration information",
+        "info_exist_template":"The current directory has been initialized, so there is no need to do it again!",
+        "info_choose_template":"Please select a template type,input the order:",
+        "info_choose_idetype":"Please select ide type,input the order:",
+        "info_available_templates":"Available templates:",
+        "info_available_ides":"Available IDE types:"
+    },
     "config": {
         "info_help_short": "设置SmartIDE配置信息",
         "info_help_long": "设置SmartIDE配置信息",
@@ -25,7 +34,7 @@
         "info_help_long": "SmartIDE allows you to create local and remote dev environment with integrated WebIDE.",
         "info_usage_template": "Usage:{{if .Runnable}}\n  {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}\n  {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}\nAliases:\n  {{.NameAndAliases}}{{end}}{{if .HasExample}}\nExamples:\n{{.Example}}{{end}}{{if .HasAvailableSubCommands}}\nAvailable Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name \"help\"))}}\n  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}\nFlags:\n{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}\nGlobal Flags:\n{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasHelpSubCommands}}\nAdditional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}\n  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}\nUse \"{{.CommandPath}} [command] --help\" for more information about a command.{{end}}\n",
         "info_help_flag_debug": "Enable Debug mode will generate more detailed log messages",
-        "info_help_flag_mode": "smartide 的运行模式，是在服务端（server）还是客户端（client）",
+        "info_help_flag_mode": "smartide 的运行模式，是在服务端（server）还是客户端（client）或者流水线模式（pipeline）",
         "info_help_flag_server_workspace_id": "smartide server工作区ID",
         "info_help_flag_server_token": "smartide server的token",
         "info_help_flag_server_username": "smartide server登录账号",
@@ -69,6 +78,7 @@
         "Info_k8s_port_forward_end": "k8s port-forward end... ",
         "info_k8s_updated": "Updated deployment... ",
         "info_help_flag_host": "Host IP / DNS name or hostId",
+        "info_help_flag_callback_api_address": "Callback API Address",
         "info_help_flag_port": "SSH port，default to 22",
         "info_help_flag_username": "SSH username",
         "info_help_flag_pasword": "SSH password",
@@ -82,6 +92,7 @@
         "info_ssh_tunnel": "[SSH] Port forwarding : %v",
         "info_create_network": "[Docker] Creating network %v",
         "info_workspace_saving": "[Workspace] Save workspace record ...",
+        "info_pipeline_mode_success": "dev/test enviroment start success with pipeline mode, you can work with below URL now!",
         "info_workspace_saved": "[Worksapce] Saved successfully. Open your Workspace using WorkspaceId (smartide start %v) to quickly resume your work.",
         "info_workspace_record_load": "从工作区（%v）中读取数据",
         "info_workspace_changed": "工作区配置改变！",
@@ -184,7 +195,9 @@
         "info_warting_for_webide": "[WebIDE] Waiting for WebIDE to start ...",
         "info_open_brower": "[WebIDE] You can now open your browser to access the WebIDE : %v ",
         "info_git_cloned": "[Git] Workspace is already exist, code is already cloned, no need to run git checkout.",
-        "info_tunnel_waiting": "端口转发中..."
+        "info_tunnel_waiting": "端口转发中...",
+        "info_callback_msg": "successfully send workspace info to below API: %v"
+
     },
     "update": {
         "info_help_short": "Automatically upgrade to a specified version",
@@ -232,8 +245,8 @@
         "info_port_binding_result2": "[Port Forwarding] localhost: %v (%v used) -> Container: %v ",
         "info_port_binding_result": "[Port Forwarding] localhost: %v -> Container: %v  ",
         "info_find_new_port": "[Port Forwarding] Discovering a new port:",
-        "info_ssh_webide_host_port": "[Port Forwarding] WebIDE Port : %v",
-        "info_ssh_host_port": "SSH port %v",
+        "info_ssh_webide_host_port": " WebIDE Container Port: %v",
+        "info_ssh_host_port": "SSH Container port: %v",
         "info_temp_create_directory": "Create .temp folder, please add this to gitIgnore: %v",
         "info_temp_created_docker_compose": "Create docker-compose in .temp folder : %v",
         "info_temp_created_config": "Create SmartIDE config file in .temp folder: %v",

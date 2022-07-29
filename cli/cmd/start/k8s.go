@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-03-23 16:15:38
- * @LastEditors: kenan
- * @LastEditTime: 2022-07-04 16:48:31
- * @FilePath: /smartide-cli/cmd/start/k8s.go
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-07-25 17:48:05
+ * @FilePath: /cli/cmd/start/k8s.go
  */
 
 package start
@@ -39,6 +39,7 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil kubectl.KubernetesUtil, work
 	if workspaceInfo.K8sInfo.Namespace == "" {
 		workspaceInfo.K8sInfo.Namespace = k8sUtil.Namespace
 	}
+	runAsUserName := "smartide"
 
 	//3. 解析 .k8s.ide.yaml 文件（是否需要注入到deploy.yaml文件中）
 	common.SmartIDELog.Info("下载配置文件 及 关联k8s yaml文件")
@@ -123,7 +124,7 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil kubectl.KubernetesUtil, work
 
 		//4.5. 执行相关操作， git config + ssh config + git clone + agent
 		//e.g. kubectl exec -it pod-name -- /bin/bash -c "command(s)"
-		err = execPod(cmd, workspaceInfo, &k8sUtil, originK8sConfig, tempK8sConfig) // ★★★★★
+		err = execPod(cmd, workspaceInfo, &k8sUtil, originK8sConfig, tempK8sConfig, runAsUserName) // ★★★★★
 		if err != nil {
 			return nil, err
 		}
@@ -165,7 +166,6 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil kubectl.KubernetesUtil, work
 	}
 
 	function1 := func(k8sServiceName string, availableClientPort, hostOriginPort, index int) {
-
 		forwardCommand := fmt.Sprintf("port-forward svc/%v %v:%v --address 0.0.0.0 ",
 			k8sServiceName, availableClientPort, hostOriginPort)
 		output, err := k8sUtil.ExecKubectlCommandCombined(forwardCommand, "")
@@ -226,7 +226,8 @@ func updatePortInfo(availableClientPort int, hostOriginPort int, workspaceInfo *
 
 func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 	kubernetes *kubectl.KubernetesUtil,
-	originK8sConfig *config.SmartIdeK8SConfig, tempK8sConfig config.SmartIdeK8SConfig) error {
+	originK8sConfig *config.SmartIdeK8SConfig, tempK8sConfig config.SmartIdeK8SConfig,
+	runAsUserName string) error {
 	// 等待启动
 	common.SmartIDELog.Info("等待 deployment 启动...")
 	for {
@@ -250,7 +251,7 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 	//TODO:
 	common.SmartIDELog.Info("install agent")
 	if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server {
-		err := kubernetes.CopyToPod(*devContainerPod, common.PathJoin("/usr/local/bin", "smartide-agent"), common.PathJoin("/", "smartide-agent"))
+		err := kubernetes.CopyToPod(*devContainerPod, common.PathJoin("/usr/local/bin", "smartide-agent"), common.PathJoin("/", "smartide-agent"), runAsUserName)
 		if err != nil {
 			return err
 		}
@@ -260,14 +261,14 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 			return err
 		}
 
-		go kubernetes.StartAgent(cmd, *devContainerPod)
+		go kubernetes.StartAgent(cmd, *devContainerPod, runAsUserName)
 
 	}
 
 	//5.1. git config
 	if originK8sConfig.Workspace.DevContainer.Volumes.HasGitConfig.Value() {
 		common.SmartIDELog.Info("git config")
-		err = kubernetes.CopyLocalGitConfigToPod(*devContainerPod)
+		err = kubernetes.CopyLocalGitConfigToPod(*devContainerPod, runAsUserName)
 		if err != nil {
 			return err
 		}
@@ -276,7 +277,7 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 	//5.2. ssh config
 	if originK8sConfig.Workspace.DevContainer.Volumes.HasSshKey.Value() {
 		common.SmartIDELog.Info("ssh config")
-		err = kubernetes.CopyLocalSSHConfigToPod(*devContainerPod)
+		err = kubernetes.CopyLocalSSHConfigToPod(*devContainerPod, runAsUserName)
 		if err != nil {
 			return err
 		}
@@ -285,7 +286,7 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 	//5.3. git clone
 	common.SmartIDELog.Info("git clone")
 	containerGitCloneDir := originK8sConfig.GetProjectDirctory()
-	err = kubernetes.GitClone(*devContainerPod, workspaceInfo.GitCloneRepoUrl, containerGitCloneDir, workspaceInfo.Branch)
+	err = kubernetes.GitClone(*devContainerPod, runAsUserName, workspaceInfo.GitCloneRepoUrl, containerGitCloneDir, workspaceInfo.Branch)
 	if err != nil {
 		return err
 	}
@@ -293,7 +294,7 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 	//5.4. 复制config文件
 	common.SmartIDELog.Info("copy config file")
 	configFileAbsolutePath := common.PathJoin(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath)
-	err = copyConfigToPod(*kubernetes, *devContainerPod, containerGitCloneDir, configFileAbsolutePath)
+	err = copyConfigToPod(*kubernetes, *devContainerPod, containerGitCloneDir, configFileAbsolutePath, runAsUserName)
 	if err != nil {
 		return err
 	}
@@ -327,7 +328,7 @@ func hasChanged(workspaceInfo workspace.WorkspaceInfo, originK8sConfig config.Sm
 }
 
 // 复制config文件到pod
-func copyConfigToPod(k kubectl.KubernetesUtil, pod coreV1.Pod, podDestGitRepoPath string, configFilePath string) error {
+func copyConfigToPod(k kubectl.KubernetesUtil, pod coreV1.Pod, podDestGitRepoPath string, configFilePath string, runAsUserName string) error {
 	// 目录
 	configFileDir := path.Dir(configFilePath)
 	tempDirPath := common.PathJoin(configFileDir, ".temp")
@@ -358,11 +359,11 @@ func copyConfigToPod(k kubectl.KubernetesUtil, pod coreV1.Pod, podDestGitRepoPat
 
 	// copy
 	destDir := common.PathJoin(podDestGitRepoPath, ".ide")
-	err = k.CopyToPod(pod, gitignoreFile, destDir)
+	err = k.CopyToPod(pod, gitignoreFile, destDir, runAsUserName)
 	if err != nil {
 		return err
 	}
-	err = k.CopyToPod(pod, tempDirPath, destDir)
+	err = k.CopyToPod(pod, tempDirPath, destDir, runAsUserName)
 	if err != nil {
 		return err
 	}
@@ -371,7 +372,7 @@ func copyConfigToPod(k kubectl.KubernetesUtil, pod coreV1.Pod, podDestGitRepoPat
 }
 
 // 复制config文件到pod
-func copyAgentToPod(k kubectl.KubernetesUtil, pod coreV1.Pod, podDestGitRepoPath string, agentFilePath string) error {
+func copyAgentToPod(k kubectl.KubernetesUtil, pod coreV1.Pod, podDestGitRepoPath string, agentFilePath string, runAsUserName string) error {
 	// 目录
 	configFileDir := path.Dir(agentFilePath)
 	tempDirPath := common.PathJoin(configFileDir, ".temp")
@@ -396,7 +397,7 @@ func copyAgentToPod(k kubectl.KubernetesUtil, pod coreV1.Pod, podDestGitRepoPath
 	// copy
 	destDir := common.PathJoin("/", "smartide-agent")
 
-	err = k.CopyToPod(pod, tempDirPath, destDir)
+	err = k.CopyToPod(pod, tempDirPath, destDir, runAsUserName)
 	if err != nil {
 		return err
 	}

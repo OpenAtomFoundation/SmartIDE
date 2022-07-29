@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-11 16:49:40
+ * @LastEditTime: 2022-07-27 15:30:49
  */
 package common
 
@@ -356,24 +356,29 @@ func (instance *SSHRemote) ConvertFilePath(filepath string) (newFilepath string)
 }
 
 // 检测远程服务器的环境，是否安装docker、docker-compose、git
-func (instance *SSHRemote) CheckRemoveEnv() error {
-	var msg []string
+func (instance *SSHRemote) CheckRemoteEnv() error {
+	var errMsg []string
 
-	// 环境监测
+	//1. 环境监测
+	//1.1. GIT
 	output, err := instance.ExeSSHCommand("git version")
 	if err != nil || strings.Contains(strings.ToLower(output), "error:") {
 		if err != nil {
 			SmartIDELog.Debug(err.Error(), output)
 		}
-		msg = append(msg, i18nInstance.Main.Err_env_git_check)
+		errMsg = append(errMsg, i18nInstance.Main.Err_env_git_check)
 	}
+
+	//1.2. docker
 	output, err = instance.ExeSSHCommand("docker version")
 	if err != nil || strings.Contains(strings.ToLower(output), "error:") {
 		if err != nil {
 			SmartIDELog.Debug(err.Error(), output)
 		}
-		msg = append(msg, i18nInstance.Main.Err_env_docker)
+		errMsg = append(errMsg, i18nInstance.Main.Err_env_docker)
 	}
+
+	//1.3. docker-compose
 	output, err = instance.ExeSSHCommand("docker-compose version")
 	if err != nil ||
 		(!strings.Contains(strings.ToLower(output), "docker-compose version") && !strings.Contains(strings.ToLower(output), "docker compose version")) ||
@@ -381,12 +386,21 @@ func (instance *SSHRemote) CheckRemoveEnv() error {
 		if err != nil {
 			SmartIDELog.Debug(err.Error(), output)
 		}
-		msg = append(msg, i18nInstance.Main.Err_env_Docker_Compose)
+		errMsg = append(errMsg, i18nInstance.Main.Err_env_Docker_Compose)
 	}
 
-	// 错误判断
-	if len(msg) > 0 {
-		return errors.New(strings.Join(msg, "; "))
+	//1.4. 默认的shell 是否为bash
+	output, err = instance.ExeSSHCommand("echo $SHELL")
+	if err != nil {
+		SmartIDELog.Warning(err.Error())
+	}
+	if !strings.Contains(output, "/bash") {
+		errMsg = append(errMsg, "当前用户的默认shell必须为bash，您可以通过 “sudo usermod -s /bin/bash {username}” 或者 “sudo vim /etc/passwd” 进行设置")
+	}
+
+	//2. 错误判断
+	if len(errMsg) > 0 {
+		return errors.New(strings.Join(errMsg, "\\n "))
 	}
 
 	// 把当前用户加到docker用户组里面
@@ -834,7 +848,19 @@ func (instance *SSHRemote) ExecSSHCommandRealTimeFunc(sshCommand string, customE
 				continue
 			}
 
-			array := strings.Split(originMsg, "\r\n")
+			err = originExecuteFun(originMsg)
+			if err != nil {
+				return err
+			}
+
+			if customExecuteFun != nil {
+				err = customExecuteFun(originMsg)
+				if err != nil {
+					return err
+				}
+			}
+
+			/* array := strings.Split(originMsg, "\r\n")
 			for _, sub := range array {
 				if len(sub) == 0 || sub == "\r\n" { //|| sub == "\r"
 					continue
@@ -851,7 +877,7 @@ func (instance *SSHRemote) ExecSSHCommandRealTimeFunc(sshCommand string, customE
 						return err
 					}
 				}
-			}
+			} */
 
 		}
 		return nil
@@ -1078,7 +1104,7 @@ func GetWSPolicies(no string, t string, cmd *cobra.Command) (ws []WorkspacePolic
 
 // Add publickey to .ssh/authorized_keys file on remote host(vm mode)
 func (instance *SSHRemote) AddPublicKeyIntoAuthorizedkeys() {
-	execCommand := "cat ~/.ssh/id_rsa.pub__ > ~/.ssh/authorized_keys__"
+	execCommand := "[[ -f ~/.ssh/id_rsa.pub__ ]] && cat ~/.ssh/id_rsa.pub__ > ~/.ssh/authorized_keys__"
 	output, err := instance.ExeSSHCommand(execCommand)
 	if err != nil {
 		if output != "" || err.Error() != "Process exited with status 1" {
