@@ -39,10 +39,12 @@ description: >
 
 在本次峰会的云原生论坛上，SmartIDE现场演示了以上两个场景。我们也会继续践行我们的使命，设计和开发一款真正为开发者解决问题、消除痛点、提高效率的开发者乐于使用的CloudIDE产品。
 
-## 全面支持个人开发者和企业级研发场景
-SmartIDE可以完成开发环境的一键搭建，如果你熟悉命令行操作，那么安装我们的cli，只需要学会一个命令 `smartide start` 就可以一键完成任何项目的开发调测环境搭建，不再需要安装任何工具，SDK，调试器，编译器，环境变量等繁琐的操作。如果不喜欢命令行操作，也可以使用我们的 Server 通过网页完成全部操作。
+## 从新定义IDE
+如果把Vscode和JetBrain这些IDE称为传统IDE的话，他们最大的问题是：**虽然在 I (Integration) 和 D (Development) 上面传统IDE都做的非常不错，但是他们都没有解决 E (Environment) 的问题。** 
 
-如果把Vscode和JetBrain这些IDE称为传统IDE的话，这些传统IDE最大的问题是：**他们虽然在 I (Integration) 和 D (Development) 上面都做的非常不错，但是都没有解决 E (Environment) 的问题。**
+SmartIDE是 **第一个提供完整环境标准化能力** 的新一代IDE产品，拓展了传统IDE的的边界，对IDE的概念从新定义并且专注打造围绕这一全新IDE概念的开发者生态系统。加入开放原子基金会是SmartIDE继续拓展新一代开发者生态的重要里一步，我们将继续围绕开发者的体验重新定位现有的研发工具链体系，为个人开发者和企业提供一体化研发环境标准化解决方案，补齐传统IDE的短板。
+
+SmartIDE可以完成开发环境的一键搭建，如果你熟悉命令行操作，那么安装我们的cli，只需要学会一个命令 `smartide start` 就可以一键完成任何项目的开发调测环境搭建，不再需要安装任何工具，SDK，调试器，编译器，环境变量等繁琐的操作。如果不喜欢命令行操作，也可以使用我们的 Server 通过网页完成全部操作。
 
 SmartIDE提供了三种运行形态，针对个人开发者以及企业研发面临的不同场景，提供了简单方便一站式的开发调试环境解决方案。彻底解决环境（E）的问题。
 
@@ -60,6 +62,33 @@ SmartIDE提供了三种运行形态，针对个人开发者以及企业研发面
 ![OpenAtom Summit](images/openatom010.png)
 
 SmartIDE产品体系包含 **CLI，Server，开发者容器与模版以及插件市场四大组件**，构成了企业级CloudIDE的完整生态环境。**四大组件全部开源，为企业构建自主可控的私有化CloudIDE提供了一站式的解决方案。**
+
+个人开发者和企业用户可以从以下地址获取相关安装包、脚本和说明文档，立即开始体验：
+
+- CLI 工具
+  - 安装 https://smartide.cn/zh/docs/install/cli/
+  - 快读启动教程 https://smartide.cn/zh/docs/quickstart/cli/
+- Server
+  - 安装 https://smartide.cn/zh/docs/install/server/
+  - 快速启动教程 https://smartide.cn/zh/docs/quickstart/server/
+- 开发者镜像和模版
+  - 使用说明 https://smartide.cn/zh/docs/templates/
+  - 开发者镜像和模版指令列表 [https://smartide.cn/zh/docs/templates/#镜像和模版指令列表](https://smartide.cn/zh/docs/templates/#%E9%95%9C%E5%83%8F%E5%92%8C%E6%A8%A1%E7%89%88%E6%8C%87%E4%BB%A4%E5%88%97%E8%A1%A8)
+  - 模版使用说明 [https://smartide.cn/zh/docs/templates/#模版库](https://smartide.cn/zh/docs/templates/#%E6%A8%A1%E7%89%88%E5%BA%93)
+- 插件市场
+  - 安装 https://smartide.cn/zh/docs/install/marketplace/
+  - 配置IDE使用SmartIDE插件市场 https://smartide.cn/zh/docs/manual/marketplace/config/
+  - 配置自动插件同步机制 https://smartide.cn/zh/docs/manual/marketplace/extension-sync/
+  - 将你的插件发布到SmartIDE插件市场 https://smartide.cn/zh/docs/manual/marketplace/publish-extension/
+  - 插件安装手册 https://smartide.cn/zh/docs/manual/marketplace/usage/
+  - 使用自签名证书进行插件市场私有化部署 https://smartide.cn/zh/docs/manual/marketplace/self-signed-certificate/
+
+我们也提供了多种开发语言技术栈的快速启动文档，方便开发者使用
+
+- Node/前端开发 https://smartide.cn/zh/docs/quickstart/node/
+- Java https://smartide.cn/zh/docs/quickstart/java/
+- DotNet https://smartide.cn/zh/docs/quickstart/dotnet/
+- Python Jupyter Notebook https://smartide.cn/zh/docs/quickstart/jupyter/ 
 
 ![OpenAtom Summit](images/openatom005.png)
 
