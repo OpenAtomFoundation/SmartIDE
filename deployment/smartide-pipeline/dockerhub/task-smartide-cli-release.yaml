@@ -67,11 +67,7 @@ spec:
 
         echo "hello smartide"
 
-<<<<<<< HEAD
         smartide version --mode server --isInsightDisabled true
-=======
-        smartide version
->>>>>>> releases/release-24
 
 
         if [ "$(params.COMMAND)" == "start" ]; then 
