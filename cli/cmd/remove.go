@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-11 09:30:25
+ * @LastEditTime: 2022-07-29 17:09:48
  */
 package cmd
 
@@ -107,8 +107,9 @@ var removeCmd = &cobra.Command{
 		var checkErrorFeedback = func(err error) {
 			if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server && err != nil {
 				server.Feedback_Finish(server.FeedbackCommandEnum_Remove, cmd, false, nil, workspaceInfo, err.Error(), "")
+				common.CheckError(err)
 			}
-			common.CheckError(err)
+
 		}
 
 		//2. 操作类型
