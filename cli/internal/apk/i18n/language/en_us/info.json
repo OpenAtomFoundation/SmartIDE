@@ -1,4 +1,13 @@
 {
+    "init":{
+        "info_help_short":"Detect and initialize smartide workspace configuration information",
+        "info_help_long":"Detect and initialize smartide workspace configuration information",
+        "info_exist_template":"The current directory has been initialized, so there is no need to do it again!",
+        "info_choose_template":"Please select a template type,input the order:",
+        "info_choose_idetype":"Please select ide type,input the order:",
+        "info_available_templates":"Available templates:",
+        "info_available_ides":"Available IDE types:"
+    },
     "config": {
         "info_help_short": "设置SmartIDE配置信息",
         "info_help_long": "设置SmartIDE配置信息",

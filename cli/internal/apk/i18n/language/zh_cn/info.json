@@ -1,4 +1,13 @@
 {
+    "init":{
+        "info_help_short":"检测并初始化SmartIDE工作区配置信息",
+        "info_help_long":"检测并初始化SmartIDE工作区配置信息",
+        "info_exist_template":"当前目录已经完成初始化，无须再次进行！",
+        "info_choose_template":"请选择模板类型，输入序号：",
+        "info_choose_idetype":"请选择IDE类型，输入序号：",
+        "info_available_templates":"可供选择的模板如下：",
+        "info_available_ides":"可供选择的IDE如下："
+    },
     "config": {
         "info_help_short": "设置SmartIDE配置信息",
         "info_help_long": "设置SmartIDE配置信息",

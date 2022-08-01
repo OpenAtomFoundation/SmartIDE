@@ -1,8 +1,8 @@
 <!--
  * @Date: 2022-03-10 10:48:37
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-01 10:05:50
- * @FilePath: /smartide/deployment/smartide-pipeline/readme.md
+ * @LastEditTime: 2022-08-01 11:14:09
+ * @FilePath: /cli/Users/jasonchen/projects/smartide/smartide/deployment/smartide-pipeline/readme.md
 -->
 
 ## 阿里云版tekton配置
