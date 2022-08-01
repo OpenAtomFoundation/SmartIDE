@@ -84,9 +84,9 @@ var ApplySSHCmd = &cobra.Command{
 		k8sUtil, err := kubectl.NewK8sUtil(tempK8sConfigFileRelativePath,
 			resourceInfo.KubeContext,
 			configMapNamespace)
-		if err != nil {
-			common.SmartIDELog.Error(err)
-		}
+		common.CheckError(err)
+		err = k8sUtil.Check()
+		common.CheckError(err)
 
 		//3. Construct Config Map
 		configMap := &kubectl.ConfigMap{

@@ -105,6 +105,8 @@ var k8sCmd = &cobra.Command{
 			workspaceInfo.K8sInfo.Context,
 			namespace)
 		common.CheckError(err)
+		err = k8sUtil.Check()
+		common.CheckError(err)
 
 		//3. Delete ingress if public-url flag is disable
 		if publicUrl == "disable" {

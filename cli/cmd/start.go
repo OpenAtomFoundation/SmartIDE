@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-01 09:46:59
+ * @LastEditTime: 2022-08-01 10:44:04
  */
 package cmd
 
@@ -145,6 +145,8 @@ var startCmd = &cobra.Command{
 				common.SmartIDELog.Error(err)
 
 			} else { //1.2.2. cli 在客户端运行
+				err = k8sUtil.Check()
+				common.SmartIDELog.Error(err)
 
 				if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server { //1.2.2.1. 远程工作区 本地加载
 					err := start.ExecuteServerK8sStartByClientEnvCmd(workspaceInfo, executeStartCmdFunc)

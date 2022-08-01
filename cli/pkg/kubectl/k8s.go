@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:13:54
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-26 16:27:00
+ * @LastEditTime: 2022-08-01 10:42:10
  * @FilePath: /cli/pkg/kubectl/k8s.go
  */
 
@@ -129,6 +129,19 @@ func (k *KubernetesUtil) CreateKubeConfig(kubeConfigContent string) error {
 	kubeConfigPath := "~/.kube/config"
 	err := common.FS.CreateOrOverWrite(kubeConfigPath, kubeConfigContent)
 
+	return err
+}
+
+// 检查集群是否可以连接
+func (k *KubernetesUtil) Check() error {
+	command := "get nodes -o json"
+	output, err := k.ExecKubectlCommandCombined(command, "")
+	if err != nil {
+		return err
+	}
+	if strings.Contains(output, "Unable to connect to the server") {
+		return errors.New(output)
+	}
 	return err
 }
 
