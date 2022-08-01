@@ -67,7 +67,7 @@ spec:
 
         echo "hello smartide"
 
-        smartide version
+        smartide version --mode server --isInsightDisabled true
 
 
         if [ "$(params.COMMAND)" == "start" ]; then 
