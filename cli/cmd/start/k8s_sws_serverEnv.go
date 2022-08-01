@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-05-31 09:36:33
- * @LastEditors: kenan
- * @LastEditTime: 2022-07-15 10:40:02
- * @FilePath: /smartide/cli/cmd/start/k8s_sws_serverEnv.go
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-08-01 10:58:12
+ * @FilePath: /cli/cmd/start/k8s_sws_serverEnv.go
  */
 
 package start
@@ -25,13 +25,16 @@ func ExecuteK8sServerStartCmd(cmd *cobra.Command, k8sUtil kubectl.KubernetesUtil
 			return
 		}
 		if err != nil {
-			smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_Start, cmd, false, nil, workspace.WorkspaceInfo{}, err.Error(), "")
+			smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_Start, cmd, false, nil, workspaceInfo, err.Error(), "")
+			common.CheckError(err)
 		}
-		common.CheckError(err)
+
 	}
 
 	//1. 下载.kube/config文件到本地
 	err := k8sUtil.CreateKubeConfig(workspaceInfo.K8sInfo.KubeConfigContent)
+	serverFeedback(err)
+	err = k8sUtil.Check()
 	serverFeedback(err)
 
 	// 工作区

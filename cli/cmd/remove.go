@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-11 09:30:25
+ * @LastEditTime: 2022-08-01 10:58:51
  */
 package cmd
 
@@ -107,8 +107,9 @@ var removeCmd = &cobra.Command{
 		var checkErrorFeedback = func(err error) {
 			if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server && err != nil {
 				server.Feedback_Finish(server.FeedbackCommandEnum_Remove, cmd, false, nil, workspaceInfo, err.Error(), "")
+				common.CheckError(err)
 			}
-			common.CheckError(err)
+
 		}
 
 		//2. 操作类型
@@ -160,6 +161,8 @@ var removeCmd = &cobra.Command{
 							workspaceInfo.K8sInfo.Context,
 							workspaceInfo.K8sInfo.Namespace)
 						common.CheckError(err)
+						err = k8sUtil.Check()
+						common.CheckError(err)
 
 						err = remove.RemoveK8s(*k8sUtil, workspaceInfo)
 						common.CheckError(err)
@@ -190,6 +193,8 @@ var removeCmd = &cobra.Command{
 
 				k8sUtil.CreateKubeConfig(workspaceInfo.K8sInfo.KubeConfigContent)
 				checkErrorFeedback(err)
+				err = k8sUtil.Check()
+				common.CheckError(err)
 
 				pod, _, _ := start.GetDevContainerPod(*k8sUtil, workspaceInfo.K8sInfo.TempK8sConfig)
 				if pod == nil {

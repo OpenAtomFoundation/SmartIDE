@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-06-07 14:21:08
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-07 14:51:35
- * @FilePath: /smartide-cli/cmd/remove/core.go
+ * @LastEditTime: 2022-08-01 09:47:15
+ * @FilePath: /cli/cmd/remove/core.go
  */
 
 package remove
@@ -23,7 +23,7 @@ func serverFeedback(workspaceInfo workspace.WorkspaceInfo, cmd *cobra.Command, e
 		return
 	}
 	if err != nil {
-		smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_Start, cmd, false, nil, workspace.WorkspaceInfo{}, err.Error(), "")
+		smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_Start, cmd, false, nil, workspaceInfo, err.Error(), "")
 	}
 
 	common.SmartIDELog.Error(err)

@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-06-07 09:26:55
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-09 14:56:56
- * @FilePath: /smartide-cli/cmd/start/k8s_sws_clientEnv.go
+ * @LastEditTime: 2022-08-01 10:43:59
+ * @FilePath: /cli/cmd/start/k8s_sws_clientEnv.go
  */
 
 package start
@@ -44,6 +44,10 @@ func ExecuteServerK8sStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo,
 	k8sUtil, err := kubectl.NewK8sUtil(workspaceInfo.K8sInfo.KubeConfigFilePath,
 		workspaceInfo.K8sInfo.Context,
 		workspaceInfo.K8sInfo.Namespace)
+	if err != nil {
+		return err
+	}
+	err = k8sUtil.Check()
 	if err != nil {
 		return err
 	}
