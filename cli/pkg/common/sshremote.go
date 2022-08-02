@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-02 16:24:47
+ * @LastEditTime: 2022-08-02 21:50:36
  */
 package common
 
@@ -396,7 +396,7 @@ func (instance *SSHRemote) CheckRemoteEnv() error {
 			SmartIDELog.Warning(err.Error())
 		}
 		SmartIDELog.Debug(output)
-		return errors.New("请检查当前环境是否使用bash作为默认shell，清考：https://smartide.cn/zh/docs/install/docker/linux/")
+		return errors.New("请检查当前环境是否使用bash作为默认shell，参考：https://smartide.cn/zh/docs/install/docker/linux/")
 	}
 
 	//2. 错误判断
