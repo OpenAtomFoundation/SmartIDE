@@ -60,14 +60,14 @@ spec:
 
   steps:
     - name: smartide-cli
-      image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-cli:4629
+      image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-cli:4710
 
       script: |
         #!/bin/bash
 
         echo "hello smartide"
 
-        smartide version
+        smartide version --mode server --isInsightDisabled true
 
 
         if [ "$(params.COMMAND)" == "start" ]; then 

@@ -1,4 +1,10 @@
-![](/docs/content/zh/docs/overview/images/smartide-logo-small.png)
+<!--
+ * @Date: 2022-07-15 09:23:34
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-08-02 17:24:09
+ * @FilePath: /smartide/README.md
+-->
+![](/docs/content/zh/docs/overview/images/smartide-logo-small.png) 
 <p align="center"> 
   中文 ｜ <a href="README-EN.md">English</a>
 </p>

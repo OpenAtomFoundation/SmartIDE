@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-03-23 16:13:54
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-26 16:27:00
- * @FilePath: /cli/pkg/kubectl/k8s.go
+ * @LastEditTime: 2022-08-02 16:04:48
+ * @FilePath: /smartide/cli/pkg/kubectl/k8s.go
  */
 
 package kubectl
@@ -132,6 +132,19 @@ func (k *KubernetesUtil) CreateKubeConfig(kubeConfigContent string) error {
 	return err
 }
 
+// 检查集群是否可以连接
+func (k *KubernetesUtil) Check() error {
+	command := "get nodes -o json"
+	output, err := k.ExecKubectlCommandCombined(command, "")
+	if err != nil {
+		return err
+	}
+	if strings.Contains(output, "Unable to connect to the server") {
+		return errors.New(output)
+	}
+	return err
+}
+
 // 拷贝本地ssh config到pod
 func (k *KubernetesUtil) CopyLocalSSHConfigToPod(pod coreV1.Pod, runAsUser string) error {
 	home, err := os.UserHomeDir()
@@ -156,7 +169,7 @@ func (k *KubernetesUtil) CopyLocalSSHConfigToPod(pod coreV1.Pod, runAsUser strin
 	}
 
 	// chmod
-	commad := fmt.Sprintf(`sudo echo -e 'Host *\n	StrictHostKeyChecking no' >>  ~/.ssh/config`)
+	commad := `sudo echo -e 'Host *\n	StrictHostKeyChecking no' >>  ~/.ssh/config`
 	k.ExecuteCommandRealtimeInPod(pod, commad, runAsUser)
 
 	return nil
@@ -427,7 +440,11 @@ func (k *KubernetesUtil) GetPod(selector string, namespace string) (*coreV1.Pod,
 func (k *KubernetesUtil) ExecuteCommandRealtimeInPod(pod coreV1.Pod, command string, runAsUser string) error {
 	//command = "su smartide -c " + command
 	if runAsUser != "" && runAsUser != "root" {
-		command = strings.ReplaceAll(command, "'", "\\\"")
+		if runtime.GOOS == "windows" {
+			command = strings.ReplaceAll(command, "'", "`")
+		} else {
+			command = strings.ReplaceAll(command, "'", "\"\"")
+		}
 		command = fmt.Sprintf(`su %v -c '%v'`, runAsUser, command)
 	}
 	kubeCommand := fmt.Sprintf(` -it exec %v -- /bin/bash -c "%v"`, pod.Name, command)
@@ -444,7 +461,11 @@ func (k *KubernetesUtil) ExecuteCommandRealtimeInPod(pod coreV1.Pod, command str
 func (k *KubernetesUtil) ExecuteCommandCombinedInPod(pod coreV1.Pod, command string, runAsUser string) (string, error) {
 	//command = "su smartide -c " + command
 	if runAsUser != "" && runAsUser != "root" {
-		command = strings.ReplaceAll(command, "'", "\\\"")
+		if runtime.GOOS == "windows" {
+			command = strings.ReplaceAll(command, "'", "`")
+		} else {
+			command = strings.ReplaceAll(command, "'", "\"\"")
+		}
 		command = fmt.Sprintf(`su %v -c '%v'`, runAsUser, command)
 	}
 	kubeCommand := fmt.Sprintf(` -it exec %v -- /bin/bash -c "%v"`, pod.Name, command)
@@ -456,7 +477,11 @@ func (k *KubernetesUtil) ExecuteCommandCombinedInPod(pod coreV1.Pod, command str
 func (k *KubernetesUtil) ExecuteCommandCombinedBackgroundInPod(pod coreV1.Pod, command string, runAsUser string) {
 	//command = fmt.Sprintf("su smartide -c '%v'", command)
 	if runAsUser != "" && runAsUser != "root" {
-		command = strings.ReplaceAll(command, "'", "\\\"")
+		if runtime.GOOS == "windows" {
+			command = strings.ReplaceAll(command, "'", "`")
+		} else {
+			command = strings.ReplaceAll(command, "'", "\"\"")
+		}
 		command = fmt.Sprintf(`su %v -c '%v'`, runAsUser, command)
 	}
 	kubeCommand := fmt.Sprintf(` exec  %v -- /bin/bash -c "%v"`, pod.Name, command)

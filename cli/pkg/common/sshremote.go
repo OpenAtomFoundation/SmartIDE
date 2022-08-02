@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-27 15:30:49
+ * @LastEditTime: 2022-08-02 21:50:36
  */
 package common
 
@@ -364,18 +364,18 @@ func (instance *SSHRemote) CheckRemoteEnv() error {
 	output, err := instance.ExeSSHCommand("git version")
 	if err != nil || strings.Contains(strings.ToLower(output), "error:") {
 		if err != nil {
-			SmartIDELog.Debug(err.Error(), output)
+			SmartIDELog.Importance(i18nInstance.Main.Err_env_git_check, err.Error(), output)
 		}
-		errMsg = append(errMsg, i18nInstance.Main.Err_env_git_check)
+		return errors.New("请检查当前环境是否满足要求，参考：https://smartide.cn/zh/docs/install/docker/linux/")
 	}
 
 	//1.2. docker
 	output, err = instance.ExeSSHCommand("docker version")
 	if err != nil || strings.Contains(strings.ToLower(output), "error:") {
 		if err != nil {
-			SmartIDELog.Debug(err.Error(), output)
+			SmartIDELog.Importance(i18nInstance.Main.Err_env_docker, err.Error(), output)
 		}
-		errMsg = append(errMsg, i18nInstance.Main.Err_env_docker)
+		return errors.New("请检查当前环境是否满足要求，参考：https://smartide.cn/zh/docs/install/docker/linux/")
 	}
 
 	//1.3. docker-compose
@@ -384,18 +384,19 @@ func (instance *SSHRemote) CheckRemoteEnv() error {
 		(!strings.Contains(strings.ToLower(output), "docker-compose version") && !strings.Contains(strings.ToLower(output), "docker compose version")) ||
 		strings.Contains(strings.ToLower(output), "error:") {
 		if err != nil {
-			SmartIDELog.Debug(err.Error(), output)
+			SmartIDELog.Importance(i18nInstance.Main.Err_env_Docker_Compose, err.Error(), output)
 		}
-		errMsg = append(errMsg, i18nInstance.Main.Err_env_Docker_Compose)
+		return errors.New("请检查当前环境是否满足要求，参考：https://smartide.cn/zh/docs/install/docker/linux/")
 	}
 
 	//1.4. 默认的shell 是否为bash
 	output, err = instance.ExeSSHCommand("echo $SHELL")
-	if err != nil {
-		SmartIDELog.Warning(err.Error())
-	}
-	if !strings.Contains(output, "/bash") {
-		errMsg = append(errMsg, "当前用户的默认shell必须为bash，您可以通过 “sudo usermod -s /bin/bash {username}” 或者 “sudo vim /etc/passwd” 进行设置")
+	if err != nil || !strings.Contains(output, "/bash") {
+		if err != nil {
+			SmartIDELog.Warning(err.Error())
+		}
+		SmartIDELog.Debug(output)
+		return errors.New("请检查当前环境是否使用bash作为默认shell，参考：https://smartide.cn/zh/docs/install/docker/linux/")
 	}
 
 	//2. 错误判断

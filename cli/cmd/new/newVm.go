@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-04-20 10:46:40
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-26 08:34:35
- * @FilePath: /smartide-cli/cmd/new/newVm.go
+ * @LastEditTime: 2022-08-01 09:47:31
+ * @FilePath: /cli/cmd/new/newVm.go
  */
 
 package new
@@ -33,7 +33,8 @@ func VmNew(cmd *cobra.Command, args []string, workspaceInfo workspace.WorkspaceI
 			return
 		}
 		if err != nil {
-			smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_New, cmd, false, nil, workspace.WorkspaceInfo{}, err.Error(), "")
+			smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_New, cmd, false, nil, workspaceInfo, err.Error(), "")
+			common.CheckError(err)
 		}
 	}
 
