@@ -4,7 +4,7 @@ linkTitle: "CLI"
 date: 2021-09-24
 weight: 20
 description: >
-  本文档介绍如何完成SmartIDE CLI的安装。当前SmartIDE CLI支持MacOS和Windows两种操作系统，我们提供了一键安装脚本方便开发人员快速完成安装。
+  本文档介绍如何完成SmartIDE CLI的安装。当前SmartIDE CLI支持Windows/Mac/Linux三种操作系统和x86/arm两种处理器，我们提供了一键安装脚本方便开发人员快速完成安装。
 ---
 
 ## 先决条件
@@ -36,6 +36,7 @@ SmartIDE CLI 通过调用docker和docker-compose来实现容器化环境的管�
 
 | 版本号      | 构建编号 | 发布日期      |   简要说明   |
 | ----------- | ----------- | ----------- | ----------- |
+| v1.0.23 | 4650 | 2022.07.29 | 主要包括：1. CLI正式开源 2. 完整k8s模式 3. 团队管理 4. Hybrid模式 VSCode/JetBrains Gateway 5. smartide-webterminal 6. ARM支持 7. Pipeline模式 - Gitlab CI 支持 8. node、java VMLC开发者镜像 9.修复若干Bug |
 | v0.1.20 | 4041 | 2022.06.17 | 增加Server的K8S模式功能；优化CLI K8S模式功能、工作区策略SSH Key；修复若干BUG。  |
 | [v0.1.19](/zh/blog/2022-0615-sprint19/) | 3909 | 2022.06.01 | 增加工作区策略SSH Key及Git Config功能；工作区日志优化；K8S模式增强；修复若干BUG。  |
 | [v0.1.18](/zh/blog/2022-0519-sprint18/)     | 3538 | 2022.05.19 | 增加CLi K8s模式，并支持主机资源非22端口连接。插件市场历史版本同步，阿里 OpenSumi使用SmartIDE插件市场作为官方市场。修复了若干Bug。  |
@@ -67,7 +68,6 @@ curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/releases/$(curl -L -s h
 curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/releases/$(curl -L -s https://smartidedl.blob.core.chinacloudapi.cn/releases/stable.txt)/smartide-osx-arm64" \
 && mv -f smartide-osx-arm64 /usr/local/bin/smartide \
 && ln -s -f /usr/local/bin/smartide /usr/local/bin/se \
-&& chmod +x /usr/local/bin/smartide
 ```
 {{% /tab %}}
 {{% tab name="Linux" %}}
@@ -75,8 +75,16 @@ curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/releases/$(curl -L -s h
 # SmartIDE 每日构建版通道安装脚本
 # 打开终端窗口，复制粘贴以下脚本即可安装每日构建版SmartIDE CLI应用
 # 再次执行此命令即可更新版本
-curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/releases/$(curl -L -s https://smartidedl.blob.core.chinacloudapi.cn/releases/stable.txt)/smartide-linux" \
-&& sudo mv -f smartide-linux /usr/local/bin/smartide \
+
+# x86 架构处理器
+curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/releases/$(curl -L -s https://smartidedl.blob.core.chinacloudapi.cn/releases/stable.txt)/smartide-linux-amd64" \
+&& sudo mv -f smartide-linux-amd64 /usr/local/bin/smartide \
+&& sudo ln -s -f /usr/local/bin/smartide /usr/local/bin/se \
+&& sudo chmod +x /usr/local/bin/smartide
+
+# arm 架构处理器
+curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/releases/$(curl -L -s https://smartidedl.blob.core.chinacloudapi.cn/releases/stable.txt)/smartide-linux-arm64" \
+&& sudo mv -f smartide-linux-arm64 /usr/local/bin/smartide \
 && sudo ln -s -f /usr/local/bin/smartide /usr/local/bin/se \
 && sudo chmod +x /usr/local/bin/smartide
 ```
@@ -128,8 +136,16 @@ curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/builds/$(curl -L -s htt
 # SmartIDE 每日构建版通道安装脚本
 # 打开终端窗口，复制粘贴以下脚本即可安装每日构建版SmartIDE CLI应用
 # 再次执行此命令即可更新版本
-curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/builds/$(curl -L -s https://smartidedl.blob.core.chinacloudapi.cn/builds/stable.txt)/smartide-linux" \
-&& sudo mv -f smartide-linux /usr/local/bin/smartide \
+
+# x86架构处理器
+curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/builds/$(curl -L -s https://smartidedl.blob.core.chinacloudapi.cn/builds/stable.txt)/smartide-linux-amd64" \
+&& sudo mv -f smartide-linux-amd64 /usr/local/bin/smartide \
+&& sudo ln -s -f /usr/local/bin/smartide /usr/local/bin/se \
+&& sudo chmod +x /usr/local/bin/smartide
+
+# arm架构处理器
+curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/builds/$(curl -L -s https://smartidedl.blob.core.chinacloudapi.cn/builds/stable.txt)/smartide-linux-arm64" \
+&& sudo mv -f smartide-linux-arm64 /usr/local/bin/smartide \
 && sudo ln -s -f /usr/local/bin/smartide /usr/local/bin/se \
 && sudo chmod +x /usr/local/bin/smartide
 ```
@@ -156,11 +172,13 @@ Invoke-WebRequest -Uri ("https://smartidedl.blob.core.chinacloudapi.cn/builds/"+
 # 键入以下命令获取当前版本
 smartide version
 # 输出如下
-v0.1.11.2035
-版本号: v0.1.11.2035
-构建号: 20220208.2_2035_main_IndividualCI
-编译时间: 2022-02-08 01:15:49
-提交记录: 2030b4ab1492c7afcc13f918a782b06c36f11a6d
+v1.0.23.4650
+版本号: v1.0.23.4650
+操作系统: Microsoft Windows 11 企业版
+构建号: 20220729.4_4650_main_Manual
+编译时间: 2022-07-29 03:22:35
+提交记录: a26ef7a473eb2251f9a8276755d30b73c3142e4e
+发行商: leansoftX.com
 ```
 
 说明：
