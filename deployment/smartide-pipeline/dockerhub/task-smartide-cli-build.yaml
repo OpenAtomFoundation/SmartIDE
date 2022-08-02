@@ -60,7 +60,7 @@ spec:
 
   steps:
     - name: smartide-cli
-      image: smartide/smartide-cli:4704
+      image: smartide/smartide-cli:4710
 
       script: |
         #!/bin/bash
