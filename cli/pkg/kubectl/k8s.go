@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:13:54
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-02 14:42:16
+ * @LastEditTime: 2022-08-02 14:43:33
  * @FilePath: /smartide/cli/pkg/kubectl/k8s.go
  */
 
@@ -457,7 +457,7 @@ func (k *KubernetesUtil) ExecuteCommandRealtimeInPod(pod coreV1.Pod, command str
 func (k *KubernetesUtil) ExecuteCommandCombinedInPod(pod coreV1.Pod, command string, runAsUser string) (string, error) {
 	//command = "su smartide -c " + command
 	if runAsUser != "" && runAsUser != "root" {
-		command = strings.ReplaceAll(command, "'", "\\\"")
+		command = strings.ReplaceAll(command, "'", "\"\"")
 		command = fmt.Sprintf(`su %v -c '%v'`, runAsUser, command)
 	}
 	kubeCommand := fmt.Sprintf(` -it exec %v -- /bin/bash -c "%v"`, pod.Name, command)
@@ -469,7 +469,7 @@ func (k *KubernetesUtil) ExecuteCommandCombinedInPod(pod coreV1.Pod, command str
 func (k *KubernetesUtil) ExecuteCommandCombinedBackgroundInPod(pod coreV1.Pod, command string, runAsUser string) {
 	//command = fmt.Sprintf("su smartide -c '%v'", command)
 	if runAsUser != "" && runAsUser != "root" {
-		command = strings.ReplaceAll(command, "'", "\\\"")
+		command = strings.ReplaceAll(command, "'", "\"\"")
 		command = fmt.Sprintf(`su %v -c '%v'`, runAsUser, command)
 	}
 	kubeCommand := fmt.Sprintf(` exec  %v -- /bin/bash -c "%v"`, pod.Name, command)
