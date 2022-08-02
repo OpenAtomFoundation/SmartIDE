@@ -118,13 +118,21 @@ stages:
                 upx -9 -o $(cliname)-win-$(Build.BuildNumber)-x64.exe $(cliname)-win-$(Build.BuildNumber)-x64-origin.exe
 
 
-                echo "build for macos ..."
+                echo "build for macos amd64 ..."
 
                 ##CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o $(cliname)-osx-$(Build.BuildNumber)-x64-origin  -ldflags="-X 'main.BuildTime=$(date "+%Y-%m-%d %H:%M:%S")'"
 
                 ##upx -9 -o $(cliname)-osx-$(Build.BuildNumber)-x64 $(cliname)-osx-$(Build.BuildNumber)-x64-origin
 
                 CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o $(cliname)-osx-$(Build.BuildNumber)-x64  -ldflags="-X 'main.BuildTime=$(date "+%Y-%m-%d %H:%M:%S")'"
+               
+                echo "build for macos arm64 ..."
+
+                ##CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o $(cliname)-osx-$(Build.BuildNumber)-x64-origin  -ldflags="-X 'main.BuildTime=$(date "+%Y-%m-%d %H:%M:%S")'"
+
+                ##upx -9 -o $(cliname)-osx-$(Build.BuildNumber)-x64 $(cliname)-osx-$(Build.BuildNumber)-x64-origin
+
+                CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -o $(cliname)-osx-$(Build.BuildNumber)-arm64  -ldflags="-X 'main.BuildTime=$(date "+%Y-%m-%d %H:%M:%S")'"
 
                 #sudo ls **/*$(cliname)-*-**
 
@@ -138,6 +146,7 @@ stages:
                 $(cliname)-linux-$(Build.BuildNumber)-arm64
                  $(cliname)-linux-$(Build.BuildNumber)-amd64
                 $(cliname)-osx-$(Build.BuildNumber)-x64
+                $(cliname)-osx-$(Build.BuildNumber)-arm64
                 **/stable*.txt
                 **/stable*.json
               TargetFolder: "$(Build.ArtifactStagingDirectory)"
@@ -169,7 +178,7 @@ stages:
               buildType: "current"
               downloadType: "single"
               artifactName: "drop"
-              itemPattern: "**/*$(cliname)-osx-**-x64*"
+              itemPattern: "**/*$(cliname)-osx-**-***"
               downloadPath: "$(Build.SourcesDirectory)"
           - task: Bash@3
             inputs:
@@ -208,11 +217,37 @@ stages:
               targetType: "inline"
               script: "mv $(cliname) $(cliname)-osx"
               workingDirectory: $(Build.ArtifactStagingDirectory)
+
+          - task: Bash@3
+            inputs:
+              targetType: "inline"
+              script: "mv $(cliname)-osx-**-arm64 $(cliname)"
+              workingDirectory: $(Build.SourcesDirectory)/drop
+            displayName: renamecli          
+          - task: Bash@3
+            inputs:
+              targetType: "inline"
+              script: |
+                security import $(p12SecureFile.secureFilePath) -k ~/Library/Keychains/login.keychain-db -P $(osx-codeSignPWD)
+                gon -log-level=info -log-json $(signConfig.secureFilePath)
+              workingDirectory: "$(Build.SourcesDirectory)"
+            displayName: osx-codesign
+          - task: Bash@3
+            inputs:
+              targetType: "inline"
+              script: "unzip $(Build.SourcesDirectory)/$(cliname)-osx-x64.zip -d $(Build.ArtifactStagingDirectory)"
+          - task: Bash@3
+            displayName: rename cli (osx)
+            inputs:
+              targetType: "inline"
+              script: "mv $(cliname) $(cliname)-osx-arm64"
+              workingDirectory: $(Build.ArtifactStagingDirectory)
           - task: PublishBuildArtifacts@1
             inputs:
               PathtoPublish: "$(Build.ArtifactStagingDirectory)"
               ArtifactName: "drop-sign"
               publishLocation: "Container"
+              
 
       - job: win10
         displayName: win10
