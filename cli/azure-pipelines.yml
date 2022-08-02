@@ -210,18 +210,18 @@ stages:
           - task: Bash@3
             inputs:
               targetType: "inline"
-              script: "unzip $(Build.SourcesDirectory)/$(cliname)-osx-x64.zip -d $(Build.ArtifactStagingDirectory)"
+              script: "unzip -o $(Build.SourcesDirectory)/$(cliname)-osx-x64.zip -d $(Build.ArtifactStagingDirectory)"
           - task: Bash@3
             displayName: rename cli (osx)
             inputs:
               targetType: "inline"
-              script: "mv $(cliname) $(cliname)-osx"
+              script: "mv -f $(cliname) $(cliname)-osx"
               workingDirectory: $(Build.ArtifactStagingDirectory)
 
           - task: Bash@3
             inputs:
               targetType: "inline"
-              script: "mv $(cliname)-osx-**-arm64 $(cliname)"
+              script: "mv -f $(cliname)-osx-**-arm64 $(cliname)"
               workingDirectory: $(Build.SourcesDirectory)/drop
             displayName: renamecli          
           - task: Bash@3
@@ -235,19 +235,19 @@ stages:
           - task: Bash@3
             inputs:
               targetType: "inline"
-              script: "unzip $(Build.SourcesDirectory)/$(cliname)-osx-x64.zip -d $(Build.ArtifactStagingDirectory)"
+              script: "unzip -o $(Build.SourcesDirectory)/$(cliname)-osx-x64.zip -d $(Build.ArtifactStagingDirectory)"
           - task: Bash@3
             displayName: rename cli (osx)
             inputs:
               targetType: "inline"
-              script: "mv $(cliname) $(cliname)-osx-arm64"
+              script: "mv -f $(cliname) $(cliname)-osx-arm64"
               workingDirectory: $(Build.ArtifactStagingDirectory)
           - task: PublishBuildArtifacts@1
             inputs:
               PathtoPublish: "$(Build.ArtifactStagingDirectory)"
               ArtifactName: "drop-sign"
               publishLocation: "Container"
-              
+
 
       - job: win10
         displayName: win10
