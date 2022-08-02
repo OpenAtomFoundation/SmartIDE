@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:13:54
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-02 15:56:59
+ * @LastEditTime: 2022-08-02 16:04:48
  * @FilePath: /smartide/cli/pkg/kubectl/k8s.go
  */
 
@@ -169,7 +169,7 @@ func (k *KubernetesUtil) CopyLocalSSHConfigToPod(pod coreV1.Pod, runAsUser strin
 	}
 
 	// chmod
-	commad := fmt.Sprintf(`sudo echo -e 'Host *\n	StrictHostKeyChecking no' >>  ~/.ssh/config`)
+	commad := `sudo echo -e 'Host *\n	StrictHostKeyChecking no' >>  ~/.ssh/config`
 	k.ExecuteCommandRealtimeInPod(pod, commad, runAsUser)
 
 	return nil
