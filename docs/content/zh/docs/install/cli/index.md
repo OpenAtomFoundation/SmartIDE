@@ -61,6 +61,13 @@ curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/releases/$(curl -L -s h
 && mv -f smartide-osx /usr/local/bin/smartide \
 && ln -s -f /usr/local/bin/smartide /usr/local/bin/se \
 && chmod +x /usr/local/bin/smartide
+
+# SmartIDE Apple芯片（比如M1/M2系列）稳定版通道安装脚本
+# 打开终端窗口，复制粘贴以下脚本即可安装稳定版SmartIDE CLI应用
+# 再次执行此命令即可更新版本
+curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/releases/$(curl -L -s https://smartidedl.blob.core.chinacloudapi.cn/releases/stable.txt)/smartide-osx-arm64" \
+&& mv -f smartide-osx-arm64 /usr/local/bin/smartide \
+&& ln -s -f /usr/local/bin/smartide /usr/local/bin/se \
 ```
 {{% /tab %}}
 {{% tab name="Linux" %}}
@@ -111,6 +118,14 @@ SmartIDE CI/CD 流水线每晚8点（GMT+8 Beijing) 会自动将当天提交到s
 # 再次执行此命令即可更新版本
 curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/builds/$(curl -L -s https://smartidedl.blob.core.chinacloudapi.cn/builds/stable.txt)/smartide-osx" \
 && mv -f smartide-osx /usr/local/bin/smartide \
+&& ln -s -f /usr/local/bin/smartide /usr/local/bin/se \
+&& chmod +x /usr/local/bin/smartide
+
+# SmartIDE Apple芯片（比如M1/M2系列）每日构建版通道安装脚本
+# 打开终端窗口，复制粘贴以下脚本即可安装每日构建版SmartIDE CLI应用
+# 再次执行此命令即可更新版本
+curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/builds/$(curl -L -s https://smartidedl.blob.core.chinacloudapi.cn/builds/stable.txt)/smartide-osx-arm64" \
+&& mv -f smartide-osx-arm64 /usr/local/bin/smartide \
 && ln -s -f /usr/local/bin/smartide /usr/local/bin/se \
 && chmod +x /usr/local/bin/smartide
 ```
