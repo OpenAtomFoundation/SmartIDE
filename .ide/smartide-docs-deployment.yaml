@@ -28,7 +28,7 @@ spec:
               value: "0"
             - name: LOCAL_USER_GID
               value: "0"
-          image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-hugo:latest
+          image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-v2-vscode:all-version
           name: smartide-docs-dev
           # command: ["/bin/bash", "-ce", "tail -f /dev/null"]
           ports:
