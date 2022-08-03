@@ -18,17 +18,12 @@ spec:
     spec:
       containers:
         - env:
-            - name: HOME
-              value: /root
             - name: LOCAL_USER_PASSWORD
               value: root123
             - name: ROOT_PASSWORD
               value: root123
-            - name: LOCAL_USER_UID
-              value: "0"
-            - name: LOCAL_USER_GID
-              value: "0"
           image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-v2-vscode:all-version
+          imagePullPolicy: Always
           name: smartide-docs-dev
           # command: ["/bin/bash", "-ce", "tail -f /dev/null"]
           ports:
