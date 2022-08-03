@@ -1,5 +1,5 @@
 ---
-title: "SmartIDE v1.0.23 - CLI正式开源，完整k8s模式"
+title: "SmartIDE v1.0.23 一个非常不敏捷的发布"
 linkTitle: "v1.0.23"
 date: 2022-07-29
 description: >
@@ -8,7 +8,7 @@ description: >
 
 ![Sprint23 Version 1.0](images/v1-sprint23-001.png)
 
-本次Sprint 23包括的特性有：完整的k8s模式支持，团队管理能力，简化使用本地IDE（VSCode/JetBrains Gateway）连接SmartIDE工作区的Hybrid模式，工作区扩展组件Web Terminal，ARM处理器支持以及Gitlab CI/CD流水线支持。另外，我们也扩展了VMLC的支持范围，对 node 和 java 两种技术栈提供了对应的 VMLC 开发者镜像。
+本次发布包含Sprint 20-23的内容，包括的特性有：完整的k8s模式支持，团队管理能力，简化使用本地IDE（VSCode/JetBrains Gateway）连接SmartIDE工作区的Hybrid模式，工作区扩展组件Web Terminal，ARM处理器支持以及Gitlab CI/CD流水线支持。另外，我们也扩展了VMLC的支持范围，对 node 和 java 两种技术栈提供了对应的 VMLC 开发者镜像。
 
 ## CLI代码正式开源
 
@@ -75,7 +75,7 @@ SmartIDE工作区提供VMLC支持，你可以在自己的k8s集群上激活VMLC�
 - [为什么Dapr是比SpringCloud和Istio更优雅的微服务框架？](/zh/blog/2022-0601-dapr/)
 - [SmartIDE Server 快速启动教程](/zh/docs/quickstart/server/)
 
-## 团队管理
+## 团队共享资源
 
 SmartIDE Server中新增了团队管理能力，开发者可以根据需要创建团队并将其他用户加入团队。团队的创建者会成为当前团队的管理员，作为管理员可以将主机或者k8s集群绑定到团队并允许其他团队成员使用这些资源来创建工作区。
 
@@ -83,7 +83,7 @@ SmartIDE Server中新增了团队管理能力，开发者可以根据需要创�
 
 ![Sprint23 Version 1.0](images/v1-sprint23-007.png)
 
-## Hybrid混动模式 - VSCode SSH Remote 和 JetBrains Gateway 支持
+## Hybrid混动模式优化 - VSCode SSH Remote 和 JetBrains Gateway 支持
 
 我们简化了VSCode SSH Remote连接SmartIDE工作区的操作步骤，当开发者使用CLI启动工作区的时候，CLI会自动在 .ssh/config 文件中添加远程连接，这时开发者只需要打开VSCode的远程连接插件，即可看到已经配置好的远程连接，直接点击即可完成连接。在这个过程中，SmartIDE还会自动更新远程工作区容器中的 ~/.ssh/authorizedkeys 文件，将本地的ssh公钥添加进去，这样开发者在连接远程工作区的时候就不再需要输入密码，可以实现一键连接。
 
@@ -150,7 +150,6 @@ curl -OL  "https://smartidedl.blob.core.chinacloudapi.cn/releases/$(curl -L -s h
 && sudo chmod +x /usr/local/bin/smartide
 ```
 
-
 *下图：在一台 Apple MacPro M1 上使用ARM原生版本的SmartIDE CLI运行容器化工作区*
 
 ![Sprint23 Version 1.0](images/v1-sprint23-009.png)
@@ -206,11 +205,14 @@ smartide:
         - smartide start --mode pipeline --isInsightDisabled false --host $SMARTIDE_REMOTE_HOST --username $SMARTIDE_REMOTE_HOST_USERNAME --password $SMARTIDE_REMOTE_HOST_PASSWORD --callback-api-address $SMARTIDE_CALLBACK_API_ADDRESS $SMARTIDE_GIT_REPO_ADDRESS
 ```
 
-以上gitlab-ci流水线脚本将会使用当前的代码库创建云端工作区，开发者可以通过定制 .ide.yaml 配置文件在这个云端工作区中嵌入自己所需要的IDE，中间件或者其他环境，具体做法请参考 项目适配 和 镜像和模版。
+以上gitlab-ci流水线脚本将会使用当前的代码库创建云端工作区，开发者可以通过定制 `.ide.yaml` 配置文件在这个云端工作区中嵌入自己所需要的IDE，中间件或者其他环境，具体做法请参考 [项目适配](/zh/docs/manual/adaption/) 和 [镜像和模版](/zh/docs/templates/)。
 
-本次迭代中我们针对 SmartIDE CLI 的现有功能进行了简单扩展，在现有的 client | server 两种运行模式之上提供了 pipeline 的运行模式。这种模式其实是一种headless模式，cli不会试图打开浏览器，也不会调用 smartide server 的 api，而是允许用户自行指定一个 callback 地址 $SMARTIDE_CALLBACK_API_ADDRESS。当CLI完成工作区创建工作后，会按照既定json格式将工作区详情回调通知给这个地址。使用这种方式，开发者可以非常简单的将 CloudIDE能力 集成到现有的企业级DevOps平台中，需要的仅仅是一个流水线调度工具（gitlab-ci, jenkins, azure pipeline或者其他任何支持命令行调用的工具）和一个接收回调json格式的接口。
+本次迭代中我们针对 SmartIDE CLI 的现有功能进行了简单扩展，在现有的 `client | server` 两种运行模式之上提供了 `pipeline` 的运行模式。这种模式其实是一种headless模式，cli不会试图打开浏览器，也不会调用 smartide server 的 api，而是允许用户自行指定一个 callback 地址 `$SMARTIDE_CALLBACK_API_ADDRESS`。当CLI完成工作区创建工作后，会按照既定json格式将工作区详情回调通知给这个地址。使用这种方式，开发者可以非常简单的将 CloudIDE能力 集成到现有的企业级DevOps平台中，需要的仅仅是一个流水线调度工具（gitlab-ci, jenkins, azure pipeline或者其他任何支持命令行调用的工具）和一个接收回调json格式的接口。
 
 本次提供的gitlab-ci集成示例只是一个开始，当前SmartIDE CLI的特性已经形成闭环，我们在后续迭代中会开始探索提供更多的集成方式，让开发者可以以最简单的方式享受到云端开发的好处。
+
+有关gitlab-ci支持的详情请参考：
+- https://github.com/SmartIDE/SmartIDE/issues/30 
 
 > 使用云原生技术赋能开发者，是我们一贯的使命。
 
