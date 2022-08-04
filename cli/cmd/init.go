@@ -1,5 +1,5 @@
 /*
- * @Author: Bo Dai (daibo@leansoftx.com, http://smallidea.cnblogs.com)
+ * @Author: Bo Dai (daibo@leansoftx.com)
  * @Description:
  * @Date: 2022-07
  * @LastEditors: Bo Dai
@@ -17,8 +17,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"text/tabwriter"
 
+	initExtend "github.com/leansoftX/smartide-cli/cmd/init"
 	"github.com/leansoftX/smartide-cli/cmd/start"
 	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
@@ -26,25 +26,6 @@ import (
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
 )
-
-type NewTypeBO struct {
-	TypeName string    `json:"typename"`
-	SubTypes []SubType `json:"subtype"`
-	Commands []string  `json:"command"`
-}
-
-type TemplateTypeBo struct {
-	TypeName string
-	SubType  string
-	Commands []string
-}
-
-type SubType struct {
-	Name  string `json:"name"`
-	Title string `json:"title"`
-	Desc  string `json:"desc"`
-	Logo  string `json:"logo"`
-}
 
 const TMEPLATE_DIR_NAME = "templates"
 
@@ -81,7 +62,7 @@ var initCmd = &cobra.Command{
 			appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(workspaceInfo.Mode), strings.Join(imageNames, ","))
 		}
 
-		selectedTemplateType := new(TemplateTypeBo)
+		selectedTemplateType := new(initExtend.TemplateTypeBo)
 		// 检测当前文件夹是否有.ide.yaml，有了返回
 		hasIdeConfigYaml := common.IsExist(".ide/.ide.yaml")
 		if hasIdeConfigYaml {
@@ -122,11 +103,11 @@ var initCmd = &cobra.Command{
 // 打印 service 列表
 
 func init() {
-
+	initCmd.Flags().StringP("type", "t", "", i18nInstance.New.Info_help_flag_type)
 }
 
 // 从command的参数中获取模板设置信息
-func getTemplateSetting(cmd *cobra.Command, args []string) (*TemplateTypeBo, error) {
+func getTemplateSetting(cmd *cobra.Command, args []string) (*initExtend.TemplateTypeBo, error) {
 	common.SmartIDELog.Info(i18nInstance.New.Info_loading_templates)
 
 	// git clone
@@ -142,10 +123,29 @@ func getTemplateSetting(cmd *cobra.Command, args []string) (*TemplateTypeBo, err
 	selectedTemplateTypeName := ""
 
 	selectedTemplateSubTypeName := ""
-	if len(args) == 0 {
+	if len(args) > 0 {
+		argsTemplateTypeName := ""
+		argsTemplateSubTypeName := ""
+		common.SmartIDELog.Info(i18nInstance.Init.Info_check_cmdtemplate)
+		argsTemplateTypeName = args[0]
+		argsTemplateSubTypeName, err = cmd.Flags().GetString("type")
+		for _, currentTemplateType := range templateTypes {
+			if currentTemplateType.TypeName == argsTemplateTypeName {
+				selectedTemplateTypeName = argsTemplateTypeName
+			}
+			for _, currentTemplateTypeSubType := range currentTemplateType.SubTypes {
+				if currentTemplateTypeSubType.Name == argsTemplateSubTypeName {
+					selectedTemplateSubTypeName = currentTemplateTypeSubType.Name
+				}
+			}
+		}
+		common.SmartIDELog.Warning(i18nInstance.Init.Info_noexist_cmdtemplate)
+	}
+
+	if len(args) == 0 || selectedTemplateTypeName == "" || selectedTemplateSubTypeName == "" {
 		// print
 		fmt.Println(i18nInstance.Init.Info_available_templates)
-		printTemplates(templateTypes) // 打印支持的模版列表
+		initExtend.PrintTemplates(templateTypes) // 打印支持的模版列表
 		var index int
 		fmt.Println(i18nInstance.Init.Info_choose_templatetype)
 		fmt.Scanln(&index)
@@ -169,15 +169,14 @@ func getTemplateSetting(cmd *cobra.Command, args []string) (*TemplateTypeBo, err
 
 		selectedTemplateSubTypeName = templateTypes[index].SubTypes[indexIde].Name
 
+		selectedTemplateTypeName = strings.TrimSpace(selectedTemplateTypeName)
+		selectedTemplateSubTypeName = strings.TrimSpace(selectedTemplateSubTypeName)
 	}
 
 	//2.
 
-	selectedTemplateTypeName = strings.TrimSpace(selectedTemplateTypeName)
-	selectedTemplateSubTypeName = strings.TrimSpace(selectedTemplateSubTypeName)
-
 	//3. 遍历进行查找
-	var selectedTemplate *TemplateTypeBo
+	var selectedTemplate *initExtend.TemplateTypeBo
 	for _, currentTemplateType := range templateTypes {
 		if currentTemplateType.TypeName == selectedTemplateTypeName {
 
@@ -196,7 +195,7 @@ func getTemplateSetting(cmd *cobra.Command, args []string) (*TemplateTypeBo, err
 			}
 
 			if isSelected {
-				tmp := TemplateTypeBo{
+				tmp := initExtend.TemplateTypeBo{
 					TypeName: selectedTemplateTypeName,
 					SubType:  selectedTemplateSubTypeName,
 					Commands: currentTemplateType.Commands,
@@ -212,17 +211,6 @@ func getTemplateSetting(cmd *cobra.Command, args []string) (*TemplateTypeBo, err
 		return nil, errors.New(i18nInstance.New.Info_type_no_exist)
 	}
 	return selectedTemplate, nil
-}
-
-// 打印 service 列表
-func printTemplates(newType []NewTypeBO) {
-	w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
-	for i := 0; i < len(newType); i++ {
-		line := fmt.Sprintf("%v %v", i, newType[i].TypeName)
-		fmt.Fprintln(w, line)
-	}
-	w.Flush()
-
 }
 
 //复制templates
@@ -348,7 +336,7 @@ func copyFile(src, dest string) (w int64, err error) {
 }
 
 //加载templates索引json
-func loadTemplatesJson() (templateTypes []NewTypeBO, err error) {
+func loadTemplatesJson() (templateTypes []initExtend.NewTypeBO, err error) {
 	// new type转换为结构体
 	templatesPath := common.PathJoin(config.SmartIdeHome, TMEPLATE_DIR_NAME, "templates.json")
 	templatesByte, err := os.ReadFile(templatesPath)

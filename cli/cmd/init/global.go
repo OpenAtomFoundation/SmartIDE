@@ -11,7 +11,7 @@ import (
 var i18nInstance = i18n.GetInstance()
 
 // 打印 service 列表
-func printTemplates(newType []NewTypeBO) {
+func PrintTemplates(newType []NewTypeBO) {
 	w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
 	for i := 0; i < len(newType); i++ {
 		line := fmt.Sprintf("%v %v", i, newType[i].TypeName)

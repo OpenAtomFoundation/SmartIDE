@@ -14,7 +14,6 @@ import (
 	"strings"
 
 	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
-	"github.com/leansoftX/smartide-cli/cmd/start"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/model"
@@ -84,17 +83,17 @@ func VmInit(cmd *cobra.Command, args []string, workspaceInfo workspace.Workspace
 		selectedTemplateSettings.SubType = "_default"
 	}
 	projectDir := common.FilePahtJoin4Linux("~", model.CONST_REMOTE_REPO_ROOT, workspaceDirName)
-	err = gitCloneTemplateRepo4Remote(sshRemote, projectDir, config.GlobalSmartIdeConfig.TemplateRepo,
+	err = GitCloneTemplateRepo4Remote(sshRemote, projectDir, config.GlobalSmartIdeConfig.TemplateRepo,
 		selectedTemplateSettings.TypeName, selectedTemplateSettings.SubType)
 	common.CheckErrorFunc(err, serverFeedback)
 
 	// 执行vm start命令
-	isUnforward, _ := cmd.Flags().GetBool("unforward")
-	start.ExecuteVmStartCmd(workspaceInfo, isUnforward, yamlExecuteFun, cmd, true)
+	//isUnforward, _ := cmd.Flags().GetBool("unforward")
+	//start.ExecuteVmStartCmd(workspaceInfo, isUnforward, yamlExecuteFun, cmd, true)
 }
 
 // 在服务器上使用git下载制定的template文件，完成后删除.git文件
-func gitCloneTemplateRepo4Remote(sshRemote common.SSHRemote, projectDir string, templateGitCloneUrl string, baseType string, subType string) error {
+func GitCloneTemplateRepo4Remote(sshRemote common.SSHRemote, projectDir string, templateGitCloneUrl string, baseType string, subType string) error {
 
 	// git
 	tempDirPath := common.FilePahtJoin4Linux("~", ".ide", "template")
@@ -164,8 +163,4 @@ func checkRemoteDir(sshRemote common.SSHRemote, projectDirPath string, cmd *cobr
 func getTemplateSetting(cmd *cobra.Command, args []string) (*TemplateTypeBo, error) {
 	err := errors.New("default")
 	return nil, err
-}
-
-func init() {
-
 }
