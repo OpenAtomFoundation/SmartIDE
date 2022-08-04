@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-01 11:12:37
+ * @LastEditTime: 2022-08-04 11:16:46
  */
 package cmd
 
@@ -135,17 +135,21 @@ var startCmd = &cobra.Command{
 			start.ExecuteStartCmd(workspaceInfo, isUnforward, func(v string, d common.Docker) {}, executeStartCmdFunc)
 
 		} else if workspaceInfo.Mode == workspace.WorkingMode_K8s { //1.2. k8s 模式
-			k8sUtil, err := kubectl.NewK8sUtil(workspaceInfo.K8sInfo.KubeConfigFilePath,
-				workspaceInfo.K8sInfo.Context,
-				workspaceInfo.K8sInfo.Namespace)
-			common.SmartIDELog.Error(err)
 
 			if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server { //1.2.1. cli 在服务端运行
+				k8sUtil, err := kubectl.NewK8sUtilWithNewFile(workspaceInfo.K8sInfo.KubeConfigFilePath,
+					workspaceInfo.K8sInfo.KubeConfigContent,
+					workspaceInfo.K8sInfo.Context,
+					workspaceInfo.K8sInfo.Namespace)
+				common.SmartIDELog.Error(err)
+
 				err = start.ExecuteK8sServerStartCmd(cmd, *k8sUtil, workspaceInfo, executeStartCmdFunc)
 				common.SmartIDELog.Error(err)
 
 			} else { //1.2.2. cli 在客户端运行
-				err = k8sUtil.Check()
+				k8sUtil, err := kubectl.NewK8sUtil(workspaceInfo.K8sInfo.KubeConfigFilePath,
+					workspaceInfo.K8sInfo.Context,
+					workspaceInfo.K8sInfo.Namespace)
 				common.SmartIDELog.Error(err)
 
 				if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server { //1.2.2.1. 远程工作区 本地加载

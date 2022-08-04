@@ -73,6 +73,7 @@ var ApplySSHCmd = &cobra.Command{
 		common.CheckError(err)
 		if resourceInfo == nil {
 			common.SmartIDELog.Error(fmt.Sprintf("根据ID（%v）未找到资源数据！", resourceid))
+			return
 		}
 
 		//2. Save temp k8s config file
@@ -81,11 +82,10 @@ var ApplySSHCmd = &cobra.Command{
 		if err != nil {
 			common.SmartIDELog.Error(err)
 		}
-		k8sUtil, err := kubectl.NewK8sUtil(tempK8sConfigFileRelativePath,
+		k8sUtil, err := kubectl.NewK8sUtilWithNewFile(tempK8sConfigFileRelativePath,
+			resourceInfo.KubeConfig,
 			resourceInfo.KubeContext,
 			configMapNamespace)
-		common.CheckError(err)
-		err = k8sUtil.Check()
 		common.CheckError(err)
 
 		//3. Construct Config Map

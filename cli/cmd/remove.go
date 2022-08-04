@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-01 10:58:51
+ * @LastEditTime: 2022-08-04 11:19:11
  */
 package cmd
 
@@ -161,8 +161,6 @@ var removeCmd = &cobra.Command{
 							workspaceInfo.K8sInfo.Context,
 							workspaceInfo.K8sInfo.Namespace)
 						common.CheckError(err)
-						err = k8sUtil.Check()
-						common.CheckError(err)
 
 						err = remove.RemoveK8s(*k8sUtil, workspaceInfo)
 						common.CheckError(err)
@@ -186,15 +184,11 @@ var removeCmd = &cobra.Command{
 				err := remove.RemoveRemote(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsRemoveRemoteDirectory, removeCmdFlag.IsForce, cmd)
 				checkErrorFeedback(err)
 			} else if workspaceInfo.Mode == workspace.WorkingMode_K8s {
-				k8sUtil, err := kubectl.NewK8sUtil(workspaceInfo.K8sInfo.KubeConfigFilePath,
+				k8sUtil, err := kubectl.NewK8sUtilWithNewFile(workspaceInfo.K8sInfo.KubeConfigFilePath,
+					workspaceInfo.K8sInfo.KubeConfigContent,
 					workspaceInfo.K8sInfo.Context,
 					workspaceInfo.K8sInfo.Namespace)
 				checkErrorFeedback(err)
-
-				k8sUtil.CreateKubeConfig(workspaceInfo.K8sInfo.KubeConfigContent)
-				checkErrorFeedback(err)
-				err = k8sUtil.Check()
-				common.CheckError(err)
 
 				pod, _, _ := start.GetDevContainerPod(*k8sUtil, workspaceInfo.K8sInfo.TempK8sConfig)
 				if pod == nil {

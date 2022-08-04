@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-25 17:48:05
- * @FilePath: /cli/cmd/start/k8s.go
+ * @LastEditTime: 2022-08-04 11:25:53
+ * @FilePath: /smartide/cli/cmd/start/k8s.go
  */
 
 package start
@@ -647,7 +647,6 @@ func FeeadbackContainerId(cmd *cobra.Command, workspaceInfo workspace.WorkspaceI
 	fflags := cmd.Flags()
 	host, _ := fflags.GetString(Flags_ServerHost)
 	token, _ := fflags.GetString(Flags_ServerToken)
-	// ownerguid, _ := fflags.GetString(Flags_ServerOwnerGuid)
 	var _feedbackRequest struct {
 		ID          uint
 		ContainerId string

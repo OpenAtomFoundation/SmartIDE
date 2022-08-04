@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:13:54
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-02 16:04:48
+ * @LastEditTime: 2022-08-04 11:28:45
  * @FilePath: /smartide/cli/pkg/kubectl/k8s.go
  */
 
@@ -31,8 +31,20 @@ type KubernetesUtil struct {
 	Commands        string
 }
 
+func NewK8sUtilWithNewFile(kubeConfigFilePath string, kubeConfigContent string, targetContext string, ns string) (*KubernetesUtil, error) {
+	if kubeConfigFilePath == "" {
+		homeDir, _ := os.UserHomeDir()
+		kubeConfigFilePath = filepath.Join(homeDir, ".kube/config_smartide")
+	}
+	return newK8sUtil(kubeConfigFilePath, kubeConfigContent, targetContext, ns)
+}
+
+func NewK8sUtil(kubeConfigFilePath string, targetContext string, ns string) (*KubernetesUtil, error) {
+	return newK8sUtil(kubeConfigFilePath, "", targetContext, ns)
+}
+
 //
-func NewK8sUtil(kubeconfigFilePath string, targetContext string, ns string) (*KubernetesUtil, error) {
+func newK8sUtil(kubeConfigFilePath string, kubeConfigContent string, targetContext string, ns string) (*KubernetesUtil, error) {
 	if targetContext == "" {
 		return nil, errors.New("target k8s context is nil")
 	}
@@ -63,16 +75,27 @@ func NewK8sUtil(kubeconfigFilePath string, targetContext string, ns string) (*Ku
 		 return nil, errors.New("kube_config_content and kube_config_file_path is not nil")
 	 } */
 
+	absoluteKubeConfigFilePath := ""
 	//2.2. 指定kubeconfig
-	if kubeconfigFilePath != "" {
-		homeDir, _ := os.UserHomeDir()
-		if strings.Index(kubeconfigFilePath, "~") == 0 {
-			kubeconfigFilePath = strings.Replace(kubeconfigFilePath, "~", homeDir, -1)
+	homeDir, _ := os.UserHomeDir()
+	if kubeConfigFilePath != "" {
+		if strings.Index(kubeConfigFilePath, "~") == 0 {
+			absoluteKubeConfigFilePath = strings.Replace(kubeConfigFilePath, "~", homeDir, -1)
 		}
-		if !common.IsExist(kubeconfigFilePath) {
-			return nil, fmt.Errorf("%v 不存在", kubeconfigFilePath)
+		if !common.IsExist(absoluteKubeConfigFilePath) {
+			return nil, fmt.Errorf("%v 不存在", absoluteKubeConfigFilePath)
 		}
-		customFlags += fmt.Sprintf("--kubeconfig %v ", kubeconfigFilePath)
+		customFlags += fmt.Sprintf("--kubeconfig %v ", absoluteKubeConfigFilePath)
+	} else {
+		absoluteKubeConfigFilePath = filepath.Join(homeDir, ".kube/config_smartide")
+	}
+
+	//2.3. 更新配置文件的内容
+	if kubeConfigContent != "" {
+		err = common.FS.CreateOrOverWrite(absoluteKubeConfigFilePath, kubeConfigContent)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	//3. 切换到指定的context
@@ -83,6 +106,16 @@ func NewK8sUtil(kubeconfigFilePath string, targetContext string, ns string) (*Ku
 	}
 	if targetContext != strings.TrimSpace(currentContext) { //
 		customFlags += fmt.Sprintf("--context %v ", targetContext)
+	}
+
+	//3.1. check
+	common.SmartIDELog.Info("k8s connection check...")
+	output, err := execKubectlCommandCombined(kubectlFilePath, customFlags+" get nodes -o json", "")
+	if strings.Contains(output, "Unable to connect to the server") {
+		return nil, errors.New(output)
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	//4. namespace 为空时，使用一个随机生成的6位字符作为namespace
@@ -120,7 +153,7 @@ type ExecInPodRequest struct {
 	//Pod apiv1.Pod
 }
 
-// 拷贝本地ssh config到pod
+/* // 拷贝本地ssh config到pod
 func (k *KubernetesUtil) CreateKubeConfig(kubeConfigContent string) error {
 	if kubeConfigContent == "" {
 		return errors.New("kube config content is empty")
@@ -130,10 +163,11 @@ func (k *KubernetesUtil) CreateKubeConfig(kubeConfigContent string) error {
 	err := common.FS.CreateOrOverWrite(kubeConfigPath, kubeConfigContent)
 
 	return err
-}
+} */
 
-// 检查集群是否可以连接
-func (k *KubernetesUtil) Check() error {
+/* // 检查集群是否可以连接
+func check() error {
+	common.SmartIDELog.Info("k8s connection check...")
 	command := "get nodes -o json"
 	output, err := k.ExecKubectlCommandCombined(command, "")
 	if err != nil {
@@ -144,7 +178,7 @@ func (k *KubernetesUtil) Check() error {
 	}
 	return err
 }
-
+*/
 // 拷贝本地ssh config到pod
 func (k *KubernetesUtil) CopyLocalSSHConfigToPod(pod coreV1.Pod, runAsUser string) error {
 	home, err := os.UserHomeDir()
