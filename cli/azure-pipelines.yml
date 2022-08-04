@@ -45,8 +45,7 @@ stages:
 
       - job: build
         displayName: build
-        pool: 
-          vmImage: ubuntu-20.04
+        pool: SmartIDESub03-linux-agt
         steps:
           - checkout: self
           - task: replacetokens@4
@@ -339,8 +338,7 @@ stages:
 
       - job: linux
         displayName: linux
-        pool: 
-          vmImage: ubuntu-20.04
+        pool: SmartIDESub03-linux-agt
         workspace:
           clean: all
         steps:
@@ -426,8 +424,7 @@ stages:
       - job: docker
         displayName: Build&Push
         dependsOn: ["upload", "update"]
-        pool: 
-          vmImage: ubuntu-20.04
+        pool: SmartIDESub03-linux-agt
         steps:
           - checkout: self
           - task: CmdLine@2
@@ -517,8 +514,7 @@ stages:
       - job: docker
         displayName: Build&Push
         dependsOn: ["upload", "update"]
-        pool: 
-          vmImage: ubuntu-20.04
+        pool: SmartIDESub03-linux-agt
         steps:
           - checkout: self
           - task: CmdLine@2
