@@ -101,11 +101,10 @@ var k8sCmd = &cobra.Command{
 		if err != nil {
 			common.SmartIDELog.Error(err)
 		}
-		k8sUtil, err := kubectl.NewK8sUtil(tempK8sConfigFileRelativePath,
+		k8sUtil, err := kubectl.NewK8sUtilWithNewFile(tempK8sConfigFileRelativePath,
+			workspaceInfo.K8sInfo.KubeConfigContent,
 			workspaceInfo.K8sInfo.Context,
 			namespace)
-		common.CheckError(err)
-		err = k8sUtil.Check()
 		common.CheckError(err)
 
 		//3. Delete ingress if public-url flag is disable
