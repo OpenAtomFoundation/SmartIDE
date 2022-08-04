@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:13:54
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-04 11:28:45
+ * @LastEditTime: 2022-08-04 11:31:15
  * @FilePath: /smartide/cli/pkg/kubectl/k8s.go
  */
 
@@ -70,13 +70,8 @@ func newK8sUtil(kubeConfigFilePath string, kubeConfigContent string, targetConte
 	}
 
 	//2. kubeconfig
-	//2.0.
-	/* 	if kubeConfigContent != "" && kubeconfigFilePath != "" {
-		 return nil, errors.New("kube_config_content and kube_config_file_path is not nil")
-	 } */
-
 	absoluteKubeConfigFilePath := ""
-	//2.2. 指定kubeconfig
+	//2.1. 指定kubeconfig
 	homeDir, _ := os.UserHomeDir()
 	if kubeConfigFilePath != "" {
 		if strings.Index(kubeConfigFilePath, "~") == 0 {
@@ -90,7 +85,7 @@ func newK8sUtil(kubeConfigFilePath string, kubeConfigContent string, targetConte
 		absoluteKubeConfigFilePath = filepath.Join(homeDir, ".kube/config_smartide")
 	}
 
-	//2.3. 更新配置文件的内容
+	//2.2. 更新配置文件的内容
 	if kubeConfigContent != "" {
 		err = common.FS.CreateOrOverWrite(absoluteKubeConfigFilePath, kubeConfigContent)
 		if err != nil {
