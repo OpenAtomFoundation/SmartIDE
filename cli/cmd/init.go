@@ -10,7 +10,6 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -26,8 +25,6 @@ import (
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
 )
-
-const TMEPLATE_DIR_NAME = "templates"
 
 // initCmd represents the init command
 var initCmd = &cobra.Command{
@@ -116,7 +113,7 @@ func getTemplateSetting(cmd *cobra.Command, args []string) (*initExtend.Template
 		return nil, err
 	}
 
-	templateTypes, err := loadTemplatesJson() // 解析json文件
+	templateTypes, err := initExtend.LoadTemplatesJson() // 解析json文件
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +215,7 @@ func copyTemplateToCurrentDir(modelType, newProjectType string) {
 	if newProjectType == "" {
 		newProjectType = "_default"
 	}
-	templatePath := common.PathJoin(config.SmartIdeHome, TMEPLATE_DIR_NAME, modelType, newProjectType)
+	templatePath := common.PathJoin(config.SmartIdeHome, initExtend.TMEPLATE_DIR_NAME, modelType, newProjectType)
 	templatesFolderIsExist := common.IsExist(templatePath)
 	if !templatesFolderIsExist {
 		common.SmartIDELog.Error(i18nInstance.New.Info_type_no_exist)
@@ -231,7 +228,7 @@ func copyTemplateToCurrentDir(modelType, newProjectType string) {
 
 // clone模版repo
 func templatesClone() error {
-	templatePath := common.PathJoin(config.SmartIdeHome, TMEPLATE_DIR_NAME)
+	templatePath := common.PathJoin(config.SmartIdeHome, initExtend.TMEPLATE_DIR_NAME)
 	templateGitPath := common.PathJoin(templatePath, ".git")
 	templatesGitIsExist := common.IsExist(templateGitPath)
 
@@ -333,17 +330,4 @@ func copyFile(src, dest string) (w int64, err error) {
 	}
 	defer dstFile.Close()
 	return io.Copy(dstFile, srcFile)
-}
-
-//加载templates索引json
-func loadTemplatesJson() (templateTypes []initExtend.NewTypeBO, err error) {
-	// new type转换为结构体
-	templatesPath := common.PathJoin(config.SmartIdeHome, TMEPLATE_DIR_NAME, "templates.json")
-	templatesByte, err := os.ReadFile(templatesPath)
-	if err != nil {
-		return templateTypes, errors.New(i18nInstance.New.Err_read_templates + templatesPath + err.Error())
-	}
-
-	err = json.Unmarshal(templatesByte, &templateTypes)
-	return templateTypes, err
 }

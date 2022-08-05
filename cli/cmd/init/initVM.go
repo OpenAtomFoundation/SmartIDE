@@ -9,6 +9,7 @@
 package init
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -114,7 +115,49 @@ git fetch --all && git reset --hard origin/master && git fetch && git pull`,
 
 		return err
 	}
+	common.SmartIDELog.Info("模板库同步成功！")
+	if baseType == "" || subType == "" {
+		templatesPath := common.FilePahtJoin4Linux("~", ".ide", "template", "templates.json")
+		common.SmartIDELog.Info(templatesPath)
+		templateContent := sshRemote.GetContent(templatesPath)
 
+		var templateTypes []NewTypeBO
+
+		err = json.Unmarshal([]byte(templateContent), &templateTypes)
+		if err != nil {
+			return nil
+		}
+		fmt.Println(i18nInstance.Init.Info_available_templates)
+		PrintTemplates(templateTypes) // 打印支持的模版列表
+		var index int
+		fmt.Println(i18nInstance.Init.Info_choose_templatetype)
+		fmt.Scanln(&index)
+		if index < 1 || index >= len(templateTypes) {
+			return nil
+		}
+		selectedTypeName := templateTypes[index].TypeName
+
+		fmt.Println(i18nInstance.Init.Info_available_ides)
+		for i := 0; i < len(templateTypes[index].SubTypes); i++ {
+			fmt.Println(i, templateTypes[index].SubTypes[i].Name)
+		}
+		fmt.Println(i18nInstance.Init.Info_choose_idetype)
+		var indexIde int
+		fmt.Scanln(&indexIde)
+		if indexIde < 0 || indexIde >= len(templateTypes[index].SubTypes) {
+			return nil
+		}
+		fmt.Println("您选择的模板为：", selectedTypeName, templateTypes[index].SubTypes[indexIde].Name)
+		baseType = selectedTypeName
+
+		subType = templateTypes[index].SubTypes[indexIde].Name
+
+		baseType = strings.TrimSpace(baseType)
+		subType = strings.TrimSpace(subType)
+	}
+	common.SmartIDELog.Info(tempDirPath)
+	common.SmartIDELog.Info(baseType)
+	common.SmartIDELog.Info(subType)
 	// 项目目录如果不存在就创建
 	templateDirPath := strings.Join([]string{tempDirPath, baseType, subType, "."}, "/")
 	commandCopy := fmt.Sprintf(`

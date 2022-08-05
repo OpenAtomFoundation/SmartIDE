@@ -16,6 +16,7 @@ import (
 	"text/tabwriter"
 	"time"
 
+	initExtended "github.com/leansoftX/smartide-cli/cmd/init"
 	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
@@ -83,8 +84,10 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	ideYamlFilePath := common.FilePathJoin(common.OS_Linux, workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath) //fmt.Sprintf(`%v/.ide/.ide.yaml`, repoWorkspace)
 	common.SmartIDELog.Info(fmt.Sprintf(i18nInstance.VmStart.Info_read_config, ideYamlFilePath))
 	if !sshRemote.IsFileExist(ideYamlFilePath) {
-		message := fmt.Sprintf(i18nInstance.Main.Err_file_not_exit2, ideYamlFilePath)
-		common.SmartIDELog.Error(message)
+		common.SmartIDELog.Info(workspaceInfo.WorkingDirectoryPath)
+		common.SmartIDELog.Info(workspaceInfo.GitCloneRepoUrl)
+		initExtended.GitCloneTemplateRepo4Remote(sshRemote, workspaceInfo.WorkingDirectoryPath, config.GlobalSmartIdeConfig.TemplateRepo, "", "")
+
 	}
 	catCommand := fmt.Sprintf(`cat %v`, ideYamlFilePath)
 	output, err := sshRemote.ExeSSHCommand(catCommand)
