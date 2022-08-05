@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-28 08:23:16
+ * @LastEditTime: 2022-08-05 11:15:07
  */
 package start
 
@@ -138,7 +138,8 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		common.CheckErrorFunc(err, serverFeedback)
 
 		// 从临时文件中加载docker-compose
-		tempDockerCompose, ideBindingPort, _ = currentConfig.LoadDockerComposeFromTempFile(sshRemote, workspaceInfo.TempYamlFileAbsolutePath)
+		tempDockerCompose, ideBindingPort, _ =
+			currentConfig.LoadDockerComposeFromTempFile(sshRemote, workspaceInfo.TempYamlFileAbsolutePath)
 	}
 	//3.2. 扩展信息
 	workspaceInfo.Extend = workspaceInfo.GetWorkspaceExtend()
@@ -173,7 +174,6 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		fun1 := func(output string) error {
 			if strings.Contains(output, ":error") || strings.Contains(output, ":fatal") {
 				common.SmartIDELog.Error(output)
-
 			}
 
 			return nil
@@ -281,14 +281,21 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		unusedLocalPortStr := strconv.Itoa(item.ClientPort)
 
 		// 【注意】这里非常的绕！！！ 远程主机的docker-compose才保存了端口的label信息，所以只能使用远程主机的端口
-		label := currentConfig.GetLabelWithPort(0, item.CurrentHostPort, item.ContainerPort)
+		label := item.HostPortDesc
+		if label == "" {
+			label = currentConfig.GetLabelWithPort(0, item.CurrentHostPort, item.ContainerPort)
+		}
 		if label != "" {
 			unusedLocalPortStr += fmt.Sprintf("(%v)", label)
 		}
 
-		msg := fmt.Sprintf("localhost:%v -> %v:%v -> container:%v",
-			unusedLocalPortStr, workspaceInfo.Remote.Addr, item.CurrentHostPort, item.ContainerPort)
-		common.SmartIDELog.Info(msg)
+		// 检查是否包含在端口转发列表中
+		if _, ok := addrMapping[fmt.Sprintf("localhost:%v", item.ClientPort)]; ok {
+			msg := fmt.Sprintf("localhost:%v -> %v:%v -> container:%v",
+				unusedLocalPortStr, workspaceInfo.Remote.Addr, item.CurrentHostPort, item.ContainerPort)
+			common.SmartIDELog.Info(msg)
+		}
+
 	}
 	//8.1. 执行绑定
 	tunnel.TunnelMultiple(sshRemote.Connection, addrMapping) // 端口转发
