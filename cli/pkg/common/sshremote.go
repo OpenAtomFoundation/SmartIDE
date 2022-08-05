@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-02 21:50:36
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-08-05 11:58:19
  */
 package common
 
@@ -12,11 +12,13 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"os/exec"
 	"path"
 
 	//"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"io/ioutil"
 	"net"
 	"os"
@@ -1112,4 +1114,38 @@ func (instance *SSHRemote) AddPublicKeyIntoAuthorizedkeys() {
 			SmartIDELog.Error(err, output)
 		}
 	}
+}
+
+func PathExists(path string, perm fs.FileMode) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		// 创建文件夹
+		err := os.MkdirAll(path, perm)
+		if err != nil {
+			//fmt.Printf("mkdir failed![%v]\n", err)
+		} else {
+			return true, nil
+		}
+	}
+	return false, err
+
+}
+
+func RunCmd(cmd string, shell bool) []byte {
+	if shell {
+		out, err := exec.Command("bash", "-c", cmd).Output()
+		if err != nil {
+			log.Fatal(err)
+			panic("some error found")
+		}
+		return out
+	}
+	out, err := exec.Command(cmd).Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return out
 }
