@@ -3,7 +3,7 @@
  * @Description: config
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-27 09:28:36
+ * @LastEditTime: 2022-08-05 11:16:14
  */
 package config
 
@@ -260,6 +260,7 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 		}
 
 		if !hasContain {
+			common.SmartIDELog.Importance(fmt.Sprintf("在service定义中找不到端口: %v (%v) ", port, label))
 			portMap := NewPortMap(PortMapInfo_OnlyLabel, port, -1, label, -1, "")
 			yamlFileConfig.Workspace.DevContainer.bindingPorts = append(yamlFileConfig.Workspace.DevContainer.bindingPorts, *portMap)
 		}
