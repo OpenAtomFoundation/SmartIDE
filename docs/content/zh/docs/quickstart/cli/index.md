@@ -75,7 +75,7 @@ SmartIDE会自动启动内置的WebIDE，你会看到一个类似vscode的IDE窗
 
 ### 1. 准备远程主机
 
-按照 [Docker & Docker-Compose 安装手册 (Linux服务器)](/zh/docs/install/docker-install-linux) 准备远程linux主机
+按照 [Docker & Docker-Compose 安装手册 (Linux服务器)](/zh/docs/install/docker/linux/) 准备远程linux主机
 
 ### 2. 启动环境
 
