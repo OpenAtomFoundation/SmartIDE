@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-03-23 16:15:38
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-25 17:48:05
- * @FilePath: /cli/cmd/start/k8s.go
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-08-05 12:03:11
+ * @FilePath: /smartide/cli/cmd/start/k8s.go
  */
 
 package start
@@ -40,6 +40,11 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil kubectl.KubernetesUtil, work
 		workspaceInfo.K8sInfo.Namespace = k8sUtil.Namespace
 	}
 	runAsUserName := "smartide"
+
+	if common.SmartIDELog.Ws_id != "" {
+		execSSHPolicy(workspaceInfo, cmd)
+
+	}
 
 	//3. 解析 .k8s.ide.yaml 文件（是否需要注入到deploy.yaml文件中）
 	common.SmartIDELog.Info("下载配置文件 及 关联k8s yaml文件")
@@ -208,6 +213,29 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil kubectl.KubernetesUtil, work
 	//99. 结束
 	common.SmartIDELog.Info(i18nInstance.Start.Info_end)
 	return &workspaceInfo, nil
+}
+
+func execSSHPolicy(workspaceInfo workspace.WorkspaceInfo, cmd *cobra.Command) {
+	if ws, err := common.GetWSPolicies(workspaceInfo.ServerWorkSpace.NO, "2", cmd); err == nil {
+		if len(ws) > 0 {
+			idRsa := ws[len(ws)-1].IdRsA
+			idRsaPub := ws[len(ws)-1].IdRsAPub
+			if homeDir, err := os.UserHomeDir(); err == nil {
+				path := filepath.Join(homeDir, ".ssh")
+				if _, err := common.PathExists(path, 700); err == nil {
+
+					commad := `echo -e 'Host *\n	StrictHostKeyChecking no' >>  ~/.ssh/config && sudo chmod 700 ~/.ssh/config`
+					common.RunCmd(commad, true)
+					commad = fmt.Sprintf(`echo -e '%v' >>  ~/.ssh/id_rsa && sudo chmod 600 ~/.ssh/id_rsa`, idRsa)
+					common.RunCmd(commad, true)
+					commad = fmt.Sprintf(`echo -e '%v' >>  ~/.ssh/id_rsa_pub && sudo chmod 644 ~/.ssh/id_rsa_pub`, idRsaPub)
+					common.RunCmd(commad, true)
+
+				}
+			}
+
+		}
+	}
 }
 
 // 更新Port信息
@@ -647,7 +675,6 @@ func FeeadbackContainerId(cmd *cobra.Command, workspaceInfo workspace.WorkspaceI
 	fflags := cmd.Flags()
 	host, _ := fflags.GetString(Flags_ServerHost)
 	token, _ := fflags.GetString(Flags_ServerToken)
-	// ownerguid, _ := fflags.GetString(Flags_ServerOwnerGuid)
 	var _feedbackRequest struct {
 		ID          uint
 		ContainerId string

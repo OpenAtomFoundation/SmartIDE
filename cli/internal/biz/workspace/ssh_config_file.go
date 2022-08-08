@@ -119,8 +119,10 @@ func (workspaceInfo WorkspaceInfo) RemoveSSHConfig() {
 
 	// check host is exist?
 	logger.Debug("decoding file content to ssh config...")
-	file, _ := os.Open(configPath)
-	cfg, _ := ssh_config.Decode(file)
+	bytes, _ := ioutil.ReadFile(configPath)
+	//whiteLine := regexp.MustCompile(`\n+`)
+	content := strings.TrimSpace(string(bytes))
+	cfg, _ := ssh_config.DecodeBytes([]byte(content))
 	hostName := fmt.Sprintf("SmartIDE-%v", workspaceInfo.ID)
 	host := searchHostFromConfig(cfg, hostName)
 

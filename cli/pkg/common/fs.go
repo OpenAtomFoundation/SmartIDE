@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2021-12-29 14:26:42
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-01 21:00:34
+ * @LastEditTime: 2022-08-04 09:47:31
  * @Description: file content
  */
 
@@ -55,13 +55,14 @@ func (fs *fileOperation) SkipStrictHostKeyChecking(sshDirectory string, isReset 
 	}
 
 	// 写入配置
-	b, err := fs.CheckFileContainsStr(sshConfigPath, "StrictHostKeyChecking no") // 检查是否存在指定的文本
+	b, err := fs.CheckFileContainsStr(sshConfigPath, "## smartide StrictHostKeyChecking ##") // 检查是否存在指定的文本
 	if err != nil {
 		return err
 	}
 
 	// 是否重置
-	lines := `## smartide ##
+	lines := `## smartide StrictHostKeyChecking ##
+HOST *
 StrictHostKeyChecking no`
 	if isReset {
 		fileContentBytes, err := os.ReadFile(sshConfigPath)

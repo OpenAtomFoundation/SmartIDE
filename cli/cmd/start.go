@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-26 15:25:22
+ * @LastEditTime: 2022-08-04 11:16:46
  */
 package cmd
 
@@ -58,7 +58,7 @@ var startCmd = &cobra.Command{
   smartide start <workspaceid>
   smartide start <git clone url>
   smartide start --host <host> --username <username> --password <password> --repourl <git clone url> --branch <branch name> --filepath <config file path>
-  smartide start --host <host> <git clone url>
+  smartide start --host <hostid> <git clone url>
   smartide start --k8s <context> --repoUrl <git clone url> --branch master
   smartide start --k8s <context> <git clone url>`,
 	PreRunE: preRunValid,
@@ -102,7 +102,7 @@ var startCmd = &cobra.Command{
 			}
 			if err != nil {
 				common.SmartIDELog.Importance(err.Error())
-				smartideServer.Feedback_Finish(server.FeedbackCommandEnum_Start, cmd, false, nil, workspace.WorkspaceInfo{}, err.Error(), "")
+				smartideServer.Feedback_Finish(server.FeedbackCommandEnum_Start, cmd, false, nil, workspaceInfo, err.Error(), "")
 			}
 		})
 
@@ -135,16 +135,22 @@ var startCmd = &cobra.Command{
 			start.ExecuteStartCmd(workspaceInfo, isUnforward, func(v string, d common.Docker) {}, executeStartCmdFunc)
 
 		} else if workspaceInfo.Mode == workspace.WorkingMode_K8s { //1.2. k8s 模式
-			k8sUtil, err := kubectl.NewK8sUtil(workspaceInfo.K8sInfo.KubeConfigFilePath,
-				workspaceInfo.K8sInfo.Context,
-				workspaceInfo.K8sInfo.Namespace)
-			common.SmartIDELog.Error(err)
 
 			if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server { //1.2.1. cli 在服务端运行
+				k8sUtil, err := kubectl.NewK8sUtilWithNewFile(workspaceInfo.K8sInfo.KubeConfigFilePath,
+					workspaceInfo.K8sInfo.KubeConfigContent,
+					workspaceInfo.K8sInfo.Context,
+					workspaceInfo.K8sInfo.Namespace)
+				common.SmartIDELog.Error(err)
+
 				err = start.ExecuteK8sServerStartCmd(cmd, *k8sUtil, workspaceInfo, executeStartCmdFunc)
 				common.SmartIDELog.Error(err)
 
 			} else { //1.2.2. cli 在客户端运行
+				k8sUtil, err := kubectl.NewK8sUtil(workspaceInfo.K8sInfo.KubeConfigFilePath,
+					workspaceInfo.K8sInfo.Context,
+					workspaceInfo.K8sInfo.Namespace)
+				common.SmartIDELog.Error(err)
 
 				if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server { //1.2.2.1. 远程工作区 本地加载
 					err := start.ExecuteServerK8sStartByClientEnvCmd(workspaceInfo, executeStartCmdFunc)

@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-20 16:21:21
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-08-05 11:58:19
  */
 package common
 
@@ -12,11 +12,13 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"os/exec"
 	"path"
 
 	//"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"io/ioutil"
 	"net"
 	"os"
@@ -356,37 +358,52 @@ func (instance *SSHRemote) ConvertFilePath(filepath string) (newFilepath string)
 }
 
 // 检测远程服务器的环境，是否安装docker、docker-compose、git
-func (instance *SSHRemote) CheckRemoveEnv() error {
-	var msg []string
+func (instance *SSHRemote) CheckRemoteEnv() error {
+	var errMsg []string
 
-	// 环境监测
+	//1. 环境监测
+	//1.1. GIT
 	output, err := instance.ExeSSHCommand("git version")
 	if err != nil || strings.Contains(strings.ToLower(output), "error:") {
 		if err != nil {
-			SmartIDELog.Debug(err.Error(), output)
+			SmartIDELog.Importance(i18nInstance.Main.Err_env_git_check, err.Error(), output)
 		}
-		msg = append(msg, i18nInstance.Main.Err_env_git_check)
+		return errors.New("请检查当前环境是否满足要求，参考：https://smartide.cn/zh/docs/install/docker/linux/")
 	}
+
+	//1.2. docker
 	output, err = instance.ExeSSHCommand("docker version")
 	if err != nil || strings.Contains(strings.ToLower(output), "error:") {
 		if err != nil {
-			SmartIDELog.Debug(err.Error(), output)
+			SmartIDELog.Importance(i18nInstance.Main.Err_env_docker, err.Error(), output)
 		}
-		msg = append(msg, i18nInstance.Main.Err_env_docker)
+		return errors.New("请检查当前环境是否满足要求，参考：https://smartide.cn/zh/docs/install/docker/linux/")
 	}
+
+	//1.3. docker-compose
 	output, err = instance.ExeSSHCommand("docker-compose version")
 	if err != nil ||
 		(!strings.Contains(strings.ToLower(output), "docker-compose version") && !strings.Contains(strings.ToLower(output), "docker compose version")) ||
 		strings.Contains(strings.ToLower(output), "error:") {
 		if err != nil {
-			SmartIDELog.Debug(err.Error(), output)
+			SmartIDELog.Importance(i18nInstance.Main.Err_env_Docker_Compose, err.Error(), output)
 		}
-		msg = append(msg, i18nInstance.Main.Err_env_Docker_Compose)
+		return errors.New("请检查当前环境是否满足要求，参考：https://smartide.cn/zh/docs/install/docker/linux/")
 	}
 
-	// 错误判断
-	if len(msg) > 0 {
-		return errors.New(strings.Join(msg, "; "))
+	//1.4. 默认的shell 是否为bash
+	output, err = instance.ExeSSHCommand("echo $SHELL")
+	if err != nil || !strings.Contains(output, "/bash") {
+		if err != nil {
+			SmartIDELog.Warning(err.Error())
+		}
+		SmartIDELog.Debug(output)
+		return errors.New("请检查当前环境是否使用bash作为默认shell，参考：https://smartide.cn/zh/docs/install/docker/linux/")
+	}
+
+	//2. 错误判断
+	if len(errMsg) > 0 {
+		return errors.New(strings.Join(errMsg, "\\n "))
 	}
 
 	// 把当前用户加到docker用户组里面
@@ -1097,4 +1114,38 @@ func (instance *SSHRemote) AddPublicKeyIntoAuthorizedkeys() {
 			SmartIDELog.Error(err, output)
 		}
 	}
+}
+
+func PathExists(path string, perm fs.FileMode) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		// 创建文件夹
+		err := os.MkdirAll(path, perm)
+		if err != nil {
+			//fmt.Printf("mkdir failed![%v]\n", err)
+		} else {
+			return true, nil
+		}
+	}
+	return false, err
+
+}
+
+func RunCmd(cmd string, shell bool) []byte {
+	if shell {
+		out, err := exec.Command("bash", "-c", cmd).Output()
+		if err != nil {
+			log.Fatal(err)
+			panic("some error found")
+		}
+		return out
+	}
+	out, err := exec.Command(cmd).Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return out
 }

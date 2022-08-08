@@ -159,7 +159,7 @@ func stopRemote(workspaceInfo workspace.WorkspaceInfo) error {
 	}
 
 	// 检查环境
-	err = sshRemote.CheckRemoveEnv()
+	err = sshRemote.CheckRemoteEnv()
 	if err != nil {
 		return err
 	}

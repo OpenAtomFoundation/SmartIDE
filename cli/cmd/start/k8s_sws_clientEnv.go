@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-06-07 09:26:55
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-09 14:56:56
- * @FilePath: /smartide-cli/cmd/start/k8s_sws_clientEnv.go
+ * @LastEditTime: 2022-08-04 11:21:21
+ * @FilePath: /smartide/cli/cmd/start/k8s_sws_clientEnv.go
  */
 
 package start

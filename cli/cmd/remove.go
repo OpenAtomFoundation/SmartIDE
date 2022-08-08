@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-11 09:30:25
+ * @LastEditTime: 2022-08-04 11:19:11
  */
 package cmd
 
@@ -107,8 +107,9 @@ var removeCmd = &cobra.Command{
 		var checkErrorFeedback = func(err error) {
 			if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server && err != nil {
 				server.Feedback_Finish(server.FeedbackCommandEnum_Remove, cmd, false, nil, workspaceInfo, err.Error(), "")
+				common.CheckError(err)
 			}
-			common.CheckError(err)
+
 		}
 
 		//2. 操作类型
@@ -183,12 +184,10 @@ var removeCmd = &cobra.Command{
 				err := remove.RemoveRemote(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsRemoveRemoteDirectory, removeCmdFlag.IsForce, cmd)
 				checkErrorFeedback(err)
 			} else if workspaceInfo.Mode == workspace.WorkingMode_K8s {
-				k8sUtil, err := kubectl.NewK8sUtil(workspaceInfo.K8sInfo.KubeConfigFilePath,
+				k8sUtil, err := kubectl.NewK8sUtilWithNewFile(workspaceInfo.K8sInfo.KubeConfigFilePath,
+					workspaceInfo.K8sInfo.KubeConfigContent,
 					workspaceInfo.K8sInfo.Context,
 					workspaceInfo.K8sInfo.Namespace)
-				checkErrorFeedback(err)
-
-				k8sUtil.CreateKubeConfig(workspaceInfo.K8sInfo.KubeConfigContent)
 				checkErrorFeedback(err)
 
 				pod, _, _ := start.GetDevContainerPod(*k8sUtil, workspaceInfo.K8sInfo.TempK8sConfig)

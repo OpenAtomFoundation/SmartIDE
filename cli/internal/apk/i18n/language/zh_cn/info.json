@@ -220,7 +220,7 @@
         "info_help_flag_hostid": "远程主机Id",
         "info_host_table_header": "Id\tHost\tPort\tCreate Time",
         "info_host_detail_template": "      Id：\t%v\n地    址：\t%v\n验证模式：\t%v\n用    户：\t%v\n创建时间：\t%v\n",
-        "err_host_data_not_exit": "没有查找到关联的远程主机信息",
+        "err_host_data_not_exit": "没有查找到对应的远程主机信息",
         "info_help_host_add_short": "新增远程主机",
         "info_help_host_add_long": "新增远程主机",
         "info_help_host_remove_short": "删除远程主机",

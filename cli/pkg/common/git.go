@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-02 11:31:03
+ * @LastEditTime: 2022-08-04 14:04:55
  */
 package common
 
@@ -57,8 +57,9 @@ Set-Content $checkoutFilePath -Value $content -Encoding Ascii`,
 	git config core.sparsecheckout true
 	%v
 	git remote add -f origin %v
+	git remote set-url origin %v
 	git fetch
-`, repoName, repoName, sparseCheckout, gitCloneUrl)
+`, repoName, repoName, sparseCheckout, gitCloneUrl, gitCloneUrl)
 
 	//1.2. exec
 	err := EXEC.Realtime(command, rootDir)

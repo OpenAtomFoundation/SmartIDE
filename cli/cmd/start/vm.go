@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-19 15:00:33
+ * @LastEditTime: 2022-08-05 11:15:07
  */
 package start
 
@@ -44,7 +44,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 			return
 		}
 		if err != nil {
-			smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_Start, cmd, false, nil, workspace.WorkspaceInfo{}, err.Error(), "")
+			smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_Start, cmd, false, nil, workspaceInfo, err.Error(), "")
 		}
 	}
 
@@ -55,7 +55,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	common.CheckErrorFunc(err, serverFeedback)
 
 	//1. 检查远程主机是否有docker、docker-compose、git
-	err = sshRemote.CheckRemoveEnv()
+	err = sshRemote.CheckRemoteEnv()
 	common.CheckErrorFunc(err, serverFeedback)
 
 	//2. git clone & checkout
@@ -140,7 +140,8 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		common.CheckErrorFunc(err, serverFeedback)
 
 		// 从临时文件中加载docker-compose
-		tempDockerCompose, ideBindingPort, _ = currentConfig.LoadDockerComposeFromTempFile(sshRemote, workspaceInfo.TempYamlFileAbsolutePath)
+		tempDockerCompose, ideBindingPort, _ =
+			currentConfig.LoadDockerComposeFromTempFile(sshRemote, workspaceInfo.TempYamlFileAbsolutePath)
 	}
 
 	//3.2. 扩展信息
@@ -278,14 +279,21 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		unusedLocalPortStr := strconv.Itoa(item.ContainerPort)
 
 		// 【注意】这里非常的绕！！！ 远程主机的docker-compose才保存了端口的label信息，所以只能使用远程主机的端口
-		label := currentConfig.GetLabelWithPort(0, item.CurrentHostPort, item.ContainerPort)
+		label := item.HostPortDesc
+		if label == "" {
+			label = currentConfig.GetLabelWithPort(0, item.CurrentHostPort, item.ContainerPort)
+		}
 		if label != "" {
 			unusedLocalPortStr += fmt.Sprintf("(%v)", label)
 		}
 
-		msg := fmt.Sprintf("localhost:%v -> %v:%v -> container:%v",
-			unusedLocalPortStr, workspaceInfo.Remote.Addr, item.CurrentHostPort, item.ContainerPort)
-		common.SmartIDELog.Info(msg)
+		// 检查是否包含在端口转发列表中
+		if _, ok := addrMapping[fmt.Sprintf("localhost:%v", item.ClientPort)]; ok {
+			msg := fmt.Sprintf("localhost:%v -> %v:%v -> container:%v",
+				unusedLocalPortStr, workspaceInfo.Remote.Addr, item.CurrentHostPort, item.ContainerPort)
+			common.SmartIDELog.Info(msg)
+		}
+
 	}
 	//8.1. 执行绑定
 	tunnel.TunnelMultiple(sshRemote.Connection, addrMapping) // 端口转发
@@ -450,7 +458,7 @@ func gitAction(sshRemote common.SSHRemote, workspace workspace.WorkspaceInfo, cm
 	return err
 }
 
-//post workspace info to callback api
+/* //post workspace info to callback api
 func postWorkspaceInfo(workspaceInfo workspace.WorkspaceInfo, apiURL string) error {
 	postJson := workspaceInfo.Extend.ToJson()
 	response, err := common.PostJson(apiURL, map[string]interface{}{"data": postJson}, map[string]string{"Content-Type": "application/json"})
@@ -461,3 +469,4 @@ func postWorkspaceInfo(workspaceInfo workspace.WorkspaceInfo, apiURL string) err
 	common.SmartIDELog.Debug(response)
 	return nil
 }
+*/
