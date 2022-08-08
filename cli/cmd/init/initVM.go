@@ -61,7 +61,7 @@ func VmInit(cmd *cobra.Command, args []string, workspaceInfo workspace.Workspace
 	common.CheckErrorFunc(err, serverFeedback)
 
 	//1. 检查远程主机是否有docker、docker-compose、git
-	err = sshRemote.CheckRemoveEnv()
+	err = sshRemote.CheckRemoteEnv()
 	common.CheckErrorFunc(err, serverFeedback)
 
 	// 获取command中的配置

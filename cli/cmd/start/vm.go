@@ -195,34 +195,43 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 	//6. 当前主机绑定到远程端口
 	var addrMapping map[string]string = map[string]string{}
-	remotePortBindings := tempDockerCompose.GetPortBindings() //
-	unusedLocalPort4IdeBindingPort := ideBindingPort          // 未使用的本地端口，与ide端口对应
+	// remotePortBindings := tempDockerCompose.GetPortBindings() //
+	unusedLocalPort4IdeBindingPort := ideBindingPort // 未使用的本地端口，与ide端口对应
 	//6.1. 查找所有远程主机的端口
-	for remoteBindingPort, containerPort := range remotePortBindings {
-		remoteBindingPortInt, _ := strconv.Atoi(remoteBindingPort)
-		unusedLocalPort, err := common.CheckAndGetAvailableLocalPort(remoteBindingPortInt, 100) // 得到一个未被占用的本地端口
-		if err != nil {
-			common.SmartIDELog.Warning(err.Error())
-		}
-		if remoteBindingPortInt == ideBindingPort && unusedLocalPort != ideBindingPort {
-			unusedLocalPort4IdeBindingPort = unusedLocalPort
-		}
-		addrMapping["localhost:"+strconv.Itoa(unusedLocalPort)] = "localhost:" + remoteBindingPort
+	for serviceName, service := range tempDockerCompose.Services {
+		for _, portBinding := range service.Ports {
+			ports := strings.Split(portBinding, ":")
+			remoteBindingPort, containerPort := ports[0], ports[1]
 
-		// 日志
-		// 【注意】这里非常的绕！！！ 远程主机的docker-compose才保存了端口的label信息，所以只能使用远程主机的端口
-		containerPortInt, _ := strconv.Atoi(containerPort)
-		label := currentConfig.GetLabelWithPort(0, remoteBindingPortInt, containerPortInt)
+			remoteBindingPortInt, _ := strconv.Atoi(remoteBindingPort)
+			unusedLocalPort, err := common.CheckAndGetAvailableLocalPort(remoteBindingPortInt, 100) // 得到一个未被占用的本地端口
+			if err != nil {
+				common.SmartIDELog.Warning(err.Error())
+			}
+			if remoteBindingPortInt == ideBindingPort && unusedLocalPort != ideBindingPort {
+				unusedLocalPort4IdeBindingPort = unusedLocalPort
+			}
+			addrMapping["localhost:"+strconv.Itoa(unusedLocalPort)] = "localhost:" + remoteBindingPort
 
-		for i, port := range workspaceInfo.Extend.Ports {
-			if port.HostPortDesc == label {
-				workspaceInfo.Extend.Ports[i].CurrentHostPort = remoteBindingPortInt
-				workspaceInfo.Extend.Ports[i].OldClientPort = port.ClientPort
-				workspaceInfo.Extend.Ports[i].ClientPort = unusedLocalPort
-				break
+			// 日志
+			// 【注意】这里非常的绕！！！ 远程主机的docker-compose才保存了端口的label信息，所以只能使用远程主机的端口
+			containerPortInt, _ := strconv.Atoi(containerPort)
+			label := currentConfig.GetLabelWithPort(0, remoteBindingPortInt, containerPortInt)
+
+			for i, port := range workspaceInfo.Extend.Ports {
+				if port.HostPortDesc == label ||
+					(port.ServiceName == serviceName && port.CurrentHostPort == remoteBindingPortInt && port.OriginHostPort == containerPortInt) {
+					workspaceInfo.Extend.Ports[i].CurrentHostPort = remoteBindingPortInt
+					workspaceInfo.Extend.Ports[i].OldClientPort = port.ClientPort
+					workspaceInfo.Extend.Ports[i].ClientPort = unusedLocalPort
+					break
+				}
 			}
 		}
 	}
+	/* 	for remoteBindingPort, containerPort := range remotePortBindings {
+
+	   	} */
 
 	//7. 保存数据
 	if hasChanged {
