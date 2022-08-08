@@ -146,7 +146,7 @@ func getTemplateSetting(cmd *cobra.Command, args []string) (*initExtend.Template
 		var index int
 		fmt.Println(i18nInstance.Init.Info_choose_templatetype)
 		fmt.Scanln(&index)
-		if index < 1 || index >= len(templateTypes) {
+		if index < 0 || index >= len(templateTypes) {
 			return nil, err
 		}
 		selectedTypeName := templateTypes[index].TypeName
@@ -158,7 +158,7 @@ func getTemplateSetting(cmd *cobra.Command, args []string) (*initExtend.Template
 		fmt.Println(i18nInstance.Init.Info_choose_idetype)
 		var indexIde int
 		fmt.Scanln(&indexIde)
-		if indexIde < 1 || indexIde >= len(templateTypes[index].SubTypes) {
+		if indexIde < 0 || indexIde >= len(templateTypes[index].SubTypes) {
 			return nil, err
 		}
 		fmt.Println("您选择的模板为：", selectedTypeName, templateTypes[index].SubTypes[indexIde].Name)

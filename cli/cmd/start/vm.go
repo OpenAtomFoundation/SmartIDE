@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-22 17:02:40
+ * @LastEditTime: 2022-07-19 15:00:33
  */
 package start
 
@@ -84,8 +84,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	ideYamlFilePath := common.FilePathJoin(common.OS_Linux, workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath) //fmt.Sprintf(`%v/.ide/.ide.yaml`, repoWorkspace)
 	common.SmartIDELog.Info(fmt.Sprintf(i18nInstance.VmStart.Info_read_config, ideYamlFilePath))
 	if !sshRemote.IsFileExist(ideYamlFilePath) {
-		common.SmartIDELog.Info(workspaceInfo.WorkingDirectoryPath)
-		common.SmartIDELog.Info(workspaceInfo.GitCloneRepoUrl)
+		common.SmartIDELog.Info(i18nInstance.Init.Info_noexist_cmdtemplate)
 		initExtended.GitCloneTemplateRepo4Remote(sshRemote, workspaceInfo.WorkingDirectoryPath, config.GlobalSmartIdeConfig.TemplateRepo, "", "")
 
 	}
@@ -143,6 +142,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		// 从临时文件中加载docker-compose
 		tempDockerCompose, ideBindingPort, _ = currentConfig.LoadDockerComposeFromTempFile(sshRemote, workspaceInfo.TempYamlFileAbsolutePath)
 	}
+
 	//3.2. 扩展信息
 	workspaceInfo.Extend = workspaceInfo.GetWorkspaceExtend()
 
@@ -177,6 +177,11 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 			if strings.Contains(output, ":error") || strings.Contains(output, ":fatal") {
 				common.SmartIDELog.Error(output)
 
+			} else {
+				//common.SmartIDELog.ConsoleInLine(output)
+				if strings.Contains(output, "Pulling") {
+					fmt.Println()
+				}
 			}
 
 			return nil
@@ -189,43 +194,34 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 	//6. 当前主机绑定到远程端口
 	var addrMapping map[string]string = map[string]string{}
-	// remotePortBindings := tempDockerCompose.GetPortBindings() //
-	unusedLocalPort4IdeBindingPort := ideBindingPort // 未使用的本地端口，与ide端口对应
+	remotePortBindings := tempDockerCompose.GetPortBindings() //
+	unusedLocalPort4IdeBindingPort := ideBindingPort          // 未使用的本地端口，与ide端口对应
 	//6.1. 查找所有远程主机的端口
-	for serviceName, service := range tempDockerCompose.Services {
-		for _, portBinding := range service.Ports {
-			ports := strings.Split(portBinding, ":")
-			remoteBindingPort, containerPort := ports[0], ports[1]
+	for remoteBindingPort, containerPort := range remotePortBindings {
+		remoteBindingPortInt, _ := strconv.Atoi(remoteBindingPort)
+		unusedLocalPort, err := common.CheckAndGetAvailableLocalPort(remoteBindingPortInt, 100) // 得到一个未被占用的本地端口
+		if err != nil {
+			common.SmartIDELog.Warning(err.Error())
+		}
+		if remoteBindingPortInt == ideBindingPort && unusedLocalPort != ideBindingPort {
+			unusedLocalPort4IdeBindingPort = unusedLocalPort
+		}
+		addrMapping["localhost:"+strconv.Itoa(unusedLocalPort)] = "localhost:" + remoteBindingPort
 
-			remoteBindingPortInt, _ := strconv.Atoi(remoteBindingPort)
-			unusedLocalPort, err := common.CheckAndGetAvailableLocalPort(remoteBindingPortInt, 100) // 得到一个未被占用的本地端口
-			if err != nil {
-				common.SmartIDELog.Warning(err.Error())
-			}
-			if remoteBindingPortInt == ideBindingPort && unusedLocalPort != ideBindingPort {
-				unusedLocalPort4IdeBindingPort = unusedLocalPort
-			}
-			addrMapping["localhost:"+strconv.Itoa(unusedLocalPort)] = "localhost:" + remoteBindingPort
+		// 日志
+		// 【注意】这里非常的绕！！！ 远程主机的docker-compose才保存了端口的label信息，所以只能使用远程主机的端口
+		containerPortInt, _ := strconv.Atoi(containerPort)
+		label := currentConfig.GetLabelWithPort(0, remoteBindingPortInt, containerPortInt)
 
-			// 日志
-			// 【注意】这里非常的绕！！！ 远程主机的docker-compose才保存了端口的label信息，所以只能使用远程主机的端口
-			containerPortInt, _ := strconv.Atoi(containerPort)
-			label := currentConfig.GetLabelWithPort(0, remoteBindingPortInt, containerPortInt)
-
-			for i, port := range workspaceInfo.Extend.Ports {
-				if port.HostPortDesc == label ||
-					(port.ServiceName == serviceName && port.CurrentHostPort == remoteBindingPortInt && port.OriginHostPort == containerPortInt) {
-					workspaceInfo.Extend.Ports[i].CurrentHostPort = remoteBindingPortInt
-					workspaceInfo.Extend.Ports[i].OldClientPort = port.ClientPort
-					workspaceInfo.Extend.Ports[i].ClientPort = unusedLocalPort
-					break
-				}
+		for i, port := range workspaceInfo.Extend.Ports {
+			if port.HostPortDesc == label {
+				workspaceInfo.Extend.Ports[i].CurrentHostPort = remoteBindingPortInt
+				workspaceInfo.Extend.Ports[i].OldClientPort = port.ClientPort
+				workspaceInfo.Extend.Ports[i].ClientPort = unusedLocalPort
+				break
 			}
 		}
 	}
-	/* 	for remoteBindingPort, containerPort := range remotePortBindings {
-
-	   	} */
 
 	//7. 保存数据
 	if hasChanged {
@@ -252,6 +248,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 	//calback external api
 	if calbackAPI != "" {
+
 		containerWebIDEPort := workspaceInfo.ConfigYaml.GetContainerWebIDEPort()
 		err = smartideServer.Send_WorkspaceInfo(calbackAPI, smartideServer.FeedbackCommandEnum_Start, cmd, true, containerWebIDEPort, workspaceInfo)
 		common.CheckError(err)
@@ -266,10 +263,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	//7.1 如果mode=pipeline，也不需要端口映射，直接退出
 	if isModePipeline {
 		common.SmartIDELog.InfoF(i18nInstance.Start.Info_pipeline_mode_success)
-		IDEAddress := fmt.Sprintf("http://%v:%v/?folder=vscode-remote://%v:%v%v",
-			workspaceInfo.Remote.Addr, ideBindingPort,
-			workspaceInfo.Remote.Addr, ideBindingPort,
-			workspaceInfo.GetContainerWorkingPathWithVolumes())
+		IDEAddress := fmt.Sprintf("http://%v:%v/?folder=vscode-remote://%v:%v%v", workspaceInfo.Remote.Addr, ideBindingPort, workspaceInfo.Remote.Addr, ideBindingPort, workspaceInfo.GetContainerWorkingPathWithVolumes())
 		common.SmartIDELog.InfoF(IDEAddress)
 
 		return
@@ -281,7 +275,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	//8. 端口绑定
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_tunnel_waiting) // log
 	for _, item := range workspaceInfo.Extend.Ports {
-		unusedLocalPortStr := strconv.Itoa(item.ClientPort)
+		unusedLocalPortStr := strconv.Itoa(item.ContainerPort)
 
 		// 【注意】这里非常的绕！！！ 远程主机的docker-compose才保存了端口的label信息，所以只能使用远程主机的端口
 		label := currentConfig.GetLabelWithPort(0, item.CurrentHostPort, item.ContainerPort)

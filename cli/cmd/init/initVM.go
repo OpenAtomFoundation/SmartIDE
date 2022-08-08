@@ -115,10 +115,8 @@ git fetch --all && git reset --hard origin/master && git fetch && git pull`,
 
 		return err
 	}
-	common.SmartIDELog.Info("模板库同步成功！")
 	if baseType == "" || subType == "" {
 		templatesPath := common.FilePahtJoin4Linux("~", ".ide", "template", "templates.json")
-		common.SmartIDELog.Info(templatesPath)
 		templateContent := sshRemote.GetContent(templatesPath)
 
 		var templateTypes []NewTypeBO
@@ -132,7 +130,7 @@ git fetch --all && git reset --hard origin/master && git fetch && git pull`,
 		var index int
 		fmt.Println(i18nInstance.Init.Info_choose_templatetype)
 		fmt.Scanln(&index)
-		if index < 1 || index >= len(templateTypes) {
+		if index < 0 || index >= len(templateTypes) {
 			return nil
 		}
 		selectedTypeName := templateTypes[index].TypeName
@@ -155,9 +153,6 @@ git fetch --all && git reset --hard origin/master && git fetch && git pull`,
 		baseType = strings.TrimSpace(baseType)
 		subType = strings.TrimSpace(subType)
 	}
-	common.SmartIDELog.Info(tempDirPath)
-	common.SmartIDELog.Info(baseType)
-	common.SmartIDELog.Info(subType)
 	// 项目目录如果不存在就创建
 	templateDirPath := strings.Join([]string{tempDirPath, baseType, subType, "."}, "/")
 	commandCopy := fmt.Sprintf(`
