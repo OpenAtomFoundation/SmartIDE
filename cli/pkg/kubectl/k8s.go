@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:13:54
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-04 11:31:15
+ * @LastEditTime: 2022-08-08 11:24:43
  * @FilePath: /smartide/cli/pkg/kubectl/k8s.go
  */
 
@@ -71,26 +71,36 @@ func newK8sUtil(kubeConfigFilePath string, kubeConfigContent string, targetConte
 
 	//2. kubeconfig
 	absoluteKubeConfigFilePath := ""
+	//2.0. valid
+	if kubeConfigFilePath != "" && kubeConfigContent != "" {
+		return nil, errors.New("配置文件路径 和 文件内容不能同时指定")
+	}
 	//2.1. 指定kubeconfig
 	homeDir, _ := os.UserHomeDir()
 	if kubeConfigFilePath != "" {
 		if strings.Index(kubeConfigFilePath, "~") == 0 {
 			absoluteKubeConfigFilePath = strings.Replace(kubeConfigFilePath, "~", homeDir, -1)
+		} else {
+			absoluteKubeConfigFilePath = filepath.Join(homeDir, kubeConfigFilePath)
 		}
 		if !common.IsExist(absoluteKubeConfigFilePath) {
 			return nil, fmt.Errorf("%v 不存在", absoluteKubeConfigFilePath)
 		}
 		customFlags += fmt.Sprintf("--kubeconfig %v ", absoluteKubeConfigFilePath)
-	} else {
+	} /* else {
 		absoluteKubeConfigFilePath = filepath.Join(homeDir, ".kube/config_smartide")
-	}
+	} */
 
 	//2.2. 更新配置文件的内容
 	if kubeConfigContent != "" {
+		absoluteKubeConfigFilePath = filepath.Join(homeDir, ".kube/config_smartide")
+
 		err = common.FS.CreateOrOverWrite(absoluteKubeConfigFilePath, kubeConfigContent)
 		if err != nil {
 			return nil, err
 		}
+
+		customFlags += fmt.Sprintf("--kubeconfig %v ", absoluteKubeConfigFilePath)
 	}
 
 	//3. 切换到指定的context
