@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-04 11:19:11
+ * @LastEditTime: 2022-08-09 10:45:06
  */
 package cmd
 
@@ -184,8 +184,7 @@ var removeCmd = &cobra.Command{
 				err := remove.RemoveRemote(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsRemoveRemoteDirectory, removeCmdFlag.IsForce, cmd)
 				checkErrorFeedback(err)
 			} else if workspaceInfo.Mode == workspace.WorkingMode_K8s {
-				k8sUtil, err := kubectl.NewK8sUtilWithNewFile(workspaceInfo.K8sInfo.KubeConfigFilePath,
-					workspaceInfo.K8sInfo.KubeConfigContent,
+				k8sUtil, err := kubectl.NewK8sUtilWithContent(workspaceInfo.K8sInfo.KubeConfigContent,
 					workspaceInfo.K8sInfo.Context,
 					workspaceInfo.K8sInfo.Namespace)
 				checkErrorFeedback(err)

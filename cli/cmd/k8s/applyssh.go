@@ -82,8 +82,7 @@ var ApplySSHCmd = &cobra.Command{
 		if err != nil {
 			common.SmartIDELog.Error(err)
 		}
-		k8sUtil, err := kubectl.NewK8sUtilWithNewFile(tempK8sConfigFileRelativePath,
-			resourceInfo.KubeConfig,
+		k8sUtil, err := kubectl.NewK8sUtilWithFile(tempK8sConfigFileRelativePath,
 			resourceInfo.KubeContext,
 			configMapNamespace)
 		common.CheckError(err)
