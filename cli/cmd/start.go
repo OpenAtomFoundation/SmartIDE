@@ -58,7 +58,8 @@ var startCmd = &cobra.Command{
   smartide start <workspaceid>
   smartide start <git clone url>
   smartide start --host <host> --username <username> --password <password> --repourl <git clone url> --branch <branch name> --filepath <config file path>
-  smartide start --host <hostid> <git clone url>
+  smartide start --host <hostid> <git clone url> 
+  smartide start --host <hostid> <git clone url> <templatetype> -t {typename}
   smartide start --k8s <context> --repoUrl <git clone url> --branch master
   smartide start --k8s <context> <git clone url>`,
 	PreRunE: preRunValid,
@@ -177,7 +178,7 @@ var startCmd = &cobra.Command{
 				if workspaceInfo.GitCloneRepoUrl == "" {
 					disabelGitClone = true
 				}
-				start.ExecuteVmStartCmd(workspaceInfo, isUnforward, executeStartCmdFunc, cmd, disabelGitClone)
+				start.ExecuteVmStartCmd(workspaceInfo, isUnforward, executeStartCmdFunc, cmd, args, disabelGitClone)
 
 			} else { //1.3.2. cli 在客户端运行
 
@@ -197,7 +198,7 @@ var startCmd = &cobra.Command{
 					if workspaceInfo.GitCloneRepoUrl == "" {
 						disabelGitClone = true
 					}
-					start.ExecuteVmStartCmd(workspaceInfo, isUnforward, executeStartCmdFunc, cmd, disabelGitClone)
+					start.ExecuteVmStartCmd(workspaceInfo, isUnforward, executeStartCmdFunc, cmd, args, disabelGitClone)
 				}
 
 			}
@@ -735,6 +736,7 @@ func init() {
 	// startCmd.Flags().StringP("namespace", "n", "", i18nInstance.Start.Info_help_flag_k8s_namespace)
 	startCmd.Flags().StringP("serverownerguid", "g", "", i18nInstance.Start.Info_help_flag_ownerguid)
 	startCmd.Flags().StringP("addon", "", "", "addon webterminal")
+	startCmd.Flags().StringP("type", "T", "", i18nInstance.New.Info_help_flag_type)
 }
 
 // get repo name

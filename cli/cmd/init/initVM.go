@@ -114,17 +114,36 @@ git fetch --all && git reset --hard origin/master && git fetch && git pull`,
 		}
 
 		return err
+
 	}
-	if baseType == "" || subType == "" {
-		templatesPath := common.FilePahtJoin4Linux("~", ".ide", "template", "templates.json")
-		templateContent := sshRemote.GetContent(templatesPath)
 
-		var templateTypes []NewTypeBO
+	templatesPath := common.FilePahtJoin4Linux("~", ".ide", "template", "templates.json")
+	templateContent := sshRemote.GetContent(templatesPath)
 
-		err = json.Unmarshal([]byte(templateContent), &templateTypes)
-		if err != nil {
-			return nil
+	var templateTypes []NewTypeBO
+
+	err = json.Unmarshal([]byte(templateContent), &templateTypes)
+	if err != nil {
+		return nil
+	}
+
+	selectedTemplateTypeName := ""
+
+	selectedTemplateSubTypeName := ""
+	for _, currentTemplateType := range templateTypes {
+		if currentTemplateType.TypeName == baseType {
+			selectedTemplateTypeName = baseType
 		}
+		for _, currentTemplateTypeSubType := range currentTemplateType.SubTypes {
+			if currentTemplateTypeSubType.Name == subType {
+				selectedTemplateSubTypeName = currentTemplateTypeSubType.Name
+			}
+		}
+	}
+
+	if selectedTemplateTypeName == "" || selectedTemplateSubTypeName == "" {
+		common.SmartIDELog.InfoF(i18nInstance.Init.Info_noexist_cmdtemplate)
+
 		fmt.Println(i18nInstance.Init.Info_available_templates)
 		PrintTemplates(templateTypes) // 打印支持的模版列表
 		var index int
@@ -146,15 +165,15 @@ git fetch --all && git reset --hard origin/master && git fetch && git pull`,
 			return nil
 		}
 		fmt.Println("您选择的模板为：", selectedTypeName, templateTypes[index].SubTypes[indexIde].Name)
-		baseType = selectedTypeName
+		selectedTemplateTypeName = selectedTypeName
 
-		subType = templateTypes[index].SubTypes[indexIde].Name
+		selectedTemplateSubTypeName = templateTypes[index].SubTypes[indexIde].Name
 
-		baseType = strings.TrimSpace(baseType)
-		subType = strings.TrimSpace(subType)
+		selectedTemplateTypeName = strings.TrimSpace(selectedTemplateTypeName)
+		selectedTemplateSubTypeName = strings.TrimSpace(selectedTemplateSubTypeName)
 	}
 	// 项目目录如果不存在就创建
-	templateDirPath := strings.Join([]string{tempDirPath, baseType, subType, "."}, "/")
+	templateDirPath := strings.Join([]string{tempDirPath, selectedTemplateTypeName, selectedTemplateSubTypeName, "."}, "/")
 	commandCopy := fmt.Sprintf(`
 	[[ -d %v ]] && echo '%v directory exist' || mkdir -p %v
 	cp -r %v %v 
