@@ -77,12 +77,12 @@ var ApplySSHCmd = &cobra.Command{
 		}
 
 		//2. Save temp k8s config file
-		tempK8sConfigFileRelativePath := common.PathJoin(config.SmartIdeHome, "tempconfig")
-		err = ioutil.WriteFile(tempK8sConfigFileRelativePath, []byte(resourceInfo.KubeConfig), 0777)
+		tempK8sConfigFileAbsolutePath := common.PathJoin(config.SmartIdeHome, "tempconfig")
+		err = ioutil.WriteFile(tempK8sConfigFileAbsolutePath, []byte(resourceInfo.KubeConfig), 0777)
 		if err != nil {
 			common.SmartIDELog.Error(err)
 		}
-		k8sUtil, err := kubectl.NewK8sUtilWithFile(tempK8sConfigFileRelativePath,
+		k8sUtil, err := kubectl.NewK8sUtilWithFile(tempK8sConfigFileAbsolutePath,
 			resourceInfo.KubeContext,
 			configMapNamespace)
 		common.CheckError(err)
