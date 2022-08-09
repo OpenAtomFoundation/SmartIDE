@@ -91,7 +91,7 @@ func VmNew(cmd *cobra.Command, args []string, workspaceInfo workspace.WorkspaceI
 
 	// 执行vm start命令
 	isUnforward, _ := cmd.Flags().GetBool("unforward")
-	start.ExecuteVmStartCmd(workspaceInfo, isUnforward, yamlExecuteFun, cmd, true)
+	start.ExecuteVmStartCmd(workspaceInfo, isUnforward, yamlExecuteFun, cmd,args, true)
 }
 
 // 在服务器上使用git下载制定的template文件，完成后删除.git文件

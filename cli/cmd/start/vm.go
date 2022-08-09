@@ -29,7 +29,7 @@ import (
 
 // 远程服务器执行 start 命令
 func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
-	yamlExecuteFun func(yamlConfig config.SmartIdeConfig), cmd *cobra.Command, disableClone bool) {
+	yamlExecuteFun func(yamlConfig config.SmartIdeConfig), cmd *cobra.Command, args []string, disableClone bool) {
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_starting)
 
 	mode, _ := cmd.Flags().GetString("mode")
@@ -84,8 +84,19 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	ideYamlFilePath := common.FilePathJoin(common.OS_Linux, workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath) //fmt.Sprintf(`%v/.ide/.ide.yaml`, repoWorkspace)
 	common.SmartIDELog.Info(fmt.Sprintf(i18nInstance.VmStart.Info_read_config, ideYamlFilePath))
 	if !sshRemote.IsFileExist(ideYamlFilePath) {
-		common.SmartIDELog.Info(i18nInstance.Init.Info_noexist_cmdtemplate)
-		initExtended.GitCloneTemplateRepo4Remote(sshRemote, workspaceInfo.WorkingDirectoryPath, config.GlobalSmartIdeConfig.TemplateRepo, "", "")
+		argsTemplateTypeName := ""
+		argsTemplateSubTypeName := ""
+		if len(args) > 0 {
+
+			common.SmartIDELog.Info(i18nInstance.Init.Info_check_cmdtemplate)
+			argsTemplateTypeName = args[1]
+			argsTemplateSubTypeName, err = cmd.Flags().GetString("type")
+			if err != nil {
+				return
+			}
+		}
+
+		initExtended.GitCloneTemplateRepo4Remote(sshRemote, workspaceInfo.WorkingDirectoryPath, config.GlobalSmartIdeConfig.TemplateRepo, argsTemplateTypeName, argsTemplateSubTypeName)
 
 	}
 	catCommand := fmt.Sprintf(`cat %v`, ideYamlFilePath)
