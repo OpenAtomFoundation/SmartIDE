@@ -16,6 +16,7 @@ import (
 	"text/tabwriter"
 	"time"
 
+	initExtended "github.com/leansoftX/smartide-cli/cmd/init"
 	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
@@ -83,8 +84,9 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	ideYamlFilePath := common.FilePathJoin(common.OS_Linux, workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath) //fmt.Sprintf(`%v/.ide/.ide.yaml`, repoWorkspace)
 	common.SmartIDELog.Info(fmt.Sprintf(i18nInstance.VmStart.Info_read_config, ideYamlFilePath))
 	if !sshRemote.IsFileExist(ideYamlFilePath) {
-		message := fmt.Sprintf(i18nInstance.Main.Err_file_not_exit2, ideYamlFilePath)
-		common.SmartIDELog.Error(message)
+		common.SmartIDELog.Info(i18nInstance.Init.Info_noexist_cmdtemplate)
+		initExtended.GitCloneTemplateRepo4Remote(sshRemote, workspaceInfo.WorkingDirectoryPath, config.GlobalSmartIdeConfig.TemplateRepo, "", "")
+
 	}
 	catCommand := fmt.Sprintf(`cat %v`, ideYamlFilePath)
 	output, err := sshRemote.ExeSSHCommand(catCommand)
@@ -141,6 +143,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		tempDockerCompose, ideBindingPort, _ =
 			currentConfig.LoadDockerComposeFromTempFile(sshRemote, workspaceInfo.TempYamlFileAbsolutePath)
 	}
+
 	//3.2. 扩展信息
 	workspaceInfo.Extend = workspaceInfo.GetWorkspaceExtend()
 
@@ -174,6 +177,12 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		fun1 := func(output string) error {
 			if strings.Contains(output, ":error") || strings.Contains(output, ":fatal") {
 				common.SmartIDELog.Error(output)
+
+			} else {
+				//common.SmartIDELog.ConsoleInLine(output)
+				if strings.Contains(output, "Pulling") {
+					fmt.Println()
+				}
 			}
 
 			return nil
@@ -249,6 +258,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 	//calback external api
 	if calbackAPI != "" {
+
 		containerWebIDEPort := workspaceInfo.ConfigYaml.GetContainerWebIDEPort()
 		err = smartideServer.Send_WorkspaceInfo(calbackAPI, smartideServer.FeedbackCommandEnum_Start, cmd, true, containerWebIDEPort, workspaceInfo)
 		common.CheckError(err)
@@ -263,10 +273,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	//7.1 如果mode=pipeline，也不需要端口映射，直接退出
 	if isModePipeline {
 		common.SmartIDELog.InfoF(i18nInstance.Start.Info_pipeline_mode_success)
-		IDEAddress := fmt.Sprintf("http://%v:%v/?folder=vscode-remote://%v:%v%v",
-			workspaceInfo.Remote.Addr, ideBindingPort,
-			workspaceInfo.Remote.Addr, ideBindingPort,
-			workspaceInfo.GetContainerWorkingPathWithVolumes())
+		IDEAddress := fmt.Sprintf("http://%v:%v/?folder=vscode-remote://%v:%v%v", workspaceInfo.Remote.Addr, ideBindingPort, workspaceInfo.Remote.Addr, ideBindingPort, workspaceInfo.GetContainerWorkingPathWithVolumes())
 		common.SmartIDELog.InfoF(IDEAddress)
 
 		return
@@ -278,7 +285,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	//8. 端口绑定
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_tunnel_waiting) // log
 	for _, item := range workspaceInfo.Extend.Ports {
-		unusedLocalPortStr := strconv.Itoa(item.ClientPort)
+		unusedLocalPortStr := strconv.Itoa(item.ContainerPort)
 
 		// 【注意】这里非常的绕！！！ 远程主机的docker-compose才保存了端口的label信息，所以只能使用远程主机的端口
 		label := item.HostPortDesc

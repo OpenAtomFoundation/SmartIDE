@@ -385,6 +385,8 @@ type I18nSource struct {
 		Info_choose_idetype      string `json:"info_choose_idetype"`
 		Info_available_templates string `json:"info_available_templates"`
 		Info_available_ides      string `json:"info_available_ides"`
+		Info_check_cmdtemplate   string `json:"info_check_cmdtemplate"`
+		Info_noexist_cmdtemplate string `json:"Info_noexist_cmdtemplate"`
 	} `json:"init"`
 }
 
