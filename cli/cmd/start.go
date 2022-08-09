@@ -59,7 +59,7 @@ var startCmd = &cobra.Command{
   smartide start <git clone url>
   smartide start --host <host> --username <username> --password <password> --repourl <git clone url> --branch <branch name> --filepath <config file path>
   smartide start --host <hostid> <git clone url> 
-  smartide start --host <hostid> <git clone url> <templatetype> -t {typename}
+  smartide start --host <hostid> <git clone url> <templatetype> -T {typename}
   smartide start --k8s <context> --repoUrl <git clone url> --branch master
   smartide start --k8s <context> <git clone url>`,
 	PreRunE: preRunValid,
