@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:13:54
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-09 10:44:06
+ * @LastEditTime: 2022-08-09 14:45:50
  * @FilePath: /cli/pkg/kubectl/k8s.go
  */
 
@@ -81,15 +81,17 @@ func newK8sUtil(kubeConfigFilePath string, kubeConfigContent string, targetConte
 		if strings.Index(kubeConfigFilePath, "~") == 0 {
 			absoluteKubeConfigFilePath = strings.Replace(kubeConfigFilePath, "~", homeDir, -1)
 		} else {
-			absoluteKubeConfigFilePath = filepath.Join(homeDir, kubeConfigFilePath)
+			if !filepath.IsAbs(kubeConfigFilePath) { // 非绝对路径的时候，就认为是相对用户目录
+				absoluteKubeConfigFilePath = filepath.Join(homeDir, kubeConfigFilePath)
+			} else {
+				absoluteKubeConfigFilePath = kubeConfigFilePath
+			}
 		}
 		if !common.IsExist(absoluteKubeConfigFilePath) {
 			return nil, fmt.Errorf("%v 不存在", absoluteKubeConfigFilePath)
 		}
 		customFlags += fmt.Sprintf("--kubeconfig %v ", absoluteKubeConfigFilePath)
-	} /* else {
-		absoluteKubeConfigFilePath = filepath.Join(homeDir, ".kube/config_smartide")
-	} */
+	}
 
 	//2.2. 更新配置文件的内容
 	if kubeConfigContent != "" {
