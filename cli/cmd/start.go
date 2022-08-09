@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-04 11:16:46
+ * @LastEditTime: 2022-08-09 10:45:22
  */
 package cmd
 
@@ -137,8 +137,7 @@ var startCmd = &cobra.Command{
 		} else if workspaceInfo.Mode == workspace.WorkingMode_K8s { //1.2. k8s 模式
 
 			if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server { //1.2.1. cli 在服务端运行
-				k8sUtil, err := kubectl.NewK8sUtilWithNewFile(workspaceInfo.K8sInfo.KubeConfigFilePath,
-					workspaceInfo.K8sInfo.KubeConfigContent,
+				k8sUtil, err := kubectl.NewK8sUtilWithContent(workspaceInfo.K8sInfo.KubeConfigContent,
 					workspaceInfo.K8sInfo.Context,
 					workspaceInfo.K8sInfo.Namespace)
 				common.SmartIDELog.Error(err)

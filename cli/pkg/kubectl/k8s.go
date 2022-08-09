@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:13:54
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-08 16:32:12
+ * @LastEditTime: 2022-08-09 10:44:06
  * @FilePath: /cli/pkg/kubectl/k8s.go
  */
 
@@ -31,12 +31,12 @@ type KubernetesUtil struct {
 	Commands        string
 }
 
-func NewK8sUtilWithNewFile(kubeConfigFilePath string, kubeConfigContent string, targetContext string, ns string) (*KubernetesUtil, error) {
-	/* 	if kubeConfigFilePath == "" {
-		homeDir, _ := os.UserHomeDir()
-		kubeConfigFilePath = filepath.Join(homeDir, ".kube/config_smartide")
-	} */
-	return newK8sUtil(kubeConfigFilePath, kubeConfigContent, targetContext, ns)
+func NewK8sUtilWithFile(kubeConfigFilePath string, targetContext string, ns string) (*KubernetesUtil, error) {
+	return newK8sUtil(kubeConfigFilePath, "", targetContext, ns)
+}
+
+func NewK8sUtilWithContent(kubeConfigContent string, targetContext string, ns string) (*KubernetesUtil, error) {
+	return newK8sUtil("", kubeConfigContent, targetContext, ns)
 }
 
 func NewK8sUtil(kubeConfigFilePath string, targetContext string, ns string) (*KubernetesUtil, error) {

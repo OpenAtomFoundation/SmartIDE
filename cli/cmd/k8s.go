@@ -101,8 +101,7 @@ var k8sCmd = &cobra.Command{
 		if err != nil {
 			common.SmartIDELog.Error(err)
 		}
-		k8sUtil, err := kubectl.NewK8sUtilWithNewFile(tempK8sConfigFileRelativePath,
-			workspaceInfo.K8sInfo.KubeConfigContent,
+		k8sUtil, err := kubectl.NewK8sUtilWithFile(tempK8sConfigFileRelativePath,
 			workspaceInfo.K8sInfo.Context,
 			namespace)
 		common.CheckError(err)
