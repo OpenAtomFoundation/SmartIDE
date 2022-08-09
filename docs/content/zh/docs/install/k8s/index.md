@@ -12,6 +12,25 @@ description: >
 - 1.一个K8S集群，作为开发资源。这里可以是私有的K8S集群，也可以是云平台的K8S集群服务。
 - 2.一个域名，将域名指向K8S集群对外暴露的访问地址，这样就可以通过不同的域名地址访问到集群不同的工作区命名空间。这里可以是私有部署的DNS域名解析服务，或者共有云的域名解析。
 
+## 启用VMLC
+如果需要在k8s集群中使用VMLC环境，需要首先运行以下脚本对集群进行初始化。
+
+> 注意：此操作当前只支持Ubuntu节点，并且需要k8s版本在1.21-1.23范围内，具体请参考 [sysbox官方文档](https://github.com/nestybox/sysbox/blob/master/docs/user-guide/install-k8s.md)
+
+运行以下操作会造成节点上当前运行的所有pod重新启动，建议仅在新节点或者新集群上运行。
+
+```bash
+## 获取节点名称
+kubectl get nodes
+## 在节点上添加 sysbox-install=yes 的 label
+kubectl label nodes <节点名称> sysbox-install=yes
+## 安装 sysbox container runtime
+### 国内安装地址
+kubectl apply -f https://gitee.com/smartide/SmartIDE/raw/main/deployment/k8s/sysbox-install.yaml
+### 国际安装地址
+kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/deployment/k8s/sysbox-install-cn.yaml
+```
+
 ## 资源初始化
 准备好所需资源后，就可以通过一键配置脚本，进行资源的初始化操作。在配置好K8S上下文的命令行中执行以下步骤：
 
