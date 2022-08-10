@@ -3,7 +3,7 @@
  * @Description: config
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-05 11:16:14
+ * @LastEditTime: 2022-08-09 17:33:52
  */
 package config
 
@@ -76,7 +76,8 @@ func (yamlFileConfig *SmartIdeConfig) LoadDockerComposeFromTempFile(sshRemote co
 	}
 
 	// 获取 webide 、ssh 绑定端口
-	if yamlFileConfig.Orchestrator.Type == OrchestratorTypeEnum_Compose { // 只有在compose模式下，在会去compose文件中查找端口是否申明
+	if yamlFileConfig.Orchestrator.Type == OrchestratorTypeEnum_Compose ||
+		yamlFileConfig.Orchestrator.Type == OrchestratorTypeEnum_Allinone { // 只有在compose模式下，在会去compose文件中查找端口是否申明
 		for serviceName, service := range composeYaml.Services {
 			if serviceName != yamlFileConfig.Workspace.DevContainer.ServiceName {
 				continue
@@ -126,7 +127,8 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 	}
 
 	//1.2. 文件格式检查
-	if yamlFileConfig.Orchestrator.Type == OrchestratorTypeEnum_Compose {
+	if yamlFileConfig.Orchestrator.Type == OrchestratorTypeEnum_Compose ||
+		yamlFileConfig.Orchestrator.Type == OrchestratorTypeEnum_Allinone {
 		if yamlFileConfig.IsLinkDockerComposeFile() { // 链接了 docker-compose 文件
 			if !isRemoteMode {
 				// 检查docker-compose文件是否存在
@@ -154,7 +156,7 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 
 	//2.2. 检查devContainer中定义的service时候存在于services中
 	if _, ok := dockerCompose.Services[yamlFileConfig.Workspace.DevContainer.ServiceName]; !ok { // 是否定义了devContainer节点对应的service
-		err := fmt.Sprintf(i18nInstance.Config.Err_devcontainer_not_contains, yamlFileConfig.Workspace.DevContainer.ServiceName) //TODO：国际化
+		err := fmt.Sprintf(i18nInstance.Config.Err_devcontainer_not_contains, yamlFileConfig.Workspace.DevContainer.ServiceName)
 		common.SmartIDELog.Error(err)
 	}
 

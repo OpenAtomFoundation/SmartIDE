@@ -19,8 +19,8 @@ var i18nInstance = i18n.GetInstance()
 // 获取生成的临时 docker-compose 文件路径
 func (workspace WorkspaceInfo) GetTempDockerComposeFilePath() string {
 	dockerComposeFileName := fmt.Sprintf("docker-compose-%s.yaml", workspace.GetProjectDirctoryName()) // docker-compose 文件的名称
-	yamlFileDirPath := common.PathJoin(workspace.WorkingDirectoryPath, model.CONST_TempDirPath)        //
-	yamlFilePath := common.PathJoin(yamlFileDirPath, dockerComposeFileName)
+	//yamlFileDirPath := common.PathJoin(workspace.WorkingDirectoryPath, model.CONST_TempDirPath)        //
+	yamlFilePath := filepath.Join(workspace.WorkingDirectoryPath, model.CONST_TempDirPath, dockerComposeFileName)
 
 	return yamlFilePath
 }

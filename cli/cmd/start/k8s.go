@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-03-23 16:15:38
- * @LastEditors: kenan
- * @LastEditTime: 2022-08-05 12:03:11
- * @FilePath: /smartide/cli/cmd/start/k8s.go
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-08-10 09:21:26
+ * @FilePath: /cli/cmd/start/k8s.go
  */
 
 package start
@@ -545,6 +545,18 @@ func waitingAndOpenBrower(workspaceInfo workspace.WorkspaceInfo, originK8sConfig
 // 检测pod是否已经ready
 func getDevContainerPodReady(kubernetes kubectl.KubernetesUtil, smartideK8sConfig config.SmartIdeK8SConfig) (bool, error) {
 	devContainerName := smartideK8sConfig.Workspace.DevContainer.ServiceName
+
+	if len(smartideK8sConfig.Workspace.Deployments) == 0 {
+		pod, err := kubernetes.GetPodByName(devContainerName)
+
+		if err != nil {
+			return false, err
+		}
+
+		isReady := pod.Status.Phase == coreV1.PodRunning
+		return isReady, nil
+	}
+
 	for _, deployment := range smartideK8sConfig.Workspace.Deployments {
 		for _, container := range deployment.Spec.Template.Spec.Containers {
 			if container.Name == devContainerName {
@@ -588,33 +600,52 @@ func GetDevContainerPod(kubernetes kubectl.KubernetesUtil, smartideK8sConfig con
 	pod *coreV1.Pod, serviceName string, err error) {
 
 	devContainerName := smartideK8sConfig.Workspace.DevContainer.ServiceName
-	for _, deployment := range smartideK8sConfig.Workspace.Deployments {
-		for _, container := range deployment.Spec.Template.Spec.Containers {
-			if container.Name == devContainerName {
 
-				selector := ""
-				index := 0
-				for key, value := range deployment.Spec.Selector.MatchLabels {
-					if index == 0 {
-						selector += fmt.Sprintf("%v=%v", key, value)
-					}
-					index++
+	if len(smartideK8sConfig.Workspace.Deployments) == 0 {
+		pod, err := kubernetes.GetPodByName(devContainerName)
+		if err != nil {
+			return pod, "", err
+		}
+
+		for _, service := range smartideK8sConfig.Workspace.Services {
+			for key, value := range pod.ObjectMeta.Labels {
+				if _, ok := service.Spec.Selector[key]; ok && service.Spec.Selector[key] == value {
+					serviceName = service.Name
 				}
+			}
+		}
 
-				pod, err := kubernetes.GetPod(selector, kubernetes.Namespace)
-				if err != nil {
-					return pod, "", err
-				}
+		return pod, serviceName, nil
 
-				for _, service := range smartideK8sConfig.Workspace.Services {
+	} else {
+		for _, deployment := range smartideK8sConfig.Workspace.Deployments {
+			for _, container := range deployment.Spec.Template.Spec.Containers {
+				if container.Name == devContainerName {
+
+					selector := ""
+					index := 0
 					for key, value := range deployment.Spec.Selector.MatchLabels {
-						if _, ok := service.Spec.Selector[key]; ok && service.Spec.Selector[key] == value {
-							serviceName = service.Name
+						if index == 0 {
+							selector += fmt.Sprintf("%v=%v", key, value)
+						}
+						index++
+					}
+
+					pod, err := kubernetes.GetPodBySelector(selector)
+					if err != nil {
+						return pod, "", err
+					}
+
+					for _, service := range smartideK8sConfig.Workspace.Services {
+						for key, value := range deployment.Spec.Selector.MatchLabels {
+							if _, ok := service.Spec.Selector[key]; ok && service.Spec.Selector[key] == value {
+								serviceName = service.Name
+							}
 						}
 					}
-				}
 
-				return pod, serviceName, nil
+					return pod, serviceName, nil
+				}
 			}
 		}
 	}

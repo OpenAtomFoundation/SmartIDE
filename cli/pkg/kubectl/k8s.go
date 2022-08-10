@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:13:54
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-09 14:45:50
+ * @LastEditTime: 2022-08-10 09:33:08
  * @FilePath: /cli/pkg/kubectl/k8s.go
  */
 
@@ -453,8 +453,9 @@ func execKubectlCommandCombined(kubectlFilePath string, command string, workingD
 }
 
 // 根据selector获取pod
-func (k *KubernetesUtil) GetPod(selector string, namespace string) (*coreV1.Pod, error) {
-	command := fmt.Sprintf("get pod --selector=%v -o=yaml ", selector)
+func (k *KubernetesUtil) GetPodBySelector(selector string) (*coreV1.Pod, error) {
+	command := ""
+	command = fmt.Sprintf("get pod --selector=%v -o=yaml ", selector)
 	yaml, err := k.ExecKubectlCommandCombined(command, "")
 	if err != nil {
 		return nil, err
@@ -472,6 +473,21 @@ func (k *KubernetesUtil) GetPod(selector string, namespace string) (*coreV1.Pod,
 	bytes, _ := item.MarshalJSON()
 	objPod, _, _ := decode(bytes, nil, nil)
 	pod := objPod.(*coreV1.Pod)
+
+	return pod, nil
+}
+
+func (k *KubernetesUtil) GetPodByName(podName string) (*coreV1.Pod, error) {
+	command := fmt.Sprintf("get pod %v -o=yaml ", podName)
+	yaml, err := k.ExecKubectlCommandCombined(command, "")
+	if err != nil {
+		return nil, err
+	}
+
+	decode := k8sScheme.Codecs.UniversalDeserializer().Decode
+	obj, _, _ := decode([]byte(yaml), nil, nil)
+
+	pod := obj.(*coreV1.Pod)
 
 	return pod, nil
 }
