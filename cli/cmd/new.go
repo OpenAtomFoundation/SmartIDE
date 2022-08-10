@@ -23,7 +23,7 @@ var newCmd = &cobra.Command{
 	Short: i18nInstance.New.Info_help_short,
 	Long:  i18nInstance.New.Info_help_long,
 	Example: `  smartide new
-  smartide new <templatetype> -t {typename}`,
+  smartide new <templatetype> -T {typename}`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		//ai记录
@@ -57,7 +57,7 @@ var newCmd = &cobra.Command{
 }
 
 func init() {
-	newCmd.Flags().StringP("type", "t", "", i18nInstance.New.Info_help_flag_type)
+	newCmd.Flags().StringP("type", "T", "", i18nInstance.New.Info_help_flag_type)
 	newCmd.Flags().BoolVarP(&removeCmdFlag.IsContinue, "yes", "y", false, "目录不为空，是否清空文件夹！")
 	newCmd.Flags().BoolVarP(&removeCmdFlag.IsUnforward, "unforward", "", false, "是否禁止端口转发")
 

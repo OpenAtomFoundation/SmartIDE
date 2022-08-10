@@ -8,7 +8,8 @@
         "info_available_templates":"Available templates:",
         "info_available_ides":"Available IDE types:",
         "info_check_cmdtemplate":"Detecting the specified template......",
-        "info_noexist_cmdtemplate":"Specified template is not existed. You can select accordint to the tips"
+        "info_noexist_cmdtemplate":"Specified template is not existed. You can select accordint to the tips",
+        "info_init_complete":"Init complete!"
     },
     "config": {
         "info_help_short": "Config the SmartIDE settings",

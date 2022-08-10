@@ -16,7 +16,9 @@ import (
 	"strings"
 	"time"
 
+	initExtended "github.com/leansoftX/smartide-cli/cmd/init"
 	"github.com/leansoftX/smartide-cli/internal/dal"
+	"github.com/spf13/cobra"
 
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
@@ -40,7 +42,7 @@ func reloadWorkSpaceId(workspace *workspace.WorkspaceInfo) {
 // 本地执行 start
 func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	endPostExecuteFun func(dockerContainerName string, docker common.Docker),
-	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) {
+	yamlExecuteFun func(yamlConfig config.SmartIdeConfig), args []string, cmd *cobra.Command) {
 
 	//0. 检查本地环境
 	err := common.CheckLocalEnv()
@@ -57,6 +59,7 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	var ideBindingPort, sshBindingPort int
 
 	//1.3. 初始化配置文件对象
+	initExtended.InitLocalConfig(cmd, args)
 	currentConfig := config.NewConfig(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath, "")
 
 	// addonEnable()

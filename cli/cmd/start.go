@@ -57,7 +57,9 @@ var startCmd = &cobra.Command{
   smartide start --workspaceid {workspaceid}
   smartide start <workspaceid>
   smartide start <git clone url>
+  smartide start <git clone url> <templatetype> -T {typename}
   smartide start --host <host> --username <username> --password <password> --repourl <git clone url> --branch <branch name> --filepath <config file path>
+  smartide start --host <host> --username <username> --password <password> --repourl <git clone url> --branch <branch name> --filepath <config file path> <templatetype> -T {typename}
   smartide start --host <hostid> <git clone url> 
   smartide start --host <hostid> <git clone url> <templatetype> -T {typename}
   smartide start --k8s <context> --repoUrl <git clone url> --branch master
@@ -133,7 +135,7 @@ var startCmd = &cobra.Command{
 
 		//1. 执行命令
 		if workspaceInfo.Mode == workspace.WorkingMode_Local { //1.1. 本地模式
-			start.ExecuteStartCmd(workspaceInfo, isUnforward, func(v string, d common.Docker) {}, executeStartCmdFunc)
+			start.ExecuteStartCmd(workspaceInfo, isUnforward, func(v string, d common.Docker) {}, executeStartCmdFunc, args, cmd)
 
 		} else if workspaceInfo.Mode == workspace.WorkingMode_K8s { //1.2. k8s 模式
 

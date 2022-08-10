@@ -387,6 +387,7 @@ type I18nSource struct {
 		Info_available_ides      string `json:"info_available_ides"`
 		Info_check_cmdtemplate   string `json:"info_check_cmdtemplate"`
 		Info_noexist_cmdtemplate string `json:"Info_noexist_cmdtemplate"`
+		Info_Init_Complete       string `json:"info_init_complete"`
 	} `json:"init"`
 }
 
