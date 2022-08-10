@@ -164,7 +164,9 @@ func getTemplateSetting(cmd *cobra.Command, args []string) (*TemplateTypeBo, err
 				}
 			}
 		}
-		common.SmartIDELog.Warning(i18nInstance.Init.Info_noexist_cmdtemplate)
+		if selectedTemplateTypeName == "" || selectedTemplateSubTypeName == "" {
+			common.SmartIDELog.Info(i18nInstance.Init.Info_noexist_cmdtemplate)
+		}
 	}
 
 	if len(args) == 0 || selectedTemplateTypeName == "" || selectedTemplateSubTypeName == "" {
