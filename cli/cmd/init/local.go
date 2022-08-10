@@ -150,6 +150,9 @@ func getTemplateSetting(cmd *cobra.Command, args []string) (*TemplateTypeBo, err
 		if cmd.Name() == "start" && len(cmd.Flags().Args()) == 2 {
 			argsTemplateTypeName = args[1]
 		}
+		if cmd.Name() == "start" && len(cmd.Flags().Args()) == 1 {
+			argsTemplateTypeName = args[0]
+		}
 		argsTemplateSubTypeName, err = cmd.Flags().GetString("type")
 		for _, currentTemplateType := range templateTypes {
 			if currentTemplateType.TypeName == argsTemplateTypeName {
