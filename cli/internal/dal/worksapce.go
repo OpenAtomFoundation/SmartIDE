@@ -318,7 +318,7 @@ func workspaceDataMap(workspaceInfo *workspace.WorkspaceInfo, do workspaceDo) er
 
 	//3. 初始化配置文件
 	if do.w_mode == string(workspace.WorkingMode_Remote) {
-		workspaceInfo.ConfigYaml = *config.NewRemoteConfig(do.w_workingdir.String, do.w_config_file.String, do.w_config_content.String)
+		workspaceInfo.ConfigYaml = *config.NewComposeConfig(do.w_workingdir.String, do.w_config_file.String, do.w_config_content.String)
 
 	} else if do.w_mode == string(workspace.WorkingMode_K8s) {
 		workspaceInfo.ConfigYaml = *config.NewConfig(do.w_workingdir.String, do.w_config_file.String, do.w_config_content.String)

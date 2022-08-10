@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-05 11:15:07
+ * @LastEditTime: 2022-08-09 15:47:19
  */
 package start
 
@@ -103,7 +103,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	output, err := sshRemote.ExeSSHCommand(catCommand)
 	common.CheckErrorFunc(err, serverFeedback)
 	configYamlContent := output
-	currentConfig := config.NewRemoteConfig(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath, configYamlContent)
+	currentConfig := config.NewComposeConfig(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath, configYamlContent)
 
 	// addonEnable()
 	if workspaceInfo.Addon.IsEnable {
@@ -126,7 +126,8 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		}
 
 		// 获取compose配置
-		tempDockerCompose, ideBindingPort, _ = currentConfig.ConvertToDockerCompose(sshRemote, workspaceInfo.GetProjectDirctoryName(), workspaceInfo.WorkingDirectoryPath, true, userName)
+		tempDockerCompose, ideBindingPort, _ = currentConfig.ConvertToDockerCompose(sshRemote,
+			workspaceInfo.GetProjectDirctoryName(), workspaceInfo.WorkingDirectoryPath, true, userName)
 		workspaceInfo.TempDockerCompose = tempDockerCompose
 
 		// 配置

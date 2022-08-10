@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-15 23:09:41
+ * @LastEditTime: 2022-08-09 11:30:19
  */
 package config
 
@@ -32,16 +32,19 @@ import (
 var i18nInstance = i18n.GetInstance()
 
 // 远程服务器上的配置
-func NewRemoteConfig(localWorkingDir string, configFilePath string, configContent string) (result *SmartIdeConfig) {
-	return newConfig(localWorkingDir, configFilePath, configContent, true)
+func NewComposeConfig(localWorkingDir string, configFilePath string, configContent string) (result *SmartIdeConfig) {
+	return newConfig(localWorkingDir, configFilePath, configContent, OrchestratorTypeEnum_Compose, true)
 }
 
-// 远程服务器上的配置
-func NewK8SConfig(configFileAbsolutePath string, k8sYamlFileAbsolutePaths []string, configContent string, k8sYamlContent string) (result *SmartIdeK8SConfig, err error) {
+// k8s工作区的配置
+func NewK8SConfig(configFileAbsolutePath string,
+	k8sYamlFileAbsolutePaths []string,
+	configContent string,
+	k8sYamlContent string) (result *SmartIdeK8SConfig, err error) {
 
 	localWorkingDir := filepath.Dir(configFileAbsolutePath)
 	fileName := filepath.Base(configFileAbsolutePath)
-	config := newConfig(localWorkingDir, fileName, configContent, false)
+	config := newConfig(localWorkingDir, fileName, configContent, OrchestratorTypeEnum_K8S, false)
 	result = config.ConvertToSmartIdeK8SConfig()
 
 	parseYamlFunc := func(yamlFileContent string) error {
@@ -126,11 +129,14 @@ func NewK8SConfig(configFileAbsolutePath string, k8sYamlFileAbsolutePaths []stri
 // @Param data configFilePath string ""
 // @Param data configContent string ""
 func NewConfig(localWorkingDir string, configFilePath string, configContent string) (result *SmartIdeConfig) {
-	return newConfig(localWorkingDir, configFilePath, configContent, false)
+	return newConfig(localWorkingDir, configFilePath, configContent, OrchestratorTypeEnum_Allinone, false)
 }
 
 //
-func newConfig(localWorkingDir string, configFilePath string, configContent string, isRemote bool) (result *SmartIdeConfig) {
+func newConfig(localWorkingDir string, configFilePath string, configContent string,
+	orchestratorType OrchestratorTypeEnum,
+	isRemote bool) (
+	result *SmartIdeConfig) {
 	result = &SmartIdeConfig{}
 
 	// 配置文件的路径
@@ -163,7 +169,6 @@ func newConfig(localWorkingDir string, configFilePath string, configContent stri
 	} else {
 		if !isRemote { // 只有本地模式下，才会从本地加载配置文件
 			result = loadConfigWithYamlFile(localWorkingDir, configFilePath)
-
 		}
 
 	}
@@ -176,7 +181,7 @@ func newConfig(localWorkingDir string, configFilePath string, configContent stri
 	result.Workspace.DevContainer.configRelativeFilePath =
 		strings.Replace(result.Workspace.DevContainer.configRelativeFilePath, result.Workspace.DevContainer.workingDirectoryPath, "", -1)
 
-		// 置为空
+	// 置为空
 	result.Workspace.DevContainer.bindingPorts = []PortMapInfo{}
 
 	return result

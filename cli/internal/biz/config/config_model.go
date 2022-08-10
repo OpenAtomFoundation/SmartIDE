@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2022-07-15 10:34:10
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-08-08 10:49:19
  */
 package config
 
@@ -36,8 +36,9 @@ import (
 type OrchestratorTypeEnum string
 
 const (
-	OrchestratorTypeEnum_K8S     OrchestratorTypeEnum = "k8s"
-	OrchestratorTypeEnum_Compose OrchestratorTypeEnum = "docker-compose"
+	OrchestratorTypeEnum_K8S      OrchestratorTypeEnum = "k8s"
+	OrchestratorTypeEnum_Compose  OrchestratorTypeEnum = "docker-compose"
+	OrchestratorTypeEnum_Allinone OrchestratorTypeEnum = "allinone"
 )
 
 type IdeTypeEnum string

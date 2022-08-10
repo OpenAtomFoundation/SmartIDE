@@ -1,6 +1,6 @@
 version: smartide/v0.3
 orchestrator:
-  type: docker-compose
+  type: allinone
   version: 3
 workspace:
   dev-container:
@@ -15,19 +15,5 @@ workspace:
     command: 
         - go env -w GOPROXY=https://goproxy.cn,direct
     
-  services:
-    smartide-go-dev:
-      container_name: smartide-go
-      image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-golang-v2-vscode:1749
-      restart: always
-      environment:
-        ROOT_PASSWORD: root123
-        LOCAL_USER_PASSWORD: root123
-      volumes:
-        - .:/home/project
-        ## - /var/run/docker.sock:/var/run/docker.sock
-      espose:
-        - 3000
-      ports:
-        - 6800:3000
-        - "6822:22"
+  docker-compose-file: docker-compose.yaml  # 链接的docker-compose文件的相对路径
+  kube-deploy-files: ”*.deploy.yaml“ # 采用通配符的方式匹配“.ide”目录下的文件

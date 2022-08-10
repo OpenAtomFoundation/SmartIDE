@@ -3,13 +3,14 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-11 16:26:33
+ * @LastEditTime: 2022-08-10 00:22:13
  */
 package config
 
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -28,6 +29,19 @@ func (c SmartIdeK8SConfig) Valid() error {
 	for _, deployment := range c.Workspace.Deployments {
 		for _, container := range deployment.Spec.Template.Spec.Containers {
 			if container.Name == c.Workspace.DevContainer.ServiceName {
+				isContainServiceName = true
+				break
+			}
+		}
+	}
+	if !isContainServiceName {
+		for _, other := range c.Workspace.Others {
+			re := reflect.ValueOf(other)
+			if re.Kind() == reflect.Ptr {
+				re = re.Elem()
+			}
+			kindName := fmt.Sprint(re.FieldByName("Kind"))
+			if strings.ToLower(kindName) == "pod" && re.FieldByName("ObjectMeta").FieldByName("Name").String() == c.Workspace.DevContainer.ServiceName {
 				isContainServiceName = true
 				break
 			}
@@ -63,7 +77,9 @@ func (c SmartIdeConfig) Valid() error {
 		return errors.New(i18nInstance.Config.Err_config_orchestrator_type_none)
 
 	} else {
-		if c.Orchestrator.Type != OrchestratorTypeEnum_Compose && c.Orchestrator.Type != OrchestratorTypeEnum_K8S {
+		if c.Orchestrator.Type != OrchestratorTypeEnum_Compose &&
+			c.Orchestrator.Type != OrchestratorTypeEnum_K8S &&
+			c.Orchestrator.Type != OrchestratorTypeEnum_Allinone {
 			return errors.New(i18nInstance.Config.Err_config_orchestrator_type_valid)
 		}
 	}

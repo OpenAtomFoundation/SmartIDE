@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-27 09:22:43
+ * @LastEditTime: 2022-08-09 19:29:01
  */
 package start
 
@@ -61,7 +61,7 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	//1.3. 初始化配置文件对象
 	initExtended.InitLocalConfig(cmd, args)
 	currentConfig := config.NewConfig(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath, "")
-
+	//TODO: git pull
 	// addonEnable()
 	if workspaceInfo.Addon.IsEnable {
 		workspaceInfo = AddonEnable(workspaceInfo)

@@ -1,13 +1,17 @@
 version: "3"
 services:
-  smartide-go:
-    container_name: smartide-go
-    environment:
-      POSTGRES_HOST_AUTH_METHOD: trust
-      ROOT_PASSWORD: root123
-    image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-go:latest
-    export:
-      - 3000
-    restart: always
-    volumes:
-      - .:/home/project
+    smartide-go-dev:
+      container_name: smartide-go
+      image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-golang-v2-vscode:1749
+      restart: always
+      environment:
+        ROOT_PASSWORD: root123
+        LOCAL_USER_PASSWORD: root123
+      volumes:
+        - .:/home/project
+        ## - /var/run/docker.sock:/var/run/docker.sock
+      espose:
+        - 3000
+      ports:
+        - 6800:3000
+        - "6822:22"
