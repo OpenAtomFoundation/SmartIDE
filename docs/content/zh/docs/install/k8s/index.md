@@ -31,6 +31,16 @@ kubectl apply -f https://gitee.com/smartide/SmartIDE/raw/main/deployment/k8s/sys
 kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/deployment/k8s/sysbox-install.yaml
 ```
 
+运行以上指令后需要观察 sysbox-deploy pod进入运行状态，并且其他运行在节点上的pod重启完毕后，如果没有报错，代表安装成功。
+
+*下图：sysbox-deploy pod创建中*
+
+![sysbox-deploy pod创建中](./images/sysbox-install-001.png)
+
+*下图：同节点上的其他pod重新启动中*
+
+![sysbox-deploy 造成节点上其他pod重启](./images/sysbox-install-002.png)
+
 ## 资源初始化
 准备好所需资源后，就可以通过一键配置脚本，进行资源的初始化操作。在配置好K8S上下文的命令行中执行以下步骤：
 
