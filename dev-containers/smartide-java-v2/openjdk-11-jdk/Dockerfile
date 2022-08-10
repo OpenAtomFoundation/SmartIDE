@@ -21,4 +21,10 @@ RUN wget https://dlcdn.apache.org/maven/maven-3/3.8.6/binaries/apache-maven-3.8.
 RUN tar -xvzf apache-maven-3.8.6-bin.tar.gz
 RUN cp -r apache-maven-3.8.6 /opt/maven
 
+RUN export JAVA_HOME=/usr/lib/jvm/java-1.17.0-openjdk-amd64
+RUN export M2_HOME=/opt/maven
+RUN export MAVEN_HOME=/opt/maven
+RUN export PATH=${M2_HOME}/bin:${PATH}
+
 USER root
+
