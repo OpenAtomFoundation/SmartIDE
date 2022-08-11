@@ -31,4 +31,4 @@ RUN echo 'M2_HOME=/opt/maven' >> .bashrc
 RUN echo 'MAVEN_HOME=/opt/maven' >> .bashrc
 RUN echo 'PATH=${M2_HOME}/bin:${PATH}' >> .bashrc
 
-RUN rm -rf apache-maven-3.8.6-bin.tar.gz
+RUN rm -rf apache-maven-3.8.6-bin.tar.gz apache-maven-3.8.6 
