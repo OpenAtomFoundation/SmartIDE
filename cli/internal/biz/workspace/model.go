@@ -275,7 +275,7 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 				return WorkspaceInfo{}, err
 			}
 			workspaceInfo.K8sInfo.TempK8sConfig = *tempK8sYaml
-			workspaceInfo.K8sInfo.Namespace = (*tempK8sYaml).Workspace.Deployments[0].Namespace
+			workspaceInfo.K8sInfo.Namespace = (*tempK8sYaml).Workspace.Services[0].Namespace
 		}
 	} else {
 		return WorkspaceInfo{}, errors.New("所选模式不支持！")
