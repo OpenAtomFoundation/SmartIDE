@@ -30,6 +30,18 @@ sudo chmod -R 777 vsix/extensions
 sudo tar -zxf #{OpenVScodeServerFileName}#.tar.gz --strip-components 1 -C openvscode-images
 sudo tar -zxf #{OpenVScodeServerVmlcFileName}#.tar.gz --strip-components 1 -C openvscode-images-vmlc
 
+#重写OpenVsCode 安装包下载地址
+
+cd openvscode-images
+contents="$(jq '.extensionsGallery.serviceUrl = "https://marketplace.smartide.cn/vscode/gallery" | .extensionsGallery.itemUrl ="https://marketplace.smartide.cn/vscode/item" | .linkProtectionTrustedDomains=["https://marketplace.smartide.cn"]' product.json )" && \
+echo -E "${contents}" > product.json 
+cd ..
+
+cd openvscode-images-vmlc
+contents="$(jq '.extensionsGallery.serviceUrl = "https://marketplace.smartide.cn/vscode/gallery" | .extensionsGallery.itemUrl ="https://marketplace.smartide.cn/vscode/item" | .linkProtectionTrustedDomains=["https://marketplace.smartide.cn"]' product.json )" && \
+echo -E "${contents}" > product.json 
+cd ..
+
 # 删除node   
 sudo rm -rf ./openvscode-images/node
 sudo rm -rf ./openvscode-images-vmlc/node
