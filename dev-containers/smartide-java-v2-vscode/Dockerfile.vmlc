@@ -30,5 +30,4 @@ RUN chmod +x /idesh/startup-openvscode.sh &&               \
         /etc/systemd/system/multi-user.target.wants/openvscode.service
 
 WORKDIR opvscode
-RUN contents="$(jq '.extensionsGallery.serviceUrl = "https://marketplace.smartide.cn/vscode/gallery" | .extensionsGallery.itemUrl ="https://marketplace.smartide.cn/vscode/item" | .linkProtectionTrustedDomains=["https://marketplace.smartide.cn"]' product.json )" && \
-    echo -E "${contents}" > product.json 
+RUN jq '.extensionsGallery.serviceUrl = "https://marketplace.smartide.cn/vscode/gallery" | .extensionsGallery.itemUrl ="https://marketplace.smartide.cn/vscode/item" | .linkProtectionTrustedDomains=["https://marketplace.smartide.cn"]' product.json|sponge product.json

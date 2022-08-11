@@ -23,7 +23,6 @@ COPY gosu_entrypoint_node.sh /idesh/gosu_entrypoint_node.sh
 RUN chmod +x /idesh/gosu_entrypoint_node.sh
 
 WORKDIR opvscode
-RUN contents="$(jq '.extensionsGallery.serviceUrl = "https://marketplace.smartide.cn/vscode/gallery" | .extensionsGallery.itemUrl ="https://marketplace.smartide.cn/vscode/item" | .linkProtectionTrustedDomains=["https://marketplace.smartide.cn"]' product.json )" && \
-    echo -E "${contents}" > product.json 
+RUN jq '.extensionsGallery.serviceUrl = "https://marketplace.smartide.cn/vscode/gallery" | .extensionsGallery.itemUrl ="https://marketplace.smartide.cn/vscode/item" | .linkProtectionTrustedDomains=["https://marketplace.smartide.cn"]' product.json|sponge product.json
 
 ENTRYPOINT ["/idesh/gosu_entrypoint_node.sh"]
