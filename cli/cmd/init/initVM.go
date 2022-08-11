@@ -216,8 +216,3 @@ func checkRemoteDir(sshRemote common.SSHRemote, projectDirPath string, cmd *cobr
 
 	return nil
 }
-
-func getTemplateSetting(cmd *cobra.Command, args []string) (*TemplateTypeBo, error) {
-	err := errors.New("default")
-	return nil, err
-}

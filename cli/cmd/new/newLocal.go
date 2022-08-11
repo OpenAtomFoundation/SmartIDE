@@ -88,7 +88,7 @@ func LocalNew(cmd *cobra.Command, args []string, workspaceInfo workspace.Workspa
 			}
 		}
 		isUnforward, _ := cmd.Flags().GetBool("unforward")
-		start.ExecuteStartCmd(workspaceInfo, isUnforward, func1, yamlExecuteFun)
+		start.ExecuteStartCmd(workspaceInfo, isUnforward, func1, yamlExecuteFun, args, cmd)
 	}
 
 }
