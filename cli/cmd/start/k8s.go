@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-03-23 16:15:38
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-10 09:21:26
- * @FilePath: /cli/cmd/start/k8s.go
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-08-11 10:25:00
+ * @FilePath: /smartide/cli/cmd/start/k8s.go
  */
 
 package start
@@ -228,7 +228,7 @@ func execSSHPolicy(workspaceInfo workspace.WorkspaceInfo, cmd *cobra.Command) {
 					common.RunCmd(commad, true)
 					commad = fmt.Sprintf(`echo -e '%v' >>  ~/.ssh/id_rsa && sudo chmod 600 ~/.ssh/id_rsa`, idRsa)
 					common.RunCmd(commad, true)
-					commad = fmt.Sprintf(`echo -e '%v' >>  ~/.ssh/id_rsa_pub && sudo chmod 644 ~/.ssh/id_rsa_pub`, idRsaPub)
+					commad = fmt.Sprintf(`echo -e '%v' >>  ~/.ssh/id_rsa.pub && sudo chmod 644 ~/.ssh/id_rsa.pub`, idRsaPub)
 					common.RunCmd(commad, true)
 
 				}
