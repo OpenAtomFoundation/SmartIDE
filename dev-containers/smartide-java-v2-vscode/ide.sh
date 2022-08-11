@@ -31,11 +31,6 @@ sudo tar -zxf #{OpenVScodeServerFileName}#.tar.gz --strip-components 1 -C openvs
 sudo tar -zxf #{OpenVScodeServerVmlcFileName}#.tar.gz --strip-components 1 -C openvscode-images-vmlc
 
 
-sudo find ./  -name "*.js" | xargs perl -pi -e 's|https://open-vsx.org|https://marketplace.smartide.cn|g' 
-sudo find ./  -name "*.json" | xargs perl -pi -e 's|https://open-vsx.org|https://marketplace.smartide.cn|g'
-
-
-
 # 删除node   
 sudo rm -rf ./openvscode-images/node
 sudo rm -rf ./openvscode-images-vmlc/node
