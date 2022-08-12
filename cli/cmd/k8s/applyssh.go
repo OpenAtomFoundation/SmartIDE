@@ -35,6 +35,9 @@ var ApplySSHCmd = &cobra.Command{
 	Aliases: []string{"ssh"},
 	Example: `  smartide k8s applyssh --resourceid <resourceid> --ports <configmap ports string> --mode <mode> --serverhost <serverhost>  --servertoken <servertoken>`,
 	Run: func(cmd *cobra.Command, args []string) {
+		common.SmartIDELog.Info(i18nInstance.ApplySSH.Info_start)
+
+		// 获取参数
 		fflags := cmd.Flags()
 		checkFlagErr := checkFlag(fflags, k8s_applyssh_flag_resourceid)
 		if checkFlagErr != nil {
@@ -57,13 +60,66 @@ var ApplySSHCmd = &cobra.Command{
 			common.SmartIDELog.Error(checkFlagErr)
 		}
 
-		common.SmartIDELog.Info(i18nInstance.ApplySSH.Info_start)
-
 		resourceid, _ := fflags.GetString(k8s_applyssh_flag_resourceid)
 		ports, _ := fflags.GetString(k8s_applyssh_flag_ports)
 		serverHost, _ := fflags.GetString(k8s_applyssh_flag_serverhost)
 		serverToken, _ := fflags.GetString(k8s_applyssh_flag_servertoken)
 		configMapNamespace := "ingress-nginx"
+
+		currentAuth := model.Auth{
+			LoginUrl: serverHost,
+			Token:    serverToken,
+		}
+
+		//3. parse ports && Construct Config Map
+		configMap := &kubectl.ConfigMap{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+			Metadata: struct {
+				Name      string "yaml:\"name\""
+				Namespace string "yaml:\"namespace\""
+			}{
+				Name:      "ingress-nginx-tcp",
+				Namespace: "ingress-nginx",
+			},
+			Data: map[string]string{},
+		}
+		workspaceStrs := []string{}
+		portList := strings.Split(ports, ";")
+		for _, port := range portList {
+			portInfo := strings.Split(port, ":")
+			externalport := portInfo[0]
+			service := portInfo[1]
+			internalport := portInfo[2]
+			workspaceStr := portInfo[3]
+			if !strings.Contains(workspaceStr, "remove") {
+				configMap.Data[externalport] = fmt.Sprintf("%v:%v", service, internalport)
+			}
+			/* 			if strings.Contains(workspaceStr, "add") {
+			   				addWorkspaceStrs = append(addWorkspaceStrs, fmt.Sprintf("%v:%v:%v", strings.Split(workspaceStr, "-")[0], service, externalport))
+			   			}
+			   			if strings.Contains(workspaceStr, "remove") {
+			   				removeWorkspaceStrs = append(removeWorkspaceStrs, fmt.Sprintf("%v:%v:%v", strings.Split(workspaceStr, "-")[0], service, externalport))
+			   			} */
+
+			workspaceStrs = append(workspaceStrs, fmt.Sprintf("%v:%v:%v", strings.Split(workspaceStr, "-")[0], service, externalport))
+		}
+
+		feedbackError := func(feedbackError error) {
+			for _, workspaceStr := range workspaceStrs {
+				workspaceIdStr := strings.Split(workspaceStr, ":")[0]
+				workspaceInfo, _ := workspace.GetWorkspaceFromServer(currentAuth, workspaceIdStr, workspace.CliRunningEvnEnum_Server)
+				/* if err != nil {
+					common.SmartIDELog.Importance(err.Error())
+					continue
+				} */
+				if feedbackError != nil {
+					server.Feedback_Finish(server.FeedbackCommandEnum_Start, cmd, false, nil, *workspaceInfo, feedbackError.Error(), "")
+					common.CheckError(feedbackError)
+				}
+			}
+
+		}
 
 		//1. Get K8s Resource
 		auth := model.Auth{}
@@ -79,70 +135,65 @@ var ApplySSHCmd = &cobra.Command{
 		//2. Save temp k8s config file
 		tempK8sConfigFileAbsolutePath := common.PathJoin(config.SmartIdeHome, "tempconfig")
 		err = ioutil.WriteFile(tempK8sConfigFileAbsolutePath, []byte(resourceInfo.KubeConfig), 0777)
-		if err != nil {
-			common.SmartIDELog.Error(err)
-		}
+		feedbackError(err)
 		k8sUtil, err := kubectl.NewK8sUtilWithFile(tempK8sConfigFileAbsolutePath,
 			resourceInfo.KubeContext,
 			configMapNamespace)
-		common.CheckError(err)
-
-		//3. Construct Config Map
-		configMap := &kubectl.ConfigMap{
-			APIVersion: "v1",
-			Kind:       "ConfigMap",
-			Metadata: struct {
-				Name      string "yaml:\"name\""
-				Namespace string "yaml:\"namespace\""
-			}{
-				Name:      "ingress-nginx-tcp",
-				Namespace: "ingress-nginx",
-			},
-			Data: map[string]string{},
-		}
-		addWorkspaces := []string{}
-		removeWorkspaces := []string{}
-		portList := strings.Split(ports, ";")
-		for _, port := range portList {
-			portInfo := strings.Split(port, ":")
-			externalport := portInfo[0]
-			service := portInfo[1]
-			internalport := portInfo[2]
-			workspace := portInfo[3]
-			if !strings.Contains(workspace, "remove") {
-				configMap.Data[externalport] = fmt.Sprintf("%v:%v", service, internalport)
-			}
-			if strings.Contains(workspace, "add") {
-				addWorkspaces = append(addWorkspaces, fmt.Sprintf("%v:%v:%v", strings.Split(workspace, "-")[0], service, externalport))
-			}
-			if strings.Contains(workspace, "remove") {
-				removeWorkspaces = append(removeWorkspaces, fmt.Sprintf("%v:%v:%v", strings.Split(workspace, "-")[0], service, externalport))
-			}
-		}
+		feedbackError(err)
 
 		//4. Save Config Map to Temp Yaml
 		configMapYamlData, err := yaml.Marshal(&configMap)
-		if err != nil {
-			common.SmartIDELog.Error(err)
-		}
+		feedbackError(err)
 		tempK8sConfigMapYamlFilePath := common.PathJoin(config.SmartIdeHome, "k8s_configmap_temp.yaml")
 		err = ioutil.WriteFile(tempK8sConfigMapYamlFilePath, []byte(configMapYamlData), 0777)
-		if err != nil {
-			common.SmartIDELog.Error(err)
-		}
+		feedbackError(err)
 
 		//5. Kubectl Apply
 		common.SmartIDELog.Info(i18nInstance.ApplySSH.Info_log_enable_ssh_start)
 		err = k8sUtil.ExecKubectlCommandRealtime(fmt.Sprintf("apply -f %v", tempK8sConfigMapYamlFilePath), "", false)
-		if err != nil {
-			common.SmartIDELog.Error(err)
-		}
+		feedbackError(err)
 		common.SmartIDELog.Info(i18nInstance.ApplySSH.Info_log_enable_ssh_success)
 
 		//6. Callback and log
 		wsURL := fmt.Sprint(strings.ReplaceAll(strings.ReplaceAll(serverHost, "https", "ws"), "http", "ws"), "/ws/smartide/ws")
 		common.WebsocketStart(wsURL)
-		for _, addWorkspaceInfo := range addWorkspaces {
+		for _, workspaceStr := range workspaceStrs {
+			if strings.Contains(workspaceStr, "WS") {
+				workspaceId := strings.Split(workspaceStr, ":")[0]
+				workspaceService := strings.Split(strings.Split(workspaceStr, ":")[1], "/")[1]
+				workspaceExternalPort := strings.Split(workspaceStr, ":")[2]
+				if pid, err := workspace.GetParentId(workspaceId, 1, serverToken, serverHost); err == nil && pid > 0 {
+					common.SmartIDELog.Ws_id = workspaceId
+					common.SmartIDELog.ParentId = pid
+					common.SmartIDELog.Info("-----------------------")
+					if strings.Contains(workspaceStr, "add") {
+						common.SmartIDELog.Info(fmt.Sprintf(i18nInstance.ApplySSH.Info_log_service_enable_ssh_success,
+							workspaceId, workspaceService, workspaceExternalPort))
+					} else if strings.Contains(workspaceStr, "remove") {
+						common.SmartIDELog.Info(fmt.Sprintf(i18nInstance.ApplySSH.Info_log_service_disable_ssh_success,
+							workspaceId, workspaceService, workspaceExternalPort))
+					}
+					common.SmartIDELog.Info("-----------------------")
+
+					// feedback
+					feedbackMap := make(map[string]interface{})
+					feedbackMap["port"] = ""
+					feedbackMap["url"] = ""
+					workspaceInfo, err := workspace.GetWorkspaceFromServer(currentAuth, workspaceId, workspace.CliRunningEvnEnum_Server)
+					common.CheckError(err)
+					for index, portDetail := range workspaceInfo.Extend.Ports {
+						if portDetail.HostPortDesc == "tools-ssh" && portDetail.ServiceName == workspaceService {
+							workspaceInfo.Extend.Ports[index].SSHPort = workspaceExternalPort
+							workspaceInfo.Extend.Ports[index].IsConnected = true
+						}
+					}
+					err = server.Feedback_Finish(server.FeedbackCommandEnum_ApplySSH, cmd, true, nil, *workspaceInfo, "", "") //(currentAuth, *workspaceInfo)
+					common.CheckError(err)
+
+				}
+			}
+		}
+		/* for _, addWorkspaceInfo := range addWorkspaceStrs {
 			if strings.Contains(addWorkspaceInfo, "WS") {
 				addWorkspaceId := strings.Split(addWorkspaceInfo, ":")[0]
 				addWorkspaceService := strings.Split(strings.Split(addWorkspaceInfo, ":")[1], "/")[1]
@@ -174,7 +225,7 @@ var ApplySSHCmd = &cobra.Command{
 				}
 			}
 		}
-		for _, removeWorkspaceInfo := range removeWorkspaces {
+		for _, removeWorkspaceInfo := range removeWorkspaceStrs {
 			if strings.Contains(removeWorkspaceInfo, "WS") {
 				removeWorkspaceId := strings.Split(removeWorkspaceInfo, ":")[0]
 				removeWorkspaceService := strings.Split(strings.Split(removeWorkspaceInfo, ":")[1], "/")[1]
@@ -206,7 +257,7 @@ var ApplySSHCmd = &cobra.Command{
 					common.CheckError(err)
 				}
 			}
-		}
+		} */
 	},
 }
 
