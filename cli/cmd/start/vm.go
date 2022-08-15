@@ -89,7 +89,13 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		if len(args) > 0 {
 
 			common.SmartIDELog.Info(i18nInstance.Init.Info_check_cmdtemplate)
-			argsTemplateTypeName = args[1]
+
+			if cmd.Name() == "start" && len(cmd.Flags().Args()) == 2 {
+				argsTemplateTypeName = args[1]
+			}
+			if cmd.Name() == "start" && len(cmd.Flags().Args()) == 1 {
+				argsTemplateTypeName = args[0]
+			}
 			argsTemplateSubTypeName, err = cmd.Flags().GetString("type")
 			if err != nil {
 				return
