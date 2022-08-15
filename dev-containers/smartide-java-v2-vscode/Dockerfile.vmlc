@@ -8,6 +8,15 @@ FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-java-v2-vmlc:latest
 
 USER root
 
+RUN apt-get update && \
+    mkdir -p /usr/share/man/man1 && \
+    apt-get -y install --no-install-recommends net-tools && \
+    apt-get clean && \
+    apt-get autoremove -y && \
+    rm -rf /tmp/* /var/lib/apt/lists/* /var/tmp/*
+
+
+
 WORKDIR /home
 #复制IDE文件
 COPY openvscode-images-vmlc opvscode
