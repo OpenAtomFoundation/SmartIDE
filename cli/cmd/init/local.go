@@ -182,19 +182,22 @@ func getTemplateSetting(cmd *cobra.Command, args []string) (*TemplateTypeBo, err
 		selectedTypeName := templateTypes[index].TypeName
 
 		fmt.Println(i18nInstance.Init.Info_available_ides)
+		var subTypes = []string{"_default"}
+		fmt.Println(0, subTypes[0])
 		for i := 0; i < len(templateTypes[index].SubTypes); i++ {
-			fmt.Println(i, templateTypes[index].SubTypes[i].Name)
+			fmt.Println(i+1, templateTypes[index].SubTypes[i].Name)
+			subTypes = append(subTypes, templateTypes[index].SubTypes[i].Name)
 		}
 		fmt.Println(i18nInstance.Init.Info_choose_idetype)
 		var indexIde int
 		fmt.Scanln(&indexIde)
-		if indexIde < 0 || indexIde >= len(templateTypes[index].SubTypes) {
+		if indexIde < 0 || indexIde >= len(subTypes) {
 			return nil, err
 		}
-		fmt.Println("您选择的模板为：", selectedTypeName, templateTypes[index].SubTypes[indexIde].Name)
+		fmt.Println("您选择的模板为：", selectedTypeName, subTypes[indexIde])
 		selectedTemplateTypeName = selectedTypeName
 
-		selectedTemplateSubTypeName = templateTypes[index].SubTypes[indexIde].Name
+		selectedTemplateSubTypeName = subTypes[indexIde]
 
 		selectedTemplateTypeName = strings.TrimSpace(selectedTemplateTypeName)
 		selectedTemplateSubTypeName = strings.TrimSpace(selectedTemplateSubTypeName)
