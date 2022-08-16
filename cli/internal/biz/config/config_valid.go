@@ -20,7 +20,7 @@ import (
 // 验证配置文件格式是否正确
 func (c SmartIdeK8SConfig) Valid() error {
 	// Workspace.KubeDeployFiles 节点
-	if c.Workspace.KubeDeployFiles == "" {
+	if c.Workspace.KubeDeployFileExpression == "" {
 		return errors.New("Workspace.KubeDeployFiles 未在配置文件中定义！")
 	}
 

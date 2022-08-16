@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2021-10-13 15:31:52
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-26 15:33:30
+ * @LastEditTime: 2022-08-11 09:12:20
  * @Description: file content
  */
 
@@ -48,7 +48,7 @@ func ConfigGitByDockerExec() {
 		var key = str[0:index]
 		var value = str[index+1:]
 
-		yamlFileCongfig := NewConfig("", "", "")
+		yamlFileCongfig := SmartIdeConfig{}
 
 		var servicename = yamlFileCongfig.Workspace.DevContainer.ServiceName
 		cmdStr := fmt.Sprint("docker exec ", servicename, " git config --global ", key, " ", value)

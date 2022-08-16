@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-09 15:47:19
+ * @LastEditTime: 2022-08-16 16:19:22
  */
 package start
 
@@ -105,11 +105,13 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		initExtended.GitCloneTemplateRepo4Remote(sshRemote, workspaceInfo.WorkingDirectoryPath, config.GlobalSmartIdeConfig.TemplateRepo, argsTemplateTypeName, argsTemplateSubTypeName)
 
 	}
-	catCommand := fmt.Sprintf(`cat %v`, ideYamlFilePath)
-	output, err := sshRemote.ExeSSHCommand(catCommand)
-	common.CheckErrorFunc(err, serverFeedback)
-	configYamlContent := output
-	currentConfig := config.NewComposeConfig(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath, configYamlContent)
+	/* 	catCommand := fmt.Sprintf(`cat %v`, ideYamlFilePath)
+	   	output, err := sshRemote.ExeSSHCommand(catCommand)
+	   	common.CheckErrorFunc(err, serverFeedback)
+	   	configYamlContent := output */
+	currentConfig, err := config.NewRemoteConfig(&sshRemote,
+		workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath)
+	common.CheckError(err)
 
 	// addonEnable()
 	if workspaceInfo.Addon.IsEnable {
@@ -119,8 +121,10 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 	//3. docker-compose
 	//3.1. 获取 compose 数据
-	_, linkComposeFileContent := currentConfig.GetRemoteLinkDockerComposeFile(&sshRemote)
+	//_, linkComposeFileContent := currentConfig.GetRemoteLinkDockerComposeFile(&sshRemote)
 	yamlStr, err := currentConfig.ToYaml()
+	common.CheckErrorFunc(err, serverFeedback)
+	linkComposeFileContent, err := currentConfig.Workspace.LinkCompose.ToYaml()
 	common.CheckErrorFunc(err, serverFeedback)
 	hasChanged := workspaceInfo.ChangeConfig(yamlStr, linkComposeFileContent) // 是否改变
 	if hasChanged {                                                           // 改变包括了初始化
@@ -139,11 +143,11 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		// 配置
 		workspaceInfo.ConfigYaml = *currentConfig
 
-		// 链接的 docker-compose 文件
-		if workspaceInfo.ConfigYaml.IsLinkDockerComposeFile() {
-			yaml.Unmarshal([]byte(linkComposeFileContent), workspaceInfo.LinkDockerCompose)
-		}
-
+		/* 		// 链接的 docker-compose 文件
+		   		if workspaceInfo.ConfigYaml.IsLinkDockerComposeFile() {
+		   			yaml.Unmarshal([]byte(linkComposeFileContent), workspaceInfo.LinkDockerCompose)
+		   		}
+		*/
 		// 扩展信息
 		workspaceExtend := workspace.WorkspaceExtend{Ports: currentConfig.GetPortMappings()}
 		workspaceInfo.Extend = workspaceExtend

@@ -3,13 +3,14 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-04 14:04:55
+ * @LastEditTime: 2022-08-15 23:15:20
  */
 package common
 
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -96,4 +97,46 @@ Set-Content $checkoutFilePath -Value $content -Encoding Ascii`,
 	}
 
 	return files, nil
+}
+
+// 从git下载相关文件
+func (g gitOperation) DownloadFilesByGit(workingRootDir string, gitCloneUrl string, branch string, filePathExpression string) (
+	gitRepoRootDirPath string, fileRelativePaths []string, err error) {
+	// home 目录的路径
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return
+	}
+
+	// 文件路径
+	//workingRootDir := filepath.Join(home, ".ide", ".k8s") // 工作目录，repo 会clone到当前目录下
+	sshPath := filepath.Join(home, ".ssh")
+	if !IsExist(workingRootDir) { // 目录如果不存在，就要创建
+		os.MkdirAll(workingRootDir, os.ModePerm)
+	}
+
+	// 设置不进行host的检查，即clone新的git库时，不会给出提示
+	err = FS.SkipStrictHostKeyChecking(sshPath, false)
+	if err != nil {
+		return
+	}
+
+	// 下载指定的文件
+	//filePathExpression = common.PathJoin(".ide", filePathExpression)
+	fileRelativePaths, err = GIT.SparseCheckout(workingRootDir, gitCloneUrl, filePathExpression, branch)
+	if err != nil {
+		return
+	}
+
+	// 还原.ssh config 的设置
+	err = FS.SkipStrictHostKeyChecking(sshPath, true)
+	if err != nil {
+		return
+	}
+
+	gitRepoRootDirPath = filepath.Join(workingRootDir, GetRepoName(gitCloneUrl)) // git repo 的根目录
+	for index, _ := range fileRelativePaths {
+		fileRelativePaths[index] = strings.Replace(fileRelativePaths[index], gitRepoRootDirPath, "", -1) // 把绝对路径改为相对路径
+	}
+	return gitRepoRootDirPath, fileRelativePaths, nil
 }

@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-03-23 16:15:38
- * @LastEditors: kenan
- * @LastEditTime: 2022-08-11 10:25:00
- * @FilePath: /smartide/cli/cmd/start/k8s.go
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-08-16 18:09:15
+ * @FilePath: /cli/cmd/start/k8s.go
  */
 
 package start
@@ -48,18 +48,13 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil kubectl.KubernetesUtil, work
 
 	//3. 解析 .k8s.ide.yaml 文件（是否需要注入到deploy.yaml文件中）
 	common.SmartIDELog.Info("下载配置文件 及 关联k8s yaml文件")
-	gitRepoRootDirPath, configFileRelativePath, k8sYamlRelativePaths, err := downloadConfigAndLinkFiles(workspaceInfo)
+	gitRepoRootDirPath, configFileRelativePath, _, err := downloadConfigAndLinkFiles(workspaceInfo)
 	if err != nil {
 		return nil, err
 	}
 	//3.1. 解析配置文件 + 关联的k8s yaml
 	common.SmartIDELog.Info(fmt.Sprintf("解析配置文件 %v", workspaceInfo.ConfigFileRelativePath))
-	configFileAbsolutePath := common.PathJoin(gitRepoRootDirPath, configFileRelativePath) // 配置文件绝对路径
-	var k8sYamlAbsolutePaths []string                                                     // 关联k8s yaml文件的绝对路径
-	for _, relativePath := range k8sYamlRelativePaths {
-		k8sYamlAbsolutePaths = append(k8sYamlAbsolutePaths, common.PathJoin(gitRepoRootDirPath, relativePath))
-	}
-	originK8sConfig, err := config.NewK8SConfig(configFileAbsolutePath, k8sYamlAbsolutePaths, "", "")
+	originK8sConfig, err := config.NewK8sConfig(gitRepoRootDirPath, configFileRelativePath)
 	if err != nil {
 		return nil, err
 	}
@@ -222,7 +217,7 @@ func execSSHPolicy(workspaceInfo workspace.WorkspaceInfo, cmd *cobra.Command) {
 			idRsaPub := ws[len(ws)-1].IdRsAPub
 			if homeDir, err := os.UserHomeDir(); err == nil {
 				path := filepath.Join(homeDir, ".ssh")
-				if _, err := common.PathExists(path, 700); err == nil {
+				if _, err := common.PathExists(path, 0700); err == nil {
 
 					commad := `echo -e 'Host *\n	StrictHostKeyChecking no' >>  ~/.ssh/config && sudo chmod 700 ~/.ssh/config`
 					common.RunCmd(commad, true)
@@ -460,24 +455,21 @@ func downloadConfigAndLinkFiles(workspaceInfo workspace.WorkspaceInfo) (
 	if err != nil {
 		return
 	}
-	smartIdeConfig := config.NewConfig("", "", string(configFileBytes))
-	if smartIdeConfig == nil {
-		err = fmt.Errorf("配置文件 %v 内容为空！", workspaceInfo.ConfigFileRelativePath)
-		return
+	filePathExpression := configYaml["workspace"].(map[interface{}]interface{})["kube-deploy-files"].(string)
+	if filePathExpression == "" {
+		return "", "", []string{}, fmt.Errorf("配置文件 %v Workspace.kube-deploy-files 节点未配置！", workspaceInfo.ConfigFileRelativePath)
 	}
-	if smartIdeConfig.Workspace.KubeDeployFiles == "" {
-		return "", "", []string{}, fmt.Errorf("配置文件 %v Workspace.KubeDeployFiles 节点未配置！", workspaceInfo.ConfigFileRelativePath)
-	}
-	filePathExpression := path.Join(".ide", smartIdeConfig.Workspace.KubeDeployFiles) // 这里的文件路径都是相对	.ide 的，注意这里只能使用 反斜杠 的分隔符
+	filePathExpression = path.Join(".ide", filePathExpression)
+
+	//
 	_, linkK8sYamlRelativePaths, err = downloadFilesByGit(workspaceInfo.GitCloneRepoUrl, workspaceInfo.Branch, filePathExpression)
 	if err != nil {
 		return "", "", []string{}, err
 	}
 	if len(linkK8sYamlRelativePaths) == 0 {
-		return "", "", []string{}, fmt.Errorf("没有找到关联的 %v yaml文件！", smartIdeConfig.Workspace.KubeDeployFiles)
+		return "", "", []string{}, fmt.Errorf("没有找到 %v 匹配的yaml文件！", filePathExpression)
 	}
 
-	//configFileRelativePath := strings.Replace(configFileAbsolutePath, gitRepoRootDirPath, "", -1)
 	return gitRepoRootDirPath, configFileRelativePath, linkK8sYamlRelativePaths, nil
 }
 
@@ -664,7 +656,9 @@ func downloadFilesByGit(gitCloneUrl string, branch string, filePathExpression st
 
 	// 文件路径
 	workingRootDir := filepath.Join(home, ".ide", ".k8s") // 工作目录，repo 会clone到当前目录下
-	sshPath := filepath.Join(home, ".ssh")
+	return common.GIT.DownloadFilesByGit(workingRootDir, gitCloneUrl, branch, filePathExpression)
+
+	/* sshPath := filepath.Join(home, ".ssh")
 	if !common.IsExist(workingRootDir) { // 目录如果不存在，就要创建
 		os.MkdirAll(workingRootDir, os.ModePerm)
 	}
@@ -692,7 +686,7 @@ func downloadFilesByGit(gitCloneUrl string, branch string, filePathExpression st
 	for index, _ := range fileRelativePaths {
 		fileRelativePaths[index] = strings.Replace(fileRelativePaths[index], gitRepoRootDirPath, "", -1) // 把绝对路径改为相对路径
 	}
-	return gitRepoRootDirPath, fileRelativePaths, nil
+	return gitRepoRootDirPath, fileRelativePaths, nil */
 }
 
 const (

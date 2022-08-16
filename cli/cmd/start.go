@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-09 10:45:22
+ * @LastEditTime: 2022-08-16 16:25:24
  */
 package cmd
 
@@ -108,10 +108,6 @@ var startCmd = &cobra.Command{
 				smartideServer.Feedback_Finish(server.FeedbackCommandEnum_Start, cmd, false, nil, workspaceInfo, err.Error(), "")
 			}
 		})
-
-		// 检查是否为服务器端模式
-		err = smartideServer.Check(cmd)
-		common.CheckError(err)
 
 		// ai记录
 		var trackEvent string
