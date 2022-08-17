@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
@@ -146,9 +147,14 @@ git fetch --all && git reset --hard origin/master && git fetch && git pull`,
 
 		fmt.Println(i18nInstance.Init.Info_available_templates)
 		PrintTemplates(templateTypes) // 打印支持的模版列表
-		var index int
-		fmt.Println(i18nInstance.Init.Info_choose_templatetype)
-		fmt.Scanln(&index)
+
+		fmt.Print(i18nInstance.Init.Info_choose_templatetype)
+		var indexChar string
+		fmt.Scanln(&indexChar)
+		index, err := strconv.Atoi(indexChar)
+		if err != nil {
+			return nil
+		}
 		if index < 0 || index >= len(templateTypes) {
 			return nil
 		}
@@ -160,9 +166,13 @@ git fetch --all && git reset --hard origin/master && git fetch && git pull`,
 			fmt.Println(i+1, templateTypes[index].SubTypes[i].Name)
 			subTypes = append(subTypes, templateTypes[index].SubTypes[i].Name)
 		}
-		fmt.Println(i18nInstance.Init.Info_choose_idetype)
-		var indexIde int
-		fmt.Scanln(&indexIde)
+		fmt.Print(i18nInstance.Init.Info_choose_idetype)
+		var indexIdeStr string
+		fmt.Scanln(&indexIdeStr)
+		indexIde, err := strconv.Atoi(indexIdeStr)
+		if err != nil {
+			return nil
+		}
 		if indexIde < 0 || indexIde >= len(subTypes) {
 			return nil
 		}
