@@ -174,7 +174,7 @@ func getTemplateSetting(cmd *cobra.Command, args []string) (*TemplateTypeBo, err
 		fmt.Println(i18nInstance.Init.Info_available_templates)
 		PrintTemplates(templateTypes) // 打印支持的模版列表
 		var index int
-		fmt.Println(i18nInstance.Init.Info_choose_templatetype)
+		fmt.Print(i18nInstance.Init.Info_choose_templatetype)
 		fmt.Scanln(&index)
 		if index < 0 || index >= len(templateTypes) {
 			return nil, err
@@ -188,7 +188,7 @@ func getTemplateSetting(cmd *cobra.Command, args []string) (*TemplateTypeBo, err
 			fmt.Println(i+1, templateTypes[index].SubTypes[i].Name)
 			subTypes = append(subTypes, templateTypes[index].SubTypes[i].Name)
 		}
-		fmt.Println(i18nInstance.Init.Info_choose_idetype)
+		fmt.Print(i18nInstance.Init.Info_choose_idetype)
 		var indexIde int
 		fmt.Scanln(&indexIde)
 		if indexIde < 0 || indexIde >= len(subTypes) {
