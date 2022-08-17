@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
@@ -154,6 +155,9 @@ func getTemplateSetting(cmd *cobra.Command, args []string) (*TemplateTypeBo, err
 			argsTemplateTypeName = args[0]
 		}
 		argsTemplateSubTypeName, err = cmd.Flags().GetString("type")
+		if err != nil {
+			return nil, err
+		}
 		for _, currentTemplateType := range templateTypes {
 			if currentTemplateType.TypeName == argsTemplateTypeName {
 				selectedTemplateTypeName = argsTemplateTypeName
@@ -173,10 +177,17 @@ func getTemplateSetting(cmd *cobra.Command, args []string) (*TemplateTypeBo, err
 		// print
 		fmt.Println(i18nInstance.Init.Info_available_templates)
 		PrintTemplates(templateTypes) // 打印支持的模版列表
-		var index int
+
 		fmt.Print(i18nInstance.Init.Info_choose_templatetype)
-		fmt.Scanln(&index)
+
+		var indexChar string
+		fmt.Scanln(&indexChar)
+		index, err := strconv.Atoi(indexChar)
+		if err != nil {
+			return nil, err
+		}
 		if index < 0 || index >= len(templateTypes) {
+
 			return nil, err
 		}
 		selectedTypeName := templateTypes[index].TypeName
@@ -189,8 +200,12 @@ func getTemplateSetting(cmd *cobra.Command, args []string) (*TemplateTypeBo, err
 			subTypes = append(subTypes, templateTypes[index].SubTypes[i].Name)
 		}
 		fmt.Print(i18nInstance.Init.Info_choose_idetype)
-		var indexIde int
-		fmt.Scanln(&indexIde)
+		var indexIdeStr string
+		fmt.Scanln(&indexIdeStr)
+		indexIde, err := strconv.Atoi(indexIdeStr)
+		if err != nil {
+			return nil, err
+		}
 		if indexIde < 0 || indexIde >= len(subTypes) {
 			return nil, err
 		}
