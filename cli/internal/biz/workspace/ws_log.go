@@ -2,8 +2,8 @@
  * @Author: kenan
  * @Date: 2022-03-14 09:54:06
  * @LastEditors: kenan
- * @LastEditTime: 2022-04-01 00:22:36
- * @FilePath: /smartide-cli/internal/biz/workspace/ws_log.go
+ * @LastEditTime: 2022-08-15 11:04:42
+ * @FilePath: /cli/internal/biz/workspace/ws_log.go
  * @Description:
  *
  * Copyright (c) 2022 by kenanlu@leansoftx.com, All Rights Reserved.
@@ -59,6 +59,12 @@ func GetParentId(wid string, action int, token string, apiHost string) (praentId
 		title = "清理工作区环境"
 	case 5:
 		title = "客户端启动工作区"
+	case 6:
+		title = "创建Ingress"
+	case 7:
+		title = "删除Ingress"
+	case 8:
+		title = "建立SSH通道"
 	}
 	url := fmt.Sprint(apiHost, "/api/smartide/wslog/find")
 	if response, err = common.Get(url, map[string]string{"title": title, "ws_id": wid, "parentID": "0"}, map[string]string{"Content-Type": "application/json", "x-token": token}); response != "" {

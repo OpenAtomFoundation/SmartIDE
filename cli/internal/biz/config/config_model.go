@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-08 10:49:19
+ * @LastEditTime: 2022-08-16 16:38:56
  */
 package config
 
@@ -132,7 +132,7 @@ type SmartIdeConfig struct {
 		DockerComposeFile string `yaml:"docker-compose-file"`
 
 		// k8s 的部署文件（通配符）
-		KubeDeployFiles string `yaml:"kube-deploy-files,omitempty"`
+		KubeDeployFileExpression string `yaml:"kube-deploy-files,omitempty"`
 
 		// 允许要启动的容器，docker-compose 中的services节点
 		Servcies map[string]compose.Service `yaml:"services,omitempty"`
@@ -142,6 +142,9 @@ type SmartIdeConfig struct {
 		Volumes map[string]compose.Volume `yaml:"volumes,omitempty"`
 		// 密钥，docker-compose 中的 Secrets 节点
 		Secrets map[string]compose.YmlSecret `yaml:"secrets,omitempty"`
+
+		// 链接的compose配置
+		LinkCompose *compose.DockerComposeYml
 	} `yaml:"workspace"`
 }
 
@@ -165,7 +168,7 @@ type SmartIdeK8SConfig struct {
 		Containers map[string]ContainerConfig `yaml:"containers"`
 
 		// k8s 的部署文件（通配符）
-		KubeDeployFiles string `yaml:"kube-deploy-files,omitempty"`
+		KubeDeployFileExpression string `yaml:"kube-deploy-files,omitempty"`
 
 		//
 		//Namespace coreV1.Namespace

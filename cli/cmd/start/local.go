@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-09 19:29:01
+ * @LastEditTime: 2022-08-16 18:07:24
  */
 package start
 
@@ -19,7 +19,6 @@ import (
 	"github.com/leansoftX/smartide-cli/internal/dal"
 	"github.com/spf13/cobra"
 
-	initExtended "github.com/leansoftX/smartide-cli/cmd/init"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/model"
@@ -27,7 +26,6 @@ import (
 	"github.com/leansoftX/smartide-cli/pkg/docker/compose"
 	"github.com/leansoftX/smartide-cli/pkg/kubectl"
 	"github.com/leansoftX/smartide-cli/pkg/tunnel"
-	"gopkg.in/yaml.v2"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -59,12 +57,9 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	var ideBindingPort, sshBindingPort int
 
 	//1.3. 初始化配置文件对象
-	if workspaceInfo.IsNil() {
-		initExtended.InitLocalConfig(cmd, args)
-	}
-	currentConfig := config.NewConfig(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath, "")
+	currentConfig, err := config.NewLocalConfig(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath)
+	common.CheckError(err)
 	//TODO: git pull
-	// addonEnable()
 	if workspaceInfo.Addon.IsEnable {
 		workspaceInfo = AddonEnable(workspaceInfo)
 		currentConfig.AddonWebTerminal(workspaceInfo.Name, workspaceInfo.WorkingDirectoryPath)
@@ -72,15 +67,15 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 	//2. docker-compose
 	//2.1. 获取compose数据
-	_, linkComposeFileContent := currentConfig.GetLocalLinkDockerComposeFile()
 	configYamlStr, err := currentConfig.ToYaml()
+	common.CheckError(err)
+	linkComposeFileContent, err := currentConfig.Workspace.LinkCompose.ToYaml()
 	common.CheckError(err)
 	hasChanged := workspaceInfo.ChangeConfig(configYamlStr, linkComposeFileContent) // 是否改变
 	if hasChanged {                                                                 // 改变包括了初始化
 		// log
 		if workspaceInfo.ID != "" {
 			common.SmartIDELog.Info(i18nInstance.Start.Info_workspace_changed)
-
 		} else {
 			common.SmartIDELog.Info(i18nInstance.Start.Info_workspace_create)
 		}
@@ -91,12 +86,6 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 		// 更新端口绑定列表，只在改变的时候才需要赋值
 		workspaceInfo.Extend = workspace.WorkspaceExtend{Ports: currentConfig.GetPortMappings()}
-
-		// 链接的docker-compose文件
-		if workspaceInfo.ConfigYaml.IsLinkDockerComposeFile() {
-			err := yaml.Unmarshal([]byte(linkComposeFileContent), workspaceInfo.LinkDockerCompose)
-			common.CheckError(err)
-		}
 
 		// 保存 docker-compose 、config 文件到临时文件夹
 		workspaceInfo.ConfigYaml = *currentConfig
@@ -149,10 +138,13 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		common.CheckError(err)
 	}
 
-	cc := currentConfig.GetServiceNames()
+	serviceNames := currentConfig.GetServiceNames()
 	//4. 获取启动的容器列表
-	dockerComposeContainers := GetLocalContainersWithServices(ctx, cli, cc)
+	dockerComposeContainers := GetLocalContainersWithServices(ctx, cli, serviceNames)
 	devContainerName := getDevContainerName(dockerComposeContainers, currentConfig.Workspace.DevContainer.ServiceName)
+	if devContainerName == "" {
+		common.SmartIDELog.Error(fmt.Errorf("从services %v 中获取 开发容器名称失败", serviceNames))
+	}
 	if currentConfig.Workspace.DevContainer.Volumes.HasGitConfig.Value() {
 		config.GitConfig(false, devContainerName, cli, &compose.Service{}, common.SSHRemote{}, kubectl.ExecInPodRequest{})
 	}

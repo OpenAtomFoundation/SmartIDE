@@ -108,7 +108,7 @@ func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId in
 		tempComposeStr, _ = workspaceInfo.K8sInfo.TempK8sConfig.ConvertToK8sYaml()
 	} else {
 		configStr, _ = workspaceInfo.ConfigYaml.ToYaml()
-		linkComposeStr, _ = workspaceInfo.LinkDockerCompose.ToYaml()
+		linkComposeStr, _ = workspaceInfo.ConfigYaml.Workspace.LinkCompose.ToYaml()
 		tempComposeStr, _ = workspaceInfo.TempDockerCompose.ToYaml()
 	}
 	//4.2. 校验
@@ -317,17 +317,18 @@ func workspaceDataMap(workspaceInfo *workspace.WorkspaceInfo, do workspaceDo) er
 	workspaceInfo.CliRunningEnv = workspace.CliRunningEnvEnum_Client
 
 	//3. 初始化配置文件
+	configYaml, _, _ := config.NewComposeConfigFromContent(do.w_config_content.String, do.w_link_compose_content.String)
+	workspaceInfo.ConfigYaml = *configYaml
 	if do.w_mode == string(workspace.WorkingMode_Remote) {
-		workspaceInfo.ConfigYaml = *config.NewComposeConfig(do.w_workingdir.String, do.w_config_file.String, do.w_config_content.String)
+
+		//workspaceInfo.ConfigYaml = *configYaml
 
 	} else if do.w_mode == string(workspace.WorkingMode_K8s) {
-		workspaceInfo.ConfigYaml = *config.NewConfig(do.w_workingdir.String, do.w_config_file.String, do.w_config_content.String)
-
-		originK8sYaml, _ := config.NewK8SConfig("", []string{}, do.w_config_content.String, do.w_link_compose_content.String)
+		originK8sYaml, _ := config.NewK8sConfigFromContent(do.w_config_content.String, do.w_link_compose_content.String)
 		workspaceInfo.K8sInfo.OriginK8sYaml = *originK8sYaml
 
 	} else {
-		workspaceInfo.ConfigYaml = *config.NewConfig(do.w_workingdir.String, do.w_config_file.String, do.w_config_content.String)
+		//workspaceInfo.ConfigYaml = *config.NewConfig(do.w_workingdir.String, do.w_config_file.String, do.w_config_content.String)
 
 	}
 
@@ -335,7 +336,7 @@ func workspaceDataMap(workspaceInfo *workspace.WorkspaceInfo, do workspaceDo) er
 	if !(do.w_mode == string(workspace.WorkingMode_K8s)) {
 		// 连接的docker-compose文件
 		if do.w_link_compose_content.String != "" {
-			err := yaml.Unmarshal([]byte(do.w_link_compose_content.String), &workspaceInfo.LinkDockerCompose)
+			err := yaml.Unmarshal([]byte(do.w_link_compose_content.String), &workspaceInfo.ConfigYaml.Workspace.LinkCompose)
 			if err != nil {
 				return err
 			}
@@ -349,7 +350,7 @@ func workspaceDataMap(workspaceInfo *workspace.WorkspaceInfo, do workspaceDo) er
 			}
 		}
 	} else {
-		tempK8sYaml, _ := config.NewK8SConfig(workspaceInfo.ConfigFileRelativePath, []string{}, do.w_config_content.String, do.w_temp_compose_content.String)
+		tempK8sYaml, _ := config.NewK8sConfigFromContent(do.w_config_content.String, do.w_temp_compose_content.String)
 		workspaceInfo.K8sInfo.TempK8sConfig = *tempK8sYaml
 	}
 

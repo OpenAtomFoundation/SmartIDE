@@ -117,7 +117,7 @@ type WorkspaceInfo struct {
 	TempDockerCompose compose.DockerComposeYml
 
 	// 链接的docker-compose文件
-	LinkDockerCompose compose.DockerComposeYml
+	//LinkDockerCompose compose.DockerComposeYml
 
 	// 扩展信息
 	Extend WorkspaceExtend
@@ -243,14 +243,17 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 		}
 	}
 	if serverWorkSpace.ConfigFileContent != "" {
-		tmpConfig := config.NewConfig(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath, serverWorkSpace.ConfigFileContent)
+		tmpConfig, _, err := config.NewComposeConfigFromContent(serverWorkSpace.ConfigFileContent, "")
+		if err != nil {
+			return WorkspaceInfo{}, err
+		}
 		workspaceInfo.ConfigYaml = *tmpConfig
 	}
 
 	// 配置文件
 	if workspaceInfo.Mode == WorkingMode_Remote {
 		if serverWorkSpace.LinkDockerCompose != "" {
-			err := yaml.Unmarshal([]byte(serverWorkSpace.LinkDockerCompose), &workspaceInfo.LinkDockerCompose)
+			err := yaml.Unmarshal([]byte(serverWorkSpace.LinkDockerCompose), &workspaceInfo.ConfigYaml.Workspace.LinkCompose)
 			if err != nil {
 				return WorkspaceInfo{}, err
 			}
@@ -263,14 +266,14 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 		}
 	} else if workspaceInfo.Mode == WorkingMode_K8s {
 		if serverWorkSpace.LinkDockerCompose != "" {
-			originK8sYaml, err := config.NewK8SConfig("", []string{}, serverWorkSpace.ConfigFileContent, serverWorkSpace.LinkDockerCompose)
+			originK8sYaml, err := config.NewK8sConfigFromContent(serverWorkSpace.ConfigFileContent, serverWorkSpace.LinkDockerCompose)
 			if err != nil {
 				return WorkspaceInfo{}, err
 			}
 			workspaceInfo.K8sInfo.OriginK8sYaml = *originK8sYaml
 		}
 		if serverWorkSpace.TempDockerComposeContent != "" {
-			tempK8sYaml, err := config.NewK8SConfig(workspaceInfo.ConfigFileRelativePath, []string{}, serverWorkSpace.ConfigFileContent, serverWorkSpace.TempDockerComposeContent)
+			tempK8sYaml, err := config.NewK8sConfigFromContent(serverWorkSpace.ConfigFileContent, serverWorkSpace.TempDockerComposeContent)
 			if err != nil {
 				return WorkspaceInfo{}, err
 			}
@@ -443,12 +446,12 @@ func (w *WorkspaceInfo) ChangeConfig(currentConfigContent, linkDockerComposeCont
 		hasChanged = true
 
 	}
-	originLinkComposeYamlContent, err := w.LinkDockerCompose.ToYaml()
+	originLinkComposeYamlContent, err := w.ConfigYaml.Workspace.LinkCompose.ToYaml()
 	common.CheckError(err)
 	if strings.ReplaceAll(linkDockerComposeContent, " ", "") != strings.ReplaceAll(originLinkComposeYamlContent, " ", "") {
 		var linkDockerCompose compose.DockerComposeYml
 		err := yaml.Unmarshal([]byte(linkDockerComposeContent), &linkDockerCompose)
-		w.LinkDockerCompose = linkDockerCompose
+		w.ConfigYaml.Workspace.LinkCompose = &linkDockerCompose
 		common.CheckError(err)
 		hasChanged = true
 

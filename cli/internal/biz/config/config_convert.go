@@ -33,7 +33,7 @@ func (k8sConfig *SmartIdeK8SConfig) ConvertToSmartIdeConfig() *SmartIdeConfig {
 		smartIdeConfig.Orchestrator = k8sConfig.Orchestrator
 		smartIdeConfig.Version = k8sConfig.Version
 		smartIdeConfig.Workspace.DevContainer = k8sConfig.Workspace.DevContainer
-		smartIdeConfig.Workspace.KubeDeployFiles = k8sConfig.Workspace.KubeDeployFiles
+		smartIdeConfig.Workspace.KubeDeployFileExpression = k8sConfig.Workspace.KubeDeployFileExpression
 		return &smartIdeConfig
 	}
 	return nil
