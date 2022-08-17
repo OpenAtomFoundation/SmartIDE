@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-03-23 16:13:54
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-10 09:33:08
- * @FilePath: /cli/pkg/kubectl/k8s.go
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-08-17 17:55:45
+ * @FilePath: /smartide/cli/pkg/kubectl/k8s.go
  */
 
 package kubectl
@@ -16,6 +16,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
 
@@ -341,13 +342,13 @@ const (
 	Flags_ServerOwnerGuid = "serverownerguid"
 )
 
-func (k *KubernetesUtil) StartAgent(cmd *cobra.Command, pod coreV1.Pod, runAsUser string) error {
+func (k *KubernetesUtil) StartAgent(cmd *cobra.Command, pod coreV1.Pod, runAsUser string, ws *model.ServerWorkspace) error {
 	fflags := cmd.Flags()
 	host, _ := fflags.GetString(Flags_ServerHost)
 	token, _ := fflags.GetString(Flags_ServerToken)
 	ownerguid, _ := fflags.GetString(Flags_ServerOwnerGuid)
 
-	commad := fmt.Sprintf("sudo chmod +x /smartide-agent && cd /;./smartide-agent --serverhost %s --servertoken %s --serverownerguid %s", host, token, ownerguid)
+	commad := fmt.Sprintf("sudo chmod +x /smartide-agent && cd /;./smartide-agent --serverhost %s --servertoken %s --serverownerguid %s --workspaceId %v", host, token, ownerguid, ws.ID)
 
 	err := k.ExecuteCommandRealtimeInPod(pod, commad, runAsUser)
 	if err != nil {
