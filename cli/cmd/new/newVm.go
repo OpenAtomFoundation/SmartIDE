@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-04-20 10:46:40
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-01 09:47:31
+ * @LastEditTime: 2022-08-17 15:31:46
  * @FilePath: /cli/cmd/new/newVm.go
  */
 
@@ -45,7 +45,7 @@ func VmNew(cmd *cobra.Command, args []string, workspaceInfo workspace.WorkspaceI
 		if token != "" {
 			if workspaceIdStr, _ := cmd.Flags().GetString(smartideServer.Flags_ServerWorkspaceid); workspaceIdStr != "" {
 				if no, _ := workspace.GetWorkspaceNo(workspaceIdStr, token, apiHost); no != "" {
-					if pid, err := workspace.GetParentId(no, 1, token, apiHost); err == nil && pid > 0 {
+					if pid, err := workspace.GetParentId(no, workspace.ActionEnum_Workspace_Start, token, apiHost); err == nil && pid > 0 {
 						common.SmartIDELog.Ws_id = no
 						common.SmartIDELog.ParentId = pid
 					}
@@ -91,7 +91,7 @@ func VmNew(cmd *cobra.Command, args []string, workspaceInfo workspace.WorkspaceI
 
 	// 执行vm start命令
 	isUnforward, _ := cmd.Flags().GetBool("unforward")
-	start.ExecuteVmStartCmd(workspaceInfo, isUnforward, yamlExecuteFun, cmd,args, true)
+	start.ExecuteVmStartCmd(workspaceInfo, isUnforward, yamlExecuteFun, cmd, args, true)
 }
 
 // 在服务器上使用git下载制定的template文件，完成后删除.git文件

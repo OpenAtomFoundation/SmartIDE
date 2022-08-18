@@ -1,8 +1,8 @@
 /*
  * @Author: kenan
  * @Date: 2022-03-14 09:54:06
- * @LastEditors: kenan
- * @LastEditTime: 2022-08-15 11:04:42
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-08-17 11:23:50
  * @FilePath: /cli/internal/biz/workspace/ws_log.go
  * @Description:
  *
@@ -38,33 +38,49 @@ type WorkspaceLog struct {
 	Status   int       `json:"status" ` //执行状态 1:未启动,2:启动中,3:执行完毕,4:执行错误
 }
 
+type ActionEnum int
+
+const (
+	ActionEnum_Workspace_Start           ActionEnum = 1
+	ActionEnum_Workspace_Stop            ActionEnum = 2
+	ActionEnum_Workspace_RemoveContainer ActionEnum = 3
+	ActionEnum_Workspace_Remove          ActionEnum = 4
+	ActionEnum_Workspace_Connect         ActionEnum = 5
+	ActionEnum_Ingress_Enable            ActionEnum = 6
+	ActionEnum_Ingress_Disable           ActionEnum = 7
+	ActionEnum_SSH_Enable                ActionEnum = 8
+	ActionEnum_SSH_Disable               ActionEnum = 9
+)
+
 /*
 * description: 根据action:1 start,2 stop ,3 deleteContainer,4 delete 获取日志parentID
 * param wid 工作区id
 * param action
  */
-func GetParentId(wid string, action int, token string, apiHost string) (praentId int, err error) {
+func GetParentId(wid string, action ActionEnum, token string, apiHost string) (praentId int, err error) {
 	// 查询当前工作区日志parentid
 	var title = ""
 	var response = ""
 	praentId = 0
 	switch action {
-	case 1:
+	case ActionEnum_Workspace_Start:
 		title = "启动工作区"
-	case 2:
+	case ActionEnum_Workspace_Stop:
 		title = "停止工作区"
-	case 3:
+	case ActionEnum_Workspace_RemoveContainer:
 		title = "删除工作区容器"
-	case 4:
+	case ActionEnum_Workspace_Remove:
 		title = "清理工作区环境"
-	case 5:
+	case ActionEnum_Workspace_Connect:
 		title = "客户端启动工作区"
-	case 6:
+	case ActionEnum_Ingress_Enable:
 		title = "创建Ingress"
-	case 7:
+	case ActionEnum_Ingress_Disable:
 		title = "删除Ingress"
-	case 8:
+	case ActionEnum_SSH_Enable:
 		title = "建立SSH通道"
+	case ActionEnum_SSH_Disable:
+		title = "删除SSH通道"
 	}
 	url := fmt.Sprint(apiHost, "/api/smartide/wslog/find")
 	if response, err = common.Get(url, map[string]string{"title": title, "ws_id": wid, "parentID": "0"}, map[string]string{"Content-Type": "application/json", "x-token": token}); response != "" {

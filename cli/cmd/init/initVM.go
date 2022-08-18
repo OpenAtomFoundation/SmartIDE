@@ -2,8 +2,8 @@
  * @Author: Bo Dai (daibo@leansoftx.com)
  * @Description:
  * @Date: 2022-07
- * @LastEditors: Bo Dai
- * @LastEditTime: 2022年7月28日 14点17分
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-08-17 15:31:23
  */
 
 package init
@@ -45,7 +45,7 @@ func VmInit(cmd *cobra.Command, args []string, workspaceInfo workspace.Workspace
 		if token != "" {
 			if workspaceIdStr, _ := cmd.Flags().GetString(smartideServer.Flags_ServerWorkspaceid); workspaceIdStr != "" {
 				if no, _ := workspace.GetWorkspaceNo(workspaceIdStr, token, apiHost); no != "" {
-					if pid, err := workspace.GetParentId(no, 1, token, apiHost); err == nil && pid > 0 {
+					if pid, err := workspace.GetParentId(no, workspace.ActionEnum_Workspace_Start, token, apiHost); err == nil && pid > 0 {
 						common.SmartIDELog.Ws_id = no
 						common.SmartIDELog.ParentId = pid
 					}

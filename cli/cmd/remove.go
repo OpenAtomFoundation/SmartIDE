@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-09 10:45:06
+ * @LastEditTime: 2022-08-17 11:24:36
  */
 package cmd
 
@@ -84,7 +84,7 @@ var removeCmd = &cobra.Command{
 				}
 				common.WebsocketStart(wsURL)
 				if action != 0 {
-					if pid, err := workspace.GetParentId(workspaceIdStr, action, serverModeInfo.ServerToken, serverModeInfo.ServerHost); err == nil && pid > 0 {
+					if pid, err := workspace.GetParentId(workspaceIdStr, workspace.ActionEnum_Workspace_Remove, serverModeInfo.ServerToken, serverModeInfo.ServerHost); err == nil && pid > 0 {
 						common.SmartIDELog.Ws_id = workspaceIdStr
 						common.SmartIDELog.ParentId = pid
 					}

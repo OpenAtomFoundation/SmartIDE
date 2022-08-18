@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-16 16:25:24
+ * @LastEditTime: 2022-08-18 11:04:20
  */
 package cmd
 
@@ -73,14 +73,14 @@ var startCmd = &cobra.Command{
 			token, _ := cmd.Flags().GetString(server.Flags_ServerToken)
 			if token != "" {
 				if workspaceIdStr := getWorkspaceIdFromFlagsOrArgs(cmd, args); strings.Contains(workspaceIdStr, "SWS") {
-					if pid, err := workspace.GetParentId(workspaceIdStr, 1, token, apiHost); err == nil && pid > 0 {
+					if pid, err := workspace.GetParentId(workspaceIdStr, workspace.ActionEnum_Workspace_Start, token, apiHost); err == nil && pid > 0 {
 						common.SmartIDELog.Ws_id = workspaceIdStr
 						common.SmartIDELog.ParentId = pid
 					}
 				} else {
 					if workspaceIdStr, _ := cmd.Flags().GetString(server.Flags_ServerWorkspaceid); workspaceIdStr != "" {
 						if no, _ := workspace.GetWorkspaceNo(workspaceIdStr, token, apiHost); no != "" {
-							if pid, err := workspace.GetParentId(no, 1, token, apiHost); err == nil && pid > 0 {
+							if pid, err := workspace.GetParentId(no, workspace.ActionEnum_Workspace_Start, token, apiHost); err == nil && pid > 0 {
 								common.SmartIDELog.Ws_id = no
 								common.SmartIDELog.ParentId = pid
 							}

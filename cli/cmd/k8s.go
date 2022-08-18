@@ -44,22 +44,30 @@ var k8sCmd = &cobra.Command{
 		common.CheckError(checkFlagErr)
 		checkFlagErr = checkFlag(fflags, k8s_flag_mode)
 		common.CheckError(checkFlagErr)
+		publicUrl, _ := fflags.GetString(k8s_flag_public_url)
+		serverHost, _ := fflags.GetString(k8s_flag_serverhost)
+		serverToken, _ := fflags.GetString(k8s_flag_servertoken)
 
 		//0. 初始化Log
 		if apiHost, _ := fflags.GetString(k8s_flag_serverhost); apiHost != "" {
 			wsURL := fmt.Sprint(strings.ReplaceAll(strings.ReplaceAll(apiHost, "https", "ws"), "http", "ws"), "/ws/smartide/ws")
 			common.WebsocketStart(wsURL)
 			token, _ := fflags.GetString(k8s_flag_servertoken)
+
+			workspaceIngressAction := workspace.ActionEnum_Ingress_Enable
+			if strings.ToLower(publicUrl) != "enable" {
+				workspaceIngressAction = workspace.ActionEnum_Ingress_Disable
+			}
 			if token != "" {
 				if workspaceIdStr := getWorkspaceIdFromFlagsOrArgs(cmd, args); strings.Contains(workspaceIdStr, "WS") {
-					if pid, err := workspace.GetParentId(workspaceIdStr, 1, token, apiHost); err == nil && pid > 0 {
+					if pid, err := workspace.GetParentId(workspaceIdStr, workspaceIngressAction, token, apiHost); err == nil && pid > 0 {
 						common.SmartIDELog.Ws_id = workspaceIdStr
 						common.SmartIDELog.ParentId = pid
 					}
 				} else {
 					if workspaceIdStr, _ := fflags.GetString(k8s_flag_workspaceid); workspaceIdStr != "" {
 						if no, _ := workspace.GetWorkspaceNo(workspaceIdStr, token, apiHost); no != "" {
-							if pid, err := workspace.GetParentId(no, 1, token, apiHost); err == nil && pid > 0 {
+							if pid, err := workspace.GetParentId(no, workspaceIngressAction, token, apiHost); err == nil && pid > 0 {
 								common.SmartIDELog.Ws_id = no
 								common.SmartIDELog.ParentId = pid
 							}
@@ -90,9 +98,6 @@ var k8sCmd = &cobra.Command{
 		authType := workspaceInfo.K8sInfo.IngressAuthType
 		username := workspaceInfo.K8sInfo.IngressLoginUserName
 		password := workspaceInfo.K8sInfo.IngressLoginPassword
-		publicUrl, _ := fflags.GetString(k8s_flag_public_url)
-		serverHost, _ := fflags.GetString(k8s_flag_serverhost)
-		serverToken, _ := fflags.GetString(k8s_flag_servertoken)
 
 		//2. Save temp k8s config file
 		k8sConfigDirPath := config.SmartIdeHome

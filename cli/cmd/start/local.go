@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-16 18:07:24
+ * @LastEditTime: 2022-08-18 11:07:25
  */
 package start
 
@@ -19,7 +19,6 @@ import (
 	"github.com/leansoftX/smartide-cli/internal/dal"
 	"github.com/spf13/cobra"
 
-	initExtended "github.com/leansoftX/smartide-cli/cmd/init"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/model"
@@ -27,6 +26,8 @@ import (
 	"github.com/leansoftX/smartide-cli/pkg/docker/compose"
 	"github.com/leansoftX/smartide-cli/pkg/kubectl"
 	"github.com/leansoftX/smartide-cli/pkg/tunnel"
+
+	initExtended "github.com/leansoftX/smartide-cli/cmd/init"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -58,7 +59,7 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	var ideBindingPort, sshBindingPort int
 
 	//1.3. 初始化配置文件对象
-	if workspaceInfo.IsNil() || !common.IsExist(workspaceInfo.ConfigYaml.GetConfigFileAbsolutePath()) {
+	if workspaceInfo.IsNil() {
 		initExtended.InitLocalConfig(cmd, args)
 	}
 	currentConfig, err := config.NewLocalConfig(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath)
