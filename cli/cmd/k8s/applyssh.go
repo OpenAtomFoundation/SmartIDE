@@ -175,33 +175,79 @@ var ApplySSHCmd = &cobra.Command{
 					sshAction = workspace.ActionEnum_SSH_Enable
 				}
 
-				if pid, err := workspace.GetParentId(applySsh.WorkspaceNo, sshAction, serverToken, serverHost); err == nil && pid > 0 {
-					common.SmartIDELog.Ws_id = applySsh.WorkspaceNo
-					common.SmartIDELog.ParentId = pid
-					common.SmartIDELog.Info("-----------------------")
-					if applySsh.Action == "add" {
-						common.SmartIDELog.Info(fmt.Sprintf(i18nInstance.ApplySSH.Info_log_service_enable_ssh_success,
-							applySsh.WorkspaceNo, applySsh.Service, applySsh.PublicPort))
-					} else if applySsh.Action == "remove" {
-						common.SmartIDELog.Info(fmt.Sprintf(i18nInstance.ApplySSH.Info_log_service_disable_ssh_success,
-							applySsh.WorkspaceNo, applySsh.Service, applySsh.PublicPort))
+				// 反馈给
+				workspaceInfo, err := workspace.GetWorkspaceFromServer(currentAuth, applySsh.WorkspaceNo, workspace.CliRunningEvnEnum_Server)
+				for index, portDetail := range workspaceInfo.Extend.Ports {
+					if portDetail.HostPortDesc == "tools-ssh" && portDetail.ServiceName == applySsh.Service {
+						if applySsh.Action == "add" {
+							workspaceInfo.Extend.Ports[index].SSHPort = fmt.Sprint(applySsh.PublicPort)
+							workspaceInfo.Extend.Ports[index].IsConnected = true
+						} else if applySsh.Action == "remove" {
+							workspaceInfo.Extend.Ports[index].SSHPort = ""
+							workspaceInfo.Extend.Ports[index].IsConnected = false
+						}
 					}
-					common.SmartIDELog.Info("-----------------------")
+				}
+				common.CheckError(err)
+				err = server.Feedback_Finish(server.FeedbackCommandEnum_ApplySSH, cmd, true, nil, *workspaceInfo, "", "")
+				common.CheckError(err)
+
+				// ws
+				if pid, err := workspace.GetParentId(applySsh.WorkspaceNo, sshAction, serverToken, serverHost); err == nil && pid > 0 {
+					if pid, err := workspace.GetParentId(workspaceInfo.ServerWorkSpace.NO, sshAction, currentAuth.Token.(string), currentAuth.LoginUrl); err == nil && pid > 0 {
+						common.SmartIDELog.Ws_id = workspaceInfo.ServerWorkSpace.NO
+						common.SmartIDELog.ParentId = pid
+
+						common.SmartIDELog.Info("-----------------------")
+						if applySsh.Action == "add" {
+							common.SmartIDELog.Info(fmt.Sprintf(i18nInstance.ApplySSH.Info_log_service_enable_ssh_success,
+								applySsh.WorkspaceNo, applySsh.Service, applySsh.PublicPort))
+						} else if applySsh.Action == "remove" {
+							common.SmartIDELog.Info(fmt.Sprintf(i18nInstance.ApplySSH.Info_log_service_disable_ssh_success,
+								applySsh.WorkspaceNo, applySsh.Service, applySsh.PublicPort))
+						}
+						common.SmartIDELog.Info("-----------------------")
+
+					} else {
+						title := "??"
+						if applySsh.Action == "add" {
+							title = "创建SSH通道"
+						} else if applySsh.Action == "remove" {
+							title = "删除SSH通道"
+						}
+						if err := workspace.CreateWsLog(workspaceInfo.ServerWorkSpace.NO, currentAuth.Token.(string), currentAuth.LoginUrl, title, ""); err == nil {
+							if pid, err := workspace.GetParentId(workspaceInfo.ServerWorkSpace.NO, sshAction, currentAuth.Token.(string), currentAuth.LoginUrl); err == nil && pid > 0 {
+								common.SmartIDELog.Ws_id = workspaceInfo.ServerWorkSpace.NO
+								common.SmartIDELog.ParentId = pid
+							}
+						}
+					}
+					/* 					common.SmartIDELog.Ws_id = applySsh.WorkspaceNo
+					   					common.SmartIDELog.ParentId = pid
+					   					common.SmartIDELog.Info("-----------------------")
+					   					if applySsh.Action == "add" {
+					   						common.SmartIDELog.Info(fmt.Sprintf(i18nInstance.ApplySSH.Info_log_service_enable_ssh_success,
+					   							applySsh.WorkspaceNo, applySsh.Service, applySsh.PublicPort))
+					   					} else if applySsh.Action == "remove" {
+					   						common.SmartIDELog.Info(fmt.Sprintf(i18nInstance.ApplySSH.Info_log_service_disable_ssh_success,
+					   							applySsh.WorkspaceNo, applySsh.Service, applySsh.PublicPort))
+					   					}
+					   					common.SmartIDELog.Info("-----------------------") */
 
 					// feedback
 					/* 			feedbackMap := make(map[string]interface{})
 					feedbackMap["port"] = ""
 					feedbackMap["url"] = "" */
-					workspaceInfo, err := workspace.GetWorkspaceFromServer(currentAuth, applySsh.WorkspaceNo, workspace.CliRunningEvnEnum_Server)
-					common.CheckError(err)
-					for index, portDetail := range workspaceInfo.Extend.Ports {
-						if portDetail.HostPortDesc == "tools-ssh" && portDetail.ServiceName == applySsh.Service {
-							workspaceInfo.Extend.Ports[index].SSHPort = fmt.Sprint(applySsh.PublicPort)
-							workspaceInfo.Extend.Ports[index].IsConnected = true
-						}
-					}
-					err = server.Feedback_Finish(server.FeedbackCommandEnum_ApplySSH, cmd, true, nil, *workspaceInfo, "", "")
-					common.CheckError(err)
+					/* 					workspaceInfo, err := workspace.GetWorkspaceFromServer(currentAuth, applySsh.WorkspaceNo, workspace.CliRunningEvnEnum_Server)
+					   					common.CheckError(err)
+					   					for index, portDetail := range workspaceInfo.Extend.Ports {
+					   						if portDetail.HostPortDesc == "tools-ssh" && portDetail.ServiceName == applySsh.Service {
+					   							workspaceInfo.Extend.Ports[index].SSHPort = fmt.Sprint(applySsh.PublicPort)
+					   							workspaceInfo.Extend.Ports[index].IsConnected = true
+					   						}
+					   					}
+					   					err = server.Feedback_Finish(server.FeedbackCommandEnum_ApplySSH, cmd, true, nil, *workspaceInfo, "", "")
+					   					common.CheckError(err) */
 
 				}
 			}
