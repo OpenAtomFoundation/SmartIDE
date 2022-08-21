@@ -74,7 +74,9 @@ var ApplySSHCmd = &cobra.Command{
 
 		type ApplySshInfo struct {
 			PublicPort   int
-			Service      string
+			ServiceFull  string
+			ServiceName  string
+			Namespace    string
 			InternalPort int
 			WorkspaceNo  string
 			Action       string // remove, add, empty
@@ -102,7 +104,9 @@ var ApplySSHCmd = &cobra.Command{
 
 			applySshInfo := ApplySshInfo{}
 			applySshInfo.PublicPort, _ = strconv.Atoi(portInfo[0])
-			applySshInfo.Service = portInfo[1]
+			applySshInfo.ServiceFull = portInfo[1]
+			applySshInfo.Namespace = strings.Split(applySshInfo.ServiceFull, "/")[0]
+			applySshInfo.ServiceName = strings.Split(applySshInfo.ServiceFull, "/")[1]
 			applySshInfo.InternalPort, _ = strconv.Atoi(portInfo[2])
 			workspaceStr := strings.Split(portInfo[3], "-")
 			applySshInfo.WorkspaceNo = workspaceStr[0]
@@ -110,7 +114,7 @@ var ApplySSHCmd = &cobra.Command{
 
 			// 添加到yaml中
 			if applySshInfo.Action != "remove" {
-				configMap.Data[fmt.Sprint(applySshInfo.PublicPort)] = fmt.Sprintf("%v:%v", applySshInfo.Service, applySshInfo.InternalPort)
+				configMap.Data[fmt.Sprint(applySshInfo.PublicPort)] = fmt.Sprintf("%v:%v", applySshInfo.ServiceFull, applySshInfo.InternalPort)
 			}
 
 			applySshArray = append(applySshArray, applySshInfo)
@@ -177,8 +181,9 @@ var ApplySSHCmd = &cobra.Command{
 
 				// 反馈给
 				workspaceInfo, err := workspace.GetWorkspaceFromServer(currentAuth, applySsh.WorkspaceNo, workspace.CliRunningEvnEnum_Server)
+				common.CheckError(err)
 				for index, portDetail := range workspaceInfo.Extend.Ports {
-					if portDetail.HostPortDesc == "tools-ssh" && portDetail.ServiceName == applySsh.Service {
+					if portDetail.HostPortDesc == "tools-ssh" && portDetail.ServiceName == applySsh.ServiceName {
 						if applySsh.Action == "add" {
 							workspaceInfo.Extend.Ports[index].SSHPort = fmt.Sprint(applySsh.PublicPort)
 							workspaceInfo.Extend.Ports[index].IsConnected = true
@@ -186,11 +191,13 @@ var ApplySSHCmd = &cobra.Command{
 							workspaceInfo.Extend.Ports[index].SSHPort = ""
 							workspaceInfo.Extend.Ports[index].IsConnected = false
 						}
+
+						err = server.Feedback_Finish(server.FeedbackCommandEnum_ApplySSH, cmd, true, nil, *workspaceInfo, "", "")
+						common.CheckError(err)
+					} else {
+						common.SmartIDELog.Importance("没有找到对应的port信息")
 					}
 				}
-				common.CheckError(err)
-				err = server.Feedback_Finish(server.FeedbackCommandEnum_ApplySSH, cmd, true, nil, *workspaceInfo, "", "")
-				common.CheckError(err)
 
 				// ws
 				if pid, err := workspace.GetParentId(applySsh.WorkspaceNo, sshAction, serverToken, serverHost); err == nil && pid > 0 {
@@ -201,10 +208,10 @@ var ApplySSHCmd = &cobra.Command{
 						common.SmartIDELog.Info("-----------------------")
 						if applySsh.Action == "add" {
 							common.SmartIDELog.Info(fmt.Sprintf(i18nInstance.ApplySSH.Info_log_service_enable_ssh_success,
-								applySsh.WorkspaceNo, applySsh.Service, applySsh.PublicPort))
+								applySsh.WorkspaceNo, applySsh.ServiceFull, applySsh.PublicPort))
 						} else if applySsh.Action == "remove" {
 							common.SmartIDELog.Info(fmt.Sprintf(i18nInstance.ApplySSH.Info_log_service_disable_ssh_success,
-								applySsh.WorkspaceNo, applySsh.Service, applySsh.PublicPort))
+								applySsh.WorkspaceNo, applySsh.ServiceFull, applySsh.PublicPort))
 						}
 						common.SmartIDELog.Info("-----------------------")
 
