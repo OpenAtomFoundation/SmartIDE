@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-03-23 16:13:54
  * @LastEditors: kenan
- * @LastEditTime: 2022-08-17 17:55:45
- * @FilePath: /smartide/cli/pkg/kubectl/k8s.go
+ * @LastEditTime: 2022-08-23 21:24:44
+ * @FilePath: /cli/pkg/kubectl/k8s.go
  */
 
 package kubectl
@@ -342,7 +342,7 @@ const (
 	Flags_ServerOwnerGuid = "serverownerguid"
 )
 
-func (k *KubernetesUtil) StartAgent(cmd *cobra.Command, pod coreV1.Pod, runAsUser string, ws *model.ServerWorkspace) error {
+func (k *KubernetesUtil) StartAgent(cmd *cobra.Command, pod coreV1.Pod, runAsUser string, ws *model.ServerWorkspace) {
 	fflags := cmd.Flags()
 	host, _ := fflags.GetString(Flags_ServerHost)
 	token, _ := fflags.GetString(Flags_ServerToken)
@@ -350,12 +350,8 @@ func (k *KubernetesUtil) StartAgent(cmd *cobra.Command, pod coreV1.Pod, runAsUse
 
 	commad := fmt.Sprintf("sudo chmod +x /smartide-agent && cd /;./smartide-agent --serverhost %s --servertoken %s --serverownerguid %s --workspaceId %v", host, token, ownerguid, ws.ID)
 
-	err := k.ExecuteCommandRealtimeInPod(pod, commad, runAsUser)
-	if err != nil {
-		return err
-	}
+	go k.ExecuteCommandInPod(pod, commad, runAsUser)
 
-	return nil
 }
 
 type ProxyWriter struct {
@@ -508,6 +504,26 @@ func (k *KubernetesUtil) ExecuteCommandRealtimeInPod(pod coreV1.Pod, command str
 	kubeCommand := fmt.Sprintf(` -it exec %v -- /bin/bash -c "%v"`, pod.Name, command)
 
 	err := k.ExecKubectlCommandRealtime(kubeCommand, "", false)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (k *KubernetesUtil) ExecuteCommandInPod(pod coreV1.Pod, command string, runAsUser string) error {
+	//command = "su smartide -c " + command
+	if runAsUser != "" && runAsUser != "root" {
+		if runtime.GOOS == "windows" {
+			command = strings.ReplaceAll(command, "'", "`")
+		} else {
+			command = strings.ReplaceAll(command, "'", "\"\"")
+		}
+		command = fmt.Sprintf(`su %v -c '%v'`, runAsUser, command)
+	}
+	kubeCommand := fmt.Sprintf(` -it exec %v -- /bin/bash -c "%v"`, pod.Name, command)
+
+	err := k.ExecKubectlCommand(kubeCommand, "", false)
 	if err != nil {
 		return err
 	}
