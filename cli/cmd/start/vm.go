@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2022-08-19 17:26:43
+ * @LastEditTime: 2022-08-23 11:57:13
  */
 package start
 
@@ -106,10 +106,6 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		initExtended.GitCloneTemplateRepo4Remote(sshRemote, workspaceInfo.WorkingDirectoryPath, config.GlobalSmartIdeConfig.TemplateRepo, argsTemplateTypeName, argsTemplateSubTypeName)
 
 	}
-	/* 	catCommand := fmt.Sprintf(`cat %v`, ideYamlFilePath)
-	   	output, err := sshRemote.ExeSSHCommand(catCommand)
-	   	common.CheckErrorFunc(err, serverFeedback)
-	   	configYamlContent := output */
 	currentConfig, err := config.NewRemoteConfig(&sshRemote,
 		workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath)
 	common.CheckError(err)

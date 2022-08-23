@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-18 11:05:14
+ * @LastEditTime: 2022-08-23 11:06:00
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -271,7 +271,6 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 	}
 
 	//5.5. agent
-	//TODO:
 	common.SmartIDELog.Info("install agent")
 	if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server {
 		err := kubernetes.CopyToPod(*devContainerPod, common.PathJoin("/usr/local/bin", "smartide-agent"), common.PathJoin("/", "smartide-agent"), runAsUserName)
@@ -289,20 +288,26 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 	}
 
 	//5.1. git config
-	if originK8sConfig.Workspace.DevContainer.Volumes.HasGitConfig.Value() {
-		common.SmartIDELog.Info("git config")
-		err = kubernetes.CopyLocalGitConfigToPod(*devContainerPod, runAsUserName)
-		if err != nil {
-			return err
+	// 会通过agent生成
+	if workspaceInfo.CliRunningEnv == workspace.CliRunningEnvEnum_Client {
+		if originK8sConfig.Workspace.DevContainer.Volumes.HasGitConfig.Value() {
+			common.SmartIDELog.Info("git config")
+			err = kubernetes.CopyLocalGitConfigToPod(*devContainerPod, runAsUserName)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
 	//5.2. ssh config
-	if originK8sConfig.Workspace.DevContainer.Volumes.HasSshKey.Value() {
-		common.SmartIDELog.Info("ssh config")
-		err = kubernetes.CopyLocalSSHConfigToPod(*devContainerPod, runAsUserName)
-		if err != nil {
-			return err
+	// 本地模式下才需要拷贝ssh 公私钥文件，如果是server模式下，会通过agent下载公私钥文件
+	if workspaceInfo.CliRunningEnv == workspace.CliRunningEnvEnum_Client {
+		if originK8sConfig.Workspace.DevContainer.Volumes.HasSshKey.Value() {
+			common.SmartIDELog.Info("ssh config")
+			err = kubernetes.CopyLocalSSHConfigToPod(*devContainerPod, runAsUserName)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

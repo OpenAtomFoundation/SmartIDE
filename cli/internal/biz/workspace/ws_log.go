@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-03-14 09:54:06
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-17 11:23:50
+ * @LastEditTime: 2022-08-19 10:17:42
  * @FilePath: /cli/internal/biz/workspace/ws_log.go
  * @Description:
  *
@@ -78,7 +78,7 @@ func GetParentId(wid string, action ActionEnum, token string, apiHost string) (p
 	case ActionEnum_Ingress_Disable:
 		title = "删除Ingress"
 	case ActionEnum_SSH_Enable:
-		title = "建立SSH通道"
+		title = "创建SSH通道"
 	case ActionEnum_SSH_Disable:
 		title = "删除SSH通道"
 	}
