@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-23 11:06:00
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-08-23 22:09:44
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -277,16 +277,22 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 		if err != nil {
 			return err
 		}
-
+		kubernetes.StartAgent(cmd, *devContainerPod, runAsUserName, workspaceInfo.ServerWorkSpace)
+		err = kubernetes.CopyLocalSSHConfigToPod(*devContainerPod, runAsUserName)
+		if err != nil {
+			return err
+		}
 		err = FeeadbackContainerId(cmd, workspaceInfo, devContainerPod.Name)
 		if err != nil {
 			return err
 		}
 
-		go kubernetes.StartAgent(cmd, *devContainerPod, runAsUserName, workspaceInfo.ServerWorkSpace)
-
 	}
-
+	dcp, _, err1 := GetDevContainerPod(*kubernetes, tempK8sConfig)
+	if err != nil {
+		return err1
+	}
+	// time.Sleep(time.Second * 15)
 	//5.1. git config
 	// 会通过agent生成
 	if workspaceInfo.CliRunningEnv == workspace.CliRunningEnvEnum_Client {
@@ -310,11 +316,10 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 			}
 		}
 	}
-
 	//5.3. git clone
 	common.SmartIDELog.Info("git clone")
 	containerGitCloneDir := originK8sConfig.GetProjectDirctory()
-	err = kubernetes.GitClone(*devContainerPod, runAsUserName, workspaceInfo.GitCloneRepoUrl, containerGitCloneDir, workspaceInfo.Branch)
+	err = kubernetes.GitClone(*dcp, runAsUserName, workspaceInfo.GitCloneRepoUrl, containerGitCloneDir, workspaceInfo.Branch)
 	if err != nil {
 		return err
 	}
