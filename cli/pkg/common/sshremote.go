@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2022-08-05 11:58:19
+ * @LastEditTime: 2022-08-19 16:53:32
  */
 package common
 
@@ -627,6 +627,20 @@ func (instance *SSHRemote) ExecSSHkeyPolicy(no string, cmd *cobra.Command) {
 	}
 }
 
+//ExecSSHSetPasswordPolicy
+func (instance *SSHRemote) GetBasicPassword(no string, cmd *cobra.Command) (password string) {
+	password = ""
+	var ws []WorkspacePolicy
+	if no != "" {
+		ws, _ = GetWSPolicies(no, "3", cmd)
+	}
+
+	if len(ws) > 0 {
+		password = ws[len(ws)-1].Password
+	}
+	return password
+}
+
 // 保存一个空密码，保证后续的git clone不需要输入私钥的密码
 func (instance *SSHRemote) sshSaveEmptyPassphrase() {
 	// 如果本身就是空密码，就不需要执行了
@@ -1058,17 +1072,22 @@ type GVA_MODEL struct {
 }
 type WorkspacePolicy struct {
 	GVA_MODEL
-	Wid              string `json:"wid" form:"wid" `
-	Name             string `json:"name" form:"name"`
-	Status           *bool  `json:"status" form:"status" ` // 状态
-	JustOne          *bool  `json:"justone" form:"justone" `
-	Schdule          int    `json:"schdule" form:"schdule" `
-	Type             int    `json:"type" form:"type" `
-	Tasks            string `json:"tasks" form:"tasks" `
-	OwnerGUID        string `json:"ownerGuid" form:"ownerGuid"`
-	GitConifgContent string `json:"gitConfigContent" form:"gitConfigContent" `
-	IdRsA            string `json:"id_rsa" form:"id_rsa"`
-	IdRsAPub         string `json:"id_rsa_pub" form:"id_rsa_pub" `
+	Wid                string `json:"wid" form:"wid" `
+	Name               string `json:"name" form:"name"`
+	Status             *bool  `json:"status" form:"status" ` // 状态
+	JustOne            *bool  `json:"justone" form:"justone" `
+	Schdule            int    `json:"schdule" form:"schdule" `
+	Type               int    `json:"type" form:"type" `
+	Tasks              string `json:"tasks" form:"tasks" `
+	OwnerGUID          string `json:"ownerGuid" form:"ownerGuid"`
+	GitConifgContent   string `json:"gitConfigContent" form:"gitConfigContent" `
+	IdRsA              string `json:"id_rsa" form:"id_rsa"`
+	IdRsAPub           string `json:"id_rsa_pub" form:"id_rsa_pub" `
+	BlockCommit        *bool  `json:"blockCommit"`
+	TeamID             int    `json:"teamId"`
+	ScanerServerConfig string `json:"scanerServerConfig"`
+	UserName           string `json:"username"`
+	Password           string `json:"password"`
 }
 
 type WSPolicyResponse struct {
