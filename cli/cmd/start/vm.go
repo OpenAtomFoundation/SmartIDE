@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2022-08-23 11:57:13
+ * @LastEditTime: 2022-08-23 17:04:33
  */
 package start
 
@@ -384,7 +384,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		}
 		if containerId, err = sshRemote.ExeSSHCommand(fmt.Sprintf("docker ps  -f 'name=%s' -q", dcc[len(dcc)-1].ContainerName)); containerId != "" && err == nil {
 			// smartide-agent install
-			workspace.InstallSmartideAgent(sshRemote, containerId, cmd)
+			workspace.InstallSmartideAgent(sshRemote, containerId, cmd, workspaceInfo.ServerWorkSpace.ID)
 		}
 
 		common.SmartIDELog.Info("feedback...")
