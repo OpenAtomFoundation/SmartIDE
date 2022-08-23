@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-16 16:19:22
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-08-19 17:26:43
  */
 package start
 
@@ -20,6 +20,7 @@ import (
 	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
+	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/docker/compose"
 	"github.com/leansoftX/smartide-cli/pkg/tunnel"
@@ -138,6 +139,17 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		// 获取compose配置
 		tempDockerCompose, ideBindingPort, _ = currentConfig.ConvertToDockerCompose(sshRemote,
 			workspaceInfo.GetProjectDirctoryName(), workspaceInfo.WorkingDirectoryPath, true, userName)
+		if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server && workspaceInfo.ServerWorkSpace.Name != "" {
+			for k := range tempDockerCompose.Services[workspaceInfo.ServerWorkSpace.Name].Environment {
+				if k == model.CONST_ENV_NAME_LoalUserPassword {
+					// 修改获取basic 密码,修改容器密码
+					if p := sshRemote.GetBasicPassword(common.SmartIDELog.Ws_id, cmd); p != "" {
+						tempDockerCompose.Services[workspaceInfo.ServerWorkSpace.Name].Environment[k] = p
+
+					}
+				}
+			}
+		}
 		workspaceInfo.TempDockerCompose = tempDockerCompose
 
 		// 配置
