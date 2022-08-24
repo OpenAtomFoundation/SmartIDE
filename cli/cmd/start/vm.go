@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2022-08-24 17:09:39
+ * @LastEditTime: 2022-08-24 17:41:09
  */
 package start
 
@@ -136,14 +136,8 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		tempDockerCompose, ideBindingPort, _ = currentConfig.ConvertToDockerCompose(sshRemote,
 			workspaceInfo.GetProjectDirctoryName(), workspaceInfo.WorkingDirectoryPath, true, userName)
 		if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server && workspaceInfo.ServerWorkSpace.Name != "" {
-			for k := range tempDockerCompose.Services[workspaceInfo.ServerWorkSpace.Name].Environment {
-				if k == model.CONST_ENV_NAME_LoalUserPassword {
-					// 修改获取basic 密码,修改容器密码
-					if p, _ := common.GetBasicPassword(common.SmartIDELog.Ws_id, cmd); p != "" {
-						tempDockerCompose.Services[workspaceInfo.ServerWorkSpace.Name].Environment[k] = p
-					}
-				}
-			}
+			setBasicSSHPWD(tempDockerCompose, workspaceInfo, cmd)
+
 		}
 		workspaceInfo.TempDockerCompose = tempDockerCompose
 
@@ -401,6 +395,22 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		time.Sleep(500)
 	}
 
+}
+
+func setBasicSSHPWD(tempDockerCompose compose.DockerComposeYml, workspaceInfo workspace.WorkspaceInfo, cmd *cobra.Command) {
+	k := func() string {
+		for k := range tempDockerCompose.Services[workspaceInfo.ServerWorkSpace.Name].Environment {
+			if k == model.CONST_ENV_NAME_LoalUserPassword {
+				return k
+			}
+		}
+		return ""
+	}()
+	if k != "" {
+		if p, _ := common.GetBasicPassword(common.SmartIDELog.Ws_id, cmd); p != "" {
+			tempDockerCompose.Services[workspaceInfo.ServerWorkSpace.Name].Environment[k] = p
+		}
+	}
 }
 
 // 打印 service 列表
