@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: kenan
- * @LastEditTime: 2022-08-24 10:50:15
+ * @LastEditTime: 2022-08-24 16:36:45
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -22,6 +22,7 @@ import (
 
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
+	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/kubectl"
 	"github.com/spf13/cobra"
@@ -97,6 +98,18 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil kubectl.KubernetesUtil, work
 		repoName := common.GetRepoName(workspaceInfo.GitCloneRepoUrl)
 		// ★★★★★ 把所有k8s kind转换为一个临时的k8s yaml文件
 		tempK8sConfig = originK8sConfig.ConvertToTempK8SYaml(repoName, workspaceInfo.K8sInfo.Namespace, originK8sConfig.GetSystemUserName())
+		for _, d := range tempK8sConfig.Workspace.Deployments {
+			for _, c := range d.Spec.Template.Spec.Containers {
+				for i, ev := range c.Env {
+					if ev.Name == model.CONST_ENV_NAME_LoalUserPassword {
+						// 获取basic 密码
+						if p := common.GetBasicPassword(common.SmartIDELog.Ws_id, cmd); p != "" {
+							c.Env[i].Value = p
+						}
+					}
+				}
+			}
+		}
 		tempK8sYamlFileRelativePath, err := tempK8sConfig.SaveK8STempYaml(gitRepoRootDirPath)
 		// ★★★★★ 保存到目录（临时k8s yaml文件的绝对路径）
 		tempK8sYamlAbsolutePath := common.PathJoin(gitRepoRootDirPath, tempK8sYamlFileRelativePath)
