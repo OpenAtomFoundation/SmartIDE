@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2022-08-19 16:53:32
+ * @LastEditTime: 2022-08-24 16:32:13
  */
 package common
 
@@ -628,7 +628,7 @@ func (instance *SSHRemote) ExecSSHkeyPolicy(no string, cmd *cobra.Command) {
 }
 
 //ExecSSHSetPasswordPolicy
-func (instance *SSHRemote) GetBasicPassword(no string, cmd *cobra.Command) (password string) {
+func GetBasicPassword(no string, cmd *cobra.Command) (password string) {
 	password = ""
 	var ws []WorkspacePolicy
 	if no != "" {

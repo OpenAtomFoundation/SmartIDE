@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2022-08-23 17:04:33
+ * @LastEditTime: 2022-08-24 16:32:29
  */
 package start
 
@@ -139,7 +139,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 			for k := range tempDockerCompose.Services[workspaceInfo.ServerWorkSpace.Name].Environment {
 				if k == model.CONST_ENV_NAME_LoalUserPassword {
 					// 修改获取basic 密码,修改容器密码
-					if p := sshRemote.GetBasicPassword(common.SmartIDELog.Ws_id, cmd); p != "" {
+					if p := common.GetBasicPassword(common.SmartIDELog.Ws_id, cmd); p != "" {
 						tempDockerCompose.Services[workspaceInfo.ServerWorkSpace.Name].Environment[k] = p
 
 					}
