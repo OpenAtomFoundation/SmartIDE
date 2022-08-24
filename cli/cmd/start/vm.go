@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2022-08-24 17:43:58
+ * @LastEditTime: 2022-08-24 18:23:54
  */
 package start
 
@@ -398,17 +398,20 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 }
 
 func setBasicSSHPWD(tempDockerCompose compose.DockerComposeYml, workspaceInfo workspace.WorkspaceInfo, cmd *cobra.Command) {
-	k := func() string {
-		for k := range tempDockerCompose.Services[workspaceInfo.ServerWorkSpace.Name].Environment {
-			if k == model.CONST_ENV_NAME_LoalUserPassword {
-				return k
+	k1, k2 := func() (k1 string, k2 string) {
+		for k1, v := range tempDockerCompose.Services {
+			for k2 := range v.Environment {
+				if k2 == model.CONST_ENV_NAME_LoalUserPassword {
+					return k1, k2
+				}
 			}
+
 		}
-		return ""
+		return "", ""
 	}()
-	if k != "" {
+	if k1 != "" && k2 != "" {
 		if p, _ := common.GetBasicPassword(common.SmartIDELog.Ws_id, cmd); p != "" {
-			tempDockerCompose.Services[workspaceInfo.ServerWorkSpace.Name].Environment[k] = p
+			tempDockerCompose.Services[k1].Environment[k2] = p
 		}
 	}
 }
