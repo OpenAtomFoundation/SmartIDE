@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2022-08-24 16:32:13
+ * @LastEditTime: 2022-08-24 17:45:19
  */
 package common
 
@@ -628,17 +628,17 @@ func (instance *SSHRemote) ExecSSHkeyPolicy(no string, cmd *cobra.Command) {
 }
 
 //ExecSSHSetPasswordPolicy
-func GetBasicPassword(no string, cmd *cobra.Command) (password string) {
+func GetBasicPassword(no string, cmd *cobra.Command) (password string, err error) {
 	password = ""
 	var ws []WorkspacePolicy
 	if no != "" {
-		ws, _ = GetWSPolicies(no, "3", cmd)
+		ws, err = GetWSPolicies(no, "3", cmd)
 	}
 
 	if len(ws) > 0 {
 		password = ws[len(ws)-1].Password
 	}
-	return password
+	return password, err
 }
 
 // 保存一个空密码，保证后续的git clone不需要输入私钥的密码
