@@ -59,7 +59,6 @@ spec:
       default: 
 
   steps:
-    - name: smartide-cli
       image: smartide/smartide-cli:5289
       script: |
         #!/bin/bash
