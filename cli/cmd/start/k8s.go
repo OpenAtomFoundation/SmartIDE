@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: kenan
- * @LastEditTime: 2022-08-24 16:36:45
+ * @LastEditTime: 2022-08-24 17:17:05
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -98,16 +98,10 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil kubectl.KubernetesUtil, work
 		repoName := common.GetRepoName(workspaceInfo.GitCloneRepoUrl)
 		// ★★★★★ 把所有k8s kind转换为一个临时的k8s yaml文件
 		tempK8sConfig = originK8sConfig.ConvertToTempK8SYaml(repoName, workspaceInfo.K8sInfo.Namespace, originK8sConfig.GetSystemUserName())
-		for _, d := range tempK8sConfig.Workspace.Deployments {
-			for _, c := range d.Spec.Template.Spec.Containers {
-				for i, ev := range c.Env {
-					if ev.Name == model.CONST_ENV_NAME_LoalUserPassword {
-						// 获取basic 密码
-						if p := common.GetBasicPassword(common.SmartIDELog.Ws_id, cmd); p != "" {
-							c.Env[i].Value = p
-						}
-					}
-				}
+		if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server {
+			err = setSSHPWD(tempK8sConfig, cmd)
+			if err != nil {
+				return nil, err
 			}
 		}
 		tempK8sYamlFileRelativePath, err := tempK8sConfig.SaveK8STempYaml(gitRepoRootDirPath)
@@ -221,6 +215,29 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil kubectl.KubernetesUtil, work
 	//99. 结束
 	common.SmartIDELog.Info(i18nInstance.Start.Info_end)
 	return &workspaceInfo, nil
+}
+
+func setSSHPWD(tempK8sConfig config.SmartIdeK8SConfig, cmd *cobra.Command) (err error) {
+	for _, d := range tempK8sConfig.Workspace.Deployments {
+		for _, c := range d.Spec.Template.Spec.Containers {
+			i := func() (i int) {
+				for i, ev := range c.Env {
+					if ev.Name == model.CONST_ENV_NAME_LoalUserPassword {
+						return i
+					}
+				}
+				return -1
+			}()
+			if i >= 0 {
+				p := ""
+				if p, err = common.GetBasicPassword(common.SmartIDELog.Ws_id, cmd); p != "" {
+					c.Env[i].Value = p
+				}
+			}
+
+		}
+	}
+	return nil
 }
 
 func execSSHPolicy(workspaceInfo workspace.WorkspaceInfo, cmd *cobra.Command) {
