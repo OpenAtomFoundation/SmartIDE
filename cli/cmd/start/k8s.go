@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: kenan
- * @LastEditTime: 2022-08-25 18:32:29
+ * @LastEditTime: 2022-08-25 18:33:35
  * @FilePath: /smartide/cli/cmd/start/k8s.go
  */
 
