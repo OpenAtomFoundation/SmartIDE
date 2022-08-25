@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-25 17:05:48
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-08-25 18:33:47
  */
 package start
 
@@ -135,10 +135,10 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		// 获取compose配置
 		tempDockerCompose, ideBindingPort, _ = currentConfig.ConvertToDockerCompose(sshRemote,
 			workspaceInfo.GetProjectDirctoryName(), workspaceInfo.WorkingDirectoryPath, true, userName)
-		if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server {
-			setBasicSSHPWD(tempDockerCompose, *currentConfig, cmd)
+		// if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server {
+		// 	setBasicSSHPWD(tempDockerCompose, *currentConfig, cmd)
 
-		}
+		// }
 		workspaceInfo.TempDockerCompose = tempDockerCompose
 
 		// 配置
