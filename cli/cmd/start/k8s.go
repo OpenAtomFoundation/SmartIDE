@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: kenan
- * @LastEditTime: 2022-08-25 11:38:56
- * @FilePath: /cli/cmd/start/k8s.go
+ * @LastEditTime: 2022-08-25 18:32:29
+ * @FilePath: /smartide/cli/cmd/start/k8s.go
  */
 
 package start
@@ -98,12 +98,12 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil kubectl.KubernetesUtil, work
 		repoName := common.GetRepoName(workspaceInfo.GitCloneRepoUrl)
 		// ★★★★★ 把所有k8s kind转换为一个临时的k8s yaml文件
 		tempK8sConfig = originK8sConfig.ConvertToTempK8SYaml(repoName, workspaceInfo.K8sInfo.Namespace, originK8sConfig.GetSystemUserName())
-		if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server {
-			err = setSSHPWD(tempK8sConfig, cmd)
-			if err != nil {
-				return nil, err
-			}
-		}
+		// if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server {
+		// 	err = setSSHPWD(tempK8sConfig, cmd)
+		// 	if err != nil {
+		// 		return nil, err
+		// 	}
+		// }
 		tempK8sYamlFileRelativePath, err := tempK8sConfig.SaveK8STempYaml(gitRepoRootDirPath)
 		// ★★★★★ 保存到目录（临时k8s yaml文件的绝对路径）
 		tempK8sYamlAbsolutePath := common.PathJoin(gitRepoRootDirPath, tempK8sYamlFileRelativePath)
