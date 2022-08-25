@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-25 11:24:51
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-08-25 11:38:56
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -218,6 +218,7 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil kubectl.KubernetesUtil, work
 }
 
 func setSSHPWD(tempK8sConfig config.SmartIdeK8SConfig, cmd *cobra.Command) (err error) {
+
 	for _, d := range tempK8sConfig.Workspace.Deployments {
 		for _, c := range d.Spec.Template.Spec.Containers {
 			i := func() (i int) {
@@ -232,6 +233,11 @@ func setSSHPWD(tempK8sConfig config.SmartIdeK8SConfig, cmd *cobra.Command) (err 
 				p := ""
 				if p, err = common.GetBasicPassword(common.SmartIDELog.Ws_id, cmd); p != "" {
 					c.Env[i].Value = p
+				}
+			} else {
+				p := ""
+				if p, err = common.GetBasicPassword(common.SmartIDELog.Ws_id, cmd); p != "" {
+					c.Env = append(c.Env, coreV1.EnvVar{Name: model.CONST_ENV_NAME_LoalUserPassword, Value: p})
 				}
 			}
 

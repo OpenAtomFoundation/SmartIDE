@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-25 11:24:36
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-08-25 11:39:07
  */
 package start
 
@@ -135,8 +135,8 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		// 获取compose配置
 		tempDockerCompose, ideBindingPort, _ = currentConfig.ConvertToDockerCompose(sshRemote,
 			workspaceInfo.GetProjectDirctoryName(), workspaceInfo.WorkingDirectoryPath, true, userName)
-		if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server && workspaceInfo.ServerWorkSpace.Name != "" {
-			setBasicSSHPWD(tempDockerCompose, workspaceInfo, cmd)
+		if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server {
+			setBasicSSHPWD(tempDockerCompose, *currentConfig, cmd)
 
 		}
 		workspaceInfo.TempDockerCompose = tempDockerCompose
@@ -393,23 +393,34 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 }
 
-func setBasicSSHPWD(tempDockerCompose compose.DockerComposeYml, workspaceInfo workspace.WorkspaceInfo, cmd *cobra.Command) {
-	k1, k2 := func() (k1 string, k2 string) {
-		for k1, v := range tempDockerCompose.Services {
-			for k2 := range v.Environment {
-				if k2 == model.CONST_ENV_NAME_LoalUserPassword {
-					return k1, k2
-				}
-			}
+func setBasicSSHPWD(tempDockerCompose compose.DockerComposeYml, configYaml config.SmartIdeConfig, cmd *cobra.Command) {
+	if p, _ := common.GetBasicPassword(common.SmartIDELog.Ws_id, cmd); p != "" {
+		for _, s := range tempDockerCompose.Services {
+			s.Environment[model.CONST_ENV_NAME_LoalUserPassword] = p
 
 		}
-		return "", ""
-	}()
-	if k1 != "" && k2 != "" {
-		if p, _ := common.GetBasicPassword(common.SmartIDELog.Ws_id, cmd); p != "" {
-			tempDockerCompose.Services[k1].Environment[k2] = p
-		}
 	}
+
+	// k1, k2 := func() (k1 string, k2 string) {
+	// 	for k1, v := range tempDockerCompose.Services {
+	// 		for k2 := range v.Environment {
+	// 			if k2 == model.CONST_ENV_NAME_LoalUserPassword {
+	// 				return k1, k2
+	// 			}
+	// 		}
+
+	// 	}
+	// 	return "", ""
+	// }()
+	// if k1 != "" && k2 != "" {
+	// 	if p, _ := common.GetBasicPassword(common.SmartIDELog.Ws_id, cmd); p != "" {
+	// 		tempDockerCompose.Services[k1].Environment[k2] = p
+	// 	}
+	// } else {
+	// 	if p, _ := common.GetBasicPassword(common.SmartIDELog.Ws_id, cmd); p != "" && configYaml.Workspace.DevContainer.ServiceName != "" {
+	// 		tempDockerCompose.Services[configYaml.Workspace.DevContainer.ServiceName].Environment[model.CONST_ENV_NAME_LoalUserPassword] = p
+	// 	}
+	// }
 }
 
 // 打印 service 列表
