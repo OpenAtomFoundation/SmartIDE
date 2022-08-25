@@ -3,7 +3,7 @@
  * @Description: config
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-16 16:03:44
+ * @LastEditTime: 2022-08-25 10:19:51
  */
 package config
 
@@ -89,7 +89,7 @@ func (yamlFileConfig *SmartIdeConfig) LoadDockerComposeFromTempFile(sshRemote co
 					if index > 0 {
 						ideBindingPort, _ = strconv.Atoi(port[:index])
 						if ideBindingPort > 0 {
-							common.SmartIDELog.InfoF(i18nInstance.Common.Info_ssh_webide_host_port, ideBindingPort)
+							common.SmartIDELog.DebugF(i18nInstance.Common.Info_ssh_webide_host_port, ideBindingPort)
 							continue
 						}
 					}
@@ -98,7 +98,7 @@ func (yamlFileConfig *SmartIdeConfig) LoadDockerComposeFromTempFile(sshRemote co
 					if index > 0 {
 						sshBindingPort, _ = strconv.Atoi(port[:index])
 						if sshBindingPort > 0 {
-							common.SmartIDELog.InfoF(i18nInstance.Common.Info_ssh_host_port, sshBindingPort)
+							common.SmartIDELog.DebugF(i18nInstance.Common.Info_ssh_host_port, sshBindingPort)
 							continue
 						}
 					}
@@ -180,7 +180,7 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 				if bindingPortOld != bindingPortNew {
 					service.Ports[index] = fmt.Sprintf("%v:%v", bindingPortNew, containerPort)
 
-					common.SmartIDELog.InfoF("localhost:%v (%v 被占用) -> container:%v", bindingPortNew, bindingPortOld, containerPort)
+					common.SmartIDELog.DebugF("localhost:%v (%v 被占用) -> container:%v", bindingPortNew, bindingPortOld, containerPort)
 					hasChange = true
 
 					// ide、ssh端口更新
@@ -193,7 +193,7 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 						}
 					}
 				} else {
-					common.SmartIDELog.InfoF("localhost:%v -> container:%v", bindingPortOld, containerPort)
+					common.SmartIDELog.DebugF("localhost:%v -> container:%v", bindingPortOld, containerPort)
 				}
 				yamlFileConfig.setPort4Label(containerPort, bindingPortOld, bindingPortNew, serviceName)
 			}

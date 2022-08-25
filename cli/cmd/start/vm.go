@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2022-08-24 18:29:16
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-08-25 11:24:36
  */
 package start
 
@@ -218,7 +218,6 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 	//6. 当前主机绑定到远程端口
 	var addrMapping map[string]string = map[string]string{}
-	// remotePortBindings := tempDockerCompose.GetPortBindings() //
 	unusedLocalPort4IdeBindingPort := ideBindingPort // 未使用的本地端口，与ide端口对应
 	//6.1. 查找所有远程主机的端口
 	for serviceName, service := range tempDockerCompose.Services {
@@ -252,9 +251,6 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 			}
 		}
 	}
-	/* 	for remoteBindingPort, containerPort := range remotePortBindings {
-
-	   	} */
 
 	//7. 保存数据
 	if hasChanged {
@@ -308,7 +304,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	//8. 端口绑定
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_tunnel_waiting) // log
 	for _, item := range workspaceInfo.Extend.Ports {
-		unusedLocalPortStr := strconv.Itoa(item.ContainerPort)
+		unusedLocalPortStr := strconv.Itoa(item.ClientPort)
 
 		// 【注意】这里非常的绕！！！ 远程主机的docker-compose才保存了端口的label信息，所以只能使用远程主机的端口
 		label := item.HostPortDesc
