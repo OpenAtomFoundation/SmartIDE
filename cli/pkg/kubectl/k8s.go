@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:13:54
  * @LastEditors: kenan
- * @LastEditTime: 2022-08-23 21:24:44
+ * @LastEditTime: 2022-08-26 15:18:44
  * @FilePath: /cli/pkg/kubectl/k8s.go
  */
 
@@ -350,7 +350,10 @@ func (k *KubernetesUtil) StartAgent(cmd *cobra.Command, pod coreV1.Pod, runAsUse
 
 	commad := fmt.Sprintf("sudo chmod +x /smartide-agent && cd /;./smartide-agent --serverhost %s --servertoken %s --serverownerguid %s --workspaceId %v", host, token, ownerguid, ws.ID)
 
-	go k.ExecuteCommandInPod(pod, commad, runAsUser)
+	err := k.ExecuteCommandRealtimeInPod(pod, commad, runAsUser)
+	if err != nil {
+		common.SmartIDELog.Debug(err.Error())
+	}
 
 }
 
