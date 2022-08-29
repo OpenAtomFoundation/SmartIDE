@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-29 15:09:21
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-08-29 16:18:31
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -321,8 +321,7 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 		if err != nil {
 			return err
 		}
-		go kubernetes.StartAgent(cmd, *devContainerPod, runAsUserName, workspaceInfo.ServerWorkSpace)
-
+		kubernetes.StartAgent(cmd, *devContainerPod, runAsUserName, workspaceInfo.ServerWorkSpace)
 	}
 
 	// time.Sleep(time.Second * 15)
