@@ -3,6 +3,7 @@ package k8s
 import (
 	"fmt"
 	"io/ioutil"
+	"strconv"
 	"strings"
 
 	"github.com/leansoftX/smartide-cli/cmd/server"
@@ -35,6 +36,9 @@ var ApplySSHCmd = &cobra.Command{
 	Aliases: []string{"ssh"},
 	Example: `  smartide k8s applyssh --resourceid <resourceid> --ports <configmap ports string> --mode <mode> --serverhost <serverhost>  --servertoken <servertoken>`,
 	Run: func(cmd *cobra.Command, args []string) {
+		common.SmartIDELog.Info(i18nInstance.ApplySSH.Info_start)
+
+		// 获取参数
 		fflags := cmd.Flags()
 		checkFlagErr := checkFlag(fflags, k8s_applyssh_flag_resourceid)
 		if checkFlagErr != nil {
@@ -57,38 +61,28 @@ var ApplySSHCmd = &cobra.Command{
 			common.SmartIDELog.Error(checkFlagErr)
 		}
 
-		common.SmartIDELog.Info(i18nInstance.ApplySSH.Info_start)
-
 		resourceid, _ := fflags.GetString(k8s_applyssh_flag_resourceid)
 		ports, _ := fflags.GetString(k8s_applyssh_flag_ports)
 		serverHost, _ := fflags.GetString(k8s_applyssh_flag_serverhost)
 		serverToken, _ := fflags.GetString(k8s_applyssh_flag_servertoken)
 		configMapNamespace := "ingress-nginx"
 
-		//1. Get K8s Resource
-		auth := model.Auth{}
-		auth.LoginUrl = serverHost
-		auth.Token = serverToken
-		resourceInfo, err := server.GetResourceByID(auth, resourceid)
-		common.CheckError(err)
-		if resourceInfo == nil {
-			common.SmartIDELog.Error(fmt.Sprintf("根据ID（%v）未找到资源数据！", resourceid))
+		currentAuth := model.Auth{
+			LoginUrl: serverHost,
+			Token:    serverToken,
 		}
 
-		//2. Save temp k8s config file
-		tempK8sConfigFileRelativePath := common.PathJoin(config.SmartIdeHome, "tempconfig")
-		err = ioutil.WriteFile(tempK8sConfigFileRelativePath, []byte(resourceInfo.KubeConfig), 0777)
-		if err != nil {
-			common.SmartIDELog.Error(err)
+		type ApplySshInfo struct {
+			PublicPort   int
+			ServiceFull  string
+			ServiceName  string
+			Namespace    string
+			InternalPort int
+			WorkspaceNo  string
+			Action       string // remove, add, empty
 		}
-		k8sUtil, err := kubectl.NewK8sUtil(tempK8sConfigFileRelativePath,
-			resourceInfo.KubeContext,
-			configMapNamespace)
-		common.CheckError(err)
-		err = k8sUtil.Check()
-		common.CheckError(err)
 
-		//3. Construct Config Map
+		//3. parse ports && Construct Config Map
 		configMap := &kubectl.ConfigMap{
 			APIVersion: "v1",
 			Kind:       "ConfigMap",
@@ -101,113 +95,143 @@ var ApplySSHCmd = &cobra.Command{
 			},
 			Data: map[string]string{},
 		}
-		addWorkspaces := []string{}
-		removeWorkspaces := []string{}
+		// <外部端口>:<命名空间>/<服务名称>:<内部端口>:<工作区ID>-[<新增或删除的标识>]
+		// e.g. 22001:ccdpko/ruoyi-cloud-dev:6822:KWS005-;22002:l494kb/boathouse-calculator-service:6822:KWS006-;22003:g9o07d/ruoyi-cloud-dev:6822:KWS007-add
+		applySshArray := []ApplySshInfo{}
 		portList := strings.Split(ports, ";")
 		for _, port := range portList {
 			portInfo := strings.Split(port, ":")
-			externalport := portInfo[0]
-			service := portInfo[1]
-			internalport := portInfo[2]
-			workspace := portInfo[3]
-			if !strings.Contains(workspace, "remove") {
-				configMap.Data[externalport] = fmt.Sprintf("%v:%v", service, internalport)
+
+			applySshInfo := ApplySshInfo{}
+			applySshInfo.PublicPort, _ = strconv.Atoi(portInfo[0])
+			applySshInfo.ServiceFull = portInfo[1]
+			applySshInfo.Namespace = strings.Split(applySshInfo.ServiceFull, "/")[0]
+			applySshInfo.ServiceName = strings.Split(applySshInfo.ServiceFull, "/")[1]
+			applySshInfo.InternalPort, _ = strconv.Atoi(portInfo[2])
+			workspaceStr := strings.Split(portInfo[3], "-")
+			applySshInfo.WorkspaceNo = workspaceStr[0]
+			applySshInfo.Action = workspaceStr[1]
+
+			// 添加到yaml中
+			if applySshInfo.Action != "remove" {
+				configMap.Data[fmt.Sprint(applySshInfo.PublicPort)] = fmt.Sprintf("%v:%v", applySshInfo.ServiceFull, applySshInfo.InternalPort)
 			}
-			if strings.Contains(workspace, "add") {
-				addWorkspaces = append(addWorkspaces, fmt.Sprintf("%v:%v:%v", strings.Split(workspace, "-")[0], service, externalport))
-			}
-			if strings.Contains(workspace, "remove") {
-				removeWorkspaces = append(removeWorkspaces, fmt.Sprintf("%v:%v:%v", strings.Split(workspace, "-")[0], service, externalport))
-			}
+
+			applySshArray = append(applySshArray, applySshInfo)
 		}
+
+		// 反馈错误
+		feedbackError := func(feedbackError error) {
+			for _, applySsh := range applySshArray {
+				if applySsh.Action == "" { // 非新增和删除ssh端口不需要反馈错误
+					continue
+				}
+
+				workspaceInfo, _ := workspace.GetWorkspaceFromServer(currentAuth, applySsh.WorkspaceNo, workspace.CliRunningEvnEnum_Server)
+				if feedbackError != nil {
+					server.Feedback_Finish(server.FeedbackCommandEnum_ApplySSH, cmd, false, nil, *workspaceInfo, feedbackError.Error(), "")
+					common.CheckError(feedbackError)
+				}
+			}
+
+		}
+
+		//1. Get K8s Resource
+		auth := model.Auth{}
+		auth.LoginUrl = serverHost
+		auth.Token = serverToken
+		resourceInfo, err := server.GetResourceByID(auth, resourceid)
+		common.CheckError(err)
+		if resourceInfo == nil {
+			common.SmartIDELog.Error(fmt.Sprintf("根据ID（%v）未找到资源数据！", resourceid))
+			return
+		}
+
+		//2. Save temp k8s config file
+		tempK8sConfigFileAbsolutePath := common.PathJoin(config.SmartIdeHome, "tempconfig")
+		err = ioutil.WriteFile(tempK8sConfigFileAbsolutePath, []byte(resourceInfo.KubeConfig), 0777)
+		feedbackError(err)
+		k8sUtil, err := kubectl.NewK8sUtilWithFile(tempK8sConfigFileAbsolutePath,
+			resourceInfo.KubeContext,
+			configMapNamespace)
+		feedbackError(err)
 
 		//4. Save Config Map to Temp Yaml
 		configMapYamlData, err := yaml.Marshal(&configMap)
-		if err != nil {
-			common.SmartIDELog.Error(err)
-		}
+		feedbackError(err)
 		tempK8sConfigMapYamlFilePath := common.PathJoin(config.SmartIdeHome, "k8s_configmap_temp.yaml")
 		err = ioutil.WriteFile(tempK8sConfigMapYamlFilePath, []byte(configMapYamlData), 0777)
-		if err != nil {
-			common.SmartIDELog.Error(err)
-		}
+		feedbackError(err)
 
 		//5. Kubectl Apply
 		common.SmartIDELog.Info(i18nInstance.ApplySSH.Info_log_enable_ssh_start)
 		err = k8sUtil.ExecKubectlCommandRealtime(fmt.Sprintf("apply -f %v", tempK8sConfigMapYamlFilePath), "", false)
-		if err != nil {
-			common.SmartIDELog.Error(err)
-		}
+		feedbackError(err)
 		common.SmartIDELog.Info(i18nInstance.ApplySSH.Info_log_enable_ssh_success)
 
 		//6. Callback and log
 		wsURL := fmt.Sprint(strings.ReplaceAll(strings.ReplaceAll(serverHost, "https", "ws"), "http", "ws"), "/ws/smartide/ws")
 		common.WebsocketStart(wsURL)
-		for _, addWorkspaceInfo := range addWorkspaces {
-			if strings.Contains(addWorkspaceInfo, "WS") {
-				addWorkspaceId := strings.Split(addWorkspaceInfo, ":")[0]
-				addWorkspaceService := strings.Split(strings.Split(addWorkspaceInfo, ":")[1], "/")[1]
-				addWorkspaceExternalPort := strings.Split(addWorkspaceInfo, ":")[2]
-				if pid, err := workspace.GetParentId(addWorkspaceId, 1, serverToken, serverHost); err == nil && pid > 0 {
-					common.SmartIDELog.Ws_id = addWorkspaceId
+		for _, applySsh := range applySshArray {
+			if applySsh.Action != "" {
+				sshAction := workspace.ActionEnum_SSH_Disable
+				if applySsh.Action == "add" {
+					sshAction = workspace.ActionEnum_SSH_Enable
+				}
+				workspaceInfo, err := workspace.GetWorkspaceFromServer(currentAuth, applySsh.WorkspaceNo, workspace.CliRunningEvnEnum_Server)
+				common.CheckError(err)
+
+				// ws
+				if pid, err := workspace.GetParentId(workspaceInfo.ServerWorkSpace.NO, sshAction, currentAuth.Token.(string), currentAuth.LoginUrl); err == nil && pid > 0 {
+					common.SmartIDELog.Ws_id = workspaceInfo.ServerWorkSpace.NO
 					common.SmartIDELog.ParentId = pid
-					common.SmartIDELog.Info("-----------------------")
-					common.SmartIDELog.Info(fmt.Sprintf(i18nInstance.ApplySSH.Info_log_service_enable_ssh_success, addWorkspaceId, addWorkspaceService, addWorkspaceExternalPort))
-					common.SmartIDELog.Info("-----------------------")
-					// feedback
-					feedbackMap := make(map[string]interface{})
-					feedbackMap["port"] = ""
-					feedbackMap["url"] = ""
-					currentAuth := model.Auth{
-						LoginUrl: serverHost,
-						Token:    serverToken,
+				} else {
+					title := "??"
+					if applySsh.Action == "add" {
+						title = "创建SSH通道"
+					} else if applySsh.Action == "remove" {
+						title = "删除SSH通道"
 					}
-					workspaceInfo, err := workspace.GetWorkspaceFromServer(currentAuth, addWorkspaceId, workspace.CliRunningEvnEnum_Server)
-					common.CheckError(err)
-					for index, portDetail := range workspaceInfo.Extend.Ports {
-						if portDetail.HostPortDesc == "tools-ssh" && portDetail.ServiceName == addWorkspaceService {
-							workspaceInfo.Extend.Ports[index].SSHPort = addWorkspaceExternalPort
-							workspaceInfo.Extend.Ports[index].IsConnected = true
+					if err := workspace.CreateWsLog(workspaceInfo.ServerWorkSpace.NO, currentAuth.Token.(string), currentAuth.LoginUrl, title, ""); err == nil {
+						if pid, err := workspace.GetParentId(workspaceInfo.ServerWorkSpace.NO, sshAction, currentAuth.Token.(string), currentAuth.LoginUrl); err == nil && pid > 0 {
+							common.SmartIDELog.Ws_id = workspaceInfo.ServerWorkSpace.NO
+							common.SmartIDELog.ParentId = pid
 						}
 					}
-					err = server.Feedback_Finish(server.FeedbackCommandEnum_ApplySSH, cmd, true, nil, *workspaceInfo, "", "") //(currentAuth, *workspaceInfo)
-					common.CheckError(err)
 				}
-			}
-		}
-		for _, removeWorkspaceInfo := range removeWorkspaces {
-			if strings.Contains(removeWorkspaceInfo, "WS") {
-				removeWorkspaceId := strings.Split(removeWorkspaceInfo, ":")[0]
-				removeWorkspaceService := strings.Split(strings.Split(removeWorkspaceInfo, ":")[1], "/")[1]
-				removeWorkspaceExternalPort := strings.Split(removeWorkspaceInfo, ":")[2]
-				if pid, err := workspace.GetParentId(removeWorkspaceId, 1, serverToken, serverHost); err == nil && pid > 0 {
-					common.SmartIDELog.Ws_id = removeWorkspaceId
-					common.SmartIDELog.ParentId = pid
-					common.SmartIDELog.Info("-----------------------")
-					common.SmartIDELog.Info(fmt.Sprintf(i18nInstance.ApplySSH.Info_log_service_disable_ssh_success, removeWorkspaceId, removeWorkspaceService, removeWorkspaceExternalPort))
-					common.SmartIDELog.Info("-----------------------")
-					// feedback
-					feedbackMap := make(map[string]interface{})
-					feedbackMap["port"] = ""
-					feedbackMap["url"] = ""
-					currentAuth := model.Auth{
-						LoginUrl: serverHost,
-						Token:    serverToken,
-					}
-					workspaceInfo, err := workspace.GetWorkspaceFromServer(currentAuth, removeWorkspaceId, workspace.CliRunningEvnEnum_Server)
-					common.CheckError(err)
-					for index, portDetail := range workspaceInfo.Extend.Ports {
-						if portDetail.HostPortDesc == "tools-ssh" && portDetail.ServiceName == removeWorkspaceService {
+
+				// log
+				common.SmartIDELog.Info("-----------------------")
+				if applySsh.Action == "add" {
+					common.SmartIDELog.Info(fmt.Sprintf(i18nInstance.ApplySSH.Info_log_service_enable_ssh_success,
+						applySsh.WorkspaceNo, applySsh.ServiceFull, applySsh.PublicPort))
+				} else if applySsh.Action == "remove" {
+					common.SmartIDELog.Info(fmt.Sprintf(i18nInstance.ApplySSH.Info_log_service_disable_ssh_success,
+						applySsh.WorkspaceNo, applySsh.ServiceFull, applySsh.PublicPort))
+				}
+				common.SmartIDELog.Info("-----------------------")
+
+				// 反馈给
+				for index, portDetail := range workspaceInfo.Extend.Ports {
+					if portDetail.HostPortDesc == "tools-ssh" && portDetail.ServiceName == applySsh.ServiceName {
+						if applySsh.Action == "add" {
+							workspaceInfo.Extend.Ports[index].SSHPort = fmt.Sprint(applySsh.PublicPort)
+							workspaceInfo.Extend.Ports[index].IsConnected = true
+						} else if applySsh.Action == "remove" {
 							workspaceInfo.Extend.Ports[index].SSHPort = ""
 							workspaceInfo.Extend.Ports[index].IsConnected = false
 						}
-					}
 
-					err = server.Feedback_Finish(server.FeedbackCommandEnum_ApplySSH, cmd, true, nil, *workspaceInfo, "", "") //(currentAuth, *workspaceInfo)
-					common.CheckError(err)
+						err = server.Feedback_Finish(server.FeedbackCommandEnum_ApplySSH, cmd, true, nil, *workspaceInfo, "", "")
+						common.CheckError(err)
+					} else {
+						common.SmartIDELog.Importance("没有找到对应的port信息")
+					}
 				}
+
 			}
 		}
+
 	},
 }
 

@@ -166,6 +166,28 @@ SmartIDE Server Deployment Successfully！
 请确保你的日志末尾出现  SmartIDE Server Deployment Successfully！的字样即表示安装已经顺利完成。
 
 如果中途出现报错的情况，可以提交 Issue 与我们联系。
+### 数据持久化与备份恢复
+SmartIDE Server的数据均保存在MySQL数据库中。
+
+- 备份：单机版部署中，MySQL数据已将久化到$HOME/smartide/mysql文件夹中，其中gva文件夹即为SmartIDE Server数据库。此时，只需在安装时的目录中，执行如下脚本停止Server服务后，拷贝gva文件夹即可完成备份，完成后重新启动服务。
+```
+# 停止SmartIDE Server服务
+docker-compose -f docker-compose.yaml --env-file docker-compose_cn.env down
+# 执行备份
+cp -r $HOME/smartide/mysql/gva $HOME/smartide/gva-backup
+# 重新SmartIDE Server服务
+docker-compose -f docker-compose.yaml --env-file docker-compose_cn.env up -d
+```
+
+- 恢复：若在原主机中进行还原恢复，那么只需要将备份的gva文件夹，替换到$HOME/smartide/mysql/gva即可。若在其他机器中恢复，那么停止Server服务后，替换到$HOME/smartide/mysql/gva即可，完成后重新启动服务。
+```
+# 停止SmartIDE Server服务
+docker-compose -f docker-compose.yaml --env-file docker-compose_cn.env down
+# 执行备份
+cp -r $HOME/smartide/gva-backup $HOME/smartide/mysql/gva
+# 重新SmartIDE Server服务
+docker-compose -f docker-compose.yaml --env-file docker-compose_cn.env up -d
+```
 
 ### 访问环境
 完成以上安装步骤后，就可以通过以下访问地址，访问部署好的Server了：

@@ -3,7 +3,7 @@
  * @Description: config
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-27 09:28:36
+ * @LastEditTime: 2022-08-25 10:19:51
  */
 package config
 
@@ -76,7 +76,8 @@ func (yamlFileConfig *SmartIdeConfig) LoadDockerComposeFromTempFile(sshRemote co
 	}
 
 	// 获取 webide 、ssh 绑定端口
-	if yamlFileConfig.Orchestrator.Type == OrchestratorTypeEnum_Compose { // 只有在compose模式下，在会去compose文件中查找端口是否申明
+	if yamlFileConfig.Orchestrator.Type == OrchestratorTypeEnum_Compose ||
+		yamlFileConfig.Orchestrator.Type == OrchestratorTypeEnum_Allinone { // 只有在compose模式下，在会去compose文件中查找端口是否申明
 		for serviceName, service := range composeYaml.Services {
 			if serviceName != yamlFileConfig.Workspace.DevContainer.ServiceName {
 				continue
@@ -88,7 +89,7 @@ func (yamlFileConfig *SmartIdeConfig) LoadDockerComposeFromTempFile(sshRemote co
 					if index > 0 {
 						ideBindingPort, _ = strconv.Atoi(port[:index])
 						if ideBindingPort > 0 {
-							common.SmartIDELog.InfoF(i18nInstance.Common.Info_ssh_webide_host_port, ideBindingPort)
+							common.SmartIDELog.DebugF(i18nInstance.Common.Info_ssh_webide_host_port, ideBindingPort)
 							continue
 						}
 					}
@@ -97,7 +98,7 @@ func (yamlFileConfig *SmartIdeConfig) LoadDockerComposeFromTempFile(sshRemote co
 					if index > 0 {
 						sshBindingPort, _ = strconv.Atoi(port[:index])
 						if sshBindingPort > 0 {
-							common.SmartIDELog.InfoF(i18nInstance.Common.Info_ssh_host_port, sshBindingPort)
+							common.SmartIDELog.DebugF(i18nInstance.Common.Info_ssh_host_port, sshBindingPort)
 							continue
 						}
 					}
@@ -112,7 +113,7 @@ func (yamlFileConfig *SmartIdeConfig) LoadDockerComposeFromTempFile(sshRemote co
 
 // 把自定义的配置转换为 docker compose
 func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SSHRemote, projectName string,
-	remoteConfigDir string, isCheckUnuesedPorts bool, userName string) (composeYaml compose.DockerComposeYml, ideBindingPort int, sshBindingPort int) {
+	remoteWorkingDir string, isCheckUnuesedPorts bool, userName string) (composeYaml compose.DockerComposeYml, ideBindingPort int, sshBindingPort int) {
 
 	ideBindingPort = model.CONST_Local_Default_BindingPort_WebIDE // webide
 	sshBindingPort = model.CONST_Local_Default_BindingPort_SSH    // ssh
@@ -126,7 +127,8 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 	}
 
 	//1.2. 文件格式检查
-	if yamlFileConfig.Orchestrator.Type == OrchestratorTypeEnum_Compose {
+	if yamlFileConfig.Orchestrator.Type == OrchestratorTypeEnum_Compose ||
+		yamlFileConfig.Orchestrator.Type == OrchestratorTypeEnum_Allinone {
 		if yamlFileConfig.IsLinkDockerComposeFile() { // 链接了 docker-compose 文件
 			if !isRemoteMode {
 				// 检查docker-compose文件是否存在
@@ -149,12 +151,12 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 
 	//2. 转换为docker-compose - 基本转换
 	//2.1.
-	dockerCompose, err := yamlFileConfig.getDockerCompose(sshRemote, remoteConfigDir)
+	dockerCompose, err := yamlFileConfig.getDockerCompose(sshRemote, remoteWorkingDir)
 	common.CheckError(err)
 
 	//2.2. 检查devContainer中定义的service时候存在于services中
 	if _, ok := dockerCompose.Services[yamlFileConfig.Workspace.DevContainer.ServiceName]; !ok { // 是否定义了devContainer节点对应的service
-		err := fmt.Sprintf(i18nInstance.Config.Err_devcontainer_not_contains, yamlFileConfig.Workspace.DevContainer.ServiceName) //TODO：国际化
+		err := fmt.Sprintf(i18nInstance.Config.Err_devcontainer_not_contains, yamlFileConfig.Workspace.DevContainer.ServiceName)
 		common.SmartIDELog.Error(err)
 	}
 
@@ -178,7 +180,7 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 				if bindingPortOld != bindingPortNew {
 					service.Ports[index] = fmt.Sprintf("%v:%v", bindingPortNew, containerPort)
 
-					common.SmartIDELog.InfoF("localhost:%v (%v 被占用) -> container:%v", bindingPortNew, bindingPortOld, containerPort)
+					common.SmartIDELog.DebugF("localhost:%v (%v 被占用) -> container:%v", bindingPortNew, bindingPortOld, containerPort)
 					hasChange = true
 
 					// ide、ssh端口更新
@@ -191,7 +193,7 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 						}
 					}
 				} else {
-					common.SmartIDELog.InfoF("localhost:%v -> container:%v", bindingPortOld, containerPort)
+					common.SmartIDELog.DebugF("localhost:%v -> container:%v", bindingPortOld, containerPort)
 				}
 				yamlFileConfig.setPort4Label(containerPort, bindingPortOld, bindingPortNew, serviceName)
 			}
@@ -260,6 +262,7 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 		}
 
 		if !hasContain {
+			common.SmartIDELog.Importance(fmt.Sprintf("在service定义中找不到端口: %v (%v) ", port, label))
 			portMap := NewPortMap(PortMapInfo_OnlyLabel, port, -1, label, -1, "")
 			yamlFileConfig.Workspace.DevContainer.bindingPorts = append(yamlFileConfig.Workspace.DevContainer.bindingPorts, *portMap)
 		}
@@ -396,7 +399,7 @@ func checkAndGetAvailableRemotePort(sshRemote common.SSHRemote, bindingPortOld i
 }
 
 // 获取docker compose
-func (yamlFileConfig SmartIdeConfig) getDockerCompose(sshRemote common.SSHRemote, remoteConfigDir string) (
+func (yamlFileConfig SmartIdeConfig) getDockerCompose(sshRemote common.SSHRemote, remoteWorkingDir string) (
 	dockerCompose compose.DockerComposeYml, err error) {
 	isRemoteMode := false // 是否为 vm 命令模式，比如smartide vm start
 	if (sshRemote != common.SSHRemote{}) {
@@ -410,7 +413,7 @@ func (yamlFileConfig SmartIdeConfig) getDockerCompose(sshRemote common.SSHRemote
 
 		if isRemoteMode {
 			// 获取docker-compose文件在远程主机上的路径
-			remoteDockerComposeFilePath := common.FilePathJoin(common.OS_Linux, remoteConfigDir, yamlFileConfig.Workspace.DockerComposeFile)
+			remoteDockerComposeFilePath := common.FilePathJoin(common.OS_Linux, remoteWorkingDir, ".ide", yamlFileConfig.Workspace.DockerComposeFile)
 			common.SmartIDELog.InfoF(i18nInstance.Config.Info_read_docker_compose, remoteDockerComposeFilePath)
 
 			// 在远程主机上加载docker-compose文件

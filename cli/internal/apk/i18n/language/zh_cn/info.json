@@ -6,7 +6,10 @@
         "info_choose_template":"请选择模板类型，输入序号：",
         "info_choose_idetype":"请选择IDE类型，输入序号：",
         "info_available_templates":"可供选择的模板如下：",
-        "info_available_ides":"可供选择的IDE如下："
+        "info_available_ides":"可供选择的IDE如下：",
+        "info_check_cmdtemplate":"正在检测指定的模板......",
+        "info_noexist_cmdtemplate":"未检测到指定模板，你可以根据提示进行选择!",
+        "info_init_complete":"模板初始化已完成!"
     },
     "config": {
         "info_help_short": "设置SmartIDE配置信息",

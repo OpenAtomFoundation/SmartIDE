@@ -1,7 +1,7 @@
-<!--
+<!-- 
  * @Date: 2022-07-15 09:23:34
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-02 17:24:09
+ * @LastEditTime: 2022-08-09 14:56:58
  * @FilePath: /smartide/README.md
 -->
 ![](/docs/content/zh/docs/overview/images/smartide-logo-small.png) 

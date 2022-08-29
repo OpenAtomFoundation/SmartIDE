@@ -51,22 +51,22 @@ func (workspaceInfo WorkspaceInfo) UpdateSSHConfig() {
 		return
 	}
 
-	logger.DebugF("find port map info....\n")
+	logger.DebugF("find port map info....")
 	portMapInfo, err := workspaceInfo.Extend.Ports.Find("tools-ssh")
 	common.CheckError(err)
 	sshPort := portMapInfo.GetSSHPortAtLocalHost()
-	logger.InfoF("workspaceID: %v, ssh port : %v\n", workspaceInfo.ID, sshPort)
+	logger.DebugF("workspaceID: %v, ssh port : %v", workspaceInfo.ID, sshPort)
 
 	// check config file
 	logger.DebugF("find ssh file path....")
 
 	configPath, err := getSSHConfigPath()
 	common.CheckError(err)
-	logger.DebugF("ssh file path: %v\n", configPath)
+	logger.DebugF("ssh file path: %v", configPath)
 
 	IdentityFile := getIdentityFile()
 
-	logger.DebugF("private key file path: %v\n", IdentityFile)
+	logger.DebugF("private key file path: %v", IdentityFile)
 
 	// get file/ create file
 	logger.Debug("ensure config file exist...")
@@ -84,9 +84,9 @@ func (workspaceInfo WorkspaceInfo) UpdateSSHConfig() {
 	record := configMap.ConvertToRecord()
 	logger.Debug("config record:", record.ToString())
 
-	logger.DebugF("check host %v is exist in config file...\n", record.Host)
+	logger.DebugF("check host %v is exist in config file...", record.Host)
 	isHostExistInConfig := isHostExistInConfig(cfg, record.Host)
-	logger.DebugF("check result:%v\n", isHostExistInConfig)
+	logger.DebugF("check result:%v", isHostExistInConfig)
 
 	if !isHostExistInConfig {
 		// append to ssh config
@@ -110,7 +110,7 @@ func (workspaceInfo WorkspaceInfo) RemoveSSHConfig() {
 
 	configPath, err := getSSHConfigPath()
 	common.CheckError(err)
-	logger.DebugF("ssh file path: %v\n", configPath)
+	logger.DebugF("ssh file path: %v", configPath)
 
 	// get file/ create file
 	logger.Debug("ensure config file exist...")
@@ -119,13 +119,15 @@ func (workspaceInfo WorkspaceInfo) RemoveSSHConfig() {
 
 	// check host is exist?
 	logger.Debug("decoding file content to ssh config...")
-	file, _ := os.Open(configPath)
-	cfg, _ := ssh_config.Decode(file)
+	bytes, _ := ioutil.ReadFile(configPath)
+	//whiteLine := regexp.MustCompile(`\n+`)
+	content := strings.TrimSpace(string(bytes))
+	cfg, _ := ssh_config.DecodeBytes([]byte(content))
 	hostName := fmt.Sprintf("SmartIDE-%v", workspaceInfo.ID)
 	host := searchHostFromConfig(cfg, hostName)
 
 	isHostExistInConfig := isHostExistInConfig(cfg, hostName)
-	logger.DebugF("check result:%v\n", isHostExistInConfig)
+	logger.DebugF("check result:%v", isHostExistInConfig)
 	if isHostExistInConfig {
 		line := getLineNumber(configPath, hostName)
 		if line > 0 {
@@ -180,15 +182,15 @@ func (configMap SSHConfigMap) ConvertToRecord() SSHConfigRecord {
 }
 
 func updateRecord(record SSHConfigRecord, cfg *ssh_config.Config, configMap map[string]string, configPath string) {
-	logger.DebugF("search host %v from config file...\n", record.Host)
+	logger.DebugF("search host %v from config file...", record.Host)
 	host := searchHostFromConfig(cfg, record.Host)
 	if host == nil {
-		logger.WarningF("can not find host: %v in ssh config file\n", record.Host)
+		logger.WarningF("can not find host: %v in ssh config file", record.Host)
 		return
 	}
 
 	// patch nodes
-	logger.DebugF("patch host config %v ...\n", record.Host)
+	logger.DebugF("patch host config %v ...", record.Host)
 	patchNodeKeyValue(host, configMap)
 
 	cfgStr := cfg.String()
@@ -198,15 +200,15 @@ func updateRecord(record SSHConfigRecord, cfg *ssh_config.Config, configMap map[
 	_, err = writer.WriteString(cfgStr)
 	_ = writer.Close()
 	common.CheckError(err)
-	logger.Info("ssh config update success, your can view it in vscode remote target list")
+	logger.Debug("ssh config update success, your can view it in vscode remote target list")
 }
 
 func appendRecord(record SSHConfigRecord, configPath string) {
 
-	logger.InfoF("append host: %v to .ssh/config...\n", record.Host)
+	logger.InfoF("append host: %v to .ssh/config...", record.Host)
 	file, err := os.OpenFile(configPath, os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
-		logger.WarningF("error when write setting to ssh config file, %v\n", err.Error())
+		logger.WarningF("error when write setting to ssh config file, %v", err.Error())
 		return
 	}
 	str := record.ToString()
@@ -250,13 +252,13 @@ func ensureSSHConfigFileExist(configPath string) error {
 	_, err := os.Stat(configPath)
 
 	if err != nil {
-		logger.WarningF("config file: %v not exist, will init a new config file\n", configPath)
+		logger.WarningF("config file: %v not exist, will init a new config file", configPath)
 		//_, err := os.Create(configPath)
 		err := common.FS.CreateOrOverWrite(configPath, "")
 		if err != nil {
 			common.CheckError(err)
 		}
-		logger.InfoF("config file: %v created\n", configPath)
+		logger.InfoF("config file: %v created", configPath)
 	}
 	return nil
 }
@@ -302,7 +304,7 @@ func patchNodeKeyValue(host *ssh_config.Host, recordMap SSHConfigMap) {
 				Value:        v,
 				LeadingSpace: 2,
 			}
-			logger.DebugF("append key %v to host %v...\n", k, recordMap["Host"])
+			logger.DebugF("append key %v to host %v...", k, recordMap["Host"])
 			host.Nodes = append(host.Nodes, newNode)
 		} else {
 
@@ -313,7 +315,7 @@ func patchNodeKeyValue(host *ssh_config.Host, recordMap SSHConfigMap) {
 			} else {
 				first.Value = v
 			}
-			logger.DebugF("update key %v to new value %v...\n", k, first.Value)
+			logger.DebugF("update key %v to new value %v...", k, first.Value)
 		}
 
 	}

@@ -1,8 +1,8 @@
 /*
  * @Author: kenan
  * @Date: 2021-10-13 15:31:52
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-26 15:33:30
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-08-19 10:52:22
  * @Description: file content
  */
 
@@ -48,7 +48,7 @@ func ConfigGitByDockerExec() {
 		var key = str[0:index]
 		var value = str[index+1:]
 
-		yamlFileCongfig := NewConfig("", "", "")
+		yamlFileCongfig := SmartIdeConfig{}
 
 		var servicename = yamlFileCongfig.Workspace.DevContainer.ServiceName
 		cmdStr := fmt.Sprint("docker exec ", servicename, " git config --global ", key, " ", value)
@@ -80,7 +80,10 @@ func SSHVolumesConfig(isVmCommand bool, service *compose.Service, sshRemote comm
 	} else {
 		// volumes for linux vm
 		if isVmCommand {
-			configPaths = []string{fmt.Sprintf("$HOME/.ssh/id_rsa_%s_%s:/home/smartide/.ssh/id_rsa", userName, common.SmartIDELog.Ws_id), fmt.Sprintf("$HOME/.ssh/id_rsa.pub_%s_%s:/home/smartide/.ssh/id_rsa.pub", userName, common.SmartIDELog.Ws_id), fmt.Sprintf("$HOME/.ssh/authorized_keys_%s_%s:/home/smartide/.ssh/authorized_keys", userName, common.SmartIDELog.Ws_id)}
+			if common.SmartIDELog.Ws_id == "" {
+				configPaths = []string{fmt.Sprintf("$HOME/.ssh/id_rsa_%s_%s:/home/smartide/.ssh/id_rsa", userName, common.SmartIDELog.Ws_id), fmt.Sprintf("$HOME/.ssh/id_rsa.pub_%s_%s:/home/smartide/.ssh/id_rsa.pub", userName, common.SmartIDELog.Ws_id), fmt.Sprintf("$HOME/.ssh/authorized_keys_%s_%s:/home/smartide/.ssh/authorized_keys", userName, common.SmartIDELog.Ws_id)}
+			}
+
 		} else {
 			// volumes for local linxu/mac
 			if homeDir, err := os.UserHomeDir(); err == nil {

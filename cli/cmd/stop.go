@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-01 17:01:40
+ * @LastEditTime: 2022-08-17 15:33:22
  */
 package cmd
 
@@ -37,7 +37,7 @@ var stopCmd = &cobra.Command{
 				wsURL := fmt.Sprint(strings.ReplaceAll(strings.ReplaceAll(serverModeInfo.ServerHost, "https", "ws"), "http", "ws"), "/ws/smartide/ws")
 				common.WebsocketStart(wsURL)
 
-				if pid, err := workspace.GetParentId(workspaceIdStr, 2, serverModeInfo.ServerToken, serverModeInfo.ServerHost); err == nil && pid > 0 {
+				if pid, err := workspace.GetParentId(workspaceIdStr, workspace.ActionEnum_Workspace_Stop, serverModeInfo.ServerToken, serverModeInfo.ServerHost); err == nil && pid > 0 {
 					common.SmartIDELog.Ws_id = workspaceIdStr
 					common.SmartIDELog.ParentId = pid
 				}

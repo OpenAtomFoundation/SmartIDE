@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-03-23 16:13:54
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-02 16:04:48
- * @FilePath: /smartide/cli/pkg/kubectl/k8s.go
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-08-26 17:34:14
+ * @FilePath: /cli/pkg/kubectl/k8s.go
  */
 
 package kubectl
@@ -16,6 +16,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
 
@@ -31,8 +32,20 @@ type KubernetesUtil struct {
 	Commands        string
 }
 
+func NewK8sUtilWithFile(kubeConfigFilePath string, targetContext string, ns string) (*KubernetesUtil, error) {
+	return newK8sUtil(kubeConfigFilePath, "", targetContext, ns)
+}
+
+func NewK8sUtilWithContent(kubeConfigContent string, targetContext string, ns string) (*KubernetesUtil, error) {
+	return newK8sUtil("", kubeConfigContent, targetContext, ns)
+}
+
+func NewK8sUtil(kubeConfigFilePath string, targetContext string, ns string) (*KubernetesUtil, error) {
+	return newK8sUtil(kubeConfigFilePath, "", targetContext, ns)
+}
+
 //
-func NewK8sUtil(kubeconfigFilePath string, targetContext string, ns string) (*KubernetesUtil, error) {
+func newK8sUtil(kubeConfigFilePath string, kubeConfigContent string, targetContext string, ns string) (*KubernetesUtil, error) {
 	if targetContext == "" {
 		return nil, errors.New("target k8s context is nil")
 	}
@@ -58,21 +71,39 @@ func NewK8sUtil(kubeconfigFilePath string, targetContext string, ns string) (*Ku
 	}
 
 	//2. kubeconfig
-	//2.0.
-	/* 	if kubeConfigContent != "" && kubeconfigFilePath != "" {
-		 return nil, errors.New("kube_config_content and kube_config_file_path is not nil")
-	 } */
+	absoluteKubeConfigFilePath := ""
+	//2.0. valid
+	if kubeConfigFilePath != "" && kubeConfigContent != "" {
+		return nil, errors.New("配置文件路径 和 文件内容不能同时指定")
+	}
+	//2.1. 指定kubeconfig
+	homeDir, _ := os.UserHomeDir()
+	if kubeConfigFilePath != "" {
+		if strings.Index(kubeConfigFilePath, "~") == 0 {
+			absoluteKubeConfigFilePath = strings.Replace(kubeConfigFilePath, "~", homeDir, -1)
+		} else {
+			if !filepath.IsAbs(kubeConfigFilePath) { // 非绝对路径的时候，就认为是相对用户目录
+				absoluteKubeConfigFilePath = filepath.Join(homeDir, kubeConfigFilePath)
+			} else {
+				absoluteKubeConfigFilePath = kubeConfigFilePath
+			}
+		}
+		if !common.IsExist(absoluteKubeConfigFilePath) {
+			return nil, fmt.Errorf("%v 不存在", absoluteKubeConfigFilePath)
+		}
+		customFlags += fmt.Sprintf("--kubeconfig %v ", absoluteKubeConfigFilePath)
+	}
 
-	//2.2. 指定kubeconfig
-	if kubeconfigFilePath != "" {
-		homeDir, _ := os.UserHomeDir()
-		if strings.Index(kubeconfigFilePath, "~") == 0 {
-			kubeconfigFilePath = strings.Replace(kubeconfigFilePath, "~", homeDir, -1)
+	//2.2. 更新配置文件的内容
+	if kubeConfigContent != "" {
+		absoluteKubeConfigFilePath = filepath.Join(homeDir, ".kube/config_smartide")
+
+		err = common.FS.CreateOrOverWrite(absoluteKubeConfigFilePath, kubeConfigContent)
+		if err != nil {
+			return nil, err
 		}
-		if !common.IsExist(kubeconfigFilePath) {
-			return nil, fmt.Errorf("%v 不存在", kubeconfigFilePath)
-		}
-		customFlags += fmt.Sprintf("--kubeconfig %v ", kubeconfigFilePath)
+
+		customFlags += fmt.Sprintf("--kubeconfig %v ", absoluteKubeConfigFilePath)
 	}
 
 	//3. 切换到指定的context
@@ -83,6 +114,16 @@ func NewK8sUtil(kubeconfigFilePath string, targetContext string, ns string) (*Ku
 	}
 	if targetContext != strings.TrimSpace(currentContext) { //
 		customFlags += fmt.Sprintf("--context %v ", targetContext)
+	}
+
+	//3.1. check
+	common.SmartIDELog.Info("k8s connection check...")
+	output, err := execKubectlCommandCombined(kubectlFilePath, customFlags+" get nodes -o json", "")
+	if strings.Contains(output, "Unable to connect to the server") {
+		return nil, errors.New(output)
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	//4. namespace 为空时，使用一个随机生成的6位字符作为namespace
@@ -120,7 +161,7 @@ type ExecInPodRequest struct {
 	//Pod apiv1.Pod
 }
 
-// 拷贝本地ssh config到pod
+/* // 拷贝本地ssh config到pod
 func (k *KubernetesUtil) CreateKubeConfig(kubeConfigContent string) error {
 	if kubeConfigContent == "" {
 		return errors.New("kube config content is empty")
@@ -130,10 +171,11 @@ func (k *KubernetesUtil) CreateKubeConfig(kubeConfigContent string) error {
 	err := common.FS.CreateOrOverWrite(kubeConfigPath, kubeConfigContent)
 
 	return err
-}
+} */
 
-// 检查集群是否可以连接
-func (k *KubernetesUtil) Check() error {
+/* // 检查集群是否可以连接
+func check() error {
+	common.SmartIDELog.Info("k8s connection check...")
 	command := "get nodes -o json"
 	output, err := k.ExecKubectlCommandCombined(command, "")
 	if err != nil {
@@ -144,7 +186,7 @@ func (k *KubernetesUtil) Check() error {
 	}
 	return err
 }
-
+*/
 // 拷贝本地ssh config到pod
 func (k *KubernetesUtil) CopyLocalSSHConfigToPod(pod coreV1.Pod, runAsUser string) error {
 	home, err := os.UserHomeDir()
@@ -300,20 +342,19 @@ const (
 	Flags_ServerOwnerGuid = "serverownerguid"
 )
 
-func (k *KubernetesUtil) StartAgent(cmd *cobra.Command, pod coreV1.Pod, runAsUser string) error {
+func (k *KubernetesUtil) StartAgent(cmd *cobra.Command, pod coreV1.Pod, runAsUser string, ws *model.ServerWorkspace) {
 	fflags := cmd.Flags()
 	host, _ := fflags.GetString(Flags_ServerHost)
 	token, _ := fflags.GetString(Flags_ServerToken)
 	ownerguid, _ := fflags.GetString(Flags_ServerOwnerGuid)
 
-	commad := fmt.Sprintf("sudo chmod +x /smartide-agent && cd /;./smartide-agent --serverhost %s --servertoken %s --serverownerguid %s", host, token, ownerguid)
+	commad := fmt.Sprintf("sudo chmod +x /smartide-agent && cd /;./smartide-agent --serverhost %s --servertoken %s --serverownerguid %s --workspaceId %v &", host, token, ownerguid, ws.ID)
 
 	err := k.ExecuteCommandRealtimeInPod(pod, commad, runAsUser)
 	if err != nil {
-		return err
+		common.SmartIDELog.Debug(err.Error())
 	}
 
-	return nil
 }
 
 type ProxyWriter struct {
@@ -412,8 +453,9 @@ func execKubectlCommandCombined(kubectlFilePath string, command string, workingD
 }
 
 // 根据selector获取pod
-func (k *KubernetesUtil) GetPod(selector string, namespace string) (*coreV1.Pod, error) {
-	command := fmt.Sprintf("get pod --selector=%v -o=yaml ", selector)
+func (k *KubernetesUtil) GetPodBySelector(selector string) (*coreV1.Pod, error) {
+	command := ""
+	command = fmt.Sprintf("get pod --selector=%v -o=yaml ", selector)
 	yaml, err := k.ExecKubectlCommandCombined(command, "")
 	if err != nil {
 		return nil, err
@@ -435,6 +477,21 @@ func (k *KubernetesUtil) GetPod(selector string, namespace string) (*coreV1.Pod,
 	return pod, nil
 }
 
+func (k *KubernetesUtil) GetPodByName(podName string) (*coreV1.Pod, error) {
+	command := fmt.Sprintf("get pod %v -o=yaml ", podName)
+	yaml, err := k.ExecKubectlCommandCombined(command, "")
+	if err != nil {
+		return nil, err
+	}
+
+	decode := k8sScheme.Codecs.UniversalDeserializer().Decode
+	obj, _, _ := decode([]byte(yaml), nil, nil)
+
+	pod := obj.(*coreV1.Pod)
+
+	return pod, nil
+}
+
 // 在pod中实时执行shell命令
 // example: kubectl -it exec podname -- bash/sh -c
 func (k *KubernetesUtil) ExecuteCommandRealtimeInPod(pod coreV1.Pod, command string, runAsUser string) error {
@@ -450,6 +507,26 @@ func (k *KubernetesUtil) ExecuteCommandRealtimeInPod(pod coreV1.Pod, command str
 	kubeCommand := fmt.Sprintf(` -it exec %v -- /bin/bash -c "%v"`, pod.Name, command)
 
 	err := k.ExecKubectlCommandRealtime(kubeCommand, "", false)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (k *KubernetesUtil) ExecuteCommandInPod(pod coreV1.Pod, command string, runAsUser string) error {
+	//command = "su smartide -c " + command
+	if runAsUser != "" && runAsUser != "root" {
+		if runtime.GOOS == "windows" {
+			command = strings.ReplaceAll(command, "'", "`")
+		} else {
+			command = strings.ReplaceAll(command, "'", "\"\"")
+		}
+		command = fmt.Sprintf(`su %v -c '%v'`, runAsUser, command)
+	}
+	kubeCommand := fmt.Sprintf(` -it exec %v -- /bin/bash -c "%v"`, pod.Name, command)
+
+	err := k.ExecKubectlCommand(kubeCommand, "", false)
 	if err != nil {
 		return err
 	}

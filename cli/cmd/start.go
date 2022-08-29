@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-01 11:12:37
+ * @LastEditTime: 2022-08-18 11:04:20
  */
 package cmd
 
@@ -57,8 +57,11 @@ var startCmd = &cobra.Command{
   smartide start --workspaceid {workspaceid}
   smartide start <workspaceid>
   smartide start <git clone url>
+  smartide start <git clone url> <templatetype> -T {typename}
   smartide start --host <host> --username <username> --password <password> --repourl <git clone url> --branch <branch name> --filepath <config file path>
-  smartide start --host <hostid> <git clone url>
+  smartide start --host <host> --username <username> --password <password> --repourl <git clone url> --branch <branch name> --filepath <config file path> <templatetype> -T {typename}
+  smartide start --host <hostid> <git clone url> 
+  smartide start --host <hostid> <git clone url> <templatetype> -T {typename}
   smartide start --k8s <context> --repoUrl <git clone url> --branch master
   smartide start --k8s <context> <git clone url>`,
 	PreRunE: preRunValid,
@@ -70,14 +73,14 @@ var startCmd = &cobra.Command{
 			token, _ := cmd.Flags().GetString(server.Flags_ServerToken)
 			if token != "" {
 				if workspaceIdStr := getWorkspaceIdFromFlagsOrArgs(cmd, args); strings.Contains(workspaceIdStr, "SWS") {
-					if pid, err := workspace.GetParentId(workspaceIdStr, 1, token, apiHost); err == nil && pid > 0 {
+					if pid, err := workspace.GetParentId(workspaceIdStr, workspace.ActionEnum_Workspace_Start, token, apiHost); err == nil && pid > 0 {
 						common.SmartIDELog.Ws_id = workspaceIdStr
 						common.SmartIDELog.ParentId = pid
 					}
 				} else {
 					if workspaceIdStr, _ := cmd.Flags().GetString(server.Flags_ServerWorkspaceid); workspaceIdStr != "" {
 						if no, _ := workspace.GetWorkspaceNo(workspaceIdStr, token, apiHost); no != "" {
-							if pid, err := workspace.GetParentId(no, 1, token, apiHost); err == nil && pid > 0 {
+							if pid, err := workspace.GetParentId(no, workspace.ActionEnum_Workspace_Start, token, apiHost); err == nil && pid > 0 {
 								common.SmartIDELog.Ws_id = no
 								common.SmartIDELog.ParentId = pid
 							}
@@ -106,10 +109,6 @@ var startCmd = &cobra.Command{
 			}
 		})
 
-		// 检查是否为服务器端模式
-		err = smartideServer.Check(cmd)
-		common.CheckError(err)
-
 		// ai记录
 		var trackEvent string
 		for _, val := range args {
@@ -132,20 +131,23 @@ var startCmd = &cobra.Command{
 
 		//1. 执行命令
 		if workspaceInfo.Mode == workspace.WorkingMode_Local { //1.1. 本地模式
-			start.ExecuteStartCmd(workspaceInfo, isUnforward, func(v string, d common.Docker) {}, executeStartCmdFunc)
+			start.ExecuteStartCmd(workspaceInfo, isUnforward, func(v string, d common.Docker) {}, executeStartCmdFunc, args, cmd)
 
 		} else if workspaceInfo.Mode == workspace.WorkingMode_K8s { //1.2. k8s 模式
-			k8sUtil, err := kubectl.NewK8sUtil(workspaceInfo.K8sInfo.KubeConfigFilePath,
-				workspaceInfo.K8sInfo.Context,
-				workspaceInfo.K8sInfo.Namespace)
-			common.SmartIDELog.Error(err)
 
 			if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server { //1.2.1. cli 在服务端运行
+				k8sUtil, err := kubectl.NewK8sUtilWithContent(workspaceInfo.K8sInfo.KubeConfigContent,
+					workspaceInfo.K8sInfo.Context,
+					workspaceInfo.K8sInfo.Namespace)
+				common.SmartIDELog.Error(err)
+
 				err = start.ExecuteK8sServerStartCmd(cmd, *k8sUtil, workspaceInfo, executeStartCmdFunc)
 				common.SmartIDELog.Error(err)
 
 			} else { //1.2.2. cli 在客户端运行
-				err = k8sUtil.Check()
+				k8sUtil, err := kubectl.NewK8sUtil(workspaceInfo.K8sInfo.KubeConfigFilePath,
+					workspaceInfo.K8sInfo.Context,
+					workspaceInfo.K8sInfo.Namespace)
 				common.SmartIDELog.Error(err)
 
 				if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server { //1.2.2.1. 远程工作区 本地加载
@@ -173,7 +175,7 @@ var startCmd = &cobra.Command{
 				if workspaceInfo.GitCloneRepoUrl == "" {
 					disabelGitClone = true
 				}
-				start.ExecuteVmStartCmd(workspaceInfo, isUnforward, executeStartCmdFunc, cmd, disabelGitClone)
+				start.ExecuteVmStartCmd(workspaceInfo, isUnforward, executeStartCmdFunc, cmd, args, disabelGitClone)
 
 			} else { //1.3.2. cli 在客户端运行
 
@@ -193,7 +195,7 @@ var startCmd = &cobra.Command{
 					if workspaceInfo.GitCloneRepoUrl == "" {
 						disabelGitClone = true
 					}
-					start.ExecuteVmStartCmd(workspaceInfo, isUnforward, executeStartCmdFunc, cmd, disabelGitClone)
+					start.ExecuteVmStartCmd(workspaceInfo, isUnforward, executeStartCmdFunc, cmd, args, disabelGitClone)
 				}
 
 			}
@@ -731,6 +733,7 @@ func init() {
 	// startCmd.Flags().StringP("namespace", "n", "", i18nInstance.Start.Info_help_flag_k8s_namespace)
 	startCmd.Flags().StringP("serverownerguid", "g", "", i18nInstance.Start.Info_help_flag_ownerguid)
 	startCmd.Flags().StringP("addon", "", "", "addon webterminal")
+	startCmd.Flags().StringP("type", "T", "", i18nInstance.New.Info_help_flag_type)
 }
 
 // get repo name

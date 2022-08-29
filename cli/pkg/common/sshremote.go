@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-02 21:50:36
+ * @LastEditTime: 2022-08-29 14:58:42
  */
 package common
 
@@ -12,11 +12,13 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"os/exec"
 	"path"
 
 	//"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"io/ioutil"
 	"net"
 	"os"
@@ -625,6 +627,20 @@ func (instance *SSHRemote) ExecSSHkeyPolicy(no string, cmd *cobra.Command) {
 	}
 }
 
+//ExecSSHSetPasswordPolicy
+func GetBasicPassword(no string, cmd *cobra.Command) (password string, err error) {
+	password = ""
+	var ws []WorkspacePolicy
+	if no != "" {
+		ws, err = GetWSPolicies(no, "3", cmd)
+	}
+
+	if len(ws) > 0 {
+		password = ws[len(ws)-1].Password
+	}
+	return password, err
+}
+
 // 保存一个空密码，保证后续的git clone不需要输入私钥的密码
 func (instance *SSHRemote) sshSaveEmptyPassphrase() {
 	// 如果本身就是空密码，就不需要执行了
@@ -808,6 +824,7 @@ func (instance *SSHRemote) ExecSSHCommandRealTimeFunc(sshCommand string, customE
 	sshOut, _ := session.StdoutPipe()
 
 	originExecuteFun := func(output string) error {
+		output = strings.ToLower(output)
 		if strings.Contains(output, "error") || strings.Contains(output, "fatal") {
 			return fmt.Errorf(output)
 		} else {
@@ -1056,17 +1073,22 @@ type GVA_MODEL struct {
 }
 type WorkspacePolicy struct {
 	GVA_MODEL
-	Wid              string `json:"wid" form:"wid" `
-	Name             string `json:"name" form:"name"`
-	Status           *bool  `json:"status" form:"status" ` // 状态
-	JustOne          *bool  `json:"justone" form:"justone" `
-	Schdule          int    `json:"schdule" form:"schdule" `
-	Type             int    `json:"type" form:"type" `
-	Tasks            string `json:"tasks" form:"tasks" `
-	OwnerGUID        string `json:"ownerGuid" form:"ownerGuid"`
-	GitConifgContent string `json:"gitConfigContent" form:"gitConfigContent" `
-	IdRsA            string `json:"id_rsa" form:"id_rsa"`
-	IdRsAPub         string `json:"id_rsa_pub" form:"id_rsa_pub" `
+	Wid                string `json:"wid" form:"wid" `
+	Name               string `json:"name" form:"name"`
+	Status             *bool  `json:"status" form:"status" ` // 状态
+	JustOne            *bool  `json:"justone" form:"justone" `
+	Schdule            int    `json:"schdule" form:"schdule" `
+	Type               int    `json:"type" form:"type" `
+	Tasks              string `json:"tasks" form:"tasks" `
+	OwnerGUID          string `json:"ownerGuid" form:"ownerGuid"`
+	GitConifgContent   string `json:"gitConfigContent" form:"gitConfigContent" `
+	IdRsA              string `json:"id_rsa" form:"id_rsa"`
+	IdRsAPub           string `json:"id_rsa_pub" form:"id_rsa_pub" `
+	BlockCommit        *bool  `json:"blockCommit"`
+	TeamID             int    `json:"teamId"`
+	ScanerServerConfig string `json:"scanerServerConfig"`
+	UserName           string `json:"username"`
+	Password           string `json:"password"`
 }
 
 type WSPolicyResponse struct {
@@ -1112,4 +1134,38 @@ func (instance *SSHRemote) AddPublicKeyIntoAuthorizedkeys() {
 			SmartIDELog.Error(err, output)
 		}
 	}
+}
+
+func PathExists(path string, perm fs.FileMode) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		// 创建文件夹
+		err := os.MkdirAll(path, perm)
+		if err != nil {
+			//fmt.Printf("mkdir failed![%v]\n", err)
+		} else {
+			return true, nil
+		}
+	}
+	return false, err
+
+}
+
+func RunCmd(cmd string, shell bool) []byte {
+	if shell {
+		out, err := exec.Command("bash", "-c", cmd).Output()
+		if err != nil {
+			log.Fatal(err)
+			panic("some error found")
+		}
+		return out
+	}
+	out, err := exec.Command(cmd).Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return out
 }

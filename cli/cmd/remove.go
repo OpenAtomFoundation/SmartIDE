@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-01 10:58:51
+ * @LastEditTime: 2022-08-17 11:24:36
  */
 package cmd
 
@@ -84,7 +84,7 @@ var removeCmd = &cobra.Command{
 				}
 				common.WebsocketStart(wsURL)
 				if action != 0 {
-					if pid, err := workspace.GetParentId(workspaceIdStr, action, serverModeInfo.ServerToken, serverModeInfo.ServerHost); err == nil && pid > 0 {
+					if pid, err := workspace.GetParentId(workspaceIdStr, workspace.ActionEnum_Workspace_Remove, serverModeInfo.ServerToken, serverModeInfo.ServerHost); err == nil && pid > 0 {
 						common.SmartIDELog.Ws_id = workspaceIdStr
 						common.SmartIDELog.ParentId = pid
 					}
@@ -161,8 +161,6 @@ var removeCmd = &cobra.Command{
 							workspaceInfo.K8sInfo.Context,
 							workspaceInfo.K8sInfo.Namespace)
 						common.CheckError(err)
-						err = k8sUtil.Check()
-						common.CheckError(err)
 
 						err = remove.RemoveK8s(*k8sUtil, workspaceInfo)
 						common.CheckError(err)
@@ -186,15 +184,10 @@ var removeCmd = &cobra.Command{
 				err := remove.RemoveRemote(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsRemoveRemoteDirectory, removeCmdFlag.IsForce, cmd)
 				checkErrorFeedback(err)
 			} else if workspaceInfo.Mode == workspace.WorkingMode_K8s {
-				k8sUtil, err := kubectl.NewK8sUtil(workspaceInfo.K8sInfo.KubeConfigFilePath,
+				k8sUtil, err := kubectl.NewK8sUtilWithContent(workspaceInfo.K8sInfo.KubeConfigContent,
 					workspaceInfo.K8sInfo.Context,
 					workspaceInfo.K8sInfo.Namespace)
 				checkErrorFeedback(err)
-
-				k8sUtil.CreateKubeConfig(workspaceInfo.K8sInfo.KubeConfigContent)
-				checkErrorFeedback(err)
-				err = k8sUtil.Check()
-				common.CheckError(err)
 
 				pod, _, _ := start.GetDevContainerPod(*k8sUtil, workspaceInfo.K8sInfo.TempK8sConfig)
 				if pod == nil {

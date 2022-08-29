@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-11 09:40:39
+ * @LastEditTime: 2022-08-16 15:06:55
  */
 package config
 
@@ -85,8 +85,14 @@ func (instance SmartIdeConfig) getLinkDockerComposeFile(sshRemote *common.SSHRem
 // 获取服务名称列表
 func (c *SmartIdeConfig) GetServiceNames() (serviceNames []string) {
 
-	for serviceName := range c.Workspace.Servcies {
-		serviceNames = append(serviceNames, serviceName)
+	if c.Workspace.LinkCompose != nil {
+		for serviceName := range c.Workspace.LinkCompose.Services {
+			serviceNames = append(serviceNames, serviceName)
+		}
+	} else {
+		for serviceName := range c.Workspace.Servcies {
+			serviceNames = append(serviceNames, serviceName)
+		}
 	}
 
 	return serviceNames

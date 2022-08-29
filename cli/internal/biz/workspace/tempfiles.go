@@ -19,8 +19,8 @@ var i18nInstance = i18n.GetInstance()
 // 获取生成的临时 docker-compose 文件路径
 func (workspace WorkspaceInfo) GetTempDockerComposeFilePath() string {
 	dockerComposeFileName := fmt.Sprintf("docker-compose-%s.yaml", workspace.GetProjectDirctoryName()) // docker-compose 文件的名称
-	yamlFileDirPath := common.PathJoin(workspace.WorkingDirectoryPath, model.CONST_TempDirPath)        //
-	yamlFilePath := common.PathJoin(yamlFileDirPath, dockerComposeFileName)
+	//yamlFileDirPath := common.PathJoin(workspace.WorkingDirectoryPath, model.CONST_TempDirPath)        //
+	yamlFilePath := filepath.Join(workspace.WorkingDirectoryPath, model.CONST_TempDirPath, dockerComposeFileName)
 
 	return yamlFilePath
 }
@@ -33,8 +33,8 @@ func (workspace WorkspaceInfo) SaveTempFiles() (err error) { // dockerComposeFil
 	// 临时文件夹
 	projectName := workspace.GetProjectDirctoryName()
 	tempDockerComposeFilePath := workspace.GetTempDockerComposeFilePath() // docker-compose 的临时文件
-	workingDirectoryPath := workspace.ConfigYaml.GetWorkingDirectoryPath()
-	tempConfigFilePath := getTempConfigFilePath(workingDirectoryPath, projectName) // 临时配置文件的存放路径
+	//workingDirectoryPath := workspace.ConfigYaml.GetWorkingDirectoryPath()
+	tempConfigFilePath := getTempConfigFilePath(workspace.WorkingDirectoryPath, projectName) // 临时配置文件的存放路径
 
 	// 创建 或者 清空文件夹
 	tempDirPath := filepath.Dir(tempDockerComposeFilePath) // 临时文件所在的目录
@@ -173,9 +173,9 @@ func getTempConfigFilePath(localWorkingDir string, projectName string) string {
 		workingDir = localWorkingDir
 	}
 
-	dockerComposeFileName := fmt.Sprintf("config-%s.yaml", projectName)     // docker-compose 文件的名称
-	yamlFileDirPath := common.PathJoin(workingDir, model.CONST_TempDirPath) //
-	yamlFilePath := common.PathJoin(yamlFileDirPath, dockerComposeFileName)
+	dockerComposeFileName := fmt.Sprintf("config-%s.yaml", projectName)   // docker-compose 文件的名称
+	yamlFileDirPath := filepath.Join(workingDir, model.CONST_TempDirPath) //
+	yamlFilePath := filepath.Join(yamlFileDirPath, dockerComposeFileName)
 
 	return yamlFilePath
 }

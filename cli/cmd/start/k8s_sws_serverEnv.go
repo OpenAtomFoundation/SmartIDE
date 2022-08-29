@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-05-31 09:36:33
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-01 10:58:12
+ * @LastEditTime: 2022-08-16 18:08:54
  * @FilePath: /cli/cmd/start/k8s_sws_serverEnv.go
  */
 
@@ -30,12 +30,6 @@ func ExecuteK8sServerStartCmd(cmd *cobra.Command, k8sUtil kubectl.KubernetesUtil
 		}
 
 	}
-
-	//1. 下载.kube/config文件到本地
-	err := k8sUtil.CreateKubeConfig(workspaceInfo.K8sInfo.KubeConfigContent)
-	serverFeedback(err)
-	err = k8sUtil.Check()
-	serverFeedback(err)
 
 	// 工作区
 	workspaceInfo_, err := ExecuteK8sStartCmd(cmd, k8sUtil, workspaceInfo, yamlExecuteFun)

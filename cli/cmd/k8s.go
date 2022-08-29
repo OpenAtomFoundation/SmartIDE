@@ -44,26 +44,43 @@ var k8sCmd = &cobra.Command{
 		common.CheckError(checkFlagErr)
 		checkFlagErr = checkFlag(fflags, k8s_flag_mode)
 		common.CheckError(checkFlagErr)
+		publicUrl, _ := fflags.GetString(k8s_flag_public_url)
+		serverHost, _ := fflags.GetString(k8s_flag_serverhost)
+		serverToken, _ := fflags.GetString(k8s_flag_servertoken)
+		currentAuth := model.Auth{
+			LoginUrl: serverHost,
+			Token:    serverToken,
+		}
 
 		//0. 初始化Log
 		if apiHost, _ := fflags.GetString(k8s_flag_serverhost); apiHost != "" {
-			wsURL := fmt.Sprint(strings.ReplaceAll(strings.ReplaceAll(apiHost, "https", "ws"), "http", "ws"), "/ws/smartide/ws")
-			common.WebsocketStart(wsURL)
-			token, _ := fflags.GetString(k8s_flag_servertoken)
-			if token != "" {
-				if workspaceIdStr := getWorkspaceIdFromFlagsOrArgs(cmd, args); strings.Contains(workspaceIdStr, "WS") {
-					if pid, err := workspace.GetParentId(workspaceIdStr, 1, token, apiHost); err == nil && pid > 0 {
-						common.SmartIDELog.Ws_id = workspaceIdStr
+
+			workspaceIngressAction := workspace.ActionEnum_Ingress_Enable
+			if strings.ToLower(publicUrl) != "enable" {
+				workspaceIngressAction = workspace.ActionEnum_Ingress_Disable
+			}
+
+			// ws
+			workspaceNo := ""
+			if workspaceIdStr, _ := cmd.Flags().GetString(server.Flags_ServerWorkspaceid); workspaceIdStr != "" {
+				if no, _ := workspace.GetWorkspaceNo(workspaceIdStr, currentAuth.Token.(string), currentAuth.LoginUrl); no != "" {
+					workspaceNo = no
+				}
+			}
+			if pid, err := workspace.GetParentId(workspaceNo, workspaceIngressAction, currentAuth.Token.(string), currentAuth.LoginUrl); err == nil && pid > 0 {
+				common.SmartIDELog.Ws_id = workspaceNo
+				common.SmartIDELog.ParentId = pid
+			} else {
+				title := "??"
+				if workspaceIngressAction == workspace.ActionEnum_Ingress_Enable {
+					title = "创建Ingress"
+				} else if workspaceIngressAction == workspace.ActionEnum_Ingress_Disable {
+					title = "删除Ingress"
+				}
+				if err := workspace.CreateWsLog(workspaceNo, serverToken, currentAuth.LoginUrl, title, ""); err == nil {
+					if pid, err := workspace.GetParentId(workspaceNo, workspaceIngressAction, currentAuth.Token.(string), currentAuth.LoginUrl); err == nil && pid > 0 {
+						common.SmartIDELog.Ws_id = workspaceNo
 						common.SmartIDELog.ParentId = pid
-					}
-				} else {
-					if workspaceIdStr, _ := fflags.GetString(k8s_flag_workspaceid); workspaceIdStr != "" {
-						if no, _ := workspace.GetWorkspaceNo(workspaceIdStr, token, apiHost); no != "" {
-							if pid, err := workspace.GetParentId(no, 1, token, apiHost); err == nil && pid > 0 {
-								common.SmartIDELog.Ws_id = no
-								common.SmartIDELog.ParentId = pid
-							}
-						}
 					}
 				}
 			}
@@ -90,9 +107,6 @@ var k8sCmd = &cobra.Command{
 		authType := workspaceInfo.K8sInfo.IngressAuthType
 		username := workspaceInfo.K8sInfo.IngressLoginUserName
 		password := workspaceInfo.K8sInfo.IngressLoginPassword
-		publicUrl, _ := fflags.GetString(k8s_flag_public_url)
-		serverHost, _ := fflags.GetString(k8s_flag_serverhost)
-		serverToken, _ := fflags.GetString(k8s_flag_servertoken)
 
 		//2. Save temp k8s config file
 		k8sConfigDirPath := config.SmartIdeHome
@@ -101,11 +115,9 @@ var k8sCmd = &cobra.Command{
 		if err != nil {
 			common.SmartIDELog.Error(err)
 		}
-		k8sUtil, err := kubectl.NewK8sUtil(tempK8sConfigFileRelativePath,
+		k8sUtil, err := kubectl.NewK8sUtilWithFile(tempK8sConfigFileRelativePath,
 			workspaceInfo.K8sInfo.Context,
 			namespace)
-		common.CheckError(err)
-		err = k8sUtil.Check()
 		common.CheckError(err)
 
 		//3. Delete ingress if public-url flag is disable
@@ -131,10 +143,7 @@ var k8sCmd = &cobra.Command{
 			feedbackMap := make(map[string]interface{})
 			feedbackMap["port"] = ""
 			feedbackMap["url"] = ""
-			currentAuth := model.Auth{
-				LoginUrl: serverHost,
-				Token:    serverToken,
-			}
+
 			err = server.FeeadbackExtend(currentAuth, workspaceInfo)
 			if err != nil {
 				common.SmartIDELog.Error(err)

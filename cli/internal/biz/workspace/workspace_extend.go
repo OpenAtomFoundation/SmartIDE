@@ -23,7 +23,7 @@ func (workspaceInfo *WorkspaceInfo) GetWorkspaceExtend() WorkspaceExtend {
 	// 兼容链接docker-compose 和 不链接docker-compose 两种方式
 	composeServices := workspaceInfo.ConfigYaml.Workspace.Servcies
 	if workspaceInfo.ConfigYaml.IsLinkDockerComposeFile() {
-		composeServices = workspaceInfo.LinkDockerCompose.Services
+		composeServices = workspaceInfo.ConfigYaml.Workspace.LinkCompose.Services
 	}
 
 	//1. 遍历 compose 文件中的 services

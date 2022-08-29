@@ -72,7 +72,7 @@ var getCmd = &cobra.Command{
 
 			// 链接的 docker-compose
 			if workspaceInfo.ConfigYaml.IsLinkDockerComposeFile() {
-				linkDockerYamlStr, err := workspaceInfo.LinkDockerCompose.ToYaml()
+				linkDockerYamlStr, err := workspaceInfo.ConfigYaml.Workspace.LinkCompose.ToYaml()
 				common.CheckError(err)
 				console = fmt.Sprintf("-- link Docker-Compose ---------\n%v\n%v", workspaceInfo.ConfigYaml.Workspace.DockerComposeFile, linkDockerYamlStr)
 				common.SmartIDELog.Console(console)

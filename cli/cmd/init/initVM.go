@@ -1,28 +1,29 @@
 /*
- * @Date: 2022-04-20 10:46:40
+ * @Author: Bo Dai (daibo@leansoftx.com)
+ * @Description:
+ * @Date: 2022-07
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-17 15:31:46
- * @FilePath: /cli/cmd/new/newVm.go
+ * @LastEditTime: 2022-08-17 15:31:23
  */
 
-package new
+package init
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
+	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
-
-	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
-	"github.com/leansoftX/smartide-cli/cmd/start"
 )
 
-func VmNew(cmd *cobra.Command, args []string, workspaceInfo workspace.WorkspaceInfo,
+func VmInit(cmd *cobra.Command, args []string, workspaceInfo workspace.WorkspaceInfo,
 	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) {
 
 	mode, _ := cmd.Flags().GetString("mode")
@@ -33,8 +34,7 @@ func VmNew(cmd *cobra.Command, args []string, workspaceInfo workspace.WorkspaceI
 			return
 		}
 		if err != nil {
-			smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_New, cmd, false, nil, workspaceInfo, err.Error(), "")
-			common.CheckError(err)
+			smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_New, cmd, false, nil, workspace.WorkspaceInfo{}, err.Error(), "")
 		}
 	}
 
@@ -85,17 +85,17 @@ func VmNew(cmd *cobra.Command, args []string, workspaceInfo workspace.WorkspaceI
 		selectedTemplateSettings.SubType = "_default"
 	}
 	projectDir := common.FilePahtJoin4Linux("~", model.CONST_REMOTE_REPO_ROOT, workspaceDirName)
-	err = gitCloneTemplateRepo4Remote(sshRemote, projectDir, config.GlobalSmartIdeConfig.TemplateRepo,
+	err = GitCloneTemplateRepo4Remote(sshRemote, projectDir, config.GlobalSmartIdeConfig.TemplateRepo,
 		selectedTemplateSettings.TypeName, selectedTemplateSettings.SubType)
 	common.CheckErrorFunc(err, serverFeedback)
 
 	// 执行vm start命令
-	isUnforward, _ := cmd.Flags().GetBool("unforward")
-	start.ExecuteVmStartCmd(workspaceInfo, isUnforward, yamlExecuteFun, cmd, args, true)
+	//isUnforward, _ := cmd.Flags().GetBool("unforward")
+	//start.ExecuteVmStartCmd(workspaceInfo, isUnforward, yamlExecuteFun, cmd, true)
 }
 
 // 在服务器上使用git下载制定的template文件，完成后删除.git文件
-func gitCloneTemplateRepo4Remote(sshRemote common.SSHRemote, projectDir string, templateGitCloneUrl string, baseType string, subType string) error {
+func GitCloneTemplateRepo4Remote(sshRemote common.SSHRemote, projectDir string, templateGitCloneUrl string, baseType string, subType string) error {
 
 	// git
 	tempDirPath := common.FilePahtJoin4Linux("~", ".ide", "template")
@@ -115,10 +115,77 @@ git fetch --all && git reset --hard origin/master && git fetch && git pull`,
 		}
 
 		return err
+
 	}
 
+	templatesPath := common.FilePahtJoin4Linux("~", ".ide", "template", "templates.json")
+	templateContent := sshRemote.GetContent(templatesPath)
+
+	var templateTypes []NewTypeBO
+
+	err = json.Unmarshal([]byte(templateContent), &templateTypes)
+	if err != nil {
+		return nil
+	}
+
+	selectedTemplateTypeName := ""
+
+	selectedTemplateSubTypeName := ""
+	for _, currentTemplateType := range templateTypes {
+		if currentTemplateType.TypeName == baseType {
+			selectedTemplateTypeName = baseType
+		}
+		for _, currentTemplateTypeSubType := range currentTemplateType.SubTypes {
+			if currentTemplateTypeSubType.Name == subType {
+				selectedTemplateSubTypeName = currentTemplateTypeSubType.Name
+			}
+		}
+	}
+
+	if selectedTemplateTypeName == "" || selectedTemplateSubTypeName == "" {
+		common.SmartIDELog.InfoF(i18nInstance.Init.Info_noexist_cmdtemplate)
+
+		fmt.Println(i18nInstance.Init.Info_available_templates)
+		PrintTemplates(templateTypes) // 打印支持的模版列表
+
+		fmt.Print(i18nInstance.Init.Info_choose_templatetype)
+		var indexChar string
+		fmt.Scanln(&indexChar)
+		index, err := strconv.Atoi(indexChar)
+		if err != nil {
+			return nil
+		}
+		if index < 0 || index >= len(templateTypes) {
+			return nil
+		}
+		selectedTypeName := templateTypes[index].TypeName
+
+		var subTypes = []string{"_default"}
+		fmt.Println(0, subTypes[0])
+		for i := 0; i < len(templateTypes[index].SubTypes); i++ {
+			fmt.Println(i+1, templateTypes[index].SubTypes[i].Name)
+			subTypes = append(subTypes, templateTypes[index].SubTypes[i].Name)
+		}
+		fmt.Print(i18nInstance.Init.Info_choose_idetype)
+		var indexIdeStr string
+		fmt.Scanln(&indexIdeStr)
+		indexIde, err := strconv.Atoi(indexIdeStr)
+		if err != nil {
+			return nil
+		}
+		if indexIde < 0 || indexIde >= len(subTypes) {
+			return nil
+		}
+		fmt.Println("您选择的模板为：", selectedTypeName, subTypes[indexIde])
+		selectedTemplateTypeName = selectedTypeName
+
+		selectedTemplateSubTypeName = subTypes[indexIde]
+
+		selectedTemplateTypeName = strings.TrimSpace(selectedTemplateTypeName)
+		selectedTemplateSubTypeName = strings.TrimSpace(selectedTemplateSubTypeName)
+	}
 	// 项目目录如果不存在就创建
-	templateDirPath := strings.Join([]string{tempDirPath, baseType, subType, "."}, "/")
+	templateDirPath := strings.Join([]string{tempDirPath, selectedTemplateTypeName, selectedTemplateSubTypeName, "."}, "/")
 	commandCopy := fmt.Sprintf(`
 	[[ -d %v ]] && echo '%v directory exist' || mkdir -p %v
 	cp -r %v %v 

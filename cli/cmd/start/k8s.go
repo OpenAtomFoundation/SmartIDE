@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-25 17:48:05
+ * @LastEditTime: 2022-08-29 15:09:21
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -22,6 +22,7 @@ import (
 
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
+	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/kubectl"
 	"github.com/spf13/cobra"
@@ -41,20 +42,20 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil kubectl.KubernetesUtil, work
 	}
 	runAsUserName := "smartide"
 
+	if common.SmartIDELog.Ws_id != "" {
+		execSSHPolicy(workspaceInfo, cmd)
+
+	}
+
 	//3. 解析 .k8s.ide.yaml 文件（是否需要注入到deploy.yaml文件中）
 	common.SmartIDELog.Info("下载配置文件 及 关联k8s yaml文件")
-	gitRepoRootDirPath, configFileRelativePath, k8sYamlRelativePaths, err := downloadConfigAndLinkFiles(workspaceInfo)
+	gitRepoRootDirPath, configFileRelativePath, _, err := downloadConfigAndLinkFiles(workspaceInfo)
 	if err != nil {
 		return nil, err
 	}
 	//3.1. 解析配置文件 + 关联的k8s yaml
 	common.SmartIDELog.Info(fmt.Sprintf("解析配置文件 %v", workspaceInfo.ConfigFileRelativePath))
-	configFileAbsolutePath := common.PathJoin(gitRepoRootDirPath, configFileRelativePath) // 配置文件绝对路径
-	var k8sYamlAbsolutePaths []string                                                     // 关联k8s yaml文件的绝对路径
-	for _, relativePath := range k8sYamlRelativePaths {
-		k8sYamlAbsolutePaths = append(k8sYamlAbsolutePaths, common.PathJoin(gitRepoRootDirPath, relativePath))
-	}
-	originK8sConfig, err := config.NewK8SConfig(configFileAbsolutePath, k8sYamlAbsolutePaths, "", "")
+	originK8sConfig, err := config.NewK8sConfig(gitRepoRootDirPath, configFileRelativePath)
 	if err != nil {
 		return nil, err
 	}
@@ -97,6 +98,12 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil kubectl.KubernetesUtil, work
 		repoName := common.GetRepoName(workspaceInfo.GitCloneRepoUrl)
 		// ★★★★★ 把所有k8s kind转换为一个临时的k8s yaml文件
 		tempK8sConfig = originK8sConfig.ConvertToTempK8SYaml(repoName, workspaceInfo.K8sInfo.Namespace, originK8sConfig.GetSystemUserName())
+		// if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server {
+		// 	err = setSSHPWD(tempK8sConfig, cmd)
+		// 	if err != nil {
+		// 		return nil, err
+		// 	}
+		// }
 		tempK8sYamlFileRelativePath, err := tempK8sConfig.SaveK8STempYaml(gitRepoRootDirPath)
 		// ★★★★★ 保存到目录（临时k8s yaml文件的绝对路径）
 		tempK8sYamlAbsolutePath := common.PathJoin(gitRepoRootDirPath, tempK8sYamlFileRelativePath)
@@ -210,6 +217,58 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil kubectl.KubernetesUtil, work
 	return &workspaceInfo, nil
 }
 
+func setSSHPWD(tempK8sConfig config.SmartIdeK8SConfig, cmd *cobra.Command) (err error) {
+
+	for _, d := range tempK8sConfig.Workspace.Deployments {
+		for _, c := range d.Spec.Template.Spec.Containers {
+			i := func() (i int) {
+				for i, ev := range c.Env {
+					if ev.Name == model.CONST_ENV_NAME_LoalUserPassword {
+						return i
+					}
+				}
+				return -1
+			}()
+			if i >= 0 {
+				p := ""
+				if p, err = common.GetBasicPassword(common.SmartIDELog.Ws_id, cmd); p != "" {
+					c.Env[i].Value = p
+				}
+			} else {
+				p := ""
+				if p, err = common.GetBasicPassword(common.SmartIDELog.Ws_id, cmd); p != "" {
+					c.Env = append(c.Env, coreV1.EnvVar{Name: model.CONST_ENV_NAME_LoalUserPassword, Value: p})
+				}
+			}
+
+		}
+	}
+	return nil
+}
+
+func execSSHPolicy(workspaceInfo workspace.WorkspaceInfo, cmd *cobra.Command) {
+	if ws, err := common.GetWSPolicies(workspaceInfo.ServerWorkSpace.NO, "2", cmd); err == nil {
+		if len(ws) > 0 {
+			idRsa := ws[len(ws)-1].IdRsA
+			idRsaPub := ws[len(ws)-1].IdRsAPub
+			if homeDir, err := os.UserHomeDir(); err == nil {
+				path := filepath.Join(homeDir, ".ssh")
+				if _, err := common.PathExists(path, 0700); err == nil {
+
+					commad := `echo -e 'Host *\n	StrictHostKeyChecking no' >>  ~/.ssh/config && sudo chmod 700 ~/.ssh/config`
+					common.RunCmd(commad, true)
+					commad = fmt.Sprintf(`echo -e '%v' >>  ~/.ssh/id_rsa && sudo chmod 600 ~/.ssh/id_rsa`, idRsa)
+					common.RunCmd(commad, true)
+					commad = fmt.Sprintf(`echo -e '%v' >>  ~/.ssh/id_rsa.pub && sudo chmod 644 ~/.ssh/id_rsa.pub`, idRsaPub)
+					common.RunCmd(commad, true)
+
+				}
+			}
+
+		}
+	}
+}
+
 // 更新Port信息
 func updatePortInfo(availableClientPort int, hostOriginPort int, workspaceInfo *workspace.WorkspaceInfo, index int) {
 	if availableClientPort != hostOriginPort {
@@ -248,41 +307,48 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 	}
 
 	//5.5. agent
-	//TODO:
 	common.SmartIDELog.Info("install agent")
 	if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server {
 		err := kubernetes.CopyToPod(*devContainerPod, common.PathJoin("/usr/local/bin", "smartide-agent"), common.PathJoin("/", "smartide-agent"), runAsUserName)
 		if err != nil {
 			return err
 		}
-
-		err = FeeadbackContainerId(cmd, workspaceInfo, devContainerPod.Name)
-		if err != nil {
-			return err
-		}
-
-		go kubernetes.StartAgent(cmd, *devContainerPod, runAsUserName)
-
-	}
-
-	//5.1. git config
-	if originK8sConfig.Workspace.DevContainer.Volumes.HasGitConfig.Value() {
-		common.SmartIDELog.Info("git config")
-		err = kubernetes.CopyLocalGitConfigToPod(*devContainerPod, runAsUserName)
-		if err != nil {
-			return err
-		}
-	}
-
-	//5.2. ssh config
-	if originK8sConfig.Workspace.DevContainer.Volumes.HasSshKey.Value() {
-		common.SmartIDELog.Info("ssh config")
 		err = kubernetes.CopyLocalSSHConfigToPod(*devContainerPod, runAsUserName)
 		if err != nil {
 			return err
 		}
+		err = FeeadbackContainerId(cmd, workspaceInfo, devContainerPod.Name)
+		if err != nil {
+			return err
+		}
+		go kubernetes.StartAgent(cmd, *devContainerPod, runAsUserName, workspaceInfo.ServerWorkSpace)
+
 	}
 
+	// time.Sleep(time.Second * 15)
+	//5.1. git config
+	// 会通过agent生成
+	if workspaceInfo.CliRunningEnv == workspace.CliRunningEnvEnum_Client {
+		if originK8sConfig.Workspace.DevContainer.Volumes.HasGitConfig.Value() {
+			common.SmartIDELog.Info("git config")
+			err = kubernetes.CopyLocalGitConfigToPod(*devContainerPod, runAsUserName)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	//5.2. ssh config
+	// 本地模式下才需要拷贝ssh 公私钥文件，如果是server模式下，会通过agent下载公私钥文件
+	if workspaceInfo.CliRunningEnv == workspace.CliRunningEnvEnum_Client {
+		if originK8sConfig.Workspace.DevContainer.Volumes.HasSshKey.Value() {
+			common.SmartIDELog.Info("ssh config")
+			err = kubernetes.CopyLocalSSHConfigToPod(*devContainerPod, runAsUserName)
+			if err != nil {
+				return err
+			}
+		}
+	}
 	//5.3. git clone
 	common.SmartIDELog.Info("git clone")
 	containerGitCloneDir := originK8sConfig.GetProjectDirctory()
@@ -432,24 +498,21 @@ func downloadConfigAndLinkFiles(workspaceInfo workspace.WorkspaceInfo) (
 	if err != nil {
 		return
 	}
-	smartIdeConfig := config.NewConfig("", "", string(configFileBytes))
-	if smartIdeConfig == nil {
-		err = fmt.Errorf("配置文件 %v 内容为空！", workspaceInfo.ConfigFileRelativePath)
-		return
+	filePathExpression := configYaml["workspace"].(map[interface{}]interface{})["kube-deploy-files"].(string)
+	if filePathExpression == "" {
+		return "", "", []string{}, fmt.Errorf("配置文件 %v Workspace.kube-deploy-files 节点未配置！", workspaceInfo.ConfigFileRelativePath)
 	}
-	if smartIdeConfig.Workspace.KubeDeployFiles == "" {
-		return "", "", []string{}, fmt.Errorf("配置文件 %v Workspace.KubeDeployFiles 节点未配置！", workspaceInfo.ConfigFileRelativePath)
-	}
-	filePathExpression := path.Join(".ide", smartIdeConfig.Workspace.KubeDeployFiles) // 这里的文件路径都是相对	.ide 的，注意这里只能使用 反斜杠 的分隔符
+	filePathExpression = path.Join(".ide", filePathExpression)
+
+	//
 	_, linkK8sYamlRelativePaths, err = downloadFilesByGit(workspaceInfo.GitCloneRepoUrl, workspaceInfo.Branch, filePathExpression)
 	if err != nil {
 		return "", "", []string{}, err
 	}
 	if len(linkK8sYamlRelativePaths) == 0 {
-		return "", "", []string{}, fmt.Errorf("没有找到关联的 %v yaml文件！", smartIdeConfig.Workspace.KubeDeployFiles)
+		return "", "", []string{}, fmt.Errorf("没有找到 %v 匹配的yaml文件！", filePathExpression)
 	}
 
-	//configFileRelativePath := strings.Replace(configFileAbsolutePath, gitRepoRootDirPath, "", -1)
 	return gitRepoRootDirPath, configFileRelativePath, linkK8sYamlRelativePaths, nil
 }
 
@@ -517,6 +580,18 @@ func waitingAndOpenBrower(workspaceInfo workspace.WorkspaceInfo, originK8sConfig
 // 检测pod是否已经ready
 func getDevContainerPodReady(kubernetes kubectl.KubernetesUtil, smartideK8sConfig config.SmartIdeK8SConfig) (bool, error) {
 	devContainerName := smartideK8sConfig.Workspace.DevContainer.ServiceName
+
+	if len(smartideK8sConfig.Workspace.Deployments) == 0 {
+		pod, err := kubernetes.GetPodByName(devContainerName)
+
+		if err != nil {
+			return false, err
+		}
+
+		isReady := pod.Status.Phase == coreV1.PodRunning
+		return isReady, nil
+	}
+
 	for _, deployment := range smartideK8sConfig.Workspace.Deployments {
 		for _, container := range deployment.Spec.Template.Spec.Containers {
 			if container.Name == devContainerName {
@@ -560,33 +635,52 @@ func GetDevContainerPod(kubernetes kubectl.KubernetesUtil, smartideK8sConfig con
 	pod *coreV1.Pod, serviceName string, err error) {
 
 	devContainerName := smartideK8sConfig.Workspace.DevContainer.ServiceName
-	for _, deployment := range smartideK8sConfig.Workspace.Deployments {
-		for _, container := range deployment.Spec.Template.Spec.Containers {
-			if container.Name == devContainerName {
 
-				selector := ""
-				index := 0
-				for key, value := range deployment.Spec.Selector.MatchLabels {
-					if index == 0 {
-						selector += fmt.Sprintf("%v=%v", key, value)
-					}
-					index++
+	if len(smartideK8sConfig.Workspace.Deployments) == 0 {
+		pod, err := kubernetes.GetPodByName(devContainerName)
+		if err != nil {
+			return pod, "", err
+		}
+
+		for _, service := range smartideK8sConfig.Workspace.Services {
+			for key, value := range pod.ObjectMeta.Labels {
+				if _, ok := service.Spec.Selector[key]; ok && service.Spec.Selector[key] == value {
+					serviceName = service.Name
 				}
+			}
+		}
 
-				pod, err := kubernetes.GetPod(selector, kubernetes.Namespace)
-				if err != nil {
-					return pod, "", err
-				}
+		return pod, serviceName, nil
 
-				for _, service := range smartideK8sConfig.Workspace.Services {
+	} else {
+		for _, deployment := range smartideK8sConfig.Workspace.Deployments {
+			for _, container := range deployment.Spec.Template.Spec.Containers {
+				if container.Name == devContainerName {
+
+					selector := ""
+					index := 0
 					for key, value := range deployment.Spec.Selector.MatchLabels {
-						if _, ok := service.Spec.Selector[key]; ok && service.Spec.Selector[key] == value {
-							serviceName = service.Name
+						if index == 0 {
+							selector += fmt.Sprintf("%v=%v", key, value)
+						}
+						index++
+					}
+
+					pod, err := kubernetes.GetPodBySelector(selector)
+					if err != nil {
+						return pod, "", err
+					}
+
+					for _, service := range smartideK8sConfig.Workspace.Services {
+						for key, value := range deployment.Spec.Selector.MatchLabels {
+							if _, ok := service.Spec.Selector[key]; ok && service.Spec.Selector[key] == value {
+								serviceName = service.Name
+							}
 						}
 					}
-				}
 
-				return pod, serviceName, nil
+					return pod, serviceName, nil
+				}
 			}
 		}
 	}
@@ -605,7 +699,9 @@ func downloadFilesByGit(gitCloneUrl string, branch string, filePathExpression st
 
 	// 文件路径
 	workingRootDir := filepath.Join(home, ".ide", ".k8s") // 工作目录，repo 会clone到当前目录下
-	sshPath := filepath.Join(home, ".ssh")
+	return common.GIT.DownloadFilesByGit(workingRootDir, gitCloneUrl, branch, filePathExpression)
+
+	/* sshPath := filepath.Join(home, ".ssh")
 	if !common.IsExist(workingRootDir) { // 目录如果不存在，就要创建
 		os.MkdirAll(workingRootDir, os.ModePerm)
 	}
@@ -633,7 +729,7 @@ func downloadFilesByGit(gitCloneUrl string, branch string, filePathExpression st
 	for index, _ := range fileRelativePaths {
 		fileRelativePaths[index] = strings.Replace(fileRelativePaths[index], gitRepoRootDirPath, "", -1) // 把绝对路径改为相对路径
 	}
-	return gitRepoRootDirPath, fileRelativePaths, nil
+	return gitRepoRootDirPath, fileRelativePaths, nil */
 }
 
 const (
@@ -647,7 +743,6 @@ func FeeadbackContainerId(cmd *cobra.Command, workspaceInfo workspace.WorkspaceI
 	fflags := cmd.Flags()
 	host, _ := fflags.GetString(Flags_ServerHost)
 	token, _ := fflags.GetString(Flags_ServerToken)
-	// ownerguid, _ := fflags.GetString(Flags_ServerOwnerGuid)
 	var _feedbackRequest struct {
 		ID          uint
 		ContainerId string

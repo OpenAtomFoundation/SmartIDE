@@ -123,7 +123,7 @@ func Feedback_Finish(feedbackCommand FeedbackCommandEnum, cmd *cobra.Command,
 	serverFeedbackUrl, _ := common.UrlJoin(serverModeInfo.ServerHost, "/api/smartide/workspace/finish")
 	configFileContent, _ := workspaceInfo.ConfigYaml.ToYaml()
 	tempYamlContent, _ := workspaceInfo.TempDockerCompose.ToYaml()
-	linkYmalContent, _ := workspaceInfo.LinkDockerCompose.ToYaml()
+	linkYmalContent, _ := workspaceInfo.ConfigYaml.Workspace.LinkCompose.ToYaml()
 	if workspaceInfo.Mode == workspace.WorkingMode_K8s {
 		tempYamlContent, _ = workspaceInfo.K8sInfo.TempK8sConfig.ConvertToK8sYaml()
 		linkYmalContent, _ = workspaceInfo.K8sInfo.OriginK8sYaml.ConvertToK8sYaml()
@@ -180,7 +180,7 @@ func Send_WorkspaceInfo(callbackAPI string, feedbackCommand FeedbackCommandEnum,
 	serverFeedbackUrl := callbackAPI
 	configFileContent, _ := workspaceInfo.ConfigYaml.ToYaml()
 	tempYamlContent, _ := workspaceInfo.TempDockerCompose.ToYaml()
-	linkYmalContent, _ := workspaceInfo.LinkDockerCompose.ToYaml()
+	linkYmalContent, _ := workspaceInfo.ConfigYaml.Workspace.LinkCompose.ToYaml()
 	if workspaceInfo.Mode == workspace.WorkingMode_K8s {
 		tempYamlContent, _ = workspaceInfo.K8sInfo.TempK8sConfig.ConvertToK8sYaml()
 		linkYmalContent, _ = workspaceInfo.K8sInfo.OriginK8sYaml.ConvertToK8sYaml()

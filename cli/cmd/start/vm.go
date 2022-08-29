@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-28 08:23:16
+ * @LastEditTime: 2022-08-29 14:59:19
  */
 package start
 
@@ -16,9 +16,11 @@ import (
 	"text/tabwriter"
 	"time"
 
+	initExtended "github.com/leansoftX/smartide-cli/cmd/init"
 	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
+	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/docker/compose"
 	"github.com/leansoftX/smartide-cli/pkg/tunnel"
@@ -28,7 +30,7 @@ import (
 
 // 远程服务器执行 start 命令
 func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
-	yamlExecuteFun func(yamlConfig config.SmartIdeConfig), cmd *cobra.Command, disableClone bool) {
+	yamlExecuteFun func(yamlConfig config.SmartIdeConfig), cmd *cobra.Command, args []string, disableClone bool) {
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_starting)
 
 	mode, _ := cmd.Flags().GetString("mode")
@@ -83,14 +85,30 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	ideYamlFilePath := common.FilePathJoin(common.OS_Linux, workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath) //fmt.Sprintf(`%v/.ide/.ide.yaml`, repoWorkspace)
 	common.SmartIDELog.Info(fmt.Sprintf(i18nInstance.VmStart.Info_read_config, ideYamlFilePath))
 	if !sshRemote.IsFileExist(ideYamlFilePath) {
-		message := fmt.Sprintf(i18nInstance.Main.Err_file_not_exit2, ideYamlFilePath)
-		common.SmartIDELog.Error(message)
+		argsTemplateTypeName := ""
+		argsTemplateSubTypeName := ""
+		if len(args) > 0 {
+
+			common.SmartIDELog.Info(i18nInstance.Init.Info_check_cmdtemplate)
+
+			if cmd.Name() == "start" && len(cmd.Flags().Args()) == 2 {
+				argsTemplateTypeName = args[1]
+			}
+			if cmd.Name() == "start" && len(cmd.Flags().Args()) == 1 {
+				argsTemplateTypeName = args[0]
+			}
+			argsTemplateSubTypeName, err = cmd.Flags().GetString("type")
+			if err != nil {
+				return
+			}
+		}
+
+		initExtended.GitCloneTemplateRepo4Remote(sshRemote, workspaceInfo.WorkingDirectoryPath, config.GlobalSmartIdeConfig.TemplateRepo, argsTemplateTypeName, argsTemplateSubTypeName)
+
 	}
-	catCommand := fmt.Sprintf(`cat %v`, ideYamlFilePath)
-	output, err := sshRemote.ExeSSHCommand(catCommand)
-	common.CheckErrorFunc(err, serverFeedback)
-	configYamlContent := output
-	currentConfig := config.NewRemoteConfig(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath, configYamlContent)
+	currentConfig, err := config.NewRemoteConfig(&sshRemote,
+		workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath)
+	common.CheckError(err)
 
 	// addonEnable()
 	if workspaceInfo.Addon.IsEnable {
@@ -100,8 +118,10 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 	//3. docker-compose
 	//3.1. 获取 compose 数据
-	_, linkComposeFileContent := currentConfig.GetRemoteLinkDockerComposeFile(&sshRemote)
+	//_, linkComposeFileContent := currentConfig.GetRemoteLinkDockerComposeFile(&sshRemote)
 	yamlStr, err := currentConfig.ToYaml()
+	common.CheckErrorFunc(err, serverFeedback)
+	linkComposeFileContent, err := currentConfig.Workspace.LinkCompose.ToYaml()
 	common.CheckErrorFunc(err, serverFeedback)
 	hasChanged := workspaceInfo.ChangeConfig(yamlStr, linkComposeFileContent) // 是否改变
 	if hasChanged {                                                           // 改变包括了初始化
@@ -113,17 +133,22 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		}
 
 		// 获取compose配置
-		tempDockerCompose, ideBindingPort, _ = currentConfig.ConvertToDockerCompose(sshRemote, workspaceInfo.GetProjectDirctoryName(), workspaceInfo.WorkingDirectoryPath, true, userName)
+		tempDockerCompose, ideBindingPort, _ = currentConfig.ConvertToDockerCompose(sshRemote,
+			workspaceInfo.GetProjectDirctoryName(), workspaceInfo.WorkingDirectoryPath, true, userName)
+		// if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server {
+		// 	setBasicSSHPWD(tempDockerCompose, *currentConfig, cmd)
+
+		// }
 		workspaceInfo.TempDockerCompose = tempDockerCompose
 
 		// 配置
 		workspaceInfo.ConfigYaml = *currentConfig
 
-		// 链接的 docker-compose 文件
-		if workspaceInfo.ConfigYaml.IsLinkDockerComposeFile() {
-			yaml.Unmarshal([]byte(linkComposeFileContent), workspaceInfo.LinkDockerCompose)
-		}
-
+		/* 		// 链接的 docker-compose 文件
+		   		if workspaceInfo.ConfigYaml.IsLinkDockerComposeFile() {
+		   			yaml.Unmarshal([]byte(linkComposeFileContent), workspaceInfo.LinkDockerCompose)
+		   		}
+		*/
 		// 扩展信息
 		workspaceExtend := workspace.WorkspaceExtend{Ports: currentConfig.GetPortMappings()}
 		workspaceInfo.Extend = workspaceExtend
@@ -138,8 +163,10 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		common.CheckErrorFunc(err, serverFeedback)
 
 		// 从临时文件中加载docker-compose
-		tempDockerCompose, ideBindingPort, _ = currentConfig.LoadDockerComposeFromTempFile(sshRemote, workspaceInfo.TempYamlFileAbsolutePath)
+		tempDockerCompose, ideBindingPort, _ =
+			currentConfig.LoadDockerComposeFromTempFile(sshRemote, workspaceInfo.TempYamlFileAbsolutePath)
 	}
+
 	//3.2. 扩展信息
 	workspaceInfo.Extend = workspaceInfo.GetWorkspaceExtend()
 
@@ -171,9 +198,15 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 			workspaceInfo.TempYamlFileAbsolutePath, workspaceInfo.WorkingDirectoryPath)
 		fmt.Println() // 避免向前覆盖
 		fun1 := func(output string) error {
+			output = strings.ToLower(output)
 			if strings.Contains(output, ":error") || strings.Contains(output, ":fatal") {
 				common.SmartIDELog.Error(output)
 
+			} else {
+				//common.SmartIDELog.ConsoleInLine(output)
+				if strings.Contains(output, "Pulling") {
+					fmt.Println()
+				}
 			}
 
 			return nil
@@ -186,7 +219,6 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 	//6. 当前主机绑定到远程端口
 	var addrMapping map[string]string = map[string]string{}
-	// remotePortBindings := tempDockerCompose.GetPortBindings() //
 	unusedLocalPort4IdeBindingPort := ideBindingPort // 未使用的本地端口，与ide端口对应
 	//6.1. 查找所有远程主机的端口
 	for serviceName, service := range tempDockerCompose.Services {
@@ -220,9 +252,6 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 			}
 		}
 	}
-	/* 	for remoteBindingPort, containerPort := range remotePortBindings {
-
-	   	} */
 
 	//7. 保存数据
 	if hasChanged {
@@ -263,10 +292,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	//7.1 如果mode=pipeline，也不需要端口映射，直接退出
 	if isModePipeline {
 		common.SmartIDELog.InfoF(i18nInstance.Start.Info_pipeline_mode_success)
-		IDEAddress := fmt.Sprintf("http://%v:%v/?folder=vscode-remote://%v:%v%v",
-			workspaceInfo.Remote.Addr, ideBindingPort,
-			workspaceInfo.Remote.Addr, ideBindingPort,
-			workspaceInfo.GetContainerWorkingPathWithVolumes())
+		IDEAddress := fmt.Sprintf("http://%v:%v/?folder=vscode-remote://%v:%v%v", workspaceInfo.Remote.Addr, ideBindingPort, workspaceInfo.Remote.Addr, ideBindingPort, workspaceInfo.GetContainerWorkingPathWithVolumes())
 		common.SmartIDELog.InfoF(IDEAddress)
 
 		return
@@ -281,14 +307,21 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		unusedLocalPortStr := strconv.Itoa(item.ClientPort)
 
 		// 【注意】这里非常的绕！！！ 远程主机的docker-compose才保存了端口的label信息，所以只能使用远程主机的端口
-		label := currentConfig.GetLabelWithPort(0, item.CurrentHostPort, item.ContainerPort)
+		label := item.HostPortDesc
+		if label == "" {
+			label = currentConfig.GetLabelWithPort(0, item.CurrentHostPort, item.ContainerPort)
+		}
 		if label != "" {
 			unusedLocalPortStr += fmt.Sprintf("(%v)", label)
 		}
 
-		msg := fmt.Sprintf("localhost:%v -> %v:%v -> container:%v",
-			unusedLocalPortStr, workspaceInfo.Remote.Addr, item.CurrentHostPort, item.ContainerPort)
-		common.SmartIDELog.Info(msg)
+		// 检查是否包含在端口转发列表中
+		if _, ok := addrMapping[fmt.Sprintf("localhost:%v", item.ClientPort)]; ok {
+			msg := fmt.Sprintf("localhost:%v -> %v:%v -> container:%v",
+				unusedLocalPortStr, workspaceInfo.Remote.Addr, item.CurrentHostPort, item.ContainerPort)
+			common.SmartIDELog.Info(msg)
+		}
+
 	}
 	//8.1. 执行绑定
 	tunnel.TunnelMultiple(sshRemote.Connection, addrMapping) // 端口转发
@@ -340,7 +373,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		}
 		if containerId, err = sshRemote.ExeSSHCommand(fmt.Sprintf("docker ps  -f 'name=%s' -q", dcc[len(dcc)-1].ContainerName)); containerId != "" && err == nil {
 			// smartide-agent install
-			workspace.InstallSmartideAgent(sshRemote, containerId, cmd)
+			workspace.InstallSmartideAgent(sshRemote, containerId, cmd, workspaceInfo.ServerWorkSpace.ID)
 		}
 
 		common.SmartIDELog.Info("feedback...")
@@ -358,6 +391,36 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		time.Sleep(500)
 	}
 
+}
+
+func setBasicSSHPWD(tempDockerCompose compose.DockerComposeYml, configYaml config.SmartIdeConfig, cmd *cobra.Command) {
+	if p, _ := common.GetBasicPassword(common.SmartIDELog.Ws_id, cmd); p != "" {
+		for _, s := range tempDockerCompose.Services {
+			s.Environment[model.CONST_ENV_NAME_LoalUserPassword] = p
+
+		}
+	}
+
+	// k1, k2 := func() (k1 string, k2 string) {
+	// 	for k1, v := range tempDockerCompose.Services {
+	// 		for k2 := range v.Environment {
+	// 			if k2 == model.CONST_ENV_NAME_LoalUserPassword {
+	// 				return k1, k2
+	// 			}
+	// 		}
+
+	// 	}
+	// 	return "", ""
+	// }()
+	// if k1 != "" && k2 != "" {
+	// 	if p, _ := common.GetBasicPassword(common.SmartIDELog.Ws_id, cmd); p != "" {
+	// 		tempDockerCompose.Services[k1].Environment[k2] = p
+	// 	}
+	// } else {
+	// 	if p, _ := common.GetBasicPassword(common.SmartIDELog.Ws_id, cmd); p != "" && configYaml.Workspace.DevContainer.ServiceName != "" {
+	// 		tempDockerCompose.Services[configYaml.Workspace.DevContainer.ServiceName].Environment[model.CONST_ENV_NAME_LoalUserPassword] = p
+	// 	}
+	// }
 }
 
 // 打印 service 列表

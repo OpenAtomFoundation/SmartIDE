@@ -41,6 +41,24 @@ kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/deploy
 
 ![sysbox-deploy 造成节点上其他pod重启](./images/sysbox-install-002.png)
 
+***注意：弹性扩展节点配置***
+
+若使用资源为弹性缩扩容节点时，为了保证新节点可以启用VMLC特性，那么需要自动/手动配置。
+
+如在Azure K8S中，可通过如下命令通过对节点池的设置，使弹性扩展时，新节点自动打入sysbox-install安装标记，完成VMLC特性的安装。
+```shell
+az aks nodepool update \
+    --resource-group smartide-k8s-test \
+    --cluster-name smartide-k8s-test \
+    --name nodepool1 \
+    --labels sysbox-install=yes \
+    --no-wait
+```
+其中：
+- resource-group : 资源组名称
+- cluster-name : 集群名称
+- name : 节点池名称
+
 ## 资源初始化
 准备好所需资源后，就可以通过一键配置脚本，进行资源的初始化操作。在配置好K8S上下文的命令行中执行以下步骤：
 

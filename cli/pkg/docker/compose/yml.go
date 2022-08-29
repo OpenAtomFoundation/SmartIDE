@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-07-11 15:38:06
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-22 16:45:51
+ * @LastEditTime: 2022-08-16 15:20:13
  * @FilePath: /cli/pkg/docker/compose/yml.go
  */
 /*
@@ -88,8 +88,11 @@ func (c *DockerComposeYml) GetSSHPassword(devService string) string {
 
 // 把结构化对象转换为string
 func (c *DockerComposeYml) ToYaml() (result string, err error) {
+	if c == nil {
+		return
+	}
 	if c.IsNil() {
-		return "", nil
+		return
 	}
 
 	//fmt.Println(c)
