@@ -25,7 +25,7 @@ SmartIDE内置了.NET 6开发环境模板，你可以通过一个简单的指令
 # 执行以下命令
 mkdir sample-dotnet-vscode 
 cd sample-dotnet-vscode
-smartide new dotnet -t vscode
+smartide new dotnet -T vscode
 ```
 
 运行后的效果如下，通过命令窗口中的日志详细了解SmartIDE的 启动过程，会自动打开浏览器窗口并导航到VSCode界面，输入 
@@ -263,7 +263,7 @@ JetBrains Rider 是由JetBrains公司开发的一个跨平台的.NET IDE工具�
 ```shell
 mkdir sample-dotnet-rider
 cd sample-dotnet-rider
-smartide new dotnet -t rider
+smartide new dotnet -T rider
 ```
 
 运行后效果如下：

@@ -36,6 +36,8 @@ SmartIDE CLI 通过调用docker和docker-compose来实现容器化环境的管�
 
 | 版本号      | 构建编号 | 发布日期      |   简要说明   |
 | ----------- | ----------- | ----------- | ----------- |
+| v1.0.25 | 5383 | 2022.08.29 | 主要包括：11.工作区SSH策略、密码策略支持K8S工作区；2.VMLC开发者镜像调整；
+3.smartide init项目初始化指令；4.ide.yaml同时支持docker-compose及k8s模式；5.优化日志显示，独立显示ingress及ssh日志信息；6.Server部署数据持久化；7.k8s basic密码使用提示；8.修复若干Bug |
 | [v1.0.23](/zh/blog/2022-0729-sprint23/) | 4650 | 2022.07.29 | 主要包括：1. CLI正式开源 2. 完整k8s模式 3. 团队管理 4. Hybrid模式 VSCode/JetBrains Gateway 5. smartide-webterminal 6. ARM支持 7. Pipeline模式 - Gitlab CI 支持 8. node、java VMLC开发者镜像 9.修复若干Bug |
 | v0.1.20 | 4041 | 2022.06.17 | 增加Server的K8S模式功能；优化CLI K8S模式功能、工作区策略SSH Key；修复若干BUG。  |
 | [v0.1.19](/zh/blog/2022-0615-sprint19/) | 3909 | 2022.06.01 | 增加工作区策略SSH Key及Git Config功能；工作区日志优化；K8S模式增强；修复若干BUG。  |

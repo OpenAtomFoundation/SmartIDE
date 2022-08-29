@@ -69,9 +69,9 @@ SmartIDE模版库本身是开源的，地址为
 ## 创建带有node全版本sdk的开发容器，无IDE，可通过VSCode SSH Remote或者JetBrains Gateway接入
 smartide new node
 ## 创建带有node全版本sdk的开发容器，使用VSCode WebIDE
-smartide new node -t vscode
+smartide new node -T vscode
 ## 创建带有node全版本sdk的开发容器，使用JetBrains WebStorm WebIDE
-smartide new node -t webstorm
+smartide new node -T webstorm
 ```
 
 我们这次发布了覆盖7个主流技术栈的SDK-Only, VSCode 和 JetBrains IDE开发者镜像一共22个，您可以通过 [镜像和模版](/zh/docs/templates/) 文档获取详细列表，包括其对应的 docker pull指令和smartide new指令。
