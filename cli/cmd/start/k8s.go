@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: kenan
- * @LastEditTime: 2022-08-29 15:48:04
+ * @LastEditTime: 2022-08-29 16:18:31
  * @FilePath: /cli/cmd/start/k8s.go
  */
 

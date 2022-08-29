@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:13:54
  * @LastEditors: kenan
- * @LastEditTime: 2022-08-29 16:12:45
+ * @LastEditTime: 2022-08-29 16:21:16
  * @FilePath: /cli/pkg/kubectl/k8s.go
  */
 

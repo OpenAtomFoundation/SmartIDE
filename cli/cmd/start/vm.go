@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2022-08-25 18:33:47
+ * @LastEditTime: 2022-08-29 16:18:42
  */
 package start
 
@@ -198,6 +198,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 			workspaceInfo.TempYamlFileAbsolutePath, workspaceInfo.WorkingDirectoryPath)
 		fmt.Println() // 避免向前覆盖
 		fun1 := func(output string) error {
+			output = strings.ToLower(output)
 			if strings.Contains(output, ":error") || strings.Contains(output, ":fatal") {
 				common.SmartIDELog.Error(output)
 

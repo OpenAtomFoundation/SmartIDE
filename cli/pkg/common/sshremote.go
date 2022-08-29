@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2022-08-24 17:45:19
+ * @LastEditTime: 2022-08-29 16:18:51
  */
 package common
 
@@ -824,6 +824,7 @@ func (instance *SSHRemote) ExecSSHCommandRealTimeFunc(sshCommand string, customE
 	sshOut, _ := session.StdoutPipe()
 
 	originExecuteFun := func(output string) error {
+		output = strings.ToLower(output)
 		if strings.Contains(output, "error") || strings.Contains(output, "fatal") {
 			return fmt.Errorf(output)
 		} else {
