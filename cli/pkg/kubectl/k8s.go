@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:13:54
  * @LastEditors: kenan
- * @LastEditTime: 2022-08-26 17:34:14
+ * @LastEditTime: 2022-08-29 16:12:45
  * @FilePath: /cli/pkg/kubectl/k8s.go
  */
 
@@ -10,10 +10,12 @@ package kubectl
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/leansoftX/smartide-cli/internal/model"
@@ -31,6 +33,9 @@ type KubernetesUtil struct {
 	Namespace       string
 	Commands        string
 }
+
+var runIdx int = 0               //background调用计数
+const ENV_NAME = "XW_DAEMON_IDX" //环境变量名
 
 func NewK8sUtilWithFile(kubeConfigFilePath string, targetContext string, ns string) (*KubernetesUtil, error) {
 	return newK8sUtil(kubeConfigFilePath, "", targetContext, ns)
@@ -348,9 +353,9 @@ func (k *KubernetesUtil) StartAgent(cmd *cobra.Command, pod coreV1.Pod, runAsUse
 	token, _ := fflags.GetString(Flags_ServerToken)
 	ownerguid, _ := fflags.GetString(Flags_ServerOwnerGuid)
 
-	commad := fmt.Sprintf("sudo chmod +x /smartide-agent && cd /;./smartide-agent --serverhost %s --servertoken %s --serverownerguid %s --workspaceId %v &", host, token, ownerguid, ws.ID)
+	commad := fmt.Sprintf("sudo chmod +x /smartide-agent && cd /;./smartide-agent --serverhost %s --servertoken %s --serverownerguid %s --workspaceId %v ", host, token, ownerguid, ws.ID)
 
-	err := k.ExecuteCommandRealtimeInPod(pod, commad, runAsUser)
+	err := k.ExecuteCommandRealtimeInPodBackground(pod, commad, runAsUser)
 	if err != nil {
 		common.SmartIDELog.Debug(err.Error())
 	}
@@ -397,6 +402,74 @@ func (k *KubernetesUtil) ExecKubectlCommandRealtime(command string, dirctory str
 	execCommand.Stdout = NewProxyWriter(os.Stdout)
 	execCommand.Stderr = NewProxyWriter(os.Stderr)
 	return execCommand.Run()
+}
+
+func (k *KubernetesUtil) ExecKubectlCommandRealtimeBackground(command string, dirctory string, isLoop bool, isExit bool) error {
+
+	logFile := "/tmp/daemon.log"
+	/*以下是父进程执行的代码*/
+
+	//因为要设置更多的属性, 这里不使用`exec.Command`方法, 直接初始化`exec.Cmd`结构体
+	cmd := &exec.Cmd{
+		Path: os.Args[0],
+		Args: os.Args,      //注意,此处是包含程序名的
+		Env:  os.Environ(), //父进程中的所有环境变量
+	}
+
+	kubeCommand := fmt.Sprintf("%v %v %v", k.KubectlFilePath, k.Commands, command)
+	if isLoop {
+		kubeCommand = fmt.Sprintf("while true; do %v; done", kubeCommand)
+	}
+	common.SmartIDELog.Debug(kubeCommand)
+
+	if dirctory != "" {
+		cmd.Dir = dirctory
+	}
+	//判断子进程还是父进程
+	runIdx++
+	envIdx, err := strconv.Atoi(os.Getenv(ENV_NAME))
+	if err != nil {
+		envIdx = 0
+	}
+	if runIdx <= envIdx { //子进程, 退出
+		return nil
+	}
+
+	//为子进程设置特殊的环境变量标识
+	cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%d", ENV_NAME, runIdx))
+
+	//若有日志文件, 则把子进程的输出导入到日志文件
+	if logFile != "" {
+		stdout, err := os.OpenFile(logFile, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
+		if err != nil {
+			log.Println(os.Getpid(), ": 打开日志文件错误:", err)
+			return err
+		}
+		cmd.Stderr = stdout
+		cmd.Stdout = stdout
+	}
+	switch runtime.GOOS {
+	case "windows":
+		cmd = exec.Command("powershell", "/c", kubeCommand)
+	default:
+		cmd = exec.Command("bash", "-c", kubeCommand)
+	}
+	//异步启动子进程
+	err = cmd.Start()
+	if err != nil {
+		log.Println(os.Getpid(), "启动子进程失败:", err)
+		return err
+	} else {
+		//执行成功
+		log.Println(os.Getpid(), ":", "启动子进程成功:", "->", cmd.Process.Pid, "\n ")
+	}
+
+	//若启动子进程成功, 父进程是否直接退出
+	if isExit {
+		os.Exit(0)
+	}
+	//execCommand.Stdout = os.Stdin
+	return nil
 }
 
 func (k *KubernetesUtil) ExecKubectlCommand(command string, dirctory string, isLoop bool) error {
@@ -507,6 +580,28 @@ func (k *KubernetesUtil) ExecuteCommandRealtimeInPod(pod coreV1.Pod, command str
 	kubeCommand := fmt.Sprintf(` -it exec %v -- /bin/bash -c "%v"`, pod.Name, command)
 
 	err := k.ExecKubectlCommandRealtime(kubeCommand, "", false)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// 在pod中实时执行shell命令
+// example: kubectl -it exec podname -- bash/sh -c
+func (k *KubernetesUtil) ExecuteCommandRealtimeInPodBackground(pod coreV1.Pod, command string, runAsUser string) error {
+	//command = "su smartide -c " + command
+	if runAsUser != "" && runAsUser != "root" {
+		if runtime.GOOS == "windows" {
+			command = strings.ReplaceAll(command, "'", "`")
+		} else {
+			command = strings.ReplaceAll(command, "'", "\"\"")
+		}
+		command = fmt.Sprintf(`su %v -c '%v'`, runAsUser, command)
+	}
+	kubeCommand := fmt.Sprintf(` -it exec %v -- /bin/bash -c "%v"`, pod.Name, command)
+
+	err := k.ExecKubectlCommandRealtimeBackground(kubeCommand, "", false, false)
 	if err != nil {
 		return err
 	}
