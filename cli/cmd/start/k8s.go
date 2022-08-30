@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
- * @LastEditors: kenan
- * @LastEditTime: 2022-08-29 16:18:31
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-08-30 14:43:28
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -17,6 +17,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"time"
 
@@ -309,11 +310,11 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 	//5.5. agent
 	common.SmartIDELog.Info("install agent")
 	if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server {
-		err := kubernetes.CopyToPod(*devContainerPod, common.PathJoin("/usr/local/bin", "smartide-agent"), common.PathJoin("/", "smartide-agent"), runAsUserName)
+		err := kubernetes.CopyToPod(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, common.PathJoin("/usr/local/bin", "smartide-agent"), common.PathJoin("/", "smartide-agent"), runAsUserName)
 		if err != nil {
 			return err
 		}
-		err = kubernetes.CopyLocalSSHConfigToPod(*devContainerPod, runAsUserName)
+		err = kubernetes.CopyLocalSSHConfigToPod(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName)
 		if err != nil {
 			return err
 		}
@@ -321,7 +322,8 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 		if err != nil {
 			return err
 		}
-		kubernetes.StartAgent(cmd, *devContainerPod, runAsUserName, workspaceInfo.ServerWorkSpace)
+		kubernetes.StartAgent(cmd, *devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName, workspaceInfo.ServerWorkSpace)
+
 	}
 
 	// time.Sleep(time.Second * 15)
@@ -330,7 +332,7 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 	if workspaceInfo.CliRunningEnv == workspace.CliRunningEnvEnum_Client {
 		if originK8sConfig.Workspace.DevContainer.Volumes.HasGitConfig.Value() {
 			common.SmartIDELog.Info("git config")
-			err = kubernetes.CopyLocalGitConfigToPod(*devContainerPod, runAsUserName)
+			err = kubernetes.CopyLocalGitConfigToPod(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName)
 			if err != nil {
 				return err
 			}
@@ -342,7 +344,7 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 	if workspaceInfo.CliRunningEnv == workspace.CliRunningEnvEnum_Client {
 		if originK8sConfig.Workspace.DevContainer.Volumes.HasSshKey.Value() {
 			common.SmartIDELog.Info("ssh config")
-			err = kubernetes.CopyLocalSSHConfigToPod(*devContainerPod, runAsUserName)
+			err = kubernetes.CopyLocalSSHConfigToPod(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName)
 			if err != nil {
 				return err
 			}
@@ -351,7 +353,7 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 	//5.3. git clone
 	common.SmartIDELog.Info("git clone")
 	containerGitCloneDir := originK8sConfig.GetProjectDirctory()
-	err = kubernetes.GitClone(*devContainerPod, runAsUserName, workspaceInfo.GitCloneRepoUrl, containerGitCloneDir, workspaceInfo.Branch)
+	err = kubernetes.GitClone(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName, workspaceInfo.GitCloneRepoUrl, containerGitCloneDir, workspaceInfo.Branch)
 	if err != nil {
 		return err
 	}
@@ -359,7 +361,7 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 	//5.4. 复制config文件
 	common.SmartIDELog.Info("copy config file")
 	configFileAbsolutePath := common.PathJoin(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath)
-	err = copyConfigToPod(*kubernetes, *devContainerPod, containerGitCloneDir, configFileAbsolutePath, runAsUserName)
+	err = copyConfigToPod(*kubernetes, *devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, containerGitCloneDir, configFileAbsolutePath, runAsUserName)
 	if err != nil {
 		return err
 	}
@@ -393,7 +395,7 @@ func hasChanged(workspaceInfo workspace.WorkspaceInfo, originK8sConfig config.Sm
 }
 
 // 复制config文件到pod
-func copyConfigToPod(k kubectl.KubernetesUtil, pod coreV1.Pod, podDestGitRepoPath string, configFilePath string, runAsUserName string) error {
+func copyConfigToPod(k kubectl.KubernetesUtil, pod coreV1.Pod, containerName string, podDestGitRepoPath string, configFilePath string, runAsUserName string) error {
 	// 目录
 	configFileDir := path.Dir(configFilePath)
 	tempDirPath := common.PathJoin(configFileDir, ".temp")
@@ -424,11 +426,11 @@ func copyConfigToPod(k kubectl.KubernetesUtil, pod coreV1.Pod, podDestGitRepoPat
 
 	// copy
 	destDir := common.PathJoin(podDestGitRepoPath, ".ide")
-	err = k.CopyToPod(pod, gitignoreFile, destDir, runAsUserName)
+	err = k.CopyToPod(pod, containerName, gitignoreFile, destDir, runAsUserName)
 	if err != nil {
 		return err
 	}
-	err = k.CopyToPod(pod, tempDirPath, destDir, runAsUserName)
+	err = k.CopyToPod(pod, containerName, tempDirPath, destDir, runAsUserName)
 	if err != nil {
 		return err
 	}
@@ -437,7 +439,7 @@ func copyConfigToPod(k kubectl.KubernetesUtil, pod coreV1.Pod, podDestGitRepoPat
 }
 
 // 复制config文件到pod
-func copyAgentToPod(k kubectl.KubernetesUtil, pod coreV1.Pod, podDestGitRepoPath string, agentFilePath string, runAsUserName string) error {
+func copyAgentToPod(k kubectl.KubernetesUtil, pod coreV1.Pod, containerName string, podDestGitRepoPath string, agentFilePath string, runAsUserName string) error {
 	// 目录
 	configFileDir := path.Dir(agentFilePath)
 	tempDirPath := common.PathJoin(configFileDir, ".temp")
@@ -462,7 +464,7 @@ func copyAgentToPod(k kubectl.KubernetesUtil, pod coreV1.Pod, podDestGitRepoPath
 	// copy
 	destDir := common.PathJoin("/", "smartide-agent")
 
-	err = k.CopyToPod(pod, tempDirPath, destDir, runAsUserName)
+	err = k.CopyToPod(pod, containerName, tempDirPath, destDir, runAsUserName)
 	if err != nil {
 		return err
 	}
@@ -581,7 +583,7 @@ func getDevContainerPodReady(kubernetes kubectl.KubernetesUtil, smartideK8sConfi
 	devContainerName := smartideK8sConfig.Workspace.DevContainer.ServiceName
 
 	if len(smartideK8sConfig.Workspace.Deployments) == 0 {
-		pod, err := kubernetes.GetPodByName(devContainerName)
+		pod, _, err := getDevContainerPod_PodDefinition(kubernetes, smartideK8sConfig)
 
 		if err != nil {
 			return false, err
@@ -629,62 +631,103 @@ func getDevContainerPodReady(kubernetes kubectl.KubernetesUtil, smartideK8sConfi
 	return false, nil
 }
 
-//
-func GetDevContainerPod(kubernetes kubectl.KubernetesUtil, smartideK8sConfig config.SmartIdeK8SConfig) (
-	pod *coreV1.Pod, serviceName string, err error) {
-
+func getDevContainerPod_PodDefinition(kubernetes kubectl.KubernetesUtil, smartideK8sConfig config.SmartIdeK8SConfig) (
+	podInstance *coreV1.Pod, serviceName string, err error) {
 	devContainerName := smartideK8sConfig.Workspace.DevContainer.ServiceName
+	isContain := false
+	for i := 0; i < len(smartideK8sConfig.Workspace.Others); i++ {
+		other := smartideK8sConfig.Workspace.Others[i]
 
-	if len(smartideK8sConfig.Workspace.Deployments) == 0 {
-		pod, err := kubernetes.GetPodByName(devContainerName)
-		if err != nil {
-			return pod, "", err
+		re := reflect.ValueOf(other)
+		kindName := ""
+		if re.Kind() == reflect.Ptr {
+			re = re.Elem()
 		}
-
-		for _, service := range smartideK8sConfig.Workspace.Services {
-			for key, value := range pod.ObjectMeta.Labels {
-				if _, ok := service.Spec.Selector[key]; ok && service.Spec.Selector[key] == value {
-					serviceName = service.Name
+		kindName = fmt.Sprint(re.FieldByName("Kind"))
+		if kindName == "Pod" {
+			tmpPod := other.(*coreV1.Pod)
+			for _, container := range tmpPod.Spec.Containers {
+				if container.Name == devContainerName {
+					podInstance, err = kubernetes.GetPodInstanceByName(tmpPod.ObjectMeta.Name)
+					if err != nil {
+						return nil, "", err
+					}
+					isContain = true
+					break
 				}
+
 			}
 		}
 
-		return pod, serviceName, nil
+		if isContain {
+			break
+		}
 
-	} else {
-		for _, deployment := range smartideK8sConfig.Workspace.Deployments {
-			for _, container := range deployment.Spec.Template.Spec.Containers {
-				if container.Name == devContainerName {
+	}
 
-					selector := ""
-					index := 0
-					for key, value := range deployment.Spec.Selector.MatchLabels {
-						if index == 0 {
-							selector += fmt.Sprintf("%v=%v", key, value)
-						}
-						index++
-					}
-
-					pod, err := kubernetes.GetPodBySelector(selector)
-					if err != nil {
-						return pod, "", err
-					}
-
-					for _, service := range smartideK8sConfig.Workspace.Services {
-						for key, value := range deployment.Spec.Selector.MatchLabels {
-							if _, ok := service.Spec.Selector[key]; ok && service.Spec.Selector[key] == value {
-								serviceName = service.Name
-							}
-						}
-					}
-
-					return pod, serviceName, nil
-				}
+	for _, service := range smartideK8sConfig.Workspace.Services {
+		for key, value := range podInstance.ObjectMeta.Labels {
+			if _, ok := service.Spec.Selector[key]; ok && service.Spec.Selector[key] == value {
+				serviceName = service.Name
+				break
 			}
 		}
 	}
+	return
+}
 
-	return nil, "", nil
+func getDevContainerPod_DeploymentDefinition(kubernetes kubectl.KubernetesUtil, smartideK8sConfig config.SmartIdeK8SConfig) (
+	podInstance *coreV1.Pod, serviceName string, err error) {
+	devContainerName := smartideK8sConfig.Workspace.DevContainer.ServiceName
+	isContain := false
+	for _, deployment := range smartideK8sConfig.Workspace.Deployments {
+		for _, container := range deployment.Spec.Template.Spec.Containers {
+			if container.Name == devContainerName {
+
+				selector := ""
+				index := 0
+				for key, value := range deployment.Spec.Selector.MatchLabels {
+					if index == 0 {
+						selector += fmt.Sprintf("%v=%v", key, value)
+					}
+					index++
+				}
+
+				pod, err := kubernetes.GetPodInstanceBySelector(selector)
+				if err != nil {
+					return pod, "", err
+				}
+
+				for _, service := range smartideK8sConfig.Workspace.Services {
+					for key, value := range deployment.Spec.Selector.MatchLabels {
+						if _, ok := service.Spec.Selector[key]; ok && service.Spec.Selector[key] == value {
+							serviceName = service.Name
+							break
+						}
+					}
+				}
+				isContain = true
+				break
+
+			}
+		}
+
+		if isContain {
+			break
+		}
+	}
+	return
+}
+
+//
+func GetDevContainerPod(kubernetes kubectl.KubernetesUtil, smartideK8sConfig config.SmartIdeK8SConfig) (
+	podInstance *coreV1.Pod, serviceName string, err error) {
+	if len(smartideK8sConfig.Workspace.Deployments) == 0 {
+		return getDevContainerPod_PodDefinition(kubernetes, smartideK8sConfig)
+	} else {
+		return getDevContainerPod_DeploymentDefinition(kubernetes, smartideK8sConfig)
+	}
+
 }
 
 // 从git下载相关文件
