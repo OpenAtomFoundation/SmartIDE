@@ -43,9 +43,9 @@ kubectl apply -f https://raw.githubusercontent.com/SmartIDE/SmartIDE/main/deploy
 
 ***注意：弹性扩展节点配置***
 
-若使用资源为弹性缩扩容节点时，为了保证新节点可以启用VMLC特性，那么需要自动/手动配置。
+若使用资源为弹性缩扩容节点时，为保证新节点可以自动启用VMLC特性，那么需要进行相应配置。
 
-如在Azure K8S中，可通过如下命令通过对节点池的设置，使弹性扩展时，新节点自动打入sysbox-install安装标记，完成VMLC特性的安装。
+例如：在Azure K8S中，可通过如下命令对节点池进行设置，那么弹性扩展时，新节点将会自动打上sysbox-install安装标记，并自动完成VMLC特性的安装。
 ```shell
 az aks nodepool update \
     --resource-group smartide-k8s-test \
