@@ -20,6 +20,8 @@ RUN mkdir /var/run/sshd && \
     apt-get autoremove -y && \
     rm -rf /tmp/* /var/lib/apt/lists/* /var/tmp/*
 
+RUN chmod 777 /var/run && \
+    chmod 777 /etc/supervisor
 
 RUN sed -i "s/UsePrivilegeSeparation.*/UsePrivilegeSeparation no/g" /etc/ssh/sshd_config && \
 	sed -i "s/UsePAM.*/UsePAM no/g" /etc/ssh/sshd_config && \
