@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:13:54
  * @LastEditors: kenan
- * @LastEditTime: 2022-08-31 21:04:06
+ * @LastEditTime: 2022-08-31 22:58:57
  * @FilePath: /cli/pkg/kubectl/k8s.go
  */
 
@@ -357,21 +357,18 @@ func (k *KubernetesUtil) StartAgent(cmd *cobra.Command, pod coreV1.Pod, containe
 
 	commad := fmt.Sprintf("sudo chmod +x /smartide-agent && cd /;./smartide-agent --serverhost %s --servertoken %s --serverownerguid %s --workspaceId %v ", host, token, ownerguid, ws.ID)
 
-	err := k.ExecuteCommandRealtimeInPod(pod, containerName, commad, runAsUser)
-	if err != nil {
-		common.SmartIDELog.Debug(err.Error())
-	}
+	go k.ExecuteCommandRealtimeInPod(pod, containerName, commad, runAsUser)
 
 	// 创建supervisor
 	commad = fmt.Sprintf(`sudo echo -e '[program:smartide-agent]
 directory=/
-command=/smartide-agent --serverhost %s --servertoken %s --serverownerguid %s --workspaceId %v ", host, token, ownerguid, ws.ID
+command=/smartide-agent --serverhost %s --servertoken %s --serverownerguid %s --workspaceId %v
 autostart=true
 autorestart=true
 startretries=10
 redirect_stderr=true
 stdout_logfile=/smartide-agent.log' >> /etc/supervisor/conf.d/smartide-agent.conf`, host, token, ownerguid, ws.ID)
-	err = k.ExecuteCommandRealtimeInPod(pod, containerName, commad, "")
+	err := k.ExecuteCommandRealtimeInPod(pod, containerName, commad, "")
 	if err != nil {
 		common.SmartIDELog.Debug(err.Error())
 	}
