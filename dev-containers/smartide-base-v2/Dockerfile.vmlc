@@ -10,7 +10,7 @@ ENV USER_PASS=smartide123.@IDE
 # Systemd installation
 #
 RUN apt-get update &&                            \
-    apt-get install -y --no-install-recommends   \
+    apt-get install -y --no-install-recommends supervisor  \
             systemd                              \
             systemd-sysv                         \
             libsystemd0                          \
@@ -36,6 +36,8 @@ RUN apt-get update &&                            \
     && mkdir -p /home/opvscode \
     && mkdir -p /idesh
 
+RUN chmod 777 /var/run && \
+    chmod 777 /etc/supervisor
 
 # Sshd install
 RUN apt-get update && apt-get install --no-install-recommends -y      \
