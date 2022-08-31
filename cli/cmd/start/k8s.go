@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
- * @LastEditors: kenan
- * @LastEditTime: 2022-08-31 10:06:09
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-08-31 13:59:37
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -693,9 +693,9 @@ func getDevContainerPod_DeploymentDefinition(kubernetes kubectl.KubernetesUtil, 
 					index++
 				}
 
-				pod, err := kubernetes.GetPodInstanceBySelector(selector)
+				podInstance, err = kubernetes.GetPodInstanceBySelector(selector)
 				if err != nil {
-					return pod, "", err
+					return podInstance, "", err
 				}
 
 				for _, service := range smartideK8sConfig.Workspace.Services {
@@ -719,7 +719,6 @@ func getDevContainerPod_DeploymentDefinition(kubernetes kubectl.KubernetesUtil, 
 	return
 }
 
-//
 func GetDevContainerPod(kubernetes kubectl.KubernetesUtil, smartideK8sConfig config.SmartIdeK8SConfig) (
 	podInstance *coreV1.Pod, serviceName string, err error) {
 	if len(smartideK8sConfig.Workspace.Deployments) == 0 {
