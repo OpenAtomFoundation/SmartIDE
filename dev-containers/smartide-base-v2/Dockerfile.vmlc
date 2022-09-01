@@ -34,7 +34,10 @@ RUN apt-get update &&                            \
     && chmod g+rw /home \
     && mkdir -p /home/project \
     && mkdir -p /home/opvscode \
-    && mkdir -p /idesh
+    && mkdir -p /idesh \
+    && chown -R $USERNAME:$USERNAME /home/project \
+    && chown -R $USERNAME:$USERNAME /home/opvscode
+    
 
 RUN chmod 777 /var/run && \
     chmod 777 /etc/supervisor
