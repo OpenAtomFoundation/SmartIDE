@@ -1,0 +1,19 @@
+version : '3'
+services:
+  smartide-dev:
+    image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-base-v2-vscode-vmlc:latest
+    restart: always
+    runtime: sysbox-runc
+    hostname: smartide-dev
+    ports:
+      - 6822:22
+      - 6800:3000
+      - 1313:1313
+    volumes:
+      - .:/home/project
+    networks:
+      - smartide-dev-network
+  
+networks:
+  smartide-dev-network:
+    external: true
