@@ -15,6 +15,13 @@ spec:
     image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-java-v2-vscode-vmlc:latest
     command: ["/sbin/init"]
     imagePullPolicy: Always
+    resources:
+      requests:
+        memory: "2Gi"
+        cpu: "500m"
+      limits:
+        memory: "2Gi"
+        cpu: "500m"
     ports:
       - containerPort: 22
       - containerPort: 3000
