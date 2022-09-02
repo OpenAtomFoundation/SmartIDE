@@ -41,7 +41,6 @@ RUN apt-get update &&                            \
 
 RUN chmod 777 /var/run && \
     chmod 777 /etc/supervisor && \
-     mkdir -p /var/log/supervisor/
 
 # Sshd install
 RUN apt-get update && apt-get install --no-install-recommends -y      \
@@ -111,6 +110,8 @@ RUN apt-get clean -y &&                                            \
     /usr/share/doc/*                                               \
     /usr/share/man/*                                               \
     /usr/share/local/*   
+
+RUN mkdir -p /var/log/supervisor
 
 EXPOSE 22 3000 8887
 
