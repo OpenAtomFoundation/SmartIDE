@@ -40,7 +40,8 @@ RUN apt-get update &&                            \
     
 
 RUN chmod 777 /var/run && \
-    chmod 777 /etc/supervisor
+    chmod 777 /etc/supervisor && \
+     mkdir -p /var/log/supervisor/
 
 # Sshd install
 RUN apt-get update && apt-get install --no-install-recommends -y      \
