@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:13:54
  * @LastEditors: kenan
- * @LastEditTime: 2022-08-31 22:58:57
+ * @LastEditTime: 2022-09-05 11:12:58
  * @FilePath: /cli/pkg/kubectl/k8s.go
  */
 
@@ -373,7 +373,7 @@ stdout_logfile=/smartide-agent.log' >> /etc/supervisor/conf.d/smartide-agent.con
 		common.SmartIDELog.Debug(err.Error())
 	}
 
-	commad = "supervisord"
+	commad = "supervisorctl reload "
 	err = k.ExecuteCommandRealtimeInPod(pod, containerName, commad, "")
 	if err != nil {
 		common.SmartIDELog.Debug(err.Error())
