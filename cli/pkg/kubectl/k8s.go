@@ -373,7 +373,12 @@ stdout_logfile=/smartide-agent.log' >> /etc/supervisor/conf.d/smartide-agent.con
 		common.SmartIDELog.Debug(err.Error())
 	}
 
-	commad = "supervisord && supervisorctl reload"
+	commad = "supervisord"
+	err = k.ExecuteCommandRealtimeInPod(pod, containerName, commad, "")
+	if err != nil {
+		common.SmartIDELog.Debug(err.Error())
+	}
+	commad = "supervisorctl reload"
 	err = k.ExecuteCommandRealtimeInPod(pod, containerName, commad, "")
 	if err != nil {
 		common.SmartIDELog.Debug(err.Error())
