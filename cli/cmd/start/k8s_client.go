@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-09-05 11:27:09
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-05 14:40:52
+ * @LastEditTime: 2022-09-05 15:41:41
  * @FilePath: /cli/cmd/start/k8s_client.go
  */
 
@@ -72,6 +72,9 @@ func ExecuteK8sClientStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 		if err != nil {
 			return err
 		}
+
+		// set value
+		workspaceInfo.K8sInfo.Namespace = k8sUtil.Namespace
 	}
 
 	// store

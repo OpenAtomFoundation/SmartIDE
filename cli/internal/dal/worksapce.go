@@ -122,31 +122,33 @@ func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId in
 	   	} */
 
 	//5. insert or update
-	if !isExit { //5.1. insert
-		remoteId := sql.NullInt32{} // 可能是个空值
-		k8sId := sql.NullInt32{}    // 可能是个空值
+	//5.1.
+	remoteId := sql.NullInt32{} // 可能是个空值
+	k8sId := sql.NullInt32{}    // 可能是个空值
 
-		if workspaceInfo.Mode != workspace.WorkingMode_K8s { // 插入到 remote 表中
-			if (workspaceInfo.Remote != workspace.RemoteInfo{}) {
-				tmpId, err := InsertOrUpdateRemote(workspaceInfo.Remote)
-				common.CheckError(err)
-				if tmpId > 0 {
-					remoteId = sql.NullInt32{
-						Int32: int32(tmpId),
-						Valid: true,
-					}
-				}
-			}
-		} else { // 插入到 k8s 表中 //TODO 表结构待定
-			tmpId, err := InsertOrUpdateK8sInfo(workspaceInfo.K8sInfo)
+	if workspaceInfo.Mode != workspace.WorkingMode_K8s { // 插入到 remote 表中
+		if (workspaceInfo.Remote != workspace.RemoteInfo{}) {
+			tmpId, err := InsertOrUpdateRemote(workspaceInfo.Remote)
 			common.CheckError(err)
 			if tmpId > 0 {
-				k8sId = sql.NullInt32{
+				remoteId = sql.NullInt32{
 					Int32: int32(tmpId),
 					Valid: true,
 				}
 			}
 		}
+	} else { // 插入到 k8s 表中 //TODO 表结构待定
+		tmpId, err := InsertOrUpdateK8sInfo(workspaceInfo.K8sInfo)
+		common.CheckError(err)
+		if tmpId > 0 {
+			k8sId = sql.NullInt32{
+				Int32: int32(tmpId),
+				Valid: true,
+			}
+		}
+	}
+	//5.2.
+	if !isExit { //5.2.1. insert
 
 		// sql
 		stmt, err := db.Prepare(`INSERT INTO workspace(w_name, w_workingdir, w_docker_compose_file_path, w_config_file, r_id,k_id,
@@ -164,7 +166,7 @@ func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId in
 			return -1, err
 		}
 		return res.LastInsertId()
-	} else { // update
+	} else { //5.2.2. update
 		// exec
 		stmt, err := db.Prepare(`update workspace 
 								set w_name=?, w_workingdir=?, w_docker_compose_file_path=?, w_config_file=?,
