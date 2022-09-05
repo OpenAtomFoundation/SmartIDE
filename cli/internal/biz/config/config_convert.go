@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-03-30 23:10:52
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-08 10:35:57
- * @FilePath: /smartide/cli/internal/biz/config/config_convert.go
+ * @LastEditTime: 2022-09-05 14:04:54
+ * @FilePath: /cli/internal/biz/config/config_convert.go
  */
 
 package config
@@ -18,11 +18,15 @@ import (
 
 	"github.com/jinzhu/copier"
 	"github.com/leansoftX/smartide-cli/pkg/common"
+	"github.com/leansoftX/smartide-cli/pkg/k8s"
 	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/api/resource"
 	k8sYaml "sigs.k8s.io/yaml"
 
+	appsV1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
+	networkingV1 "k8s.io/api/networking/v1"
+	//metaV1 "k8s.io/apimachinery/pkg/meta/v1"
 )
 
 // 转换为 SmartIdeConfig 类型
@@ -51,20 +55,19 @@ func (smartideConfig *SmartIdeConfig) ConvertToSmartIdeK8SConfig() *SmartIdeK8SC
 	return nil
 }
 
-//
 func (k8sConfig *SmartIdeK8SConfig) ConvertToConfigYaml() (string, error) {
 	smartideIdeConfig := k8sConfig.ConvertToSmartIdeConfig()
 	bytes, err := yaml.Marshal(smartideIdeConfig)
 	return string(bytes), err
 }
 
-//TODO, 获取devcontainer的登录用户
+// TODO, 获取devcontainer的登录用户
 func (originK8sConfig SmartIdeK8SConfig) GetSystemUserName() string {
 	return "root"
 }
 
 // 转换为临时的yaml文件
-func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(repoName string, namespace string, systemUserName string) SmartIdeK8SConfig {
+func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(repoName string, namespace string, systemUserName string, labels map[string]string) SmartIdeK8SConfig {
 	//0.
 	k8sConfig := SmartIdeK8SConfig{}
 	copier.CopyWithOption(&k8sConfig, &originK8sConfig, copier.Option{IgnoreEmpty: true, DeepCopy: true}) // 把一个对象赋值给另外一个对象
@@ -75,16 +78,21 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(repoName string, n
 	namespaceKind.Kind = "Namespace" // 必须要赋值，否则为空
 	namespaceKind.APIVersion = "v1"  // 必须要赋值，否则为空
 	namespaceKind.ObjectMeta.Name = namespace
+	namespaceKind = k8s.AddLabels(namespaceKind, labels).(coreV1.Namespace)
 	k8sConfig.Workspace.Others = append(k8sConfig.Workspace.Others, namespaceKind)
+
 	//1.2. 挂载到这个namespace上
 	for i := 0; i < len(k8sConfig.Workspace.Deployments); i++ {
 		k8sConfig.Workspace.Deployments[i].ObjectMeta.Namespace = namespace // namespace
+		k8sConfig.Workspace.Deployments[i] = k8s.AddLabels(k8sConfig.Workspace.Deployments[i], labels).(appsV1.Deployment)
 	}
 	for i := 0; i < len(k8sConfig.Workspace.Services); i++ {
 		k8sConfig.Workspace.Services[i].ObjectMeta.Namespace = namespace
+		k8sConfig.Workspace.Services[i] = k8s.AddLabels(k8sConfig.Workspace.Services[i], labels).(coreV1.Service)
 	}
 	for i := 0; i < len(k8sConfig.Workspace.Networks); i++ {
 		k8sConfig.Workspace.Networks[i].ObjectMeta.Namespace = namespace
+		k8sConfig.Workspace.Networks[i] = k8s.AddLabels(k8sConfig.Workspace.Networks[i], labels).(networkingV1.NetworkPolicy)
 	}
 	for i := 0; i < len(k8sConfig.Workspace.Others); i++ {
 		other := k8sConfig.Workspace.Others[i]
@@ -96,9 +104,12 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(repoName string, n
 		}
 		kindName = fmt.Sprint(re.FieldByName("Kind"))
 		if kindName != "Namespace" {
-			re.FieldByName("ObjectMeta").FieldByName("Namespace").SetString(namespace)
+			tmp := reflect.New(re.Type()).Elem()
+			tmp.FieldByName("ObjectMeta").FieldByName("Namespace").SetString(namespace)
+			//re.FieldByName("ObjectMeta").FieldByName("Namespace").SetString(namespace)
+			k8sConfig.Workspace.Others[i] = tmp.Interface()
 		}
-
+		k8sConfig.Workspace.Others[i] = k8s.AddLabels(other, labels)
 	}
 
 	return k8sConfig
@@ -229,22 +240,23 @@ func (k8sConfig *SmartIdeK8SConfig) SaveK8STempYaml(gitRepoRootDirPath string) (
 	return tempConfigFileRelativePath, nil
 }
 
-func (k8sConfig *SmartIdeK8SConfig) ConvertToK8sYaml() (string, error) {
-
-	// 现转换为json，在转换为yaml格式
-	var func1 = func(obj interface{}) (string, error) {
-		json, err := json.Marshal(obj)
-		if err != nil {
-			return "", err
-		}
-		k8sYamlContentBytes, err := k8sYaml.JSONToYAML(json)
-		if err != nil {
-			return "", err
-		}
-
-		return fmt.Sprintln("---") + string(k8sYamlContentBytes), nil
+// 先转换为json，在转换为yaml格式
+func ConvertK8sKindToString(kind interface{}) (string, error) {
+	json, err := json.Marshal(kind)
+	if err != nil {
+		return "", err
 	}
+	k8sYamlContentBytes, err := k8sYaml.JSONToYAML(json)
+	if err != nil {
+		return "", err
+	}
+	result := string(k8sYamlContentBytes)
+	result = strings.ReplaceAll(result, "\\\"", "\"")
 
+	return result, err
+}
+
+func (k8sConfig *SmartIdeK8SConfig) ConvertToK8sYaml() (string, error) {
 	//
 	kinds := []interface{}{}
 	kinds = append(kinds, k8sConfig.Workspace.Others...)
@@ -283,14 +295,14 @@ func (k8sConfig *SmartIdeK8SConfig) ConvertToK8sYaml() (string, error) {
 	})
 
 	//
-	k8sYamlContent := ""
+	var k8sYamlContents []string
 	for _, kind := range kinds {
-		content, err := func1(kind)
+		content, err := ConvertK8sKindToString(kind)
 		if err != nil {
 			return "", err
 		}
-		k8sYamlContent += string(content)
+		k8sYamlContents = append(k8sYamlContents, string(content))
 	}
 
-	return k8sYamlContent, nil
+	return strings.Join(k8sYamlContents, "\n---\n"), nil
 }

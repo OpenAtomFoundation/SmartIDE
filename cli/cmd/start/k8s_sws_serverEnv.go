@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-05-31 09:36:33
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-16 18:08:54
+ * @LastEditTime: 2022-09-02 14:35:31
  * @FilePath: /cli/cmd/start/k8s_sws_serverEnv.go
  */
 
@@ -12,11 +12,11 @@ import (
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/pkg/common"
-	"github.com/leansoftX/smartide-cli/pkg/kubectl"
+	"github.com/leansoftX/smartide-cli/pkg/k8s"
 	"github.com/spf13/cobra"
 )
 
-func ExecuteK8sServerStartCmd(cmd *cobra.Command, k8sUtil kubectl.KubernetesUtil,
+func ExecuteK8sServerStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 	workspaceInfo workspace.WorkspaceInfo,
 	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) error {
 	// 错误反馈
@@ -30,6 +30,14 @@ func ExecuteK8sServerStartCmd(cmd *cobra.Command, k8sUtil kubectl.KubernetesUtil
 		}
 
 	}
+
+	/* // create namespace
+	if k8sUtil.Namespace == "" {
+		// apply
+
+		// feedback
+
+	} */
 
 	// 工作区
 	workspaceInfo_, err := ExecuteK8sStartCmd(cmd, k8sUtil, workspaceInfo, yamlExecuteFun)

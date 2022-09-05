@@ -12,7 +12,7 @@ import (
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
-	"github.com/leansoftX/smartide-cli/pkg/kubectl"
+	"github.com/leansoftX/smartide-cli/pkg/k8s"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v2"
@@ -83,7 +83,7 @@ var ApplySSHCmd = &cobra.Command{
 		}
 
 		//3. parse ports && Construct Config Map
-		configMap := &kubectl.ConfigMap{
+		configMap := &k8s.ConfigMap{
 			APIVersion: "v1",
 			Kind:       "ConfigMap",
 			Metadata: struct {
@@ -151,7 +151,7 @@ var ApplySSHCmd = &cobra.Command{
 		tempK8sConfigFileAbsolutePath := common.PathJoin(config.SmartIdeHome, "tempconfig")
 		err = ioutil.WriteFile(tempK8sConfigFileAbsolutePath, []byte(resourceInfo.KubeConfig), 0777)
 		feedbackError(err)
-		k8sUtil, err := kubectl.NewK8sUtilWithFile(tempK8sConfigFileAbsolutePath,
+		k8sUtil, err := k8s.NewK8sUtilWithFile(tempK8sConfigFileAbsolutePath,
 			resourceInfo.KubeContext,
 			configMapNamespace)
 		feedbackError(err)

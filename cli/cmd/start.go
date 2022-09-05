@@ -32,7 +32,7 @@ import (
 
 	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/pkg/common"
-	"github.com/leansoftX/smartide-cli/pkg/kubectl"
+	"github.com/leansoftX/smartide-cli/pkg/k8s"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 
@@ -136,7 +136,7 @@ var startCmd = &cobra.Command{
 		} else if workspaceInfo.Mode == workspace.WorkingMode_K8s { //1.2. k8s 模式
 
 			if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server { //1.2.1. cli 在服务端运行
-				k8sUtil, err := kubectl.NewK8sUtilWithContent(workspaceInfo.K8sInfo.KubeConfigContent,
+				k8sUtil, err := k8s.NewK8sUtilWithContent(workspaceInfo.K8sInfo.KubeConfigContent,
 					workspaceInfo.K8sInfo.Context,
 					workspaceInfo.K8sInfo.Namespace)
 				common.SmartIDELog.Error(err)
@@ -145,7 +145,7 @@ var startCmd = &cobra.Command{
 				common.SmartIDELog.Error(err)
 
 			} else { //1.2.2. cli 在客户端运行
-				k8sUtil, err := kubectl.NewK8sUtil(workspaceInfo.K8sInfo.KubeConfigFilePath,
+				k8sUtil, err := k8s.NewK8sUtil(workspaceInfo.K8sInfo.KubeConfigFilePath,
 					workspaceInfo.K8sInfo.Context,
 					workspaceInfo.K8sInfo.Namespace)
 				common.SmartIDELog.Error(err)
@@ -563,7 +563,6 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 	return workspaceInfo, err
 }
 
-//
 func getLocalGitRepoUrl(pwd string) (gitRemmoteUrl, pathName string) {
 	// current directory
 	fileInfo, err := os.Stat(pwd)
@@ -583,7 +582,6 @@ func getLocalGitRepoUrl(pwd string) (gitRemmoteUrl, pathName string) {
 	return gitRemmoteUrl, pathName
 }
 
-//
 func getFlagValue(fflags *pflag.FlagSet, flag string) string {
 	value, err := fflags.GetString(flag)
 	if err != nil {
@@ -602,7 +600,6 @@ type FriendlyError struct {
 	Err error
 }
 
-//
 func (e *FriendlyError) Error() string {
 	return e.Err.Error()
 }

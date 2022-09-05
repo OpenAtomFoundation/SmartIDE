@@ -24,7 +24,7 @@ import (
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/docker/compose"
-	"github.com/leansoftX/smartide-cli/pkg/kubectl"
+	"github.com/leansoftX/smartide-cli/pkg/k8s"
 	"github.com/leansoftX/smartide-cli/pkg/tunnel"
 
 	initExtended "github.com/leansoftX/smartide-cli/cmd/init"
@@ -151,7 +151,7 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		common.SmartIDELog.Error(fmt.Errorf("从services %v 中获取 开发容器名称失败", serviceNames))
 	}
 	if currentConfig.Workspace.DevContainer.Volumes.HasGitConfig.Value() {
-		config.GitConfig(false, devContainerName, cli, &compose.Service{}, common.SSHRemote{}, kubectl.ExecInPodRequest{})
+		config.GitConfig(false, devContainerName, cli, &compose.Service{}, common.SSHRemote{}, k8s.ExecInPodRequest{})
 	}
 	docker := *common.NewDocker(cli)
 	dockerContainerName := strings.ReplaceAll(devContainerName, "/", "")
