@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-05 09:02:19
+ * @LastEditTime: 2022-09-05 15:17:59
  */
 package start
 
@@ -24,6 +24,7 @@ func getK8sLabels(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo) map
 	labels["smartide.workspaceName"] = workspaceInfo.Name
 	labels["smartide.cliVersion"] = cli.GetCliVersionByShell() //
 	labels["smartide.trigger"] = string(workspaceInfo.CliRunningEnv)
+	labels["smartide.workspaceId"] = workspaceInfo.ID
 
 	if workspaceInfo.CliRunningEnv != workspace.CliRunningEnvEnum_Client {
 		userName, _ := cmd.Flags().GetString("serverusername")

@@ -322,7 +322,10 @@ func workspaceDataMap(workspaceInfo *workspace.WorkspaceInfo, do workspaceDo) er
 		//workspaceInfo.ConfigYaml = *configYaml
 
 	} else if do.w_mode == string(workspace.WorkingMode_K8s) {
-		originK8sYaml, _ := config.NewK8sConfigFromContent(do.w_config_content.String, do.w_link_compose_content.String)
+		originK8sYaml, err := config.NewK8sConfigFromContent(do.w_config_content.String, do.w_link_compose_content.String)
+		if err != nil {
+			return err
+		}
 		workspaceInfo.K8sInfo.OriginK8sYaml = *originK8sYaml
 
 	} else {
