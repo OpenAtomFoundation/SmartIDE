@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-18 11:04:20
+ * @LastEditTime: 2022-09-05 14:42:19
  */
 package cmd
 
@@ -155,7 +155,7 @@ var startCmd = &cobra.Command{
 					common.CheckError(err)
 
 				} else { //1.2.2.2. 本地工作区，本地启动
-					_, err := start.ExecuteK8sStartCmd(cmd, *k8sUtil, workspaceInfo, executeStartCmdFunc)
+					err := start.ExecuteK8sClientStartCmd(cmd, *k8sUtil, workspaceInfo, executeStartCmdFunc)
 					common.CheckError(err)
 				}
 

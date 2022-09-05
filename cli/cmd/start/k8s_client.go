@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-09-05 11:27:09
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-05 14:09:22
+ * @LastEditTime: 2022-09-05 14:40:52
  * @FilePath: /cli/cmd/start/k8s_client.go
  */
 
@@ -38,6 +38,7 @@ func ExecuteK8sClientStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 	// namespace 是否存在
 	_, err := k8sUtil.ExecKubectlCommandCombined(" get namespace "+k8sUtil.Namespace, "")
 	if _, isExitError := err.(*exec.ExitError); isExitError {
+		common.SmartIDELog.Info("create namespace：" + k8sUtil.Namespace)
 		needStore = true
 
 		labels := getK8sLabels(cmd, workspaceInfo)
@@ -73,13 +74,15 @@ func ExecuteK8sClientStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 		}
 	}
 
-	//
+	// store
 	if needStore {
+		common.SmartIDELog.Info("workspace store")
 		workspaceId, err := dal.InsertOrUpdateWorkspace(workspaceInfo)
 		if err != nil {
 			return err
 		}
 		if workspaceInfo.ID == "" {
+			common.SmartIDELog.Info(fmt.Sprintf("workspace id: %v", workspaceId))
 			workspaceInfo.ID = fmt.Sprint(workspaceId)
 		}
 	}

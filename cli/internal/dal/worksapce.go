@@ -12,7 +12,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
@@ -112,15 +111,15 @@ func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId in
 		tempComposeStr, _ = workspaceInfo.TempDockerCompose.ToYaml()
 	}
 	//4.2. 校验
-	if strings.TrimSpace(configStr) == "" {
-		return -1, errors.New("配置文件数据为空！")
-	}
-	if workspaceInfo.Mode == workspace.WorkingMode_K8s && strings.TrimSpace(linkComposeStr) == "" {
-		return -1, errors.New("链接K8S yaml文件为空！")
-	}
-	if strings.TrimSpace(tempComposeStr) == "" {
-		return -1, errors.New("生成临时文件为空！")
-	}
+	/* 	if strings.TrimSpace(configStr) == "" {
+	   		return -1, errors.New("配置文件数据为空！")
+	   	}
+	   	if workspaceInfo.Mode == workspace.WorkingMode_K8s && strings.TrimSpace(linkComposeStr) == "" {
+	   		return -1, errors.New("链接K8S yaml文件为空！")
+	   	}
+	   	if strings.TrimSpace(tempComposeStr) == "" {
+	   		return -1, errors.New("生成临时文件为空！")
+	   	} */
 
 	//5. insert or update
 	if !isExit { //5.1. insert
@@ -222,7 +221,6 @@ func GetWorkspaceList() (workspaces []workspace.WorkspaceInfo, err error) {
 	return workspaces, err
 }
 
-//
 func GetSingleWorkspaceByParams(workingMode workspace.WorkingModeEnum, workingDir string, gitCloneUrl string, remoteId int, remoteHost string) (workspaceInfo workspace.WorkspaceInfo, err error) {
 	db := getDb()
 	defer db.Close()
@@ -420,7 +418,6 @@ func GetSingleWorkspace(workspaceid int) (workspaceInfo workspace.WorkspaceInfo,
 	return workspaceInfo, err
 }
 
-//
 func RemoveWorkspace(workspaceId int) error {
 	db := getDb()
 	defer db.Close()

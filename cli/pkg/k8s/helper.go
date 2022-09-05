@@ -1,16 +1,15 @@
 /*
  * @Date: 2022-09-05 11:48:48
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-05 11:50:56
+ * @LastEditTime: 2022-09-05 15:06:06
  * @FilePath: /cli/pkg/k8s/helper.go
  */
 
 package k8s
 
 import (
-	"fmt"
 	"reflect"
-	"strings"
+	"regexp"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -42,9 +41,13 @@ func AddLabels(kind interface{}, labels map[string]string) interface{} {
 	// 原类型中的labels赋值
 	objMeta := origin.FieldByName("ObjectMeta").Interface().(v1.ObjectMeta)
 	for key, value := range labels {
-		relValue := fmt.Sprintf("\\\"%v\\\"", value)
-		relValue = strings.ReplaceAll(relValue, "/", "_")
-		relValue = strings.ReplaceAll(relValue, ":", "_") //TODO 需要使用正则表达式进行replace
+
+		reg, _ := regexp.Compile(`[^-A-Za-z0-9_.]`)
+		relValue := reg.ReplaceAllString(value, "-")
+
+		regFirstAnEnd, _ := regexp.Compile(`^[^A-Za-z0-9]|[^A-Za-z0-9]$`)
+		relValue = regFirstAnEnd.ReplaceAllString(relValue, "0")
+
 		v1.SetMetaDataLabel(&objMeta, key, relValue)
 	}
 	result.FieldByName("ObjectMeta").Set(reflect.ValueOf(objMeta))
