@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-09-05 11:27:09
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-05 15:41:41
+ * @LastEditTime: 2022-09-05 22:43:58
  * @FilePath: /cli/cmd/start/k8s_client.go
  */
 
@@ -38,8 +38,8 @@ func ExecuteK8sClientStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 	// namespace 是否存在
 	_, err := k8sUtil.ExecKubectlCommandCombined(" get namespace "+k8sUtil.Namespace, "")
 	if _, isExitError := err.(*exec.ExitError); isExitError {
-		common.SmartIDELog.Info("create namespace：" + k8sUtil.Namespace)
 		needStore = true
+		common.SmartIDELog.Info("create namespace：" + k8sUtil.Namespace)
 
 		labels := getK8sLabels(cmd, workspaceInfo)
 		// namespace

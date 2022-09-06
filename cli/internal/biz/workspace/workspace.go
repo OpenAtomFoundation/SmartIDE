@@ -2,8 +2,8 @@
  * @Author: kenan
  * @Date: 2022-02-15 17:18:27
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-13 14:09:54
- * @FilePath: /smartide-cli/internal/biz/workspace/workspace.go
+ * @LastEditTime: 2022-09-06 10:37:13
+ * @FilePath: /cli/internal/biz/workspace/workspace.go
  * @Description:
  *
  * Copyright (c) 2022 by kenanlu@leansoftx.com, All Rights Reserved.
@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/model"
@@ -71,6 +72,10 @@ func GetWorkspaceFromServer(auth model.Auth, no string, cliRunningEnv CliRunning
 		return
 	}
 
+	no = strings.TrimSpace(no)
+	if no == "" {
+		return nil, errors.New("workspace id is nil")
+	}
 	url := fmt.Sprint(auth.LoginUrl, "/api/smartide/workspace/find")
 	queryparams := map[string]string{}
 	if common.IsNumber(no) {

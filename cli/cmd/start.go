@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-05 14:42:19
+ * @LastEditTime: 2022-09-06 10:39:25
  */
 package cmd
 
@@ -275,6 +275,7 @@ func getWorkspaceIdFromFlagsOrArgs(cmd *cobra.Command, args []string) string {
 	if fflags.Changed(flag_workspaceid) { // 从flag中加载
 		tmpWorkspaceId, err := fflags.GetString(flag_workspaceid)
 		common.CheckError(err)
+		tmpWorkspaceId = strings.TrimSpace(tmpWorkspaceId)
 
 		// 是否为数字，或者包含sw
 		if common.IsNumber(tmpWorkspaceId) || strings.Index(strings.ToLower(tmpWorkspaceId), "ws") == 1 {
@@ -286,6 +287,7 @@ func getWorkspaceIdFromFlagsOrArgs(cmd *cobra.Command, args []string) string {
 	if fflags.Changed("serverworkspaceid") { // 从flag中加载
 		serverWorkspaceId, err := fflags.GetString("serverworkspaceid")
 		common.CheckError(err)
+		serverWorkspaceId = strings.TrimSpace(serverWorkspaceId)
 
 		// 是否为数字，或者包含sw
 		if common.IsNumber(serverWorkspaceId) || strings.Index(strings.ToLower(serverWorkspaceId), "ws") == 1 {

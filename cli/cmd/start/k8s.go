@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-05 13:31:57
+ * @LastEditTime: 2022-09-06 10:49:27
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
