@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-03-23 16:13:54
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-30 14:50:42
- * @FilePath: /cli/pkg/k8s/k8s.go
+ * @LastEditTime: 2022-09-06 11:04:26
+ * @FilePath: /cli/pkg/k8s/k8sUtil.go
  */
 
 package k8s
@@ -356,11 +356,32 @@ func (k *KubernetesUtil) StartAgent(cmd *cobra.Command, pod coreV1.Pod, containe
 
 	commad := fmt.Sprintf("sudo chmod +x /smartide-agent && cd /;./smartide-agent --serverhost %s --servertoken %s --serverownerguid %s --workspaceId %v ", host, token, ownerguid, ws.ID)
 
-	err := k.ExecuteCommandRealtimeInPod(pod, containerName, commad, runAsUser)
+	go k.ExecuteCommandRealtimeInPod(pod, containerName, commad, runAsUser)
+
+	// 创建supervisor
+	commad = fmt.Sprintf(`sudo echo -e '[program:smartide-agent]
+directory=/
+command=/smartide-agent --serverhost %s --servertoken %s --serverownerguid %s --workspaceId %v
+autostart=true
+autorestart=true
+startretries=10
+redirect_stderr=true
+stdout_logfile=/smartide-agent.log' >> /etc/supervisor/conf.d/smartide-agent.conf`, host, token, ownerguid, ws.ID)
+	err := k.ExecuteCommandRealtimeInPod(pod, containerName, commad, "")
 	if err != nil {
 		common.SmartIDELog.Debug(err.Error())
 	}
 
+	commad = "supervisord"
+	err = k.ExecuteCommandRealtimeInPod(pod, containerName, commad, "")
+	if err != nil {
+		common.SmartIDELog.Debug(err.Error())
+	}
+	commad = "supervisorctl reload"
+	err = k.ExecuteCommandRealtimeInPod(pod, containerName, commad, "")
+	if err != nil {
+		common.SmartIDELog.Debug(err.Error())
+	}
 }
 
 type ProxyWriter struct {
