@@ -13,7 +13,7 @@ import (
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
-	"github.com/leansoftX/smartide-cli/pkg/kubectl"
+	k8sLib "github.com/leansoftX/smartide-cli/pkg/k8s"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v2"
@@ -115,7 +115,7 @@ var k8sCmd = &cobra.Command{
 		if err != nil {
 			common.SmartIDELog.Error(err)
 		}
-		k8sUtil, err := kubectl.NewK8sUtilWithFile(tempK8sConfigFileRelativePath,
+		k8sUtil, err := k8sLib.NewK8sUtilWithFile(tempK8sConfigFileRelativePath,
 			workspaceInfo.K8sInfo.Context,
 			namespace)
 		common.CheckError(err)
@@ -152,7 +152,7 @@ var k8sCmd = &cobra.Command{
 		}
 
 		//4. Initial Yaml Object
-		smartIdeIngress := &kubectl.WorkspaceIngress{
+		smartIdeIngress := &k8sLib.WorkspaceIngress{
 			APIVersion: "networking.k8s.io/v1",
 			Kind:       "Ingress",
 			Metadata: struct {

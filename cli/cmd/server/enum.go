@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-03-08 17:27:09
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-06 11:13:47
- * @FilePath: /smartide-cli/cmd/server/enum.go
+ * @LastEditTime: 2022-09-05 22:40:03
+ * @FilePath: /cli/cmd/server/enum.go
  */
 package server
 

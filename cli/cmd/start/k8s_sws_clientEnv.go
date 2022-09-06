@@ -17,7 +17,7 @@ import (
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
-	"github.com/leansoftX/smartide-cli/pkg/kubectl"
+	"github.com/leansoftX/smartide-cli/pkg/k8s"
 )
 
 // 在本地start 远程服务器上的k8s工作区
@@ -41,7 +41,7 @@ func ExecuteServerK8sStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo,
 	}
 
 	//1. 创建k8sUtil 对象
-	k8sUtil, err := kubectl.NewK8sUtil(workspaceInfo.K8sInfo.KubeConfigFilePath,
+	k8sUtil, err := k8s.NewK8sUtil(workspaceInfo.K8sInfo.KubeConfigFilePath,
 		workspaceInfo.K8sInfo.Context,
 		workspaceInfo.K8sInfo.Namespace)
 	if err != nil {

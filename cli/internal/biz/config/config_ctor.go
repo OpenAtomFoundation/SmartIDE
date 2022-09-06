@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-16 17:54:44
+ * @LastEditTime: 2022-09-05 15:26:24
  */
 package config
 
@@ -112,7 +112,7 @@ func newK8sConfig(localWorkingDir string, configFileRelativePath string, linkK8s
 	result = config.ConvertToSmartIdeK8SConfig()
 
 	parseYamlFunc := func(yamlFileContent string) error {
-		for _, subYamlFileContent := range strings.Split(yamlFileContent, "---") { // 分割符
+		for _, subYamlFileContent := range strings.Split(yamlFileContent, "---\n") { // 分割符
 			subYamlFileContent = strings.TrimSpace(subYamlFileContent)
 			if subYamlFileContent == "" {
 				continue
@@ -153,6 +153,7 @@ func newK8sConfig(localWorkingDir string, configFileRelativePath string, linkK8s
 	if k8sYamlContent != "" { // 当内容不为空的时候
 		err := parseYamlFunc(k8sYamlContent)
 		if err != nil {
+			common.SmartIDELog.Debug(k8sYamlContent)
 			return nil, err
 		}
 	} else {
@@ -187,7 +188,6 @@ func newK8sConfig(localWorkingDir string, configFileRelativePath string, linkK8s
 	return result, err
 }
 
-//
 func NewComposeConfigFromContent(configFileContent string, linkComposeFileContent string) (
 	result *SmartIdeConfig, linkDockerCompose *compose.DockerComposeYml, err error) {
 	// 从本地加载配置文件
@@ -205,7 +205,6 @@ func NewComposeConfigFromContent(configFileContent string, linkComposeFileConten
 	return
 }
 
-//
 func NewK8sConfigFromContent(configFileContent string, linkFileContent string) (
 	result *SmartIdeK8SConfig, err error) {
 	return newK8sConfig("", "", []string{}, configFileContent, linkFileContent)
@@ -320,7 +319,6 @@ func NewConfig(localWorkingDir string, configFilePath string, configContent stri
 }
 */
 
-//
 func newConfig(localWorkingDir string, configFilePath string, configContent string,
 	orchestratorType OrchestratorTypeEnum,
 	isRemote bool) (

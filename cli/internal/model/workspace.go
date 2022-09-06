@@ -2,8 +2,8 @@
  * @Author: kenan
  * @Date: 2022-02-15 19:32:44
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-28 17:53:54
- * @FilePath: /smartide-cli/internal/model/workspace.go
+ * @LastEditTime: 2022-09-05 22:46:14
+ * @FilePath: /cli/internal/model/workspace.go
  * @Description:
  *
  * Copyright (c) 2022 by kenanlu@leansoftx.com, All Rights Reserved.
@@ -53,31 +53,31 @@ type Data struct {
 	List []ServerWorkspace `json:"list"`
 }
 
-// {
-//   "code": 0,
-//   "data": {
-//     "list": [
-//       {
-//         "ID": 1,
-//         "CreatedAt": "2022-03-22T06:28:36.596Z",
-//         "UpdatedAt": "2022-03-22T06:28:36.596Z",
-//         "title": "启动工作区",
-//         "parentID": 0,
-//         "content": "启动工作区",
-//         "ws_id": "SWS001",
-//         "level": 0,
-//         "type": 0,
-//         "startAt": "2022-03-22T06:28:36.196Z",
-//         "endAt": "2022-03-22T06:28:36.196Z",
-//         "status": 0
-//       }
-//     ],
-//     "total": 1,
-//     "page": 0,
-//     "pageSize": 0
-//   },
-//   "msg": "获取成功"
-// }
+//	{
+//	  "code": 0,
+//	  "data": {
+//	    "list": [
+//	      {
+//	        "ID": 1,
+//	        "CreatedAt": "2022-03-22T06:28:36.596Z",
+//	        "UpdatedAt": "2022-03-22T06:28:36.596Z",
+//	        "title": "启动工作区",
+//	        "parentID": 0,
+//	        "content": "启动工作区",
+//	        "ws_id": "SWS001",
+//	        "level": 0,
+//	        "type": 0,
+//	        "startAt": "2022-03-22T06:28:36.196Z",
+//	        "endAt": "2022-03-22T06:28:36.196Z",
+//	        "status": 0
+//	      }
+//	    ],
+//	    "total": 1,
+//	    "page": 0,
+//	    "pageSize": 0
+//	  },
+//	  "msg": "获取成功"
+//	}
 type LogData struct {
 	List     []ServerWorkspaceLog `json:"list"`
 	Total    int64                `json:"total"`
@@ -219,8 +219,10 @@ const (
 	// 初始化
 	WorkspaceStatusEnum_Init WorkspaceStatusEnum = 0
 	//
-	WorkspaceStatusEnum_Pending WorkspaceStatusEnum = 101
-	WorkspaceStatusEnum_Start   WorkspaceStatusEnum = 199
+	WorkspaceStatusEnum_Pending           WorkspaceStatusEnum = 101
+	WorkspaceStatusEnum_Pending_NsCreated WorkspaceStatusEnum = 111
+
+	WorkspaceStatusEnum_Start WorkspaceStatusEnum = 199
 
 	WorkspaceStatusEnum_Stopping WorkspaceStatusEnum = 201
 	WorkspaceStatusEnum_Stop     WorkspaceStatusEnum = 299

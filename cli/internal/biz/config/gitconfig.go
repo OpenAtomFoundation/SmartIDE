@@ -1,8 +1,8 @@
 /*
  * @Author: kenan
  * @Date: 2021-10-13 15:31:52
- * @LastEditors: kenan
- * @LastEditTime: 2022-08-19 10:52:22
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-09-05 11:52:58
  * @Description: file content
  */
 
@@ -23,7 +23,7 @@ import (
 	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/docker/compose"
-	"github.com/leansoftX/smartide-cli/pkg/kubectl"
+	"github.com/leansoftX/smartide-cli/pkg/k8s"
 )
 
 var PassPhrase string
@@ -102,9 +102,8 @@ func SSHVolumesConfig(isVmCommand bool, service *compose.Service, sshRemote comm
 	// return
 }
 
-//
 func GitConfig(isVmCommand bool, containerName string, cli *client.Client,
-	service *compose.Service, sshRemote common.SSHRemote, execRquest kubectl.ExecInPodRequest) {
+	service *compose.Service, sshRemote common.SSHRemote, execRquest k8s.ExecInPodRequest) {
 
 	// 获取本机git config 内容
 	// git config --list --show-origin
@@ -152,7 +151,7 @@ func GitConfig(isVmCommand bool, containerName string, cli *client.Client,
 
 				gitConfigCmd := fmt.Sprint("git config --global --replace-all ", key, " ", "\"", value, "\"")
 				execRquest.Command = gitConfigCmd
-				//kubectl.ExecInPod(execRquest)
+				//k8s.ExecInPod(execRquest)
 
 			}
 		}

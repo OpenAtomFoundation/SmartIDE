@@ -1,11 +1,11 @@
 /*
  * @Date: 2022-03-23 16:13:54
- * @LastEditors: kenan
- * @LastEditTime: 2022-09-05 14:03:46
- * @FilePath: /cli/pkg/kubectl/k8s.go
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-09-06 11:04:26
+ * @FilePath: /cli/pkg/k8s/k8sUtil.go
  */
 
-package kubectl
+package k8s
 
 import (
 	"errors"
@@ -49,7 +49,6 @@ func NewK8sUtil(kubeConfigFilePath string, targetContext string, ns string) (*Ku
 	return newK8sUtil(kubeConfigFilePath, "", targetContext, ns)
 }
 
-//
 func newK8sUtil(kubeConfigFilePath string, kubeConfigContent string, targetContext string, ns string) (*KubernetesUtil, error) {
 	if targetContext == "" {
 		return nil, errors.New("target k8s context is nil")
@@ -401,7 +400,6 @@ func (w *ProxyWriter) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-//
 func (k *KubernetesUtil) ExecKubectlCommandRealtime(command string, dirctory string, isLoop bool) error {
 	var execCommand *exec.Cmd
 
@@ -674,7 +672,6 @@ func (k *KubernetesUtil) ExecuteCommandCombinedBackgroundInPod(pod coreV1.Pod, c
 	k.ExecKubectlCommandCombined(kubeCommand, "")
 }
 
-//
 func formartCommand(pod coreV1.Pod, containerName string, command string, runAsUser string) string {
 	if runAsUser != "" && runAsUser != "root" {
 		if runtime.GOOS == "windows" {
@@ -720,8 +717,8 @@ func checkAndInstallKubectl(kubectlFilePath string) error {
 	var execCommand2 *exec.Cmd
 	switch runtime.GOOS {
 	case "windows":
-		kubectlFilePath := strings.Join([]string{home, ".ide", "kubectl.exe"}, string(filepath.Separator)) //common.PathJoin(home, ".ide")
-		command := "Invoke-WebRequest -Uri \"https://smartidedl.blob.core.chinacloudapi.cn/kubectl/v1.23.0/bin/windows/amd64/kubectl.exe\" -OutFile " + kubectlFilePath
+		kubectlFilePath := strings.Join([]string{home, ".ide", "k8s.exe"}, string(filepath.Separator)) //common.PathJoin(home, ".ide")
+		command := "Invoke-WebRequest -Uri \"https://smartidedl.blob.core.chinacloudapi.cn/kubectl/v1.23.0/bin/windows/amd64/k8s.exe\" -OutFile " + kubectlFilePath
 		common.SmartIDELog.Debug(command)
 		execCommand2 = exec.Command("powershell", "/c", command)
 	case "darwin":
