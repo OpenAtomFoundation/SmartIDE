@@ -16,6 +16,7 @@ workspace:
       git-config: true
       ssh-key: true
     command:
+      - cd /home/project
       - git submodule update --init --recursive
       - cd docs
       - npm install
