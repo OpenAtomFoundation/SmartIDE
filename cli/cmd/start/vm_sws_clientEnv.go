@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-16 17:44:45
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-17 15:32:53
+ * @LastEditTime: 2022-09-07 14:46:24
  * @FilePath: /cli/cmd/start/vm_sws_clientEnv.go
  * @Description:
  *
@@ -115,7 +115,7 @@ func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo, y
 
 		// 打印信息
 		msg := fmt.Sprintf("localhost:%v -> %v:%v -> container:%v",
-			unusedClientPortStr, workspaceInfo.Remote.Addr, pmi.OriginHostPort, pmi.ContainerPort)
+			unusedClientPortStr, workspaceInfo.Remote.Addr, pmi.CurrentHostPort, pmi.ContainerPort)
 		common.SmartIDELog.Info(msg)
 
 		port.IsConnected = true
