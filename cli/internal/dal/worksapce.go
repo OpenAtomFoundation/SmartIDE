@@ -12,7 +12,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
@@ -112,42 +111,44 @@ func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId in
 		tempComposeStr, _ = workspaceInfo.TempDockerCompose.ToYaml()
 	}
 	//4.2. 校验
-	if strings.TrimSpace(configStr) == "" {
-		return -1, errors.New("配置文件数据为空！")
-	}
-	if workspaceInfo.Mode == workspace.WorkingMode_K8s && strings.TrimSpace(linkComposeStr) == "" {
-		return -1, errors.New("链接K8S yaml文件为空！")
-	}
-	if strings.TrimSpace(tempComposeStr) == "" {
-		return -1, errors.New("生成临时文件为空！")
-	}
+	/* 	if strings.TrimSpace(configStr) == "" {
+	   		return -1, errors.New("配置文件数据为空！")
+	   	}
+	   	if workspaceInfo.Mode == workspace.WorkingMode_K8s && strings.TrimSpace(linkComposeStr) == "" {
+	   		return -1, errors.New("链接K8S yaml文件为空！")
+	   	}
+	   	if strings.TrimSpace(tempComposeStr) == "" {
+	   		return -1, errors.New("生成临时文件为空！")
+	   	} */
 
 	//5. insert or update
-	if !isExit { //5.1. insert
-		remoteId := sql.NullInt32{} // 可能是个空值
-		k8sId := sql.NullInt32{}    // 可能是个空值
+	//5.1.
+	remoteId := sql.NullInt32{} // 可能是个空值
+	k8sId := sql.NullInt32{}    // 可能是个空值
 
-		if workspaceInfo.Mode != workspace.WorkingMode_K8s { // 插入到 remote 表中
-			if (workspaceInfo.Remote != workspace.RemoteInfo{}) {
-				tmpId, err := InsertOrUpdateRemote(workspaceInfo.Remote)
-				common.CheckError(err)
-				if tmpId > 0 {
-					remoteId = sql.NullInt32{
-						Int32: int32(tmpId),
-						Valid: true,
-					}
-				}
-			}
-		} else { // 插入到 k8s 表中 //TODO 表结构待定
-			tmpId, err := InsertOrUpdateK8sInfo(workspaceInfo.K8sInfo)
+	if workspaceInfo.Mode != workspace.WorkingMode_K8s { // 插入到 remote 表中
+		if (workspaceInfo.Remote != workspace.RemoteInfo{}) {
+			tmpId, err := InsertOrUpdateRemote(workspaceInfo.Remote)
 			common.CheckError(err)
 			if tmpId > 0 {
-				k8sId = sql.NullInt32{
+				remoteId = sql.NullInt32{
 					Int32: int32(tmpId),
 					Valid: true,
 				}
 			}
 		}
+	} else { // 插入到 k8s 表中 //TODO 表结构待定
+		tmpId, err := InsertOrUpdateK8sInfo(workspaceInfo.K8sInfo)
+		common.CheckError(err)
+		if tmpId > 0 {
+			k8sId = sql.NullInt32{
+				Int32: int32(tmpId),
+				Valid: true,
+			}
+		}
+	}
+	//5.2.
+	if !isExit { //5.2.1. insert
 
 		// sql
 		stmt, err := db.Prepare(`INSERT INTO workspace(w_name, w_workingdir, w_docker_compose_file_path, w_config_file, r_id,k_id,
@@ -165,7 +166,7 @@ func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId in
 			return -1, err
 		}
 		return res.LastInsertId()
-	} else { // update
+	} else { //5.2.2. update
 		// exec
 		stmt, err := db.Prepare(`update workspace 
 								set w_name=?, w_workingdir=?, w_docker_compose_file_path=?, w_config_file=?,
@@ -222,7 +223,6 @@ func GetWorkspaceList() (workspaces []workspace.WorkspaceInfo, err error) {
 	return workspaces, err
 }
 
-//
 func GetSingleWorkspaceByParams(workingMode workspace.WorkingModeEnum, workingDir string, gitCloneUrl string, remoteId int, remoteHost string) (workspaceInfo workspace.WorkspaceInfo, err error) {
 	db := getDb()
 	defer db.Close()
@@ -324,7 +324,10 @@ func workspaceDataMap(workspaceInfo *workspace.WorkspaceInfo, do workspaceDo) er
 		//workspaceInfo.ConfigYaml = *configYaml
 
 	} else if do.w_mode == string(workspace.WorkingMode_K8s) {
-		originK8sYaml, _ := config.NewK8sConfigFromContent(do.w_config_content.String, do.w_link_compose_content.String)
+		originK8sYaml, err := config.NewK8sConfigFromContent(do.w_config_content.String, do.w_link_compose_content.String)
+		if err != nil {
+			return err
+		}
 		workspaceInfo.K8sInfo.OriginK8sYaml = *originK8sYaml
 
 	} else {
@@ -420,7 +423,6 @@ func GetSingleWorkspace(workspaceid int) (workspaceInfo workspace.WorkspaceInfo,
 	return workspaceInfo, err
 }
 
-//
 func RemoveWorkspace(workspaceId int) error {
 	db := getDb()
 	defer db.Close()

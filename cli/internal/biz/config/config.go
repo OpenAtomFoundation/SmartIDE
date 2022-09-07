@@ -20,7 +20,7 @@ import (
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/docker/compose"
-	"github.com/leansoftX/smartide-cli/pkg/kubectl"
+	"github.com/leansoftX/smartide-cli/pkg/k8s"
 	"gopkg.in/yaml.v2"
 )
 
@@ -279,7 +279,7 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 			}
 
 			if yamlFileConfig.Workspace.DevContainer.Volumes.HasGitConfig.Value() {
-				GitConfig(isRemoteMode, "", nil, &service, sshRemote, kubectl.ExecInPodRequest{})
+				GitConfig(isRemoteMode, "", nil, &service, sshRemote, k8s.ExecInPodRequest{})
 			}
 
 			dockerCompose.Services[serviceName] = service

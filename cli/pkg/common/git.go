@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-15 23:15:20
+ * @LastEditTime: 2022-09-06 09:30:32
  */
 package common
 
@@ -83,6 +83,7 @@ Set-Content $checkoutFilePath -Value $content -Encoding Ascii`,
 		}
 	}
 	branchCommand += `
+	git reset --hard FETCH_HEAD
 	git pull`
 	err = EXEC.Realtime(branchCommand, repoDirPath)
 	if err != nil {

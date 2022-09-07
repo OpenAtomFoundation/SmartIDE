@@ -123,7 +123,6 @@ require (
 	github.com/ahmetb/go-linq/v3 v3.2.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/jinzhu/copier v0.3.5
-	github.com/kardianos/service v1.2.1
 	github.com/microsoft/ApplicationInsights-Go v0.4.4
 	github.com/pkg/sftp v1.13.4
 	github.com/thedevsaddam/gojsonq v2.3.0+incompatible

@@ -174,6 +174,62 @@ func Feedback_Finish(feedbackCommand FeedbackCommandEnum, cmd *cobra.Command,
 }
 
 // 反馈server工作区的创建情况
+func Feedback_Pending(feedbackCommand FeedbackCommandEnum, workspaceStatus model.WorkspaceStatusEnum,
+	cmd *cobra.Command,
+	workspaceInfo workspace.WorkspaceInfo, message string) error {
+	if workspaceInfo.CliRunningEnv != workspace.CliRunningEvnEnum_Server {
+		return errors.New("当前仅支持在 mode=server 的模式下运行！")
+	}
+
+	//1. 从参数中获取相应值
+	serverModeInfo, err := GetServerModeInfo(cmd)
+	//1.1. validate
+	if err != nil {
+		return err
+	}
+	if serverModeInfo.ServerHost == "" {
+		return errors.New("ServerHost is nil")
+	}
+	//1.2.
+	serverFeedbackUrl, _ := common.UrlJoin(serverModeInfo.ServerHost, "/api/smartide/workspace/pending")
+
+	//1.3. workspace id
+	worksspaceId := strconv.Itoa(int(workspaceInfo.ServerWorkSpace.ID))
+	if worksspaceId == "" {
+		worksspaceId = serverModeInfo.ServerWorkspaceid
+	}
+	if worksspaceId == "" {
+		return errors.New("workspace id is nil")
+	} else if strings.Contains(strings.ToLower(worksspaceId), "WS") {
+		flysnowRegexp := regexp.MustCompile(`[1-9]{1}[0-9].*`)
+		params := flysnowRegexp.FindStringSubmatch(worksspaceId)
+		worksspaceId = params[0]
+	}
+
+	//2.
+	datas := map[string]interface{}{
+		"command":           string(feedbackCommand),
+		"serverWorkspaceid": worksspaceId,
+		"serverUserName":    serverModeInfo.ServerUsername,
+		"message":           message,
+	}
+	if feedbackCommand == FeedbackCommandEnum_Start && workspaceInfo.Mode == workspace.WorkingMode_K8s { // 只有start的时候，才需要传递文件内容
+		datas["kubeNamespace"] = workspaceInfo.K8sInfo.Namespace
+		datas["status"] = workspaceStatus
+	}
+	headers := map[string]string{"Content-Type": "application/json", "x-token": serverModeInfo.ServerToken}
+
+	httpClient := common.CreateHttpClient(6, 30*time.Second, common.ResponseBodyTypeEnum_JSON)
+	_, err = httpClient.PostJson(serverFeedbackUrl.String(), datas, headers) // post 请求
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// 反馈server工作区的创建情况
 func Send_WorkspaceInfo(callbackAPI string, feedbackCommand FeedbackCommandEnum, cmd *cobra.Command,
 	isSuccess bool, webidePort *int, workspaceInfo workspace.WorkspaceInfo) error {
 
