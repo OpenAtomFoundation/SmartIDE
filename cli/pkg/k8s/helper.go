@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-09-05 11:48:48
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-06 09:43:26
+ * @LastEditTime: 2022-09-07 02:30:11
  * @FilePath: /cli/pkg/k8s/helper.go
  */
 
@@ -14,6 +14,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// 添加label
 func AddLabels(kind interface{}, labels map[string]string) interface{} {
 	origin := reflect.ValueOf(kind)
 	if origin.Kind() == reflect.Ptr {
