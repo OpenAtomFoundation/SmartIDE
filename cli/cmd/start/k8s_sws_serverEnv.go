@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-05-31 09:36:33
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-06 10:52:58
+ * @LastEditTime: 2022-09-06 11:16:08
  * @FilePath: /cli/cmd/start/k8s_sws_serverEnv.go
  */
 
@@ -55,30 +55,20 @@ func ExecuteK8sServerStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 		// 创建文件
 		// home 目录的路径
 		home, err := os.UserHomeDir()
-		if err != nil {
-			return err
-		}
+		serverFeedback(err)
 		workingRootDir := filepath.Join(home, ".ide", ".k8s") // 工作目录，repo 会clone到当前目录下
 		gitRepoRootDirPath := filepath.Join(workingRootDir, common.GetRepoName(workspaceInfo.GitCloneRepoUrl))
 		err = os.MkdirAll(gitRepoRootDirPath, os.ModePerm)
-		if err != nil {
-			return err
-		}
+		serverFeedback(err)
 		tempK8sNamespaceYamlAbsolutePath := filepath.Join(gitRepoRootDirPath, fmt.Sprintf("k8s_deployment_%v_temp_namespace.yaml", filepath.Base(gitRepoRootDirPath)))
 		k8sYamlContent, err := config.ConvertK8sKindToString(namespaceKind)
-		if err != nil {
-			return err
-		}
+		serverFeedback(err)
 		err = ioutil.WriteFile(tempK8sNamespaceYamlAbsolutePath, []byte(k8sYamlContent), 0777)
-		if err != nil {
-			return err
-		}
+		serverFeedback(err)
 
 		// apply
 		err = k8sUtil.ExecKubectlCommandRealtime(fmt.Sprintf("apply -f %v", tempK8sNamespaceYamlAbsolutePath), "", false)
-		if err != nil {
-			return err
-		}
+		serverFeedback(err)
 
 		// set value
 		workspaceInfo.K8sInfo.Namespace = k8sUtil.Namespace
