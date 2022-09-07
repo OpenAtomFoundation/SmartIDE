@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:13:54
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-06 11:04:26
+ * @LastEditTime: 2022-09-07 12:06:11
  * @FilePath: /cli/pkg/k8s/k8sUtil.go
  */
 
@@ -527,6 +527,7 @@ func execKubectlCommandCombined(kubectlFilePath string, command string, workingD
 
 	switch runtime.GOOS {
 	case "windows":
+		kubeCommand = strings.ReplaceAll(kubeCommand, "grep ", "findstr ")
 		execCommand = exec.Command("powershell", "/c", kubeCommand)
 	default:
 		execCommand = exec.Command("bash", "-c", kubeCommand)
