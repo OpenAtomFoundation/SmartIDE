@@ -75,7 +75,9 @@ Set-Content $checkoutFilePath -Value $content -Encoding Ascii`,
 	}
 	remoteName := g.GetRemoteName(repoDirPath)
 	branchCommand := fmt.Sprintf(`
-	git checkout %v && git reset --hard %v/%v && git pull
+	git checkout %v 
+	git reset --hard %v/%v 
+	git pull
 	`, branch, remoteName, branch)
 	err = EXEC.Realtime(branchCommand, repoDirPath)
 	if err != nil {
