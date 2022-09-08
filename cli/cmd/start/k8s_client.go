@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-09-05 11:27:09
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-05 22:43:58
+ * @LastEditTime: 2022-09-08 10:19:57
  * @FilePath: /cli/cmd/start/k8s_client.go
  */
 
@@ -57,6 +57,10 @@ func ExecuteK8sClientStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 		}
 		workingRootDir := filepath.Join(home, ".ide", ".k8s") // 工作目录，repo 会clone到当前目录下
 		gitRepoRootDirPath := filepath.Join(workingRootDir, common.GetRepoName(workspaceInfo.GitCloneRepoUrl))
+		err = os.MkdirAll(gitRepoRootDirPath, os.ModePerm)
+		if err != nil {
+			return err
+		}
 		tempK8sNamespaceYamlAbsolutePath := filepath.Join(gitRepoRootDirPath, fmt.Sprintf("k8s_deployment_%v_temp_namespace.yaml", filepath.Base(gitRepoRootDirPath)))
 		k8sYamlContent, err := config.ConvertK8sKindToString(namespaceKind)
 		if err != nil {

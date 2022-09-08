@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:13:54
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-07 12:06:11
+ * @LastEditTime: 2022-09-08 09:39:37
  * @FilePath: /cli/pkg/k8s/k8sUtil.go
  */
 
@@ -718,8 +718,8 @@ func checkAndInstallKubectl(kubectlFilePath string) error {
 	var execCommand2 *exec.Cmd
 	switch runtime.GOOS {
 	case "windows":
-		kubectlFilePath := strings.Join([]string{home, ".ide", "k8s.exe"}, string(filepath.Separator)) //common.PathJoin(home, ".ide")
-		command := "Invoke-WebRequest -Uri \"https://smartidedl.blob.core.chinacloudapi.cn/kubectl/v1.23.0/bin/windows/amd64/k8s.exe\" -OutFile " + kubectlFilePath
+		kubectlFilePath := strings.Join([]string{home, ".ide", "kubectl.exe"}, string(filepath.Separator)) //common.PathJoin(home, ".ide")
+		command := "Invoke-WebRequest -Uri \"https://smartidedl.blob.core.chinacloudapi.cn/kubectl/v1.23.0/bin/windows/amd64/kubectl.exe\" -OutFile " + kubectlFilePath
 		common.SmartIDELog.Debug(command)
 		execCommand2 = exec.Command("powershell", "/c", command)
 	case "darwin":

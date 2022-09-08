@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-03-29 14:16:33
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-27 16:44:19
- * @FilePath: /smartide-cli/pkg/common/exec.go
+ * @LastEditTime: 2022-09-07 14:40:10
+ * @FilePath: /cli/pkg/common/exec.go
  */
 
 package common
@@ -66,6 +66,11 @@ func (eo *execOperation) CombinedOutput(command string, rootDir string) (string,
 	}
 	if rootDir != "" {
 		execCommand.Dir = rootDir
+	} else {
+		homeDir, _ := os.UserHomeDir()
+		if homeDir != "" {
+			execCommand.Dir = homeDir
+		}
 	}
 
 	bytes, err := execCommand.CombinedOutput()

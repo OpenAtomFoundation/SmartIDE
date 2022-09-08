@@ -52,6 +52,10 @@ func AddLabels(kind interface{}, labels map[string]string) interface{} {
 }
 
 func filterSpecialCharacters4LabelValue(content string) string {
+	if len(content) >= 63 {
+		content = content[:62]
+	}
+
 	reg, _ := regexp.Compile(`[^-A-Za-z0-9_.]`)
 	relValue := reg.ReplaceAllString(content, "-")
 
