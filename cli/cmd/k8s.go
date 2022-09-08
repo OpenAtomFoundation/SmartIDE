@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/leansoftX/smartide-cli/cmd/k8s"
@@ -110,7 +111,7 @@ var k8sCmd = &cobra.Command{
 
 		//2. Save temp k8s config file
 		k8sConfigDirPath := config.SmartIdeHome
-		tempK8sConfigFileRelativePath := common.PathJoin(k8sConfigDirPath, "tempconfig")
+		tempK8sConfigFileRelativePath := filepath.Join(k8sConfigDirPath, "tempconfig")
 		err = ioutil.WriteFile(tempK8sConfigFileRelativePath, []byte(workspaceInfo.K8sInfo.KubeConfigContent), 0777)
 		if err != nil {
 			common.SmartIDELog.Error(err)
@@ -349,7 +350,7 @@ var k8sCmd = &cobra.Command{
 			common.SmartIDELog.Error(err)
 		}
 
-		tempK8sYamlFileRelativePath := common.PathJoin(k8sDirPath, "k8s_ingress_temp.yaml")
+		tempK8sYamlFileRelativePath := filepath.Join(k8sDirPath, "k8s_ingress_temp.yaml")
 		err = ioutil.WriteFile(tempK8sYamlFileRelativePath, []byte(yamlData), 0777)
 		if err != nil {
 			common.SmartIDELog.Error(err)
