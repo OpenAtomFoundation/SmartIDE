@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-06 09:30:32
+ * @LastEditTime: 2022-09-08 10:12:18
  */
 package common
 
@@ -70,21 +70,13 @@ Set-Content $checkoutFilePath -Value $content -Encoding Ascii`,
 
 	//2. checkout
 	repoDirPath := PathJoin(rootDir, repoName)
-	output, err := EXEC.CombinedOutput("git branch -a", repoDirPath)
-	if err != nil {
-		return []string{}, err
+	if branch == "" {
+		branch = g.GetMainBranchName(repoDirPath)
 	}
-	branchCommand := "git checkout master"
-	if branch != "" {
-		branchCommand = fmt.Sprintf("git checkout %v", branch)
-	} else {
-		if !strings.Contains(output, "origin/master") { // 如果主分支不master，就切换为main
-			command = "git checkout main"
-		}
-	}
-	branchCommand += `
-	git reset --hard FETCH_HEAD
-	git pull`
+	remoteName := g.GetRemoteName(repoDirPath)
+	branchCommand := fmt.Sprintf(`
+	git checkout %v && git reset --hard %v/%v && git pull
+	`, branch, remoteName, branch)
 	err = EXEC.Realtime(branchCommand, repoDirPath)
 	if err != nil {
 		return []string{}, err
@@ -98,6 +90,49 @@ Set-Content $checkoutFilePath -Value $content -Encoding Ascii`,
 	}
 
 	return files, nil
+}
+
+func (g gitOperation) GetRemoteName(repoDirPath string) string {
+	output, _ := EXEC.CombinedOutput("git remote show", repoDirPath)
+	tmpArray := strings.Split(strings.TrimSpace(output), "\n")
+	remoteName := tmpArray[len(tmpArray)-1]
+	return remoteName
+}
+
+// 获取默认分支
+// e.g. git remote show $(git remote show|tail -1)|grep 'HEAD branch'|awk '{print $NF}'
+func (g gitOperation) GetMainBranchName(repoDirPath string) string {
+	remoteName := g.GetRemoteName(repoDirPath)
+
+	output1, _ := EXEC.CombinedOutput("git remote show "+remoteName, repoDirPath)
+	tmpArray1 := strings.Split(strings.TrimSpace(output1), "\n")
+	for _, line := range tmpArray1 {
+		/*
+					* remote origin
+			  Fetch URL: https://github.com/idcf-boat-house/boathouse-calculator.git
+			  Push  URL: https://github.com/idcf-boat-house/boathouse-calculator.git
+			  HEAD branch: master
+			  Remote branches:
+			    feature-vmlc-arm-improve tracked
+			    kaikeba                  tracked
+			    master                   tracked
+			    new-base                 tracked
+			    test-git-config          tracked
+			  Local branches configured for 'git pull':
+			    feature-vmlc-arm-improve merges with remote feature-vmlc-arm-improve
+			    master                   merges with remote master
+			  Local refs configured for 'git push':
+			    feature-vmlc-arm-improve pushes to feature-vmlc-arm-improve (up to date)
+			    master                   pushes to master                   (local out of date)
+		*/
+		text := "HEAD branch:"
+		index := strings.Index(line, text)
+		if index > -1 {
+			tmp := line[index+len(text):]
+			return strings.TrimSpace(tmp)
+		}
+	}
+	return ""
 }
 
 // 从git下载相关文件
