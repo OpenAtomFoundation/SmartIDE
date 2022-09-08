@@ -59,11 +59,7 @@ spec:
       default: 
 
   steps:
-<<<<<<< HEAD
       image: smartide/smartide-cli:5673
-=======
-      image: smartide/smartide-cli:5649
->>>>>>> releases/release-26
       script: |
         #!/bin/bash
 
