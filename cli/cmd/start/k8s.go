@@ -1,7 +1,12 @@
 /*
  * @Date: 2022-03-23 16:15:38
+<<<<<<< HEAD
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-09-07 16:24:10
+=======
  * @LastEditors: Jason Chen
  * @LastEditTime: 2022-09-06 11:03:40
+>>>>>>> releases/release-26
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -343,8 +348,16 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 			if err != nil {
 				return err
 			}
+
+			//本地k8s 模式将公钥写入容器内knowhost
+			command := `sudo echo -e | cat ~/.ssh/id_rsa.pub   >>  /home/smartide/.ssh/authorized_keys && sudo chmod 644 /home/smartide/.ssh/authorized_keys`
+			err = kubernetes.ExecuteCommandRealtimeInPod(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, command, runAsUserName)
+			if err != nil {
+				return err
+			}
 		}
 	}
+
 	//5.3. git clone
 	common.SmartIDELog.Info("git clone")
 	containerGitCloneDir := originK8sConfig.GetProjectDirctory()
