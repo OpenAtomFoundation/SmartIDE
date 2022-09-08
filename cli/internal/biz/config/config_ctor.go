@@ -112,7 +112,7 @@ func newK8sConfig(localWorkingDir string, configFileRelativePath string, linkK8s
 	result = config.ConvertToSmartIdeK8SConfig()
 
 	parseYamlFunc := func(yamlFileContent string) error {
-		for _, subYamlFileContent := range strings.Split(yamlFileContent, "---\n") { // 分割符
+		for _, subYamlFileContent := range strings.Split(yamlFileContent, "---"+common.GetNewline()) { // 分割符
 			subYamlFileContent = strings.TrimSpace(subYamlFileContent)
 			if subYamlFileContent == "" {
 				continue
