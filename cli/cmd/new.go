@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-04-20 17:08:53
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-19 15:05:51
- * @FilePath: /cli/cmd/new.go
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-09-09 16:40:54
+ * @FilePath: /smartide/cli/cmd/new.go
  */
 package cmd
 
@@ -66,4 +66,5 @@ func init() {
 	newCmd.Flags().IntP("port", "p", 22, i18nInstance.Start.Info_help_flag_port)
 	newCmd.Flags().StringP("username", "u", "", i18nInstance.Start.Info_help_flag_username)
 	newCmd.Flags().StringP("password", "", "", i18nInstance.Start.Info_help_flag_password)
+	newCmd.Flags().StringP("serverownerguid", "g", "", i18nInstance.Start.Info_help_flag_ownerguid)
 }
