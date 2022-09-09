@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-15 19:32:44
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-05 22:46:14
+ * @LastEditTime: 2022-09-09 09:57:36
  * @FilePath: /cli/internal/model/workspace.go
  * @Description:
  *
@@ -113,7 +113,7 @@ type ServerWorkspace struct {
 	OwnerGUID string `json:"ownerGuid" `
 	OwnerName string `json:"ownerName" `
 
-	KubeNamespace                 string                            `json:"namespace" `
+	KubeNamespace                 string                            `json:"kubeNamespace" `
 	KubeIngressAuthenticationType KubeIngressAuthenticationTypeEnum `json:"kubeIngressAuthenticationType"`
 	KubeIngressLoginUserName      string                            `json:"kubeIngressUserName" `
 	KubeIngressLoginPassword      string                            `json:"kubeIngressPassword" `

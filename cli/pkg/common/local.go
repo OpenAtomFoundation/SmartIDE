@@ -10,6 +10,7 @@ package common
 import (
 	"errors"
 	"os/exec"
+	"runtime"
 	"strings"
 
 	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
@@ -65,4 +66,11 @@ func CheckLocalGitEnv() error {
 	}
 
 	return nil
+}
+
+func GetNewline() string {
+	if runtime.GOOS == "windows" {
+		return "\r\n"
+	}
+	return "\n"
 }

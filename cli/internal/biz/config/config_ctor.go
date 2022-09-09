@@ -14,6 +14,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
@@ -112,7 +113,9 @@ func newK8sConfig(localWorkingDir string, configFileRelativePath string, linkK8s
 	result = config.ConvertToSmartIdeK8SConfig()
 
 	parseYamlFunc := func(yamlFileContent string) error {
-		for _, subYamlFileContent := range strings.Split(yamlFileContent, "---\n") { // 分割符
+		re, _ := regexp.Compile(fmt.Sprintf("---%v|---%v", "\n", "\r\n"))
+		array := re.Split(yamlFileContent, -1)
+		for _, subYamlFileContent := range array { // 分割符
 			subYamlFileContent = strings.TrimSpace(subYamlFileContent)
 			if subYamlFileContent == "" {
 				continue
@@ -210,114 +213,6 @@ func NewK8sConfigFromContent(configFileContent string, linkFileContent string) (
 	return newK8sConfig("", "", []string{}, configFileContent, linkFileContent)
 
 }
-
-/* // 远程服务器 compose 类型配置
-func NewRemoteComposeConfig(sshRemote common.SSHRemote, localWorkingDir string, configFilePath string, configContent string) (result *SmartIdeConfig) {
-
-	return newConfig(localWorkingDir, configFilePath, configContent, OrchestratorTypeEnum_Compose, true)
-}
-
-// 本地 compose 类型配置
-func NewComposeConfig(localWorkingDir string, configFilePath string) (result *SmartIdeConfig) {
-	return newConfig(localWorkingDir, configFilePath, "", OrchestratorTypeEnum_Compose, false)
-} */
-/*
-// k8s 工作区的配置
-func NewK8SConfig(configFileAbsolutePath string,
-	k8sYamlFileAbsolutePaths []string,
-	configContent string,
-	k8sYamlContent string) (result *SmartIdeK8SConfig, err error) {
-
-	localWorkingDir := filepath.Dir(configFileAbsolutePath)
-	fileName := filepath.Base(configFileAbsolutePath)
-	config := newConfig(localWorkingDir, fileName, configContent, OrchestratorTypeEnum_K8S, false)
-	result = config.ConvertToSmartIdeK8SConfig()
-
-	parseYamlFunc := func(yamlFileContent string) error {
-		for _, subYamlFileContent := range strings.Split(yamlFileContent, "---") { // 分割符
-			subYamlFileContent = strings.TrimSpace(subYamlFileContent)
-			if subYamlFileContent == "" {
-				continue
-			}
-
-			// 遍历k8s的yaml文件
-			decode := k8sScheme.Codecs.UniversalDeserializer().Decode
-			obj, groupKindVersion, err := decode([]byte(subYamlFileContent), nil, nil)
-			if err != nil {
-				return err
-			}
-			if obj == nil || groupKindVersion == nil {
-				return errors.New("k8s yaml 文件解析失败！")
-			}
-
-			// example: https://developers.redhat.com/blog/2020/12/16/create-a-kubernetes-operator-in-golang-to-automatically-manage-a-simple-stateful-application#set_the_controller
-			switch groupKindVersion.Kind {
-			case "Deployment":
-				deployment := obj.(*appV1.Deployment)
-				result.Workspace.Deployments = append(result.Workspace.Deployments, *deployment)
-			case "Service":
-				service := obj.(*coreV1.Service)
-				result.Workspace.Services = append(result.Workspace.Services, *service)
-			case "PersistentVolumeClaim":
-				pvc := obj.(*coreV1.PersistentVolumeClaim)
-				result.Workspace.PVCS = append(result.Workspace.PVCS, *pvc)
-			case "NetworkPolicy":
-				networkPolicy := obj.(*networkingV1.NetworkPolicy)
-				result.Workspace.Networks = append(result.Workspace.Networks, *networkPolicy)
-			default:
-				result.Workspace.Others = append(result.Workspace.Others, obj)
-			}
-		}
-
-		return nil
-	}
-
-	if k8sYamlContent != "" {
-		err := parseYamlFunc(k8sYamlContent)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		if len(k8sYamlFileAbsolutePaths) == 0 {
-			dir := path.Dir(configFileAbsolutePath)
-			tempExpression := common.PathJoin(dir, config.Workspace.KubeDeployFiles)
-			files, err := filepath.Glob(tempExpression)
-			if err != nil {
-				return nil, err
-			}
-			k8sYamlFileAbsolutePaths = files
-		}
-
-		for _, k8sYamlFileAbsolutePath := range k8sYamlFileAbsolutePaths {
-
-			yamlFileBytes, err := ioutil.ReadFile(k8sYamlFileAbsolutePath)
-			if err != nil {
-				return nil, err
-			}
-			yamlFileContent := string(yamlFileBytes)
-			err = parseYamlFunc(yamlFileContent)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	// 验证
-	err = result.Valid()
-
-	return result, err
-} */
-
-/* //
-// @Tags
-// @Summary
-// @Param data localWorkingDir string ""
-// @Param data configFilePath string ""
-// @Param data configContent string ""
-func NewConfig(localWorkingDir string, configFilePath string, configContent string) (result *SmartIdeConfig) {
-	return newConfig(localWorkingDir, configFilePath, configContent, OrchestratorTypeEnum_Allinone, false)
-}
-*/
 
 func newConfig(localWorkingDir string, configFilePath string, configContent string,
 	orchestratorType OrchestratorTypeEnum,

@@ -107,10 +107,11 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil, workspac
 		tempK8sConfig = originK8sConfig.ConvertToTempK8SYaml(repoName, workspaceInfo.K8sInfo.Namespace, originK8sConfig.GetSystemUserName(), labels)
 		tempK8sYamlFileRelativePath, err := tempK8sConfig.SaveK8STempYaml(gitRepoRootDirPath)
 		// ★★★★★ 保存到目录（临时k8s yaml文件的绝对路径）
-		tempK8sYamlAbsolutePath := common.PathJoin(gitRepoRootDirPath, tempK8sYamlFileRelativePath)
+		tempK8sYamlAbsolutePath := filepath.Join(gitRepoRootDirPath, tempK8sYamlFileRelativePath)
 		if err != nil {
 			return nil, err
 		}
+
 		//4.3. 赋值属性
 		if workspaceInfo.Name == "" {
 			workspaceInfo.Name = repoName
@@ -499,7 +500,7 @@ func downloadConfigAndLinkFiles(workspaceInfo workspace.WorkspaceInfo) (
 	common.SmartIDELog.Info("下载配置文件 关联的 k8s yaml 文件")
 	configFileRelativePath = fileRelativePaths[0]
 	var configYaml map[string]interface{}
-	configFileBytes, err := ioutil.ReadFile(common.PathJoin(gitRepoRootDirPath, configFileRelativePath))
+	configFileBytes, err := ioutil.ReadFile(filepath.Join(gitRepoRootDirPath, configFileRelativePath))
 	if err != nil {
 		return
 	}
@@ -511,7 +512,7 @@ func downloadConfigAndLinkFiles(workspaceInfo workspace.WorkspaceInfo) (
 	if filePathExpression == "" {
 		return "", "", []string{}, fmt.Errorf("配置文件 %v Workspace.kube-deploy-files 节点未配置！", workspaceInfo.ConfigFileRelativePath)
 	}
-	filePathExpression = path.Join(".ide", filePathExpression)
+	filePathExpression = filepath.Join(".ide", filePathExpression)
 
 	//
 	_, linkK8sYamlRelativePaths, err = downloadFilesByGit(workspaceInfo.GitCloneRepoUrl, workspaceInfo.Branch, filePathExpression)

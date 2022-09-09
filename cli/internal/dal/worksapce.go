@@ -386,6 +386,7 @@ func workspaceDataMap(workspaceInfo *workspace.WorkspaceInfo, do workspaceDo) er
 			workspaceInfo.K8sInfo.ID = temp.ID
 			workspaceInfo.K8sInfo.Context = temp.Context
 			workspaceInfo.K8sInfo.Namespace = temp.Namespace
+			workspaceInfo.K8sInfo.KubeConfigFilePath = temp.KubeConfigFilePath
 		}
 	}
 
