@@ -75,7 +75,7 @@ spec:
         elif [ "$(params.COMMAND)" == "new" ]; then 
           echo "smartide new running"
           echo "smartide new $(params.ARGS) --debug --mode server --isInsightDisabled false --host '$(params.HOST)' --username '$(params.SSH_USER_NAME)' --password '$(params.SSH_USER_PASSWORD)' --serverhost '$(params.SERVER_HOST)' --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)' "
-          smartide new $(params.ARGS) -y --debug --mode server --isInsightDisabled false --host '$(params.HOST)' --username '$(params.SSH_USER_NAME)' --password '$(params.SSH_USER_PASSWORD)' --serverhost '$(params.SERVER_HOST)' --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)'  
+          smartide new $(params.ARGS) -y --debug --mode server --isInsightDisabled false --host '$(params.HOST)' --username '$(params.SSH_USER_NAME)' --password '$(params.SSH_USER_PASSWORD)' --serverhost '$(params.SERVER_HOST)' --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)' --serverownerguid '$(params.SERVER_USER_GUID)' 
         elif [ "$(params.COMMAND)" == "k8s" ]; then 
           echo "smartide k8s running"
           echo "smartide start $(params.ARGS) --debug --mode server --isInsightDisabled false --serverhost '$(params.SERVER_HOST)' --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)' "
