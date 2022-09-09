@@ -29,4 +29,9 @@ ENV LANG=C.UTF-8 \
 COPY gosu_entrypoint_node.sh /idesh/gosu_entrypoint_node.sh
 RUN chmod +x /idesh/gosu_entrypoint_node.sh
 
+#替换Smartide插件市场
+WORKDIR opvscode
+RUN find ./  -name "*.js" | xargs perl -pi -e 's|https://open-vsx.org|https://marketplace.smartide.cn|g' 
+RUN find ./  -name "*.json" | xargs perl -pi -e 's|https://open-vsx.org|https://marketplace.smartide.cn|g'
+
 ENTRYPOINT ["/idesh/gosu_entrypoint_node.sh"]
