@@ -102,10 +102,11 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil, workspac
 		tempK8sConfig = originK8sConfig.ConvertToTempK8SYaml(repoName, workspaceInfo.K8sInfo.Namespace, originK8sConfig.GetSystemUserName(), labels)
 		tempK8sYamlFileRelativePath, err := tempK8sConfig.SaveK8STempYaml(gitRepoRootDirPath)
 		// ★★★★★ 保存到目录（临时k8s yaml文件的绝对路径）
-		tempK8sYamlAbsolutePath := common.PathJoin(gitRepoRootDirPath, tempK8sYamlFileRelativePath)
+		tempK8sYamlAbsolutePath := filepath.Join(gitRepoRootDirPath, tempK8sYamlFileRelativePath)
 		if err != nil {
 			return nil, err
 		}
+
 		//4.3. 赋值属性
 		if workspaceInfo.Name == "" {
 			workspaceInfo.Name = repoName

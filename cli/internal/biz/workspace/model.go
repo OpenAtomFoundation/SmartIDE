@@ -278,7 +278,15 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 				return WorkspaceInfo{}, err
 			}
 			workspaceInfo.K8sInfo.TempK8sConfig = *tempK8sYaml
-			workspaceInfo.K8sInfo.Namespace = (*tempK8sYaml).Workspace.Services[0].Namespace
+			// workspaceInfo.K8sInfo.Namespace = (*tempK8sYaml).Workspace.Services[0].Namespace
+
+			if serverWorkSpace.KubeNamespace != "" {
+				workspaceInfo.K8sInfo.Namespace = serverWorkSpace.KubeNamespace
+			} else if len((*tempK8sYaml).Workspace.Services) > 0 {
+				workspaceInfo.K8sInfo.Namespace = (*tempK8sYaml).Workspace.Services[0].Namespace
+			} else {
+				return WorkspaceInfo{}, errors.New("namespace is nil!")
+			}
 		}
 	} else {
 		return WorkspaceInfo{}, errors.New("所选模式不支持！")
