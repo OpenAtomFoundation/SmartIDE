@@ -69,6 +69,10 @@ RUN  ln -sf /home/smartide/.nvm/versions/node/v$NODE_VERSION/bin/node /home/opvs
 COPY gosu_entrypoint_base.sh /idesh/gosu_entrypoint_base.sh
 RUN chmod +x /idesh/gosu_entrypoint_base.sh
 
+WORKDIR opvscode
+RUN find ./  -name "*.js" | xargs perl -pi -e 's|https://open-vsx.org|https://marketplace.smartide.cn|g' 
+RUN find ./  -name "*.json" | xargs perl -pi -e 's|https://open-vsx.org|https://marketplace.smartide.cn|g'
+
 ENTRYPOINT ["/idesh/gosu_entrypoint_base.sh"]
 
 # COPY openvscode.service /lib/systemd/system/
