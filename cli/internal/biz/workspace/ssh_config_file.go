@@ -83,7 +83,6 @@ func (workspaceInfo WorkspaceInfo) UpdateSSHConfig() {
 	configMap := GenerateConfigMap(workspaceInfo.ID, IdentityFile, sshPort)
 	record := configMap.ConvertToRecord()
 	logger.Debug("config record:", record.ToString())
-
 	logger.DebugF("check host %v is exist in config file...", record.Host)
 	isHostExistInConfig := isHostExistInConfig(cfg, record.Host)
 	logger.DebugF("check result:%v", isHostExistInConfig)
@@ -95,6 +94,9 @@ func (workspaceInfo WorkspaceInfo) UpdateSSHConfig() {
 		// update config
 		updateRecord(record, cfg, configMap, configPath)
 	}
+
+	// remove white lines
+	common.RemoveWhiteLines(configPath)
 }
 
 func (workspaceInfo WorkspaceInfo) RemoveSSHConfig() {
@@ -120,7 +122,6 @@ func (workspaceInfo WorkspaceInfo) RemoveSSHConfig() {
 	// check host is exist?
 	logger.Debug("decoding file content to ssh config...")
 	bytes, _ := ioutil.ReadFile(configPath)
-	//whiteLine := regexp.MustCompile(`\n+`)
 	content := strings.TrimSpace(string(bytes))
 	cfg, _ := ssh_config.DecodeBytes([]byte(content))
 	hostName := fmt.Sprintf("SmartIDE-%v", workspaceInfo.ID)
@@ -136,6 +137,9 @@ func (workspaceInfo WorkspaceInfo) RemoveSSHConfig() {
 
 		}
 	}
+
+	// remove white lines
+	common.RemoveWhiteLines(configPath)
 }
 
 func (record SSHConfigRecord) ToString() string {

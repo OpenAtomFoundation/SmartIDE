@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-17 11:24:36
+ * @LastEditTime: 2022-09-09 16:37:34
  */
 package cmd
 
@@ -23,7 +23,6 @@ import (
 
 	"github.com/leansoftX/smartide-cli/cmd/remove"
 	"github.com/leansoftX/smartide-cli/cmd/server"
-	"github.com/leansoftX/smartide-cli/cmd/start"
 )
 
 var removeCmdFlag struct {
@@ -189,11 +188,7 @@ var removeCmd = &cobra.Command{
 					workspaceInfo.K8sInfo.Namespace)
 				checkErrorFeedback(err)
 
-				pod, _, _ := start.GetDevContainerPod(*k8sUtil, workspaceInfo.K8sInfo.TempK8sConfig)
-				if pod == nil {
-					checkErrorFeedback(errors.New("find pod error"))
-				}
-				err = remove.RemoveServerK8s(*k8sUtil, cmd, workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsForce, pod.Name)
+				err = remove.RemoveK8s(*k8sUtil, workspaceInfo)
 				checkErrorFeedback(err)
 			} else {
 				common.SmartIDELog.Error(fmt.Errorf("当前 %v 模式不支持在server上运行", workspaceInfo.Mode))
