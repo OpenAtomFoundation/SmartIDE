@@ -69,7 +69,7 @@ Set-Content $checkoutFilePath -Value $content -Encoding Ascii`,
 	}
 
 	//2. checkout
-	repoDirPath := PathJoin(rootDir, repoName)
+	repoDirPath := filepath.Join(rootDir, repoName)
 	if branch == "" {
 		branch = g.GetMainBranchName(repoDirPath)
 	}
@@ -85,7 +85,7 @@ Set-Content $checkoutFilePath -Value $content -Encoding Ascii`,
 	}
 
 	//3. 获取下载的文件列表
-	tempExpression := PathJoin(rootDir, repoName, fileExpression)
+	tempExpression := filepath.Join(rootDir, repoName, fileExpression)
 	files, err := filepath.Glob(tempExpression)
 	if err != nil {
 		return []string{}, err
