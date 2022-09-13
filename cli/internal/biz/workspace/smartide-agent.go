@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-04-15 13:38:10
  * @LastEditors: kenan
- * @LastEditTime: 2022-08-23 17:05:26
+ * @LastEditTime: 2022-09-13 15:17:50
  * @FilePath: /smartide/cli/internal/biz/workspace/smartide-agent.go
  * @Description:
  *
@@ -44,7 +44,7 @@ func InstallSmartideAgent(sshRemote common.SSHRemote, containerId string, cmd *c
 		}
 
 		// 2.将远程主机文件拷贝的容器内
-		agentInstallCmd = fmt.Sprintf("docker cp %s %s:/smartide-agent && docker exec -d %s  /bin/sh -c \"sudo chmod +x /smartide-agent  && cd /;./smartide-agent --serverhost %s --servertoken %s --serverownerguid %s --workspaceId %v\"", dstPath, containerId, containerId, host, token, ownerguid, wid)
+		agentInstallCmd = fmt.Sprintf(" docker exec -d %s  /bin/sh -c \"sudo cp /home/smartide/smartide-agent /smaride-agent && sudo chmod +x /smartide-agent  && cd /;./smartide-agent --serverhost %s --servertoken %s --serverownerguid %s --workspaceId %v\"", containerId, host, token, ownerguid, wid)
 	}
 
 	sshRemote.ExecSSHCommandRealTime(agentInstallCmd)
