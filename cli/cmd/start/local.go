@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-18 11:07:25
+ * @LastEditTime: 2022-09-13 11:02:06
  */
 package start
 
@@ -158,19 +158,21 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	config.LocalContainerGitSet(docker, dockerContainerName)
 
 	//5. 保存 workspace
+	//5.1.
 	if hasChanged {
 		common.SmartIDELog.Info(i18nInstance.Start.Info_workspace_saving)
-		//5.1.
+
 		if workspaceInfo.Name == "" {
 			workspaceInfo.Name = devContainerName
 		}
 		workspaceInfo.TempDockerCompose = tempDockerCompose
-
-		common.SmartIDELog.InfoF(i18nInstance.Start.Info_workspace_saved, workspaceInfo.ID)
 	}
-
 	//5.2.
 	reloadWorkSpaceId(&workspaceInfo)
+	//5.3.
+	if hasChanged {
+		common.SmartIDELog.InfoF(i18nInstance.Start.Info_workspace_saved, workspaceInfo.ID)
+	}
 
 	// update .ssh/config file for vscode remote
 	workspaceInfo.UpdateSSHConfig()
