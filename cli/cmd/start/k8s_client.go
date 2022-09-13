@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-09-05 11:27:09
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-08 10:19:57
+ * @LastEditTime: 2022-09-09 16:45:31
  * @FilePath: /cli/cmd/start/k8s_client.go
  */
 
@@ -56,6 +56,7 @@ func ExecuteK8sClientStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 			return err
 		}
 		workingRootDir := filepath.Join(home, ".ide", ".k8s") // 工作目录，repo 会clone到当前目录下
+		workspaceInfo.WorkingDirectoryPath = workingRootDir   // 赋值避免出错
 		gitRepoRootDirPath := filepath.Join(workingRootDir, common.GetRepoName(workspaceInfo.GitCloneRepoUrl))
 		err = os.MkdirAll(gitRepoRootDirPath, os.ModePerm)
 		if err != nil {

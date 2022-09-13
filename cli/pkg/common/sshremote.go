@@ -72,27 +72,6 @@ func NewSSHRemote(host string, port int, userName, password string) (instance SS
 	return instance, nil
 }
 
-/*
- // 实例
- func (instance *SSHRemote) Instance(host string, port int, userName, password string) error {
-
-	 if (instance.Connection == &ssh.Client{}) || instance.Connection == nil {
-		 instance.SSHHost = host
-		 instance.SSHPort = port
-		 instance.SSHUserName = userName
-		 instance.SSHPassword = password
-
-		 connection, err := connectionDial(host, port, userName, password)
-		 if err != nil {
-			 return err
-		 }
-
-		 instance.Connection = connection
-	 }
-
-	 return nil
- } */
-
 // 验证
 func (instance *SSHRemote) CheckDail(host string, port int, userName, password string) error {
 

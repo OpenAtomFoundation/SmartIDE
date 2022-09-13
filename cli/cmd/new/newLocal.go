@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-04-20 10:46:56
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-15 23:08:52
- * @FilePath: /smartide-cli/cmd/new/newLocal.go
+ * @LastEditTime: 2022-09-13 10:45:37
+ * @FilePath: /cli/cmd/new/newLocal.go
  */
 package new
 
@@ -118,16 +118,21 @@ func getTemplateSetting(cmd *cobra.Command, args []string) (*TemplateTypeBo, err
 	}
 
 	//2.
+	//2.1.
 	selectedTemplateTypeName := ""
 	if len(args) > 0 {
 		selectedTemplateTypeName = args[0]
 	}
+	selectedTemplateTypeName = strings.TrimSpace(selectedTemplateTypeName)
+	//2.2.
 	selectedTemplateSubTypeName, err := cmd.Flags().GetString("type")
+	selectedTemplateSubTypeName = strings.TrimSpace(selectedTemplateSubTypeName)
 	if err != nil {
 		return nil, err
 	}
-	selectedTemplateTypeName = strings.TrimSpace(selectedTemplateTypeName)
-	selectedTemplateSubTypeName = strings.TrimSpace(selectedTemplateSubTypeName)
+	if selectedTemplateSubTypeName == "" {
+		selectedTemplateSubTypeName = "_default"
+	}
 
 	//3. 遍历进行查找
 	var selectedTemplate *TemplateTypeBo
@@ -186,7 +191,7 @@ func printTemplates(newType []NewTypeBO) {
 	fmt.Println("")
 }
 
-//复制templates
+// 复制templates
 func copyTemplateToCurrentDir(modelType, newProjectType string) {
 	if newProjectType == "" {
 		newProjectType = "_default"
@@ -202,8 +207,8 @@ func copyTemplateToCurrentDir(modelType, newProjectType string) {
 	common.CheckError(copyerr)
 }
 
-//判断文件夹是坦为空
-//空为true
+// 判断文件夹是坦为空
+// 空为true
 func folderEmpty(dirPth string) (bool, error) {
 	fis, err := ioutil.ReadDir(dirPth)
 	if err != nil {
@@ -256,7 +261,7 @@ git pull
 	return nil
 }
 
-//强制获取templates
+// 强制获取templates
 func forceTemplatesPull(gitFolder string) (errArry []string) {
 	gitCmd := *exec.Command("git", "fetch", "--all")
 	gitCmd.Dir = gitFolder
@@ -318,7 +323,7 @@ func copyDir(srcPath string, destPath string) error {
 	return err
 }
 
-//生成目录并拷贝文件
+// 生成目录并拷贝文件
 func copyFile(src, dest string) (w int64, err error) {
 	srcFile, err := os.Open(src)
 	if err != nil {
@@ -352,7 +357,7 @@ func copyFile(src, dest string) (w int64, err error) {
 	return io.Copy(dstFile, srcFile)
 }
 
-//加载templates索引json
+// 加载templates索引json
 func loadTemplatesJson() (templateTypes []NewTypeBO, err error) {
 	// new type转换为结构体
 	templatesPath := common.PathJoin(config.SmartIdeHome, TMEPLATE_DIR_NAME, "templates.json")

@@ -491,7 +491,7 @@ func downloadConfigAndLinkFiles(workspaceInfo workspace.WorkspaceInfo) (
 	if err != nil {
 		return
 	}
-	if len(fileRelativePaths) != 1 || !strings.Contains(fileRelativePaths[0], workspaceInfo.ConfigFileRelativePath) {
+	if len(fileRelativePaths) != 1 || !strings.Contains(fileRelativePaths[0], filepath.Join(workspaceInfo.ConfigFileRelativePath)) {
 		err = fmt.Errorf("配置文件 %v 不存在！", workspaceInfo.ConfigFileRelativePath)
 		return
 	}

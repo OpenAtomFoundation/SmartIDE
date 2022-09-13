@@ -172,7 +172,6 @@ func getWorkspaceStatusDescFromServer(workspaceStatus model.WorkspaceStatusEnum)
 	return "", nil
 }
 
-//
 func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (WorkspaceInfo, error) {
 	projectName := serverWorkSpace.Name
 	if projectName == "" {
@@ -301,7 +300,8 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 func (w WorkspaceInfo) IsNil() bool {
 
 	return w.ID == "" || w.Name == "" ||
-		w.WorkingDirectoryPath == "" || w.ConfigFileRelativePath == "" ||
+		w.WorkingDirectoryPath == "" ||
+		w.ConfigFileRelativePath == "" ||
 		w.Mode == "" || w.CliRunningEnv == "" || w.CacheEnv == "" // || w.ProjectName == "" len(w.Extend.Ports) == 0 ||
 }
 
@@ -342,7 +342,6 @@ func (w WorkspaceInfo) Valid() error {
 	return nil
 }
 
-//
 func (w WorkspaceInfo) GetProjectDirctoryName() string {
 	if w.projectDirctoryName == "" {
 		if w.Mode == WorkingMode_Remote { // 远程模式
@@ -407,7 +406,6 @@ func getRepoName(repoUrl string) string {
 	return strings.Replace(repoUrl[index+1:], ".git", "", -1)
 }
 
-//
 func getLocalGitRepoUrl() (gitRemmoteUrl, pathName string) {
 	// current directory
 	pwd, err := os.Getwd()
@@ -477,12 +475,10 @@ func (instance *WorkspaceExtend) ToJson() string {
 	return string(d)
 }
 
-//
 func (instance *WorkspaceExtend) IsNotNil() bool {
 	return !instance.IsNil()
 }
 
-//
 func (instance *WorkspaceExtend) IsNil() bool {
 	return instance == nil || len(instance.Ports) <= 0
 }
@@ -529,7 +525,6 @@ func (portMaps ExtendPorts) IsExit(portMapInfo *config.PortMapInfo) bool {
 	return isContain
 }
 
-//
 func (portMaps ExtendPorts) AppendOrUpdate(portMapInfo *config.PortMapInfo) ExtendPorts {
 	if portMapInfo == nil {
 		panic("obj is nil")
@@ -613,12 +608,10 @@ type K8sInfo struct {
 	TempK8sConfig config.SmartIdeK8SConfig
 }
 
-//
 func (r RemoteInfo) IsNil() bool {
 	return r.ID <= 0 || r.Addr == "" || r.UserName == "" || r.AuthType == ""
 }
 
-//
 func (w RemoteInfo) IsNotNil() bool {
 	return !w.IsNil()
 }

@@ -1,14 +1,17 @@
 /*
  * @Date: 2022-05-23 11:01:31
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-23 15:59:00
- * @FilePath: /smartide-cli/pkg/common/char.go
+ * @LastEditTime: 2022-09-09 16:26:55
+ * @FilePath: /cli/pkg/common/char.go
  */
 
 package common
 
 import (
+	"io/ioutil"
 	"math/rand"
+	"regexp"
+	"strings"
 	"time"
 	"unsafe"
 )
@@ -37,4 +40,13 @@ func RandLowStr(ln int) string {
 		idx--
 	}
 	return *(*string)(unsafe.Pointer(&buf))
+}
+
+// 删除连续的空行
+func RemoveWhiteLines(filePath string) {
+	bytes, _ := ioutil.ReadFile(filePath)
+	newLine := GetNewline()
+	content := regexp.MustCompile(`\s+(\n|\r\n){2,}`).ReplaceAllString(strings.TrimSpace(string(bytes)), newLine)
+	content += newLine
+	ioutil.WriteFile(filePath, []byte(content), 0700)
 }
