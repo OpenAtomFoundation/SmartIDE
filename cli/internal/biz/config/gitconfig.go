@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2021-10-13 15:31:52
  * @LastEditors: kenan
- * @LastEditTime: 2022-09-13 15:13:56
+ * @LastEditTime: 2022-09-14 09:51:23
  * @Description: file content
  */
 
@@ -81,7 +81,9 @@ func SSHVolumesConfig(isVmCommand bool, service *compose.Service, sshRemote comm
 		// volumes for linux vm
 		if isVmCommand {
 			if common.SmartIDELog.Ws_id == "" {
-				configPaths = []string{fmt.Sprintf("$HOME/.ssh/id_rsa_%s_%s:/home/smartide/.ssh/id_rsa", userName, common.SmartIDELog.Ws_id), fmt.Sprintf("$HOME/.ssh/id_rsa.pub_%s_%s:/home/smartide/.ssh/id_rsa.pub", userName, common.SmartIDELog.Ws_id), fmt.Sprintf("$HOME/.ssh/authorized_keys_%s_%s:/home/smartide/.ssh/authorized_keys", userName, common.SmartIDELog.Ws_id), "$HOME/smartide-agent:/home/smartide/smartide-agent"}
+				configPaths = []string{fmt.Sprintf("$HOME/.ssh/id_rsa_%s_%s:/home/smartide/.ssh/id_rsa", userName, common.SmartIDELog.Ws_id), fmt.Sprintf("$HOME/.ssh/id_rsa.pub_%s_%s:/home/smartide/.ssh/id_rsa.pub", userName, common.SmartIDELog.Ws_id), fmt.Sprintf("$HOME/.ssh/authorized_keys_%s_%s:/home/smartide/.ssh/authorized_keys", userName, common.SmartIDELog.Ws_id)}
+			} else {
+				configPaths = []string{"$HOME/smartide-agent:/home/smartide/smartide-agent"}
 			}
 
 		} else {
