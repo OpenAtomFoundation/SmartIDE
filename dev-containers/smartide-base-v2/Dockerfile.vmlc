@@ -23,7 +23,7 @@ RUN apt-get update &&                            \
             sudo                                 \
             git                                  \
             wget                                 \
-            udev &&                              \
+            udev libsecret-1-dev zip apt-utils vim iputils-ping telnet jq moreutils &&                              \
                                                  \
     # Prevents journald from reading kernel messages from /dev/kmsg
     echo "ReadKMsg=no" >> /etc/systemd/journald.conf &&               \
