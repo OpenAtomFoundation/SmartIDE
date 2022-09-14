@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-06-07 14:02:29
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-07 15:44:58
- * @FilePath: /smartide-cli/cmd/remove/local.go
+ * @LastEditTime: 2022-09-14 14:30:50
+ * @FilePath: /cli/cmd/remove/local.go
  */
 
 package remove
@@ -49,7 +49,8 @@ func RemoveLocal(workspaceInfo workspace.WorkspaceInfo, isRemoveAllComposeImages
 	if err != nil {
 		return err
 	}
-	containers := start.GetLocalContainersWithServices(ctx, cli, workspaceInfo.ConfigYaml.GetServiceNames())
+	containers := start.GetLocalContainersWithServices(ctx, cli,
+		workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigYaml.GetServiceNames())
 	if len(containers) <= 0 {
 		common.SmartIDELog.Importance(i18nInstance.Start.Warn_docker_container_getnone)
 	}
