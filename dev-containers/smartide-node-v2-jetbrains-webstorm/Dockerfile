@@ -17,7 +17,7 @@ RUN wget -q $downloadUrl -O - | tar -xz
 RUN find . -maxdepth 1 -type d -name * -execdir mv {} /ide \;
 
 # -------------构建projector-server库，运行依赖
-FROM smartide/projector-server:2021.2.2-1673 as projectorGradleBuilder
+FROM smartide/projector-server:latest as projectorGradleBuilder
 
 
 # -------------处理IDE运行程序，和构建好的rojector-server库
