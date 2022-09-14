@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-06-07 14:02:14
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-11 09:28:41
- * @FilePath: /smartide-cli/cmd/remove/vm.go
+ * @LastEditTime: 2022-09-14 14:30:35
+ * @FilePath: /cli/cmd/remove/vm.go
  */
 
 package remove
@@ -49,7 +49,8 @@ func RemoveRemote(workspaceInfo workspace.WorkspaceInfo,
 	}
 
 	// 容器列表
-	containers, err := start.GetRemoteContainersWithServices(sshRemote, workspaceInfo.ConfigYaml.GetServiceNames()) // 只能获取到运行中的容器
+	containers, err := start.GetRemoteContainersWithServices(sshRemote,
+		workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigYaml.GetServiceNames()) // 只能获取到运行中的容器
 	if err != nil {
 		return err
 	}

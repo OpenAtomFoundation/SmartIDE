@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-06 10:39:25
+ * @LastEditTime: 2022-09-14 14:37:49
  */
 package cmd
 
@@ -252,8 +252,6 @@ var (
 	flag_branch      = "branch"
 	flag_k8s         = "k8s"
 	flag_kubeconfig  = "kubeconfig"
-
-	//	flag_loginurl    = "login_url"
 )
 
 // 获取工作区id
