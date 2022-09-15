@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-30 14:43:45
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-09-15 15:20:46
  */
 package start
 
@@ -172,6 +172,9 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 	//4. ai 统计yaml
 	yamlExecuteFun(*currentConfig)
+
+	//4.1 agent cp to remote
+	workspace.InstallSmartideAgent(sshRemote)
 
 	//5. docker 容器
 	//5.1. 对应容器是否运行
@@ -373,7 +376,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		}
 		if containerId, err = sshRemote.ExeSSHCommand(fmt.Sprintf("docker ps  -f 'name=%s' -q", dcc[len(dcc)-1].ContainerName)); containerId != "" && err == nil {
 			// smartide-agent install
-			workspace.InstallSmartideAgent(sshRemote, containerId, cmd, workspaceInfo.ServerWorkSpace.ID)
+			workspace.StartSmartideAgent(sshRemote, containerId, cmd, workspaceInfo.ServerWorkSpace.ID)
 		}
 
 		common.SmartIDELog.Info("feedback...")
