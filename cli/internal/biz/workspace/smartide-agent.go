@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-04-15 13:38:10
  * @LastEditors: kenan
- * @LastEditTime: 2022-09-14 10:07:02
+ * @LastEditTime: 2022-09-15 15:30:29
  * @FilePath: /cli/internal/biz/workspace/smartide-agent.go
  * @Description:
  *
@@ -24,13 +24,7 @@ const (
 	Flags_ServerOwnerGuid = "serverownerguid"
 )
 
-func InstallSmartideAgent(sshRemote common.SSHRemote, containerId string, cmd *cobra.Command, wid uint) {
-	fflags := cmd.Flags()
-	host, _ := fflags.GetString(Flags_ServerHost)
-	token, _ := fflags.GetString(Flags_ServerToken)
-	ownerguid, _ := fflags.GetString(Flags_ServerOwnerGuid)
-
-	agentInstallCmd := fmt.Sprintf("docker exec -d %s  /bin/sh -c \"curl -o /smartide-agent -OL 'https://smartidedl.blob.core.chinacloudapi.cn/smartide-agent/latest/smartide-agent-linux' && sudo chmod +x /smartide-agent  && cd /;./smartide-agent --serverhost %s --servertoken %s --serverownerguid %s --workspaceId %v \"", containerId, host, token, ownerguid, wid)
+func InstallSmartideAgent(sshRemote common.SSHRemote) {
 
 	localFilePath := filepath.Join("/usr/local/bin/smartide-agent")
 	if common.IsExist(localFilePath) {
@@ -38,15 +32,30 @@ func InstallSmartideAgent(sshRemote common.SSHRemote, containerId string, cmd *c
 
 		homeDir, _ := sshRemote.GetRemoteHome()
 		dstPath := filepath.Join(homeDir, "smartide-agent")
+		sshRemote.ExecSSHCommandRealTime(fmt.Sprintf("[[ -d  %s ]] && sudo rm -rf %s", dstPath, dstPath))
 		if err := sshRemote.CopyFile(localFilePath, dstPath); err != nil {
 			common.SmartIDELog.Error(fmt.Sprintf("smartide-agent install fail:%s", err.Error()))
 
 		}
-
-		// 2.将远程主机文件拷贝的容器内
-		agentInstallCmd = fmt.Sprintf(" docker exec -d %s  /bin/sh -c \"sudo cp -rf /home/smartide/smartide-agent /smartide-agent && sudo chmod +x /smartide-agent  && cd /;./smartide-agent --serverhost %s --servertoken %s --serverownerguid %s --workspaceId %v\"", containerId, host, token, ownerguid, wid)
 	}
 
-	sshRemote.ExecSSHCommandRealTime(agentInstallCmd)
+}
+
+func StartSmartideAgent(sshRemote common.SSHRemote, containerId string, cmd *cobra.Command, wid uint) {
+	fflags := cmd.Flags()
+	host, _ := fflags.GetString(Flags_ServerHost)
+	token, _ := fflags.GetString(Flags_ServerToken)
+	ownerguid, _ := fflags.GetString(Flags_ServerOwnerGuid)
+	if host != "" && token != "" {
+		agentInstallCmd := fmt.Sprintf("docker exec -d %s  /bin/sh -c \"curl -o /smartide-agent -OL 'https://smartidedl.blob.core.chinacloudapi.cn/smartide-agent/latest/smartide-agent-linux' && sudo chmod +x /smartide-agent  && cd /;./smartide-agent --serverhost %s --servertoken %s --serverownerguid %s --workspaceId %v \"", containerId, host, token, ownerguid, wid)
+
+		localFilePath := filepath.Join("/usr/local/bin/smartide-agent")
+		if common.IsExist(localFilePath) {
+			// 2.将远程主机文件拷贝的容器内
+			agentInstallCmd = fmt.Sprintf(" docker exec -d %s  /bin/sh -c \"sudo cp -rf /home/smartide/smartide-agent /smartide-agent && sudo chmod +x /smartide-agent  && cd /;./smartide-agent --serverhost %s --servertoken %s --serverownerguid %s --workspaceId %v\"", containerId, host, token, ownerguid, wid)
+		}
+
+		sshRemote.ExecSSHCommandRealTime(agentInstallCmd)
+	}
 
 }
