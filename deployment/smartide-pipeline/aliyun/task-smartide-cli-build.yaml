@@ -60,7 +60,7 @@ spec:
 
   steps:
     - name: smartide-cli
-      image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-cli:5807
+      image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-cli:5825
 
       script: |
         #!/bin/bash
