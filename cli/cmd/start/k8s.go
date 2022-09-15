@@ -2,13 +2,13 @@
  * @Date: 2022-03-23 16:15:38
 <<<<<<< HEAD
  * @LastEditors: kenan
- * @LastEditTime: 2022-09-07 16:24:10
+ * @LastEditTime: 2022-09-15 17:55:03
 =======
  * @LastEditors: Jason Chen
  * @LastEditTime: 2022-09-06 11:03:40
 >>>>>>> releases/release-26
  * @FilePath: /cli/cmd/start/k8s.go
- */
+*/
 
 package start
 
@@ -327,7 +327,7 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 
 	}
 
-	// time.Sleep(time.Second * 15)
+	time.Sleep(time.Second * 10)
 	//5.1. git config
 	// 会通过agent生成
 	if workspaceInfo.CliRunningEnv == workspace.CliRunningEnvEnum_Client {
