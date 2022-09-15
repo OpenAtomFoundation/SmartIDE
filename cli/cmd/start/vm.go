@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2022-09-15 15:20:46
+ * @LastEditTime: 2022-09-15 15:34:41
  */
 package start
 
@@ -20,7 +20,6 @@ import (
 	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
-	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/docker/compose"
 	"github.com/leansoftX/smartide-cli/pkg/tunnel"
@@ -76,7 +75,6 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 			common.CheckErrorFunc(err, serverFeedback)
 		}
 	}
-
 	sshRemote.AddPublicKeyIntoAuthorizedkeys()
 
 	//3. 获取配置文件的内容
@@ -118,7 +116,6 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 	//3. docker-compose
 	//3.1. 获取 compose 数据
-	//_, linkComposeFileContent := currentConfig.GetRemoteLinkDockerComposeFile(&sshRemote)
 	yamlStr, err := currentConfig.ToYaml()
 	common.CheckErrorFunc(err, serverFeedback)
 	linkComposeFileContent, err := currentConfig.Workspace.LinkCompose.ToYaml()
@@ -135,20 +132,11 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		// 获取compose配置
 		tempDockerCompose, ideBindingPort, _ = currentConfig.ConvertToDockerCompose(sshRemote,
 			workspaceInfo.GetProjectDirctoryName(), workspaceInfo.WorkingDirectoryPath, true, userName)
-		// if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server {
-		// 	setBasicSSHPWD(tempDockerCompose, *currentConfig, cmd)
-
-		// }
 		workspaceInfo.TempDockerCompose = tempDockerCompose
 
 		// 配置
 		workspaceInfo.ConfigYaml = *currentConfig
 
-		/* 		// 链接的 docker-compose 文件
-		   		if workspaceInfo.ConfigYaml.IsLinkDockerComposeFile() {
-		   			yaml.Unmarshal([]byte(linkComposeFileContent), workspaceInfo.LinkDockerCompose)
-		   		}
-		*/
 		// 扩展信息
 		workspaceExtend := workspace.WorkspaceExtend{Ports: currentConfig.GetPortMappings()}
 		workspaceInfo.Extend = workspaceExtend
@@ -178,7 +166,8 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 	//5. docker 容器
 	//5.1. 对应容器是否运行
-	isDockerComposeRunning, err := isRemoteDockerComposeRunning(sshRemote, currentConfig.GetServiceNames())
+	isDockerComposeRunning, err := isRemoteDockerComposeRunning(sshRemote,
+		workspaceInfo.WorkingDirectoryPath, currentConfig.GetServiceNames())
 	common.CheckErrorFunc(err, serverFeedback)
 
 	//5.2. docker
@@ -206,7 +195,6 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 				common.SmartIDELog.Error(output)
 
 			} else {
-				//common.SmartIDELog.ConsoleInLine(output)
 				if strings.Contains(output, "Pulling") {
 					fmt.Println()
 				}
@@ -260,7 +248,8 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	if hasChanged {
 		common.SmartIDELog.InfoF(i18nInstance.Start.Info_workspace_saving) // log
 
-		remoteDockerComposeContainers, err := GetRemoteContainersWithServices(sshRemote, currentConfig.GetServiceNames())
+		remoteDockerComposeContainers, err := GetRemoteContainersWithServices(sshRemote,
+			workspaceInfo.WorkingDirectoryPath, currentConfig.GetServiceNames())
 		common.CheckErrorFunc(err, serverFeedback)
 		//7.1. 补充数据
 		devContainerName := getDevContainerName(remoteDockerComposeContainers, currentConfig.Workspace.DevContainer.ServiceName)
@@ -370,9 +359,13 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	if isModeServer {
 		//获取容器id
 		containerId := ""
-		dcc, err := GetRemoteContainersWithServices(sshRemote, []string{workspaceInfo.ConfigYaml.Workspace.DevContainer.ServiceName})
+		dcc, err := GetRemoteContainersWithServices(sshRemote,
+			workspaceInfo.WorkingDirectoryPath, []string{workspaceInfo.ConfigYaml.Workspace.DevContainer.ServiceName})
 		if err != nil {
 			common.SmartIDELog.ImportanceWithError(err)
+		}
+		if len(dcc) == 0 {
+			common.SmartIDELog.Error("没有查找到运行的容器！")
 		}
 		if containerId, err = sshRemote.ExeSSHCommand(fmt.Sprintf("docker ps  -f 'name=%s' -q", dcc[len(dcc)-1].ContainerName)); containerId != "" && err == nil {
 			// smartide-agent install
@@ -396,36 +389,6 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 }
 
-func setBasicSSHPWD(tempDockerCompose compose.DockerComposeYml, configYaml config.SmartIdeConfig, cmd *cobra.Command) {
-	if p, _ := common.GetBasicPassword(common.SmartIDELog.Ws_id, cmd); p != "" {
-		for _, s := range tempDockerCompose.Services {
-			s.Environment[model.CONST_ENV_NAME_LoalUserPassword] = p
-
-		}
-	}
-
-	// k1, k2 := func() (k1 string, k2 string) {
-	// 	for k1, v := range tempDockerCompose.Services {
-	// 		for k2 := range v.Environment {
-	// 			if k2 == model.CONST_ENV_NAME_LoalUserPassword {
-	// 				return k1, k2
-	// 			}
-	// 		}
-
-	// 	}
-	// 	return "", ""
-	// }()
-	// if k1 != "" && k2 != "" {
-	// 	if p, _ := common.GetBasicPassword(common.SmartIDELog.Ws_id, cmd); p != "" {
-	// 		tempDockerCompose.Services[k1].Environment[k2] = p
-	// 	}
-	// } else {
-	// 	if p, _ := common.GetBasicPassword(common.SmartIDELog.Ws_id, cmd); p != "" && configYaml.Workspace.DevContainer.ServiceName != "" {
-	// 		tempDockerCompose.Services[configYaml.Workspace.DevContainer.ServiceName].Environment[model.CONST_ENV_NAME_LoalUserPassword] = p
-	// 	}
-	// }
-}
-
 // 打印 service 列表
 func printServices(services map[string]compose.Service) {
 	w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
@@ -438,10 +401,10 @@ func printServices(services map[string]compose.Service) {
 }
 
 // docker-compose 对应的容器是否运行
-func isRemoteDockerComposeRunning(sshRemote common.SSHRemote, serviceNames []string) (isDockerComposeRunning bool, err error) {
+func isRemoteDockerComposeRunning(sshRemote common.SSHRemote, workingDir string, serviceNames []string) (isDockerComposeRunning bool, err error) {
 	isDockerComposeRunning = false
 
-	remoteContainers, err := GetRemoteContainersWithServices(sshRemote, serviceNames)
+	remoteContainers, err := GetRemoteContainersWithServices(sshRemote, workingDir, serviceNames)
 	if err != nil {
 		return isDockerComposeRunning, err
 	}
@@ -518,16 +481,3 @@ func gitAction(sshRemote common.SSHRemote, workspace workspace.WorkspaceInfo, cm
 	err = sshRemote.ExecSSHCommandRealTime(gitPullCommand)
 	return err
 }
-
-/* //post workspace info to callback api
-func postWorkspaceInfo(workspaceInfo workspace.WorkspaceInfo, apiURL string) error {
-	postJson := workspaceInfo.Extend.ToJson()
-	response, err := common.PostJson(apiURL, map[string]interface{}{"data": postJson}, map[string]string{"Content-Type": "application/json"})
-	if err != nil {
-		return err
-	}
-	common.SmartIDELog.InfoF(i18nInstance.VmStart.Info_callback_msg, apiURL)
-	common.SmartIDELog.Debug(response)
-	return nil
-}
-*/

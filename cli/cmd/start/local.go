@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-13 11:02:06
+ * @LastEditTime: 2022-09-14 16:46:55
  */
 package start
 
@@ -110,7 +110,7 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 	//3. 容器
 	//3.1. 校验 docker-compose 文件对应的环境是否已经启动
-	isDockerComposeRunning := isDockerComposeRunning(ctx, cli, currentConfig.GetServiceNames())
+	isDockerComposeRunning := isDockerComposeRunning(ctx, cli, workspaceInfo.WorkingDirectoryPath, currentConfig.GetServiceNames())
 
 	//3.2. 运行容器
 	if !isDockerComposeRunning || hasChanged { // 容器没有运行 或者 有改变，重新创建容器
@@ -145,7 +145,7 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 	serviceNames := currentConfig.GetServiceNames()
 	//4. 获取启动的容器列表
-	dockerComposeContainers := GetLocalContainersWithServices(ctx, cli, serviceNames)
+	dockerComposeContainers := GetLocalContainersWithServices(ctx, cli, workspaceInfo.WorkingDirectoryPath, serviceNames)
 	devContainerName := getDevContainerName(dockerComposeContainers, currentConfig.Workspace.DevContainer.ServiceName)
 	if devContainerName == "" {
 		common.SmartIDELog.Error(fmt.Errorf("从services %v 中获取 开发容器名称失败", serviceNames))
@@ -245,10 +245,10 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 }
 
 // docker-compose 对应的容器是否运行
-func isDockerComposeRunning(ctx context.Context, cli *client.Client, serviceNames []string) bool {
+func isDockerComposeRunning(ctx context.Context, cli *client.Client, workingDir string, serviceNames []string) bool {
 	isDockerComposeRunning := false
 
-	dockerComposeContainers := GetLocalContainersWithServices(ctx, cli, serviceNames)
+	dockerComposeContainers := GetLocalContainersWithServices(ctx, cli, workingDir, serviceNames)
 	if len(dockerComposeContainers) > 0 {
 		common.SmartIDELog.Info(i18nInstance.Start.Warn_docker_container_started)
 		isDockerComposeRunning = true

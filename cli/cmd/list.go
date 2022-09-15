@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-07 15:37:39
+ * @LastEditTime: 2022-09-14 15:40:03
  */
 package cmd
 
@@ -86,8 +86,13 @@ func printWorkspaces(cliRunningEnv workspace.CliRunningEvnEnum) {
 		if len(config) <= 0 {
 			config = "-"
 		}
-		local, _ := time.LoadLocation("Local")                                      // 北京时区
-		createTime := worksapce.CreatedTime.In(local).Format("2006-01-02 15:04:05") // 格式化输出
+		createTime := ""
+		if worksapce.Mode != workspace.WorkingMode_Local {
+			local, _ := time.LoadLocation("Local")                                     // 北京时区
+			createTime = worksapce.CreatedTime.In(local).Format("2006-01-02 15:04:05") // 格式化输出
+		} else {
+			createTime = worksapce.CreatedTime.Format("2006-01-02 15:04:05") // 格式化输出
+		}
 		host := "-"
 		if (worksapce.Remote != workspace.RemoteInfo{}) {
 			host = fmt.Sprint(worksapce.Remote.Addr, ":", worksapce.Remote.SSHPort)
