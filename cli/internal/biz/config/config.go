@@ -3,7 +3,7 @@
  * @Description: config
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-16 10:16:15
+ * @LastEditTime: 2022-09-16 15:55:51
  */
 package config
 
@@ -280,7 +280,6 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 		if serviceName == yamlFileConfig.Workspace.DevContainer.ServiceName {
 
 			if yamlFileConfig.Workspace.DevContainer.Volumes.HasSshKey.Value() {
-
 				SSHVolumesConfig(isRemoteMode, &service, sshRemote, userName)
 			}
 
@@ -371,7 +370,6 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 		}
 		// 只有IDE容器需要动态赋值uid,gid
 		if serviceName == yamlFileConfig.Workspace.DevContainer.ServiceName {
-
 			if isRemoteMode {
 				uid, gid := sshRemote.GetRemoteUserInfo()
 				service.Environment[model.CONST_LOCAL_USER_UID] = uid

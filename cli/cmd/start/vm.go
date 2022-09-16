@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-16 10:08:49
+ * @LastEditTime: 2022-09-16 16:06:09
  */
 package start
 
@@ -183,6 +183,9 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		bytesDockerComposeContent, err := yaml.Marshal(&tempDockerCompose)
 		printServices(tempDockerCompose.Services) // 打印services
 		common.CheckError(err, string(bytesDockerComposeContent))
+		if workspaceInfo.TempYamlFileAbsolutePath == "" {
+			common.SmartIDELog.Error("compose 文件路径为空！")
+		}
 		commandCreateDockerComposeFile := fmt.Sprintf("docker-compose -f %v --project-directory %v up -d",
 			workspaceInfo.TempYamlFileAbsolutePath, workspaceInfo.WorkingDirectoryPath)
 		fmt.Println() // 避免向前覆盖

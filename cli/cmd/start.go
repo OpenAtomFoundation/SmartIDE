@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-16 15:32:05
+ * @LastEditTime: 2022-09-16 16:09:37
  */
 package cmd
 
@@ -503,6 +503,7 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 				workspaceInfo.GitCloneRepoUrl, workspaceInfo.Branch, workspaceInfo.ConfigFileRelativePath,
 				workspaceInfo.Remote.ID, workspaceInfo.Remote.Addr, workspaceInfo.Remote.UserName)
 			common.CheckError(err)
+			isNew := true
 			if workspaceInfoDb.ID != "" {
 				if workspaceInfo.CliRunningEnv != workspace.CliRunningEnvEnum_Client {
 					common.SmartIDELog.Error("Not running on the server")
@@ -513,14 +514,18 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 						workspaceInfoDb.ID, workspaceInfoDb.ID)
 					fmt.Scanln(&isEnable)
 					if strings.ToLower(isEnable) != "y" {
+						isNew = false
 						os.Exit(1)
 					}
 
 				} else {
+					isNew = false
 					copier.CopyWithOption(&workspaceInfo, workspaceInfoDb, copier.Option{IgnoreEmpty: false, DeepCopy: true})
 				}
 
-			} else {
+			}
+
+			if isNew {
 				if workspaceInfo.Mode != workspace.WorkingMode_K8s {
 					// docker-compose 文件路径
 					workspaceInfo.TempYamlFileAbsolutePath = workspaceInfo.GetTempDockerComposeFilePath()
