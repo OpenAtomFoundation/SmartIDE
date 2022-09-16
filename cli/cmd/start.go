@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-16 10:47:04
+ * @LastEditTime: 2022-09-16 15:10:56
  */
 package cmd
 
@@ -309,7 +309,7 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 		CliRunningEnv: workspace.CliRunningEnvEnum_Client,
 		CacheEnv:      workspace.CacheEnvEnum_Local,
 	}
-	// 运行环境
+	//1.1. 运行环境
 	if value, _ := fflags.GetString("mode"); value != "" {
 		if strings.ToLower(value) == "server" {
 			workspaceInfo.CliRunningEnv = workspace.CliRunningEvnEnum_Server
@@ -322,6 +322,32 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 		workspaceInfo.CacheEnv = workspace.CacheEnvEnum_Server
 	} else if value, _ := fflags.GetString("serverworkspaceid"); value != "" {
 		workspaceInfo.CacheEnv = workspace.CacheEnvEnum_Server
+	}
+
+	//1.2. 涉及到配置文件的改变
+	if tmp, _ := fflags.GetString(flag_filepath); tmp != "" {
+		configFilePath, err := fflags.GetString(flag_filepath)
+		common.CheckError(err)
+
+		if configFilePath != "" {
+			if strings.Contains(configFilePath, "/") || strings.Contains(configFilePath, "\\") {
+				workspaceInfo.ConfigFileRelativePath = configFilePath
+			} else {
+				workspaceInfo.ConfigFileRelativePath = ".ide/" + configFilePath
+			}
+
+		}
+	}
+	if workspaceInfo.ConfigFileRelativePath == "" { // 避免配置文件的路径为空
+		workspaceInfo.ConfigFileRelativePath = model.CONST_Default_ConfigRelativeFilePath
+	}
+	if tmp, _ := fflags.GetString(flag_branch); tmp != "" {
+		branch, err := fflags.GetString(flag_branch)
+		common.CheckError(err)
+
+		if branch != "" {
+			workspaceInfo.Branch = branch
+		}
 	}
 
 	//2. 获取基本的信息
@@ -415,7 +441,7 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 					workspaceInfo.Name, _ = fflags.GetString("workspacename")
 				}
 
-				workspaceInfo.Remote = hostInfo
+				workspaceInfo.Remote = *hostInfo
 				if gitUrl != "" {
 					workspaceInfo.GitCloneRepoUrl = gitUrl
 				} else {
@@ -475,7 +501,7 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 			// 从数据库中查找是否存在对应的workspace信息，主要是针对在当前目录再次start的情况
 			workspaceInfoDb, err := dal.GetSingleWorkspaceByParams(workspaceInfo.Mode, workspaceInfo.WorkingDirectoryPath,
 				workspaceInfo.GitCloneRepoUrl, workspaceInfo.Branch, workspaceInfo.ConfigFileRelativePath,
-				workspaceInfo.Remote.ID, workspaceInfo.Remote.Addr)
+				workspaceInfo.Remote.ID, workspaceInfo.Remote.Addr, workspaceInfo.Remote.UserName)
 			common.CheckError(err)
 			if workspaceInfoDb.ID != "" {
 				if workspaceInfo.CliRunningEnv != workspace.CliRunningEnvEnum_Client {
@@ -522,32 +548,6 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 				Type:     "webterminal",
 				IsEnable: true,
 			}
-		}
-	}
-
-	// 涉及到配置文件的改变
-	if tmp, _ := fflags.GetString(flag_filepath); tmp != "" {
-		configFilePath, err := fflags.GetString(flag_filepath)
-		common.CheckError(err)
-
-		if configFilePath != "" {
-			if strings.Contains(configFilePath, "/") || strings.Contains(configFilePath, "\\") {
-				workspaceInfo.ConfigFileRelativePath = configFilePath
-			} else {
-				workspaceInfo.ConfigFileRelativePath = ".ide/" + configFilePath
-			}
-
-		}
-	}
-	if workspaceInfo.ConfigFileRelativePath == "" { // 避免配置文件的路径为空
-		workspaceInfo.ConfigFileRelativePath = model.CONST_Default_ConfigRelativeFilePath
-	}
-	if tmp, _ := fflags.GetString(flag_branch); tmp != "" {
-		branch, err := fflags.GetString(flag_branch)
-		common.CheckError(err)
-
-		if branch != "" {
-			workspaceInfo.Branch = branch
 		}
 	}
 
@@ -663,37 +663,37 @@ func getWorkspaceWithDbAndValid(workspaceId int, originWorkspaceInfo *workspace.
 }
 
 // 根据参数，从数据库或者其他参数中加载远程服务器的信息
-func getRemoteAndValid(fflags *pflag.FlagSet) (remoteInfo workspace.RemoteInfo, err error) {
+func getRemoteAndValid(fflags *pflag.FlagSet) (remoteInfo *workspace.RemoteInfo, err error) {
 
 	host, _ := fflags.GetString(flag_host)
-	remoteInfo = workspace.RemoteInfo{}
+	userName, _ := fflags.GetString(flag_username)
 
 	// 指定了host信息，尝试从数据库中加载
 	if common.IsNumber(host) {
 		remoteId, err := strconv.Atoi(host)
 		if err != nil {
-			return workspace.RemoteInfo{}, err
+			return nil, err
 		}
 		remoteInfo, err = dal.GetRemoteById(remoteId)
 		if err != nil {
-			return workspace.RemoteInfo{}, err
+			return nil, err
 		}
 
-		if (workspace.RemoteInfo{} == remoteInfo) {
-			return workspace.RemoteInfo{}, errors.New(i18nInstance.Host.Err_host_data_not_exit)
+		if remoteInfo == nil {
+			return nil, errors.New(i18nInstance.Host.Err_host_data_not_exit)
 		}
 	} else {
-		remoteInfo, err = dal.GetRemoteByHost(host)
+		remoteInfo, err = dal.GetRemoteByHost(host, userName)
 
 		// 如果在sqlite中有缓存数据，就不需要用户名、密码
-		if (workspace.RemoteInfo{} != remoteInfo) {
+		if remoteInfo != nil && remoteInfo.UserName == flag_username {
 			checkFlagUnnecessary(fflags, flag_username, flag_host)
 			checkFlagUnnecessary(fflags, flag_password, flag_host)
 		}
 	}
 
 	// 从参数中加载
-	if (workspace.RemoteInfo{} == remoteInfo) {
+	if remoteInfo == nil {
 		//  必填字段验证
 		err = checkFlagRequired(fflags, flag_host)
 		if err != nil {
