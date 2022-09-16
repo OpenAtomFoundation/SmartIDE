@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-16 15:10:56
+ * @LastEditTime: 2022-09-16 15:32:05
  */
 package cmd
 
@@ -509,10 +509,10 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 				}
 				if workspaceInfo.Mode == workspace.WorkingMode_Remote {
 					isEnable := ""
-					msg := fmt.Sprintf("远程工作区（%v）已存在，是否创建新的工作区？（y | n）", workspaceInfoDb.ID)
-					fmt.Scanln(&msg)
+					fmt.Printf("远程工作区（%v）已存在，可以通过 “smartide start %v” 启动原有工作区，也可以创建新的工作区，是否创建新的工作区？（y | n）",
+						workspaceInfoDb.ID, workspaceInfoDb.ID)
+					fmt.Scanln(&isEnable)
 					if strings.ToLower(isEnable) != "y" {
-						common.SmartIDELog.Importance(fmt.Sprintf("可以通过 如下命令 启动原有工作区\n\tsmartide start %v", workspaceInfoDb.ID))
 						os.Exit(1)
 					}
 
