@@ -3,7 +3,7 @@
  * @Description: config
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-25 10:19:51
+ * @LastEditTime: 2022-09-16 10:16:15
  */
 package config
 
@@ -163,6 +163,12 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 	//3. 转换为docker compose - 端口绑定
 	//3.1. 端口映射
 	for serviceName, service := range dockerCompose.Services {
+
+		// 如果设置了container name，就在container name前面加 project name（文件夹名称）
+		if service.ContainerName != "" {
+			service.ContainerName = projectName + "-" + service.ContainerName
+			dockerCompose.Services[serviceName] = service
+		}
 
 		// 绑定端口被占用的问题
 		if isCheckUnuesedPorts {
@@ -413,7 +419,7 @@ func (yamlFileConfig SmartIdeConfig) getDockerCompose(sshRemote common.SSHRemote
 
 		if isRemoteMode {
 			// 获取docker-compose文件在远程主机上的路径
-			remoteDockerComposeFilePath := common.FilePathJoin(common.OS_Linux, remoteWorkingDir, ".ide", yamlFileConfig.Workspace.DockerComposeFile)
+			remoteDockerComposeFilePath := common.FilePahtJoin4Linux(remoteWorkingDir, ".ide", yamlFileConfig.Workspace.DockerComposeFile)
 			common.SmartIDELog.InfoF(i18nInstance.Config.Info_read_docker_compose, remoteDockerComposeFilePath)
 
 			// 在远程主机上加载docker-compose文件

@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-16 17:44:45
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-07 14:46:24
+ * @LastEditTime: 2022-09-16 09:56:04
  * @FilePath: /cli/cmd/start/vm_sws_clientEnv.go
  * @Description:
  *
@@ -53,7 +53,8 @@ func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo, y
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_starting)
 	// 检查工作区的状态
 	if workspaceInfo.ServerWorkSpace.Status != model.WorkspaceStatusEnum_Start {
-		if workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Pending || workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Init {
+		if workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Pending ||
+			workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Init {
 			return errors.New("当前工作区正在启动中，请等待！")
 
 		} else if workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Stop {

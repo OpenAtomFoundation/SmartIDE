@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-14 14:42:49
+ * @LastEditTime: 2022-09-16 10:08:49
  */
 package start
 
@@ -80,7 +80,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	//3. 获取配置文件的内容
 	var ideBindingPort int
 	var tempDockerCompose compose.DockerComposeYml
-	ideYamlFilePath := common.FilePathJoin(common.OS_Linux, workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath) //fmt.Sprintf(`%v/.ide/.ide.yaml`, repoWorkspace)
+	ideYamlFilePath := common.FilePahtJoin4Linux(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath) //fmt.Sprintf(`%v/.ide/.ide.yaml`, repoWorkspace)
 	common.SmartIDELog.Info(fmt.Sprintf(i18nInstance.VmStart.Info_read_config, ideYamlFilePath))
 	if !sshRemote.IsFileExist(ideYamlFilePath) {
 		argsTemplateTypeName := ""
@@ -120,8 +120,8 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	common.CheckErrorFunc(err, serverFeedback)
 	linkComposeFileContent, err := currentConfig.Workspace.LinkCompose.ToYaml()
 	common.CheckErrorFunc(err, serverFeedback)
-	hasChanged := workspaceInfo.ChangeConfig(yamlStr, linkComposeFileContent) // 是否改变
-	if hasChanged {                                                           // 改变包括了初始化
+	hasChanged := workspaceInfo.IsChangeConfig(yamlStr, linkComposeFileContent) // 是否改变
+	if hasChanged {                                                             // 改变包括了初始化
 		// log
 		if workspaceInfo.ID != "" {
 			common.SmartIDELog.Info(i18nInstance.Start.Info_workspace_changed)

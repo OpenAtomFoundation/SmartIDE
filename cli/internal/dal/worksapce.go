@@ -74,7 +74,8 @@ func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId in
 		affectId = int64(i)
 		isExit = true
 	} else { //2.2. 用户有可能会不输入workspaceid，继续使用原有的参数
-		originWorkspace, err := GetSingleWorkspaceByParams(workspaceInfo.Mode, workspaceInfo.WorkingDirectoryPath, workspaceInfo.GitCloneRepoUrl, remoteID, remoteHost)
+		originWorkspace, err := GetSingleWorkspaceByParams(workspaceInfo.Mode, workspaceInfo.WorkingDirectoryPath,
+			workspaceInfo.GitCloneRepoUrl, workspaceInfo.Branch, workspaceInfo.ConfigFileRelativePath, remoteID, remoteHost)
 		common.CheckError(err)
 
 		if originWorkspace.IsNotNil() {
@@ -223,7 +224,10 @@ func GetWorkspaceList() (workspaces []workspace.WorkspaceInfo, err error) {
 	return workspaces, err
 }
 
-func GetSingleWorkspaceByParams(workingMode workspace.WorkingModeEnum, workingDir string, gitCloneUrl string, remoteId int, remoteHost string) (workspaceInfo workspace.WorkspaceInfo, err error) {
+func GetSingleWorkspaceByParams(workingMode workspace.WorkingModeEnum,
+	workingDir string,
+	gitCloneUrl string, branch string, confingFilePath string,
+	remoteId int, remoteHost string) (workspaceInfo workspace.WorkspaceInfo, err error) {
 	db := getDb()
 	defer db.Close()
 
@@ -235,6 +239,12 @@ func GetSingleWorkspaceByParams(workingMode workspace.WorkingModeEnum, workingDi
 	}
 	if gitCloneUrl != "" {
 		params.w_git_clone_repo_url = sql.NullString{String: gitCloneUrl, Valid: true}
+	}
+	if branch != "" {
+		params.w_branch = branch
+	}
+	if confingFilePath != "" {
+		params.w_config_file = sql.NullString{String: confingFilePath, Valid: true}
 	}
 	if remoteId <= 0 {
 		remoteInfo, err := getRemote(remoteId, remoteHost)
@@ -254,12 +264,13 @@ func GetSingleWorkspaceByParams(workingMode workspace.WorkingModeEnum, workingDi
 								w_json, w_config_content, w_link_compose_content, w_temp_compose_content, 
 								w_created 
 							from workspace 
-							where w_workingdir=? 
-							and w_mode=? 
+							where w_mode=? 
 							and w_git_clone_repo_url=? 
 							and r_id = ?
+							and w_branch = ?
+							and w_config_file = ?
 							and w_is_del = 0`,
-			params.w_workingdir, workingMode, params.w_git_clone_repo_url, params.r_id)
+			workingMode, params.w_git_clone_repo_url, params.r_id, params.w_branch, params.w_config_file)
 	} else {
 		row = db.QueryRow(`select w_id, w_name, w_workingdir, w_docker_compose_file_path, w_mode, w_config_file,
 								w_git_clone_repo_url, w_git_auth_type, w_branch, r_id, w_is_del, 
