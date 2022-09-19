@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-19 15:24:38
+ * @LastEditTime: 2022-09-19 15:38:04
  */
 package common
 
@@ -856,25 +856,6 @@ func (instance *SSHRemote) ExecSSHCommandRealTimeFunc(sshCommand string, customE
 				}
 			}
 
-			/* array := strings.Split(originMsg, "\r\n")
-			for _, sub := range array {
-				if len(sub) == 0 || sub == "\r\n" { //|| sub == "\r"
-					continue
-				}
-
-				err = originExecuteFun(sub)
-				if err != nil {
-					return err
-				}
-
-				if customExecuteFun != nil {
-					err = customExecuteFun(sub)
-					if err != nil {
-						return err
-					}
-				}
-			} */
-
 		}
 		return nil
 	}
@@ -895,16 +876,6 @@ func (instance *SSHRemote) ExecSSHCommandRealTimeFunc(sshCommand string, customE
 
 	return err
 }
-
-/* func isChanClosed(ch chan bool) bool {
-	if len(ch) == 0 {
-		select {
-		case _, ok := <-ch:
-			return !ok
-		}
-	}
-	return false
-} */
 
 func (instance *SSHRemote) RemoteUpload(filesMaps map[string]string) (err error) {
 	// initialize SSH connection
