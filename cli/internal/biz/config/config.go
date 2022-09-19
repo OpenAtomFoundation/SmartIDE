@@ -3,7 +3,7 @@
  * @Description: config
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-16 15:55:51
+ * @LastEditTime: 2022-09-19 08:29:30
  */
 package config
 
@@ -166,7 +166,7 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 
 		// 如果设置了container name，就在container name前面加 project name（文件夹名称）
 		if service.ContainerName != "" {
-			service.ContainerName = projectName + "-" + service.ContainerName
+			service.ContainerName = projectName + "_" + service.ContainerName
 			dockerCompose.Services[serviceName] = service
 		}
 

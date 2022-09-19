@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-16 16:09:37
+ * @LastEditTime: 2022-09-19 08:28:49
  */
 package cmd
 
@@ -456,7 +456,7 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 				}
 
 				if workspaceInfo.Name == "" {
-					workspaceInfo.Name = common.GetRepoName(workspaceInfo.GitCloneRepoUrl) + "_" + common.RandLowStr(3)
+					workspaceInfo.Name = common.GetRepoName(workspaceInfo.GitCloneRepoUrl) + "-" + common.RandLowStr(3)
 				}
 
 				workspaceInfo.WorkingDirectoryPath = common.FilePahtJoin4Linux("~", model.CONST_REMOTE_REPO_ROOT, workspaceInfo.Name)
@@ -536,7 +536,7 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 	}
 	// 防止工作区名称为空的情况
 	if workspaceInfo.Name == "" {
-		workspaceInfo.Name = common.GetRepoName(workspaceInfo.GitCloneRepoUrl) + "_" + common.RandLowStr(3)
+		workspaceInfo.Name = common.GetRepoName(workspaceInfo.GitCloneRepoUrl) + "-" + common.RandLowStr(3)
 	}
 	// addon,处理已经addon webterminal后再次运行不加aadon
 	addon, _ := fflags.GetString("addon")

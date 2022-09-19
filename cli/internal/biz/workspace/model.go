@@ -79,7 +79,8 @@ type Addon struct {
 }
 
 type WorkspaceInfo struct {
-	ID   string
+	ID string
+	// 文件夹名称，project
 	Name string
 	// addon
 	Addon Addon
