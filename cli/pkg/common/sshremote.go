@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-30 14:44:02
+ * @LastEditTime: 2022-09-19 15:24:38
  */
 package common
 
@@ -36,7 +36,6 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-//
 type SSHRemote struct {
 	SSHHost        string
 	SSHPort        int
@@ -134,7 +133,7 @@ func (sshRemote *SSHRemote) GetRemoteHome() (currentDir string, err error) {
 	return currentDir, err
 }
 
-//获取远程uid,gid
+// 获取远程uid,gid
 func (sshRemote *SSHRemote) GetRemoteUserInfo() (Uid string, Gid string) {
 	remuid, err := sshRemote.ExeSSHCommand("id -u $USER")
 	remgid, remgiderr := sshRemote.ExeSSHCommand("id -g $USER")
@@ -606,7 +605,7 @@ func (instance *SSHRemote) ExecSSHkeyPolicy(no string, cmd *cobra.Command) {
 	}
 }
 
-//ExecSSHSetPasswordPolicy
+// ExecSSHSetPasswordPolicy
 func GetBasicPassword(no string, cmd *cobra.Command) (password string, err error) {
 	password = ""
 	var ws []WorkspacePolicy
