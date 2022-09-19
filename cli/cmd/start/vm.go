@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-19 11:08:13
+ * @LastEditTime: 2022-09-19 14:34:51
  */
 package start
 
@@ -160,7 +160,6 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 	//4. ai 统计yaml
 	yamlExecuteFun(*currentConfig)
-
 	//4.1 agent cp to remote
 	workspace.InstallSmartideAgent(sshRemote)
 
