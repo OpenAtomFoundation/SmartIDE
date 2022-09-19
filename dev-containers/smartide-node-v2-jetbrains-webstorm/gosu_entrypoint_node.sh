@@ -84,6 +84,7 @@ else
     /usr/sbin/sshd
     
     echo "-----smartide-----Starting gosu ide"
-    exec gosu smartide /run.sh "$@"
+    cd /
+    exec gosu smartide run.sh "$@"
 
 fi
