@@ -61,20 +61,15 @@ func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId in
 
 	//2. 是否数据已经存在
 	isExit := false
-	remoteID := -1
-	remoteHost := ""
-	if (workspaceInfo.Remote != workspace.RemoteInfo{}) {
-		remoteID = workspaceInfo.Remote.ID
-		remoteHost = workspaceInfo.Remote.Addr
-	}
-
 	if workspaceInfo.ID != "" { //2.1. 用户录入workspaceid的情况
 		i, err := strconv.Atoi(workspaceInfo.ID)
 		common.CheckError(err)
 		affectId = int64(i)
 		isExit = true
 	} else { //2.2. 用户有可能会不输入workspaceid，继续使用原有的参数
-		originWorkspace, err := GetSingleWorkspaceByParams(workspaceInfo.Mode, workspaceInfo.WorkingDirectoryPath, workspaceInfo.GitCloneRepoUrl, remoteID, remoteHost)
+		originWorkspace, err := GetSingleWorkspaceByParams(workspaceInfo.Mode, workspaceInfo.WorkingDirectoryPath,
+			workspaceInfo.GitCloneRepoUrl, workspaceInfo.Branch, workspaceInfo.ConfigFileRelativePath,
+			workspaceInfo.Remote.ID, workspaceInfo.Remote.Addr, workspaceInfo.Remote.UserName)
 		common.CheckError(err)
 
 		if originWorkspace.IsNotNil() {
@@ -223,23 +218,21 @@ func GetWorkspaceList() (workspaces []workspace.WorkspaceInfo, err error) {
 	return workspaces, err
 }
 
-func GetSingleWorkspaceByParams(workingMode workspace.WorkingModeEnum, workingDir string, gitCloneUrl string, remoteId int, remoteHost string) (workspaceInfo workspace.WorkspaceInfo, err error) {
+func GetSingleWorkspaceByParams(workingMode workspace.WorkingModeEnum,
+	workingDir string,
+	gitCloneUrl string, branch string, confingFilePath string,
+	remoteId int, remoteHost string, remoteUserName string) (workspaceInfo workspace.WorkspaceInfo, err error) {
 	db := getDb()
 	defer db.Close()
 
 	// 查询参数
 	params := workspaceDo{}
 	params.w_mode = string(workingMode)
-	if workingDir != "" {
-		params.w_workingdir = sql.NullString{String: workingDir, Valid: true}
-	}
-	if gitCloneUrl != "" {
-		params.w_git_clone_repo_url = sql.NullString{String: gitCloneUrl, Valid: true}
-	}
+
 	if remoteId <= 0 {
-		remoteInfo, err := getRemote(remoteId, remoteHost)
+		remoteInfo, err := getRemote(remoteId, remoteHost, remoteUserName)
 		common.CheckError(err)
-		if remoteInfo.ID > 0 {
+		if remoteInfo != nil && remoteInfo.ID > 0 {
 			params.r_id = sql.NullInt32{Int32: int32(remoteInfo.ID), Valid: true}
 		}
 	} else {
@@ -248,30 +241,38 @@ func GetSingleWorkspaceByParams(workingMode workspace.WorkingModeEnum, workingDi
 
 	// sql
 	var row *sql.Row
+	whereStr := " and w_mode=? "
+	args := []interface{}{workingMode}
 	if workingMode == workspace.WorkingMode_Remote {
-		row = db.QueryRow(`select w_id, w_name, w_workingdir, w_docker_compose_file_path, w_mode, w_config_file,
-								w_git_clone_repo_url, w_git_auth_type, w_branch, r_id, w_is_del, 
-								w_json, w_config_content, w_link_compose_content, w_temp_compose_content, 
-								w_created 
-							from workspace 
-							where w_workingdir=? 
-							and w_mode=? 
-							and w_git_clone_repo_url=? 
-							and r_id = ?
-							and w_is_del = 0`,
-			params.w_workingdir, workingMode, params.w_git_clone_repo_url, params.r_id)
-	} else {
-		row = db.QueryRow(`select w_id, w_name, w_workingdir, w_docker_compose_file_path, w_mode, w_config_file,
-								w_git_clone_repo_url, w_git_auth_type, w_branch, r_id, w_is_del, 
-								w_json, w_config_content, w_link_compose_content, w_temp_compose_content, 
-								w_created 
-							from workspace 
-							where w_workingdir=? 
-							and w_mode=? 
-							and w_git_clone_repo_url=? 
-							and w_is_del = 0`,
-			params.w_workingdir, workingMode, params.w_git_clone_repo_url)
+		whereStr += " and r_id = ?"
+		args = append(args, params.r_id)
 	}
+	if workingDir != "" && workspaceInfo.Mode == workspace.WorkingMode_Local { // 远程主机模式时，工作目录是不确定的
+		params.w_workingdir = sql.NullString{String: workingDir, Valid: true}
+		whereStr += " and w_workingdir = ?"
+		args = append(args, params.w_workingdir)
+	}
+	if gitCloneUrl != "" {
+		params.w_git_clone_repo_url = sql.NullString{String: gitCloneUrl, Valid: true}
+		whereStr += " and w_git_clone_repo_url = ?"
+		args = append(args, params.w_git_clone_repo_url)
+	}
+	if branch != "" {
+		params.w_branch = branch
+		whereStr += " and w_branch = ?"
+		args = append(args, params.w_branch)
+	}
+	if confingFilePath != "" {
+		params.w_config_file = sql.NullString{String: confingFilePath, Valid: true}
+		whereStr += " and w_config_file = ?"
+		args = append(args, params.w_config_file)
+	}
+	row = db.QueryRow(`select w_id, w_name, w_workingdir, w_docker_compose_file_path, w_mode, w_config_file,
+								w_git_clone_repo_url, w_git_auth_type, w_branch, r_id, w_is_del, 
+								w_json, w_config_content, w_link_compose_content, w_temp_compose_content, 
+								w_created 
+							from workspace 
+							where w_is_del = 0 `+whereStr, args...)
 
 	// 赋值
 	do := workspaceDo{}
@@ -377,7 +378,14 @@ func workspaceDataMap(workspaceInfo *workspace.WorkspaceInfo, do workspaceDo) er
 	// 远程主机信息
 	rid := int(do.r_id.Int32)
 	if rid >= 0 {
-		workspaceInfo.Remote, _ = GetRemoteById(rid)
+		remote, err := GetRemoteById(rid)
+		if err != nil {
+			return err
+		}
+		if remote == nil {
+			return fmt.Errorf("本地查不到不到 id（%v）的远程主机数据", rid)
+		}
+		workspaceInfo.Remote = *remote
 	}
 	kid := int(do.k_id.Int32)
 	if int(kid) >= 0 {

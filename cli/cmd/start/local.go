@@ -76,8 +76,8 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	common.CheckError(err)
 	linkComposeFileContent, err := currentConfig.Workspace.LinkCompose.ToYaml()
 	common.CheckError(err)
-	hasChanged := workspaceInfo.ChangeConfig(configYamlStr, linkComposeFileContent) // 是否改变
-	if hasChanged {                                                                 // 改变包括了初始化
+	hasChanged := workspaceInfo.IsChangeConfig(configYamlStr, linkComposeFileContent) // 是否改变
+	if hasChanged {                                                                   // 改变包括了初始化
 		// log
 		if workspaceInfo.ID != "" {
 			common.SmartIDELog.Info(i18nInstance.Start.Info_workspace_changed)

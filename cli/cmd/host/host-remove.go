@@ -2,8 +2,8 @@
  * @Author: vincent wei (vincentwei@leansoftx.com, https://github.com/zlweicoder)
  * @Description:
  * @Date: 2021-12-31
- * @LastEditors:
- * @LastEditTime:
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-09-16 15:11:11
  */
 package host
 
@@ -32,7 +32,7 @@ var HostRemoveCmd = &cobra.Command{
 			return
 		}
 
-		err := dal.RemoveRemote(hostId, "")
+		err := dal.RemoveRemote(hostId, "", "")
 		common.CheckError(err)
 
 		common.SmartIDELog.Info(fmt.Sprintf(i18nInstance.Host.Info_host_remove_success, hostId))

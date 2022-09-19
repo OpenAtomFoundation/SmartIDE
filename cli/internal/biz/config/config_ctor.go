@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-05 15:26:24
+ * @LastEditTime: 2022-09-15 18:03:06
  */
 package config
 
@@ -37,7 +37,7 @@ func NewRemoteConfig(sshRemote *common.SSHRemote, workingDir string, relativeCon
 
 	if sshRemote != nil { // 从vm上加载配置文件
 		// 配置文件路径
-		ideYamlFilePath := common.FilePathJoin(common.OS_Linux, workingDir, relativeConfigFilePath)
+		ideYamlFilePath := common.FilePahtJoin4Linux(workingDir, relativeConfigFilePath)
 
 		// 从远程服务器上加载配置文件
 		catCommand := fmt.Sprintf(`cat %v`, ideYamlFilePath)

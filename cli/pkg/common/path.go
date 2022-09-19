@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-01 20:59:11
+ * @LastEditTime: 2022-09-15 18:02:08
  */
 package common
 
@@ -59,7 +59,7 @@ func PathJoin(paths ...string) string {
 }
 
 // 路径组合，参数 os 可以是windows
-func FilePathJoin(osType OSType, paths ...string) string {
+func filePathJoin(osType OSType, paths ...string) string {
 	result := filepath.Join(paths...)
 	switch osType {
 	case OS_Windows:
@@ -72,5 +72,5 @@ func FilePathJoin(osType OSType, paths ...string) string {
 
 // 路径组合 for linux
 func FilePahtJoin4Linux(paths ...string) string {
-	return FilePathJoin(OS_Linux, paths...)
+	return filePathJoin(OS_Linux, paths...)
 }

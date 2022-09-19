@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-06 11:05:43
+ * @LastEditTime: 2022-09-16 10:43:05
  */
 package common
 
@@ -24,7 +24,6 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-//
 type smartIDELogStruct struct {
 	Ws_id    string
 	ParentId int
@@ -70,7 +69,6 @@ func (sLog *smartIDELogStruct) InitLogger(logLevel string) {
 	initLogger()
 }
 
-//
 func (sLog *smartIDELogStruct) Error(err interface{}, headers ...string) (reErr error) {
 
 	if err == nil {
@@ -185,7 +183,6 @@ func validF(format string, args ...interface{}) {
 	}
 }
 
-//
 func (sLog *smartIDELogStruct) DebugF(format string, args ...interface{}) {
 
 	validF(format, args...)
@@ -261,7 +258,6 @@ func (sLog *smartIDELogStruct) ConsoleInLine(args ...interface{}) {
 	sugarLogger.Info(args...)
 }
 
-//
 func (sLog *smartIDELogStruct) ImportanceWithError(err error) {
 	if _, ok := err.(*exec.ExitError); !ok {
 		sLog.Importance(err.Error())
@@ -326,7 +322,7 @@ func (sLog *smartIDELogStruct) WarningF(format string, args ...interface{}) {
 	SmartIDELog.Warning(msg)
 }
 
-//var logger *zap.Logger
+// var logger *zap.Logger
 var sugarLogger *zap.SugaredLogger
 
 func initLogger() {
@@ -341,7 +337,6 @@ func initLogger() {
 	sugarLogger = logger.Sugar()
 }
 
-//
 func getEncoder() zapcore.Encoder {
 
 	encoderConfig := zapcore.EncoderConfig{
@@ -390,7 +385,6 @@ func getEncoder() zapcore.Encoder {
 	return zapcore.NewConsoleEncoder(encoderConfig)
 }
 
-//
 func getLogWriter() zapcore.WriteSyncer {
 
 	// common.IsLaunchedByDebugger()
@@ -413,7 +407,6 @@ func getLogWriter() zapcore.WriteSyncer {
 	return zapcore.AddSync(lumberJackLogger)
 }
 
-//
 func getPrefix(logLevel zapcore.Level) string {
 	t := time.Now()
 	timeStr := t.Format("2006-01-02 15:04:05.000")

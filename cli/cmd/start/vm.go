@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2022-09-15 15:34:41
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-09-19 11:08:13
  */
 package start
 
@@ -80,7 +80,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	//3. 获取配置文件的内容
 	var ideBindingPort int
 	var tempDockerCompose compose.DockerComposeYml
-	ideYamlFilePath := common.FilePathJoin(common.OS_Linux, workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath) //fmt.Sprintf(`%v/.ide/.ide.yaml`, repoWorkspace)
+	ideYamlFilePath := common.FilePahtJoin4Linux(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath) //fmt.Sprintf(`%v/.ide/.ide.yaml`, repoWorkspace)
 	common.SmartIDELog.Info(fmt.Sprintf(i18nInstance.VmStart.Info_read_config, ideYamlFilePath))
 	if !sshRemote.IsFileExist(ideYamlFilePath) {
 		argsTemplateTypeName := ""
@@ -120,8 +120,8 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	common.CheckErrorFunc(err, serverFeedback)
 	linkComposeFileContent, err := currentConfig.Workspace.LinkCompose.ToYaml()
 	common.CheckErrorFunc(err, serverFeedback)
-	hasChanged := workspaceInfo.ChangeConfig(yamlStr, linkComposeFileContent) // 是否改变
-	if hasChanged {                                                           // 改变包括了初始化
+	hasChanged := workspaceInfo.IsChangeConfig(yamlStr, linkComposeFileContent) // 是否改变
+	if hasChanged {                                                             // 改变包括了初始化
 		// log
 		if workspaceInfo.ID != "" {
 			common.SmartIDELog.Info(i18nInstance.Start.Info_workspace_changed)
@@ -131,7 +131,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 		// 获取compose配置
 		tempDockerCompose, ideBindingPort, _ = currentConfig.ConvertToDockerCompose(sshRemote,
-			workspaceInfo.GetProjectDirctoryName(), workspaceInfo.WorkingDirectoryPath, true, userName)
+			workspaceInfo.Name, workspaceInfo.WorkingDirectoryPath, true, userName)
 		workspaceInfo.TempDockerCompose = tempDockerCompose
 
 		// 配置
@@ -186,6 +186,9 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		bytesDockerComposeContent, err := yaml.Marshal(&tempDockerCompose)
 		printServices(tempDockerCompose.Services) // 打印services
 		common.CheckError(err, string(bytesDockerComposeContent))
+		if workspaceInfo.TempYamlFileAbsolutePath == "" {
+			common.SmartIDELog.Error("compose 文件路径为空！")
+		}
 		commandCreateDockerComposeFile := fmt.Sprintf("docker-compose -f %v --project-directory %v up -d",
 			workspaceInfo.TempYamlFileAbsolutePath, workspaceInfo.WorkingDirectoryPath)
 		fmt.Println() // 避免向前覆盖

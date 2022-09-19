@@ -31,7 +31,6 @@ type remoteDO struct {
 	r_created time.Time
 }
 
-//
 func GetRemoteList() (remoteList []workspace.RemoteInfo, err error) {
 	db := getDb()
 	defer db.Close()
@@ -73,18 +72,15 @@ func GetRemoteList() (remoteList []workspace.RemoteInfo, err error) {
 	return remoteList, err
 }
 
-//
-func GetRemoteById(remoteId int) (remoteInfo workspace.RemoteInfo, err error) {
-	return getRemote(remoteId, "")
+func GetRemoteById(remoteId int) (remoteInfo *workspace.RemoteInfo, err error) {
+	return getRemote(remoteId, "", "")
 }
 
-//
-func GetRemoteByHost(host string) (remoteInfo workspace.RemoteInfo, err error) {
-	return getRemote(0, host)
+func GetRemoteByHost(host string, userName string) (remoteInfo *workspace.RemoteInfo, err error) {
+	return getRemote(0, host, userName)
 }
 
-//
-func RemoveRemote(remoteId int, host string) error {
+func RemoveRemote(remoteId int, host string, userName string) error {
 	db := getDb()
 	defer db.Close()
 
@@ -92,7 +88,10 @@ func RemoveRemote(remoteId int, host string) error {
 	var exitCount, referenceCount int
 	var row *sql.Row
 	if len(host) > 0 {
-		row = db.QueryRow("select count(1) exitCount,(select count(1) from workspace where w_is_del = 0 and r_id = remote.r_id) referenceCount from remote where r_addr=? and r_is_del = 0", host)
+		row = db.QueryRow(`select count(1) exitCount,
+		   (select count(1) from workspace where w_is_del = 0 and r_id = remote.r_id) referenceCount 
+		from remote 
+		where r_addr=? and r_username = ? and r_is_del = 0`, host, userName)
 	} else if remoteId > 0 {
 		row = db.QueryRow("select count(1) exitCount,(select count(1) from workspace where w_is_del = 0 and r_id = remote.r_id) referenceCount from remote where r_id=? and r_is_del = 0", remoteId)
 	}
@@ -149,7 +148,7 @@ func RemoveRemote(remoteId int, host string) error {
 
 func InsertOrUpdateRemote(remoteInfo workspace.RemoteInfo) (id int, err error) {
 
-	var single workspace.RemoteInfo
+	var single *workspace.RemoteInfo
 
 	if remoteInfo.ID > 0 {
 		single, err = GetRemoteById(remoteInfo.ID)
@@ -157,7 +156,7 @@ func InsertOrUpdateRemote(remoteInfo workspace.RemoteInfo) (id int, err error) {
 			return id, err
 		}
 	} else {
-		single, err = GetRemoteByHost(remoteInfo.Addr)
+		single, err = GetRemoteByHost(remoteInfo.Addr, remoteInfo.UserName)
 		if err != nil {
 			return id, err
 		}
@@ -173,7 +172,7 @@ func InsertOrUpdateRemote(remoteInfo workspace.RemoteInfo) (id int, err error) {
 	}
 
 	//2. insert or update
-	if (single != workspace.RemoteInfo{}) { //2.1. update
+	if single != nil { //2.1. update
 		stmt, err := db.Prepare(`update remote
 		set r_addr=?, r_port=?, r_username=?, r_auth_type=?, r_password=?  
 		where r_id=? or r_addr=?`)
@@ -206,8 +205,7 @@ func InsertOrUpdateRemote(remoteInfo workspace.RemoteInfo) (id int, err error) {
 	return id, err
 }
 
-//
-func getRemote(remoteId int, host string) (remoteInfo workspace.RemoteInfo, err error) {
+func getRemote(remoteId int, host string, userName string) (remoteInfo *workspace.RemoteInfo, err error) {
 
 	db := getDb()
 	defer db.Close()
@@ -216,11 +214,14 @@ func getRemote(remoteId int, host string) (remoteInfo workspace.RemoteInfo, err 
 
 	var row *sql.Row
 	if len(host) > 0 {
-		row = db.QueryRow("select r_id, r_addr, r_port, r_username, r_auth_type, r_password, r_created from remote where r_addr=? and r_is_del = 0", host)
+		row = db.QueryRow(`select r_id, r_addr, r_port, r_username, r_auth_type, r_password, r_created 
+		from remote 
+		where r_addr=? and r_username = ? and r_is_del = 0`, host, userName)
 	} else if remoteId > 0 {
-		row = db.QueryRow("select r_id, r_addr, r_port, r_username, r_auth_type, r_password, r_created from remote where r_id=? and r_is_del = 0", remoteId)
+		row = db.QueryRow(`select r_id, r_addr, r_port, r_username, r_auth_type, r_password, r_created 
+		from remote where r_id=? and r_is_del = 0`, remoteId)
 	} else {
-		return remoteInfo, nil
+		return
 	}
 
 	switch err := row.Scan(&do.r_id, &do.r_addr, &do.r_port, &do.r_username, &do.r_auth_type, &do.r_password, &do.r_created); err {
@@ -228,6 +229,7 @@ func getRemote(remoteId int, host string) (remoteInfo workspace.RemoteInfo, err 
 		msg := fmt.Sprintf("host (%v | %v)", host, remoteId)
 		common.SmartIDELog.WarningF(i18nInstance.Common.Warn_dal_record_not_exit_condition, msg) // 不存在
 	case nil:
+		remoteInfo = &workspace.RemoteInfo{}
 		remoteInfo.ID = do.r_id
 		remoteInfo.Addr = do.r_addr
 		remoteInfo.UserName = do.r_username
@@ -257,5 +259,5 @@ func getRemote(remoteId int, host string) (remoteInfo workspace.RemoteInfo, err 
 		panic(err)
 	}
 
-	return remoteInfo, err
+	return
 }

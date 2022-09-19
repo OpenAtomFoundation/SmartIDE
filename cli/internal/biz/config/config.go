@@ -3,7 +3,7 @@
  * @Description: config
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-25 10:19:51
+ * @LastEditTime: 2022-09-19 08:29:30
  */
 package config
 
@@ -164,6 +164,12 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 	//3.1. 端口映射
 	for serviceName, service := range dockerCompose.Services {
 
+		// 如果设置了container name，就在container name前面加 project name（文件夹名称）
+		if service.ContainerName != "" {
+			service.ContainerName = projectName + "_" + service.ContainerName
+			dockerCompose.Services[serviceName] = service
+		}
+
 		// 绑定端口被占用的问题
 		if isCheckUnuesedPorts {
 			hasChange := false
@@ -274,7 +280,6 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 		if serviceName == yamlFileConfig.Workspace.DevContainer.ServiceName {
 
 			if yamlFileConfig.Workspace.DevContainer.Volumes.HasSshKey.Value() {
-
 				SSHVolumesConfig(isRemoteMode, &service, sshRemote, userName)
 			}
 
@@ -365,7 +370,6 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 		}
 		// 只有IDE容器需要动态赋值uid,gid
 		if serviceName == yamlFileConfig.Workspace.DevContainer.ServiceName {
-
 			if isRemoteMode {
 				uid, gid := sshRemote.GetRemoteUserInfo()
 				service.Environment[model.CONST_LOCAL_USER_UID] = uid
@@ -413,7 +417,7 @@ func (yamlFileConfig SmartIdeConfig) getDockerCompose(sshRemote common.SSHRemote
 
 		if isRemoteMode {
 			// 获取docker-compose文件在远程主机上的路径
-			remoteDockerComposeFilePath := common.FilePathJoin(common.OS_Linux, remoteWorkingDir, ".ide", yamlFileConfig.Workspace.DockerComposeFile)
+			remoteDockerComposeFilePath := common.FilePahtJoin4Linux(remoteWorkingDir, ".ide", yamlFileConfig.Workspace.DockerComposeFile)
 			common.SmartIDELog.InfoF(i18nInstance.Config.Info_read_docker_compose, remoteDockerComposeFilePath)
 
 			// 在远程主机上加载docker-compose文件

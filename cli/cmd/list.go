@@ -3,13 +3,14 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-14 15:40:03
+ * @LastEditTime: 2022-09-19 11:02:04
  */
 package cmd
 
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -42,7 +43,7 @@ var listCmd = &cobra.Command{
 
 // 打印 service 列表
 func printWorkspaces(cliRunningEnv workspace.CliRunningEvnEnum) {
-	workspaces, err := dal.GetWorkspaceList()
+	workspaceInfos, err := dal.GetWorkspaceList()
 	common.CheckError(err)
 
 	auth, err := workspace.GetCurrentUser()
@@ -54,10 +55,10 @@ func printWorkspaces(cliRunningEnv workspace.CliRunningEvnEnum) {
 		if err != nil { // 有错误仅给警告
 			common.SmartIDELog.Importance("从服务器获取工作区列表失败，" + err.Error())
 		} else { //
-			workspaces = append(workspaces, serverWorkSpaces...)
+			workspaceInfos = append(workspaceInfos, serverWorkSpaces...)
 		}
 	}
-	if len(workspaces) <= 0 {
+	if len(workspaceInfos) <= 0 {
 		common.SmartIDELog.Info(i18nInstance.List.Info_dal_none)
 		return
 	}
@@ -77,32 +78,44 @@ func printWorkspaces(cliRunningEnv workspace.CliRunningEvnEnum) {
 	fmt.Fprintln(w, strings.Join(outputArray, "\t"))
 
 	// 内容
-	for _, worksapce := range workspaces {
-		dir := worksapce.WorkingDirectoryPath
+	for _, worksapceInfo := range workspaceInfos {
+		dir := worksapceInfo.WorkingDirectoryPath
 		if len(dir) <= 0 {
 			dir = "-"
 		}
-		config := worksapce.ConfigFileRelativePath
-		if len(config) <= 0 {
-			config = "-"
+		configFile := worksapceInfo.ConfigFileRelativePath
+		if len(configFile) <= 0 {
+			configFile = "-"
+		} else {
+			if strings.Index(configFile, ".ide") == 0 ||
+				strings.Index(configFile, "/.ide") == 0 ||
+				strings.Index(configFile, "\\.ide") == 0 {
+				configFile = filepath.Base(configFile)
+			}
 		}
 		createTime := ""
-		if worksapce.Mode != workspace.WorkingMode_Local {
-			local, _ := time.LoadLocation("Local")                                     // 北京时区
-			createTime = worksapce.CreatedTime.In(local).Format("2006-01-02 15:04:05") // 格式化输出
+		if worksapceInfo.Mode != workspace.WorkingMode_Local {
+			local, _ := time.LoadLocation("Local")                                         // 北京时区
+			createTime = worksapceInfo.CreatedTime.In(local).Format("2006-01-02 15:04:05") // 格式化输出
 		} else {
-			createTime = worksapce.CreatedTime.Format("2006-01-02 15:04:05") // 格式化输出
+			createTime = worksapceInfo.CreatedTime.Format("2006-01-02 15:04:05") // 格式化输出
 		}
 		host := "-"
-		if (worksapce.Remote != workspace.RemoteInfo{}) {
-			host = fmt.Sprint(worksapce.Remote.Addr, ":", worksapce.Remote.SSHPort)
+		if (worksapceInfo.Remote != workspace.RemoteInfo{}) {
+			host = fmt.Sprint(worksapceInfo.Remote.UserName, "@", worksapceInfo.Remote.Addr, ":", worksapceInfo.Remote.SSHPort)
 		}
-		workspaceName := worksapce.Name
-		if worksapce.ServerWorkSpace != nil {
-			label := worksapce.ServerWorkSpace.Status.GetDesc()
+		workspaceName := worksapceInfo.Name
+		if worksapceInfo.ServerWorkSpace != nil {
+			label := worksapceInfo.ServerWorkSpace.Status.GetDesc()
 			workspaceName = fmt.Sprintf("%v (%v)", workspaceName, label)
 		}
-		line := fmt.Sprintf("%v\t%v\t%v\t%v\t%v\t%v\t%v", worksapce.ID, workspaceName, worksapce.Mode, dir, config, host, createTime)
+		gitBranch := worksapceInfo.Branch
+		if gitBranch == "" {
+			gitBranch = "master"
+		}
+
+		line := fmt.Sprintf("%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v", worksapceInfo.ID, workspaceName, worksapceInfo.Mode,
+			worksapceInfo.GitCloneRepoUrl, gitBranch, configFile, host, createTime)
 		fmt.Fprintln(w, line)
 	}
 	w.Flush()

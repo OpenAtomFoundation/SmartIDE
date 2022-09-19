@@ -79,7 +79,8 @@ type Addon struct {
 }
 
 type WorkspaceInfo struct {
-	ID   string
+	ID string
+	// 文件夹名称，project
 	Name string
 	// addon
 	Addon Addon
@@ -428,7 +429,7 @@ func getLocalGitRepoUrl() (gitRemmoteUrl, pathName string) {
 }
 
 // 改变配置文件
-func (w *WorkspaceInfo) ChangeConfig(currentConfigContent, linkDockerComposeContent string) (hasChanged bool) {
+func (w *WorkspaceInfo) IsChangeConfig(currentConfigContent, linkDockerComposeContent string) (hasChanged bool) {
 	// 参数检查
 	if currentConfigContent == "" {
 		msg := fmt.Sprintf(i18nInstance.Common.Warn_param_is_null, "configContent")
