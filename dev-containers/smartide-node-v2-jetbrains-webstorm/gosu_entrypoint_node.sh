@@ -84,7 +84,6 @@ else
     /usr/sbin/sshd
     
     echo "-----smartide-----Starting gosu ide"
-    cd /
-    exec gosu smartide run.sh "$@"
+    exec gosu smartide /projector/ide/bin/ide-projector-launcher.sh
 
 fi
