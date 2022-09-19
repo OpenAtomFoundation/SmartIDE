@@ -1,5 +1,5 @@
 ---
-title: "SmartMeetup(S01E04) - 仅有50Mb大小的cli即可搞定大厂才能玩的CloudIDE"
+title: "SmartMeetup(S01E04) - 50Mb小工具搞定大厂才能玩的CloudIDE"
 linkTitle: "SmartMeetup (S01E04)"
 date: 2022-09-19
 description: >
