@@ -1,14 +1,9 @@
 /*
  * @Date: 2022-03-23 16:15:38
-<<<<<<< HEAD
- * @LastEditors: kenan
- * @LastEditTime: 2022-09-15 17:55:03
-=======
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-06 11:03:40
->>>>>>> releases/release-26
+ * @LastEditTime: 2022-09-19 15:56:34
  * @FilePath: /cli/cmd/start/k8s.go
-*/
+ */
 
 package start
 
@@ -200,14 +195,15 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil, workspac
 	if workspaceInfo.CliRunningEnv == workspace.CliRunningEnvEnum_Client {
 		//8. 保存到db
 		reloadWorkSpaceId(&workspaceInfo)
-
 		common.SmartIDELog.InfoF(i18nInstance.Start.Info_workspace_saved, workspaceInfo.ID)
 
 		//9. 使用浏览器打开web ide
-		common.SmartIDELog.Info(i18nInstance.Start.Info_running_openbrower)
-		err = waitingAndOpenBrower(workspaceInfo, *originK8sConfig)
-		if err != nil {
-			return nil, err
+		if originK8sConfig.Workspace.DevContainer.IdeType != config.IdeTypeEnum_SDKOnly {
+			common.SmartIDELog.Info(i18nInstance.Start.Info_running_openbrower)
+			err = waitingAndOpenBrower(workspaceInfo, *originK8sConfig)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
