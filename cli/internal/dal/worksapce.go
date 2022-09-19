@@ -232,7 +232,7 @@ func GetSingleWorkspaceByParams(workingMode workspace.WorkingModeEnum,
 	if remoteId <= 0 {
 		remoteInfo, err := getRemote(remoteId, remoteHost, remoteUserName)
 		common.CheckError(err)
-		if remoteInfo.ID > 0 {
+		if remoteInfo != nil && remoteInfo.ID > 0 {
 			params.r_id = sql.NullInt32{Int32: int32(remoteInfo.ID), Valid: true}
 		}
 	} else {
@@ -378,7 +378,13 @@ func workspaceDataMap(workspaceInfo *workspace.WorkspaceInfo, do workspaceDo) er
 	// 远程主机信息
 	rid := int(do.r_id.Int32)
 	if rid >= 0 {
-		remote, _ := GetRemoteById(rid)
+		remote, err := GetRemoteById(rid)
+		if err != nil {
+			return err
+		}
+		if remote == nil {
+			return fmt.Errorf("本地查不到不到 id（%v）的远程主机数据", rid)
+		}
 		workspaceInfo.Remote = *remote
 	}
 	kid := int(do.k_id.Int32)

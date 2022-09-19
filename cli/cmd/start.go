@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-19 08:28:49
+ * @LastEditTime: 2022-09-19 10:46:46
  */
 package cmd
 
@@ -510,8 +510,7 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 				}
 				if workspaceInfo.Mode == workspace.WorkingMode_Remote {
 					isEnable := ""
-					fmt.Printf("远程工作区（%v）已存在，可以通过 “smartide start %v” 启动原有工作区，也可以创建新的工作区，是否创建新的工作区？（y | n）",
-						workspaceInfoDb.ID, workspaceInfoDb.ID)
+					fmt.Printf("远程工作区重复（可通过smartide list查看），是否创建新的工作区？（y | n）")
 					fmt.Scanln(&isEnable)
 					if strings.ToLower(isEnable) != "y" {
 						isNew = false
@@ -699,6 +698,7 @@ func getRemoteAndValid(fflags *pflag.FlagSet) (remoteInfo *workspace.RemoteInfo,
 
 	// 从参数中加载
 	if remoteInfo == nil {
+		remoteInfo = &workspace.RemoteInfo{}
 		//  必填字段验证
 		err = checkFlagRequired(fflags, flag_host)
 		if err != nil {

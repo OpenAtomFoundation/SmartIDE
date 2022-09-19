@@ -111,7 +111,7 @@
         "info_start": "Loading workspaces ...",
         "info_end": "Workspaces loaded.",
         "info_dal_none": "Workspace data not found. ",
-        "info_workspace_list_header": "Id\tName\tMode\tWorking Dir\tConfig File\tHost\tCreate Time"
+        "info_workspace_list_header": "Id\tName\tMode\tGit Clone Url\tGit Branch\tConfig File\tHost\tCreate Time"
     },
     "get": {
         "info_help_short": "Load workspace details",
