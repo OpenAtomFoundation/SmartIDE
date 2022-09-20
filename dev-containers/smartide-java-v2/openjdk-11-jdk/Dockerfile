@@ -4,8 +4,8 @@
 # Copyright (C) leansoftX.com
 #################################################
 
-FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-v2:latest
-
+FROM --platform=$TARGETPLATFORM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-v2:latest
+ARG TARGETPLATFORM 
 USER root
 RUN apt-get update && \
     apt-get -y install --no-install-recommends tzdata openjdk-8-jdk openjdk-11-jdk openjdk-17-jdk maven && \
