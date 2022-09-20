@@ -125,7 +125,7 @@ USER root
 
 EXPOSE 8887
 
-##CMD ["bash", "-c", "/run.sh"]
+#CMD ["bash", "-c", "/run.sh"]
 
 COPY gosu_entrypoint_node.sh /idesh/gosu_entrypoint_node.sh
 RUN chmod +x /idesh/gosu_entrypoint_node.sh
