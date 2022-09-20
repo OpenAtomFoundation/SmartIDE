@@ -132,7 +132,7 @@ func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId in
 				}
 			}
 		}
-	} else { // 插入到 k8s 表中 //TODO 表结构待定
+	} else { // 插入到 k8s 表中
 		tmpId, err := InsertOrUpdateK8sInfo(workspaceInfo.K8sInfo)
 		common.CheckError(err)
 		if tmpId > 0 {
@@ -189,7 +189,7 @@ func GetWorkspaceList() (workspaces []workspace.WorkspaceInfo, err error) {
 	defer db.Close()
 
 	rows, err := db.Query(`select w_id, w_name, w_workingdir, w_docker_compose_file_path, w_mode, w_config_file,
-									w_git_clone_repo_url, w_git_auth_type, w_branch, r_id, w_is_del, 
+									w_git_clone_repo_url, w_git_auth_type, w_branch, r_id, k_id, w_is_del, 
 									w_json, w_config_content, w_link_compose_content, w_temp_compose_content, 
 									w_created 
 							from workspace 
@@ -198,7 +198,7 @@ func GetWorkspaceList() (workspaces []workspace.WorkspaceInfo, err error) {
 	for rows.Next() {
 		do := workspaceDo{}
 		switch errSql := rows.Scan(&do.w_id, &do.w_name, &do.w_workingdir, &do.w_docker_compose_file_path, &do.w_mode, &do.w_config_file,
-			&do.w_git_clone_repo_url, &do.w_git_auth_type, &do.w_branch, &do.r_id, &do.w_is_del,
+			&do.w_git_clone_repo_url, &do.w_git_auth_type, &do.w_branch, &do.r_id, &do.k_id, &do.w_is_del,
 			&do.w_json, &do.w_config_content, &do.w_link_compose_content, &do.w_temp_compose_content,
 			&do.w_created); errSql {
 		/* case sql.ErrNoRows:
@@ -361,7 +361,9 @@ func workspaceDataMap(workspaceInfo *workspace.WorkspaceInfo, do workspaceDo) er
 	//5. 扩展属性
 	if do.w_json.String != "" {
 		err := json.Unmarshal([]byte(do.w_json.String), &workspaceInfo.Extend)
-		common.CheckError(err)
+		if err != nil {
+			return err
+		}
 	}
 
 	// git 验证方式
@@ -376,25 +378,28 @@ func workspaceDataMap(workspaceInfo *workspace.WorkspaceInfo, do workspaceDo) er
 	workspaceInfo.Branch = do.w_branch
 
 	// 远程主机信息
-	rid := int(do.r_id.Int32)
-	if rid >= 0 {
-		remote, err := GetRemoteById(rid)
-		if err != nil {
-			return err
+	if workspaceInfo.Mode == workspace.WorkingMode_Remote {
+		rid := int(do.r_id.Int32)
+		if rid > 0 {
+			remote, err := GetRemoteById(rid)
+			if err != nil {
+				return err
+			}
+			if remote == nil {
+				return fmt.Errorf("本地查不到不到 id（%v）的远程主机数据", rid)
+			}
+			workspaceInfo.Remote = *remote
 		}
-		if remote == nil {
-			return fmt.Errorf("本地查不到不到 id（%v）的远程主机数据", rid)
-		}
-		workspaceInfo.Remote = *remote
-	}
-	kid := int(do.k_id.Int32)
-	if int(kid) >= 0 {
-		temp, _ := GetK8sInfoById(kid)
-		if temp != nil {
-			workspaceInfo.K8sInfo.ID = temp.ID
-			workspaceInfo.K8sInfo.Context = temp.Context
-			workspaceInfo.K8sInfo.Namespace = temp.Namespace
-			workspaceInfo.K8sInfo.KubeConfigFilePath = temp.KubeConfigFilePath
+	} else if workspaceInfo.Mode == workspace.WorkingMode_K8s {
+		kid := int(do.k_id.Int32)
+		if int(kid) > 0 {
+			temp, _ := GetK8sInfoById(kid)
+			if temp != nil {
+				workspaceInfo.K8sInfo.ID = temp.ID
+				workspaceInfo.K8sInfo.Context = temp.Context
+				workspaceInfo.K8sInfo.Namespace = temp.Namespace
+				workspaceInfo.K8sInfo.KubeConfigFilePath = temp.KubeConfigFilePath
+			}
 		}
 	}
 

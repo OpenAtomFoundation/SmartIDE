@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-30 23:10:52
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-05 14:04:54
+ * @LastEditTime: 2022-09-20 11:17:16
  * @FilePath: /cli/internal/biz/config/config_convert.go
  */
 
@@ -70,7 +70,7 @@ func (originK8sConfig SmartIdeK8SConfig) GetSystemUserName() string {
 func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(repoName string, namespace string, systemUserName string, labels map[string]string) SmartIdeK8SConfig {
 	//0.
 	k8sConfig := SmartIdeK8SConfig{}
-	copier.CopyWithOption(&k8sConfig, &originK8sConfig, copier.Option{IgnoreEmpty: true, DeepCopy: true}) // 把一个对象赋值给另外一个对象
+	copier.CopyWithOption(&k8sConfig, originK8sConfig, copier.Option{IgnoreEmpty: true, DeepCopy: true}) // 把一个对象赋值给另外一个对象
 
 	//1. namespace
 	//1.1. 创建kind

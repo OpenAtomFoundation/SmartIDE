@@ -21,12 +21,12 @@ type K8sDO struct {
 	k_is_del     bool
 }
 
-//
 func GetK8sInfoList() (k8sInfoList []workspace.K8sInfo, err error) {
 	db := getDb()
 	defer db.Close()
 
-	rows, err := db.Query(`select k_id, k_kubeconfg, k_context, k_namespace, k_deployment,k_pvc,k_created from k8s
+	rows, err := db.Query(`select k_id, k_kubeconfg, k_context, k_namespace, k_deployment,k_pvc,k_created 
+							from k8s
 							where k_is_del = 0`)
 	for rows.Next() {
 		do := K8sDO{}
@@ -56,14 +56,12 @@ func GetK8sInfoList() (k8sInfoList []workspace.K8sInfo, err error) {
 	return k8sInfoList, err
 }
 
-//
 func GetK8sInfoById(id int) (K8sInfo *workspace.K8sInfo, err error) {
 	return GetK8sInfo(id, "")
 }
 
 //
 
-//
 func RemoveK8s(id int, context string) error {
 	db := getDb()
 	defer db.Close()
@@ -178,7 +176,6 @@ func InsertOrUpdateK8sInfo(K8sInfo workspace.K8sInfo) (id int, err error) {
 	return id, err
 }
 
-//
 func GetK8sInfo(id int, context string) (K8sInfo *workspace.K8sInfo, err error) {
 
 	db := getDb()
