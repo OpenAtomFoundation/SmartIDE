@@ -1,0 +1,2 @@
+FROM --platform=$TARGETPLATFORM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-base-v2-vscode-vmlc
+RUN pwd

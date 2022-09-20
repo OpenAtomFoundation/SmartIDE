@@ -5,7 +5,7 @@ ENV TZ Asia/Shanghai
 #git中文乱码问题
 ENV LESSCHARSET=utf-8
 ENV USERNAME=smartide
-ENV USER_PASS=smartide123.@IDE
+ENV USER_PASS=root123
 #
 # Systemd installation
 #
@@ -23,7 +23,7 @@ RUN apt-get update &&                            \
             sudo                                 \
             git                                  \
             wget                                 \
-            udev &&                              \
+            udev libsecret-1-dev zip apt-utils vim iputils-ping telnet jq moreutils &&                              \
                                                  \
     # Prevents journald from reading kernel messages from /dev/kmsg
     echo "ReadKMsg=no" >> /etc/systemd/journald.conf &&               \
