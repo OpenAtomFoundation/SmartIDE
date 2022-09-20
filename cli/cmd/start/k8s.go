@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-19 15:56:34
+ * @LastEditTime: 2022-09-20 12:28:04
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -786,6 +786,11 @@ func FeeadbackContainerId(cmd *cobra.Command, workspaceInfo workspace.WorkspaceI
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("x-token", token)
 
+	// request
+	reqBody, _ := ioutil.ReadAll(req.Body)
+	printReqStr := fmt.Sprintf("request head: %v, body: %s", req.Header, reqBody)
+	common.SmartIDELog.Debug(printReqStr)
+
 	//
 	client := &http.Client{
 		Timeout: 10 * time.Second,
@@ -796,11 +801,6 @@ func FeeadbackContainerId(cmd *cobra.Command, workspaceInfo workspace.WorkspaceI
 		return err
 	}
 	defer resp.Body.Close()
-
-	// request
-	reqBody, _ := ioutil.ReadAll(req.Body)
-	printReqStr := fmt.Sprintf("request head: %v, body: %s", req.Header, reqBody)
-	common.SmartIDELog.Debug(printReqStr)
 
 	// response
 	respBody, _ := ioutil.ReadAll(resp.Body)

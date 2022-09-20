@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-09-05 11:48:48
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-07 02:30:11
+ * @LastEditTime: 2022-09-20 11:31:36
  * @FilePath: /cli/pkg/k8s/helper.go
  */
 
@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"regexp"
 
+	"github.com/jinzhu/copier"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -27,21 +28,27 @@ func AddLabels(kind interface{}, labels map[string]string) interface{} {
 
 	// deployment的时候需要给templte 中的labels 进行赋值
 	if origin.FieldByName("Kind").String() == "Deployment" {
-		tmpLabels := origin.FieldByName("Spec").FieldByName("Template").FieldByName("Labels").
+		originLabels := origin.FieldByName("Spec").FieldByName("Template").FieldByName("Labels").
 			Interface().(map[string]string)
-		if tmpLabels == nil {
-			tmpLabels = make(map[string]string)
+		currentLabels := make(map[string]string)
+		if originLabels != nil {
+			copier.Copy(&currentLabels, originLabels)
 		}
 		for key, value := range labels {
 			relValue := filterSpecialCharacters4LabelValue(value)
-			tmpLabels[key] = relValue
+			currentLabels[key] = relValue
 		}
 		result.FieldByName("Spec").FieldByName("Template").FieldByName("Labels").
-			Set(reflect.ValueOf(tmpLabels))
+			Set(reflect.ValueOf(currentLabels))
 	}
 
 	// 原类型中的labels赋值
 	objMeta := origin.FieldByName("ObjectMeta").Interface().(v1.ObjectMeta)
+	if objMeta.Labels != nil {
+		currentLabels := make(map[string]string)
+		copier.Copy(&currentLabels, objMeta.Labels)
+		objMeta.Labels = currentLabels
+	}
 	for key, value := range labels {
 		relValue := filterSpecialCharacters4LabelValue(value)
 		v1.SetMetaDataLabel(&objMeta, key, relValue)

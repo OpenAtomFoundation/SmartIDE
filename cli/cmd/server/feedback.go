@@ -40,6 +40,11 @@ func FeeadbackExtend(auth model.Auth, workspaceInfo workspace.WorkspaceInfo) err
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("x-token", auth.Token.(string))
 
+	// request
+	reqBody, _ := ioutil.ReadAll(req.Body)
+	printReqStr := fmt.Sprintf("request head: %v, body: %s", req.Header, reqBody)
+	common.SmartIDELog.Debug(printReqStr)
+
 	//
 	client := &http.Client{
 		Timeout: 10 * time.Second,
@@ -50,11 +55,6 @@ func FeeadbackExtend(auth model.Auth, workspaceInfo workspace.WorkspaceInfo) err
 		return err
 	}
 	defer resp.Body.Close()
-
-	// request
-	reqBody, _ := ioutil.ReadAll(req.Body)
-	printReqStr := fmt.Sprintf("request head: %v, body: %s", req.Header, reqBody)
-	common.SmartIDELog.Debug(printReqStr)
 
 	// response
 	respBody, _ := ioutil.ReadAll(resp.Body)
