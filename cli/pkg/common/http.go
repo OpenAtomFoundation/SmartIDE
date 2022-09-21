@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-10 18:11:42
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-21 14:01:07
+ * @LastEditTime: 2022-09-21 16:51:27
  * @FilePath: /cli/pkg/common/http.go
  * @Description:
  *
@@ -18,12 +18,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -148,7 +148,7 @@ func Get(reqUrl string, reqParams map[string]string, headers map[string]string) 
 	// 发送请求
 	SmartIDELog.Debug(formatRequest(httpRequest, nil))
 	httpResponse, err := httpClient.Do(httpRequest)
-	SmartIDELog.Debug(formatResponse(httpResponse))
+	responseBody := parsingResponse(httpResponse)
 	if err != nil {
 		return "", err
 	}
@@ -157,12 +157,12 @@ func Get(reqUrl string, reqParams map[string]string, headers map[string]string) 
 		return "", errors.New(httpResponse.Status)
 	}
 
-	response, _ := ioutil.ReadAll(httpResponse.Body)
-	if len(response) == 0 {
+	//responseBody, _ := io.ReadAll(httpResponse.Body)
+	if len(string(responseBody)) == 0 {
 		return "", errors.New("reponse body is empty")
 	}
-	SmartIDELog.Debug("response: " + string(response))
-	return string(response), nil
+	SmartIDELog.Debug("response: " + string(responseBody))
+	return string(responseBody), nil
 }
 
 func PostForm(reqUrl string, reqParams map[string]interface{}, headers map[string]string) (string, error) {
@@ -200,7 +200,7 @@ func put(reqUrl string, reqParams map[string]interface{}, headers map[string]str
 	// 发送请求
 	SmartIDELog.Debug(formatRequest(httpRequest, reqParams))
 	httpResponse, err := httpClient.Do(httpRequest)
-	SmartIDELog.Debug(formatResponse(httpResponse))
+	responseBody := parsingResponse(httpResponse)
 	if err != nil {
 		return "", err
 	}
@@ -208,8 +208,8 @@ func put(reqUrl string, reqParams map[string]interface{}, headers map[string]str
 	if httpResponse.StatusCode != 200 {
 		return "", errors.New(httpResponse.Status)
 	}
-	responseBody, err := ioutil.ReadAll(httpResponse.Body)
-	if len(responseBody) == 0 {
+	//responseBody, err := io.ReadAll(httpResponse.Body)
+	if len(string(responseBody)) == 0 {
 		return "", errors.New("reponse body is empty")
 	}
 	return string(responseBody), err
@@ -248,7 +248,8 @@ func post(reqUrl string,
 	// 发送请求
 	SmartIDELog.Debug(formatRequest(httpRequest, reqParams))
 	httpResponse, err := httpClient.Do(httpRequest)
-	SmartIDELog.Debug(formatResponse(httpResponse))
+	responseBody := parsingResponse(httpResponse)
+	SmartIDELog.Debug()
 	if err != nil {
 		return "", err
 	}
@@ -256,11 +257,11 @@ func post(reqUrl string,
 	if httpResponse.StatusCode != 200 {
 		return "", errors.New(httpResponse.Status)
 	}
-	response, err := ioutil.ReadAll(httpResponse.Body)
-	if len(response) == 0 {
+	//responseBody, err := io.ReadAll(httpResponse.Body)
+	if len(string(responseBody)) == 0 {
 		return "", errors.New("reponse body is empty")
 	}
-	return string(response), err
+	return string(responseBody), err
 
 }
 
@@ -341,10 +342,28 @@ func formatRequest(r *http.Request, reqParams map[string]interface{}) string {
 	return "REQUEST \n\t" + strings.Join(messages, "\n\t")
 }
 
-func formatResponse(resp *http.Response) string {
-	responseBody, _ := ioutil.ReadAll(resp.Body)
-	printRespStr := fmt.Sprintf("RESPONSE \n\tcode: %v \n\thead: %v \n\tbody: %s",
-		resp.StatusCode, resp.Header, string(responseBody))
+// response format
+func parsingResponse(resp *http.Response) string {
+	responseBody, _ := io.ReadAll(resp.Body)
+	if len(responseBody) == 0 {
+		return ""
+	}
 
-	return printRespStr
+	result := string(responseBody)
+
+	// 压缩json数据，减少打印的信息
+	simpleResult := result
+	regex := regexp.MustCompile(`:".*?[^\\]"`)
+	simpleResult = regex.ReplaceAllStringFunc(simpleResult, func(old string) string {
+		if len(old) > 26 {
+			return old[:23] + "...\""
+		}
+		return old
+	})
+
+	printRespStr := fmt.Sprintf("RESPONSE \n\tcode: %v \n\thead: %v \n\tbody: %s",
+		resp.StatusCode, resp.Header, simpleResult)
+	SmartIDELog.Debug(printRespStr)
+
+	return result
 }
