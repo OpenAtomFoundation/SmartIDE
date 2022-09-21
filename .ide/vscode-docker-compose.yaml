@@ -1,0 +1,21 @@
+
+version: "3"
+services:
+  smartide-vscode-node-dev:
+    image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-v2-vscode:latest
+    hostname: dev-container
+    restart: always
+    environment:
+      LOCAL_USER_PASSWORD: root123       
+    volumes:
+      - .:/home/project
+    ports:
+      - 6822:22
+      - 6800:3000
+      - 1313:1313
+    networks:
+      - smartide-network  
+
+networks:
+  smartide-network:
+    external: true

@@ -1,0 +1,76 @@
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartide-vscode-node-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      boathouse-calculator.service: smartide-vscode-node
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        boathouse-calculator.service: smartide-vscode-node
+    spec:
+      containers:
+        - env:
+            - name: LOCAL_USER_PASSWORD
+              value: root123
+          image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-v2-vscode:latest
+          imagePullPolicy: Always
+          name: smartide-vscode-node-dev
+          ports:
+            - containerPort: 3000
+            - containerPort: 22
+            - containerPort: 1313
+            
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "500m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+status: {}
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartide-vscode-node-service
+spec:
+  ports:   
+    - name: "6800"
+      port: 6800
+      targetPort: 3000
+    - name: "6822"
+      port: 6822
+      targetPort: 22
+    - name: "1313"
+      port: 1313
+      targetPort: 1313
+  selector:
+    boathouse-calculator.service: smartide-vscode-node
+status:
+  loadBalancer: {}
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: smartide-vscode-node-network
+spec:
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              smartide-vscode-node/smartide-network: "true"
+  podSelector:
+    matchLabels:
+      smartide-vscode-node/smartide-network: "true"
