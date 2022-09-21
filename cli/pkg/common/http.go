@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-10 18:11:42
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-21 16:51:27
+ * @LastEditTime: 2022-09-21 17:27:43
  * @FilePath: /cli/pkg/common/http.go
  * @Description:
  *
@@ -139,7 +139,10 @@ func Get(reqUrl string, reqParams map[string]string, headers map[string]string) 
 	// 得到完整的url，http://xx?query
 	urlPath := Url.String()
 
-	httpRequest, _ := http.NewRequest("GET", urlPath, nil)
+	httpRequest, err := http.NewRequest("GET", urlPath, nil)
+	if err != nil {
+		return "", err
+	}
 	// 添加请求头
 	for k, v := range headers {
 		httpRequest.Header.Add(k, v)
@@ -148,7 +151,10 @@ func Get(reqUrl string, reqParams map[string]string, headers map[string]string) 
 	// 发送请求
 	SmartIDELog.Debug(formatRequest(httpRequest, nil))
 	httpResponse, err := httpClient.Do(httpRequest)
-	responseBody := parsingResponse(httpResponse)
+	if err != nil {
+		return "", err
+	}
+	responseBody, err := parsingResponse(httpResponse)
 	if err != nil {
 		return "", err
 	}
@@ -157,11 +163,9 @@ func Get(reqUrl string, reqParams map[string]string, headers map[string]string) 
 		return "", errors.New(httpResponse.Status)
 	}
 
-	//responseBody, _ := io.ReadAll(httpResponse.Body)
 	if len(string(responseBody)) == 0 {
 		return "", errors.New("reponse body is empty")
 	}
-	SmartIDELog.Debug("response: " + string(responseBody))
 	return string(responseBody), nil
 }
 
@@ -186,7 +190,10 @@ func put(reqUrl string, reqParams map[string]interface{}, headers map[string]str
 	if err != nil {
 		return "", err
 	}
-	httpRequest, _ := http.NewRequest("PUT", reqUrl, bytes.NewBuffer(jsonBytes))
+	httpRequest, err := http.NewRequest("PUT", reqUrl, bytes.NewBuffer(jsonBytes))
+	if err != nil {
+		return "", err
+	}
 
 	// client
 	httpClient := getClient(reqUrl)
@@ -200,7 +207,10 @@ func put(reqUrl string, reqParams map[string]interface{}, headers map[string]str
 	// 发送请求
 	SmartIDELog.Debug(formatRequest(httpRequest, reqParams))
 	httpResponse, err := httpClient.Do(httpRequest)
-	responseBody := parsingResponse(httpResponse)
+	if err != nil {
+		return "", err
+	}
+	responseBody, err := parsingResponse(httpResponse)
 	if err != nil {
 		return "", err
 	}
@@ -208,7 +218,6 @@ func put(reqUrl string, reqParams map[string]interface{}, headers map[string]str
 	if httpResponse.StatusCode != 200 {
 		return "", errors.New(httpResponse.Status)
 	}
-	//responseBody, err := io.ReadAll(httpResponse.Body)
 	if len(string(responseBody)) == 0 {
 		return "", errors.New("reponse body is empty")
 	}
@@ -234,7 +243,10 @@ func post(reqUrl string,
 	reqParams map[string]interface{}, contentType string, files []UploadFile, headers map[string]string) (
 	string, error) {
 	requestBody, realContentType := getReader(reqParams, contentType, files)
-	httpRequest, _ := http.NewRequest("POST", reqUrl, requestBody)
+	httpRequest, err := http.NewRequest("POST", reqUrl, requestBody)
+	if err != nil {
+		return "", err
+	}
 
 	// client
 	httpClient := getClient(reqUrl)
@@ -248,8 +260,10 @@ func post(reqUrl string,
 	// 发送请求
 	SmartIDELog.Debug(formatRequest(httpRequest, reqParams))
 	httpResponse, err := httpClient.Do(httpRequest)
-	responseBody := parsingResponse(httpResponse)
-	SmartIDELog.Debug()
+	if err != nil {
+		return "", err
+	}
+	responseBody, err := parsingResponse(httpResponse)
 	if err != nil {
 		return "", err
 	}
@@ -343,10 +357,17 @@ func formatRequest(r *http.Request, reqParams map[string]interface{}) string {
 }
 
 // response format
-func parsingResponse(resp *http.Response) string {
-	responseBody, _ := io.ReadAll(resp.Body)
-	if len(responseBody) == 0 {
-		return ""
+func parsingResponse(resp *http.Response) (string, error) {
+	if resp == nil {
+		return "", errors.New("response is nil")
+	}
+
+	responseBody := []byte{}
+	if resp.Body != nil {
+		responseBody, _ = io.ReadAll(resp.Body)
+		if len(responseBody) == 0 {
+			return "", nil
+		}
 	}
 
 	result := string(responseBody)
@@ -365,5 +386,5 @@ func parsingResponse(resp *http.Response) string {
 		resp.StatusCode, resp.Header, simpleResult)
 	SmartIDELog.Debug(printRespStr)
 
-	return result
+	return result, nil
 }
