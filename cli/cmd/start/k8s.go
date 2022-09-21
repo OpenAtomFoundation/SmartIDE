@@ -1,15 +1,13 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-20 12:28:04
+ * @LastEditTime: 2022-09-21 14:03:01
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
 package start
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -70,8 +68,8 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil, workspac
 		return nil, err
 	}
 	tempK8sConfig := workspaceInfo.K8sInfo.TempK8sConfig
-	checkPod, err := getDevContainerPodReady(k8sUtil, *originK8sConfig) // pod 是否运行正常
-	isReady := checkPod && err == nil
+	checkPodReady, err := getDevContainerPodReady(k8sUtil, *originK8sConfig) // pod 是否运行正常
+	isReady := checkPodReady && err == nil
 	if hasChanged || !isReady {
 		//4.1. 尝试删除deployment、service
 		if workspaceInfo.ID != "" { // id 为空的时候时，是 update；尝试先删除deployment、service
@@ -762,50 +760,17 @@ const (
 )
 
 func FeeadbackContainerId(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo, containerId string) error {
-
 	fflags := cmd.Flags()
 	host, _ := fflags.GetString(Flags_ServerHost)
 	token, _ := fflags.GetString(Flags_ServerToken)
-	var _feedbackRequest struct {
-		ID          uint
-		ContainerId string
-	}
-	_feedbackRequest.ID = workspaceInfo.ServerWorkSpace.ID
-	_feedbackRequest.ContainerId = containerId
-
-	// 请求体
-	jsonBytes, err := json.Marshal(_feedbackRequest)
-	if err != nil {
-		return err
-	}
 	url := fmt.Sprint(host, "/api/smartide/workspace/update")
-	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(jsonBytes))
-	if err != nil {
-		return err
+	params := make(map[string]interface{})
+	params["ID"] = workspaceInfo.ServerWorkSpace.ID
+	params["ContainerId"] = containerId
+	headers := map[string]string{
+		"x-token": token,
 	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-token", token)
+	_, err := common.Put(url, params, headers)
 
-	// request
-	reqBody, _ := ioutil.ReadAll(req.Body)
-	printReqStr := fmt.Sprintf("request head: %v, body: %s", req.Header, reqBody)
-	common.SmartIDELog.Debug(printReqStr)
-
-	//
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-	}
-	resp, err := client.Do(req)
-
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	// response
-	respBody, _ := ioutil.ReadAll(resp.Body)
-	printRespStr := fmt.Sprintf("response status code: %v, head: %v, body: %s", resp.StatusCode, resp.Header, string(respBody))
-	common.SmartIDELog.Debug(printRespStr)
-
-	return nil
+	return err
 }
