@@ -143,7 +143,7 @@ func init() {
 	rootCmd.PersistentFlags().StringP("serverusername", "", "", i18n.GetInstance().Main.Info_help_flag_server_username)
 	rootCmd.PersistentFlags().StringP("serveruserguid", "", "", i18n.GetInstance().Main.Info_help_flag_server_userguid)
 	rootCmd.PersistentFlags().StringP("serverhost", "", "", i18n.GetInstance().Main.Info_help_flag_server_host)
-	rootCmd.PersistentFlags().StringP("servereventid", "", "", "event id")
+	rootCmd.PersistentFlags().StringP("servereventid", "", "", "trigger event id")
 
 	// disable completion command
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
