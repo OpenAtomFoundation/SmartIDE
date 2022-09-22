@@ -17,7 +17,7 @@ RUN wget -q $downloadUrl -O - | tar -xz
 RUN find . -maxdepth 1 -type d -name * -execdir mv {} /ide \;
 
 # -------------构建projector-server库，运行依赖
-FROM smartide/projector-server:2021.2.2-1673 as projectorGradleBuilder
+FROM smartide/projector-server:latest as projectorGradleBuilder
 
 
 # -------------处理IDE运行程序，和构建好的rojector-server库
@@ -125,7 +125,7 @@ USER root
 
 EXPOSE 8887
 
-##CMD ["bash", "-c", "/run.sh"]
+#CMD ["bash", "-c", "/run.sh"]
 
 COPY gosu_entrypoint_node.sh /idesh/gosu_entrypoint_node.sh
 RUN chmod +x /idesh/gosu_entrypoint_node.sh

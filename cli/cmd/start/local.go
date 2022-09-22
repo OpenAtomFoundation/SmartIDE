@@ -33,7 +33,7 @@ import (
 	"github.com/docker/docker/client"
 )
 
-func reloadWorkSpaceId(workspace *workspace.WorkspaceInfo) {
+func saveDataAndReloadWorkSpaceId(workspace *workspace.WorkspaceInfo) {
 	workspaceId, err := dal.InsertOrUpdateWorkspace(*workspace)
 	workspace.ID = strconv.Itoa(int(workspaceId))
 	common.CheckError(err)
@@ -168,7 +168,7 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		workspaceInfo.TempDockerCompose = tempDockerCompose
 	}
 	//5.2.
-	reloadWorkSpaceId(&workspaceInfo)
+	saveDataAndReloadWorkSpaceId(&workspaceInfo)
 	//5.3.
 	if hasChanged {
 		common.SmartIDELog.InfoF(i18nInstance.Start.Info_workspace_saved, workspaceInfo.ID)
