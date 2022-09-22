@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-19 14:34:51
+ * @LastEditTime: 2022-09-22 14:14:13
  */
 package start
 
@@ -261,7 +261,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		workspaceInfo.TempDockerCompose = tempDockerCompose
 		//7.2. save
 		if workspaceInfo.CliRunningEnv == workspace.CliRunningEnvEnum_Client {
-			reloadWorkSpaceId(&workspaceInfo)
+			saveDataAndReloadWorkSpaceId(&workspaceInfo)
 			common.SmartIDELog.InfoF(i18nInstance.Start.Info_workspace_saved, workspaceInfo.ID)
 
 		} else {
@@ -379,6 +379,9 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		err = smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_Start, cmd, true, containerWebIDEPort, workspaceInfo, "", containerId)
 		common.CheckError(err)
 	}
+
+	//10. finish
+	common.SmartIDELog.Info(i18nInstance.Start.Info_end)
 
 	//99. 死循环进行驻守
 	if isModeServer {

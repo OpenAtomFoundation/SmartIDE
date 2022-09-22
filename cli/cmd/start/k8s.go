@@ -194,7 +194,7 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil, workspac
 
 	if workspaceInfo.CliRunningEnv == workspace.CliRunningEnvEnum_Client {
 		//8. 保存到db
-		reloadWorkSpaceId(&workspaceInfo)
+		saveDataAndReloadWorkSpaceId(&workspaceInfo)
 		common.SmartIDELog.InfoF(i18nInstance.Start.Info_workspace_saved, workspaceInfo.ID)
 
 		//9. 使用浏览器打开web ide

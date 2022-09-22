@@ -66,7 +66,7 @@ func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId in
 		common.CheckError(err)
 		affectId = int64(i)
 		isExit = true
-	} else { //2.2. 用户有可能会不输入workspaceid，继续使用原有的参数
+	} /* else { //2.2. 用户有可能会不输入workspaceid，继续使用原有的参数
 		originWorkspace, err := GetSingleWorkspaceByParams(workspaceInfo.Mode, workspaceInfo.WorkingDirectoryPath,
 			workspaceInfo.GitCloneRepoUrl, workspaceInfo.Branch, workspaceInfo.ConfigFileRelativePath,
 			workspaceInfo.Remote.ID, workspaceInfo.Remote.Addr, workspaceInfo.Remote.UserName)
@@ -80,7 +80,7 @@ func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId in
 
 		}
 	}
-
+	*/
 	//3. insert or update
 	jsonBytes, err := json.Marshal(workspaceInfo.Extend) // 扩展字段序列化
 	common.CheckError(err)
@@ -247,7 +247,7 @@ func GetSingleWorkspaceByParams(workingMode workspace.WorkingModeEnum,
 		whereStr += " and r_id = ?"
 		args = append(args, params.r_id)
 	}
-	if workingDir != "" && workspaceInfo.Mode == workspace.WorkingMode_Local { // 远程主机模式时，工作目录是不确定的
+	if workingDir != "" { // 远程主机模式时，工作目录是不确定的
 		params.w_workingdir = sql.NullString{String: workingDir, Valid: true}
 		whereStr += " and w_workingdir = ?"
 		args = append(args, params.w_workingdir)
