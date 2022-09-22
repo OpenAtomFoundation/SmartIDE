@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-22 09:45:26
+ * @LastEditTime: 2022-09-22 14:38:48
  */
 package common
 
@@ -57,6 +57,11 @@ func (tcf Block) Do() {
 
 // 重试
 func Retry(attempts uint, sleep time.Duration, f func() error) (err error) {
+	err = f()
+	if err == nil || attempts == 0 {
+		return err
+	}
+
 	for i := 0; i < int(attempts); i++ {
 		SmartIDELog.InfoF("This is attempt number %v / %v", i+1, attempts)
 		// calling the important function
