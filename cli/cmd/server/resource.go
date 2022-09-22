@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-06-30 22:17:22
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-04 08:44:19
- * @FilePath: /smartide-cli/cmd/server/resource.go
+ * @LastEditTime: 2022-09-22 09:32:35
+ * @FilePath: /cli/cmd/server/resource.go
  */
 package server
 
@@ -15,7 +15,6 @@ import (
 	"github.com/leansoftX/smartide-cli/pkg/common"
 )
 
-//
 type ServerResourceResponse struct {
 	Code int `json:"code"`
 	Data struct {
@@ -42,13 +41,14 @@ func GetResourceByID(auth model.Auth, resourceID string) (serverResource *Server
 	url := fmt.Sprint(auth.LoginUrl, "/api/smartide/resource/find")
 	queryparams := map[string]string{}
 	queryparams["ID"] = resourceID
-	response, err := common.Get(url,
+
+	httpClient := common.CreateHttpClientEnableRetry()
+	response, err := httpClient.Get(url,
 		queryparams,
 		map[string]string{
 			"Content-Type": "application/json",
 			"x-token":      auth.Token.(string),
 		})
-
 	if err != nil {
 		return nil, err
 	}
