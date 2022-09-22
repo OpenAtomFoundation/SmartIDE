@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-21 14:03:01
+ * @LastEditTime: 2022-09-22 09:27:55
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -770,7 +770,9 @@ func FeeadbackContainerId(cmd *cobra.Command, workspaceInfo workspace.WorkspaceI
 	headers := map[string]string{
 		"x-token": token,
 	}
-	_, err := common.Put(url, params, headers)
+
+	httpClient := common.CreateHttpClientEnableRetry()
+	_, err := httpClient.Put(url, params, headers)
 
 	return err
 }

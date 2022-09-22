@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-19 15:38:04
+ * @LastEditTime: 2022-09-22 09:29:06
  */
 package common
 
@@ -1062,9 +1062,13 @@ func GetWSPolicies(no string, t string, cmd *cobra.Command) (ws []WorkspacePolic
 	ownerGuid, _ := fflags.GetString(Flags_ServerOwnerGuid)
 	var response = ""
 	url := fmt.Sprint(host, "/api/smartide/workspacepolicy/getList")
-	if response, err = Get(url, map[string]string{"ownerGuid": ownerGuid, "type": t}, map[string]string{"Content-Type": "application/json", "x-token": token}); response != "" {
+
+	httpClient := CreateHttpClientEnableRetry()
+	response, err = httpClient.Get(url, map[string]string{"ownerGuid": ownerGuid, "type": t}, map[string]string{"Content-Type": "application/json", "x-token": token})
+	// response, err = Get(url, map[string]string{"ownerGuid": ownerGuid, "type": t}, map[string]string{"Content-Type": "application/json", "x-token": token});
+	if response != "" {
 		l := &WSPolicyResponse{}
-		err = json.Unmarshal([]byte(response), l)
+		//err = json.Unmarshal([]byte(response), l)
 		if err = json.Unmarshal([]byte(response), l); err == nil {
 			if l.Code == 0 && (len(l.Data.Workspacepolicies) != 0) {
 				return l.Data.Workspacepolicies, err

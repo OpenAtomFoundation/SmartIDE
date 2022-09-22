@@ -148,7 +148,10 @@ func getWorkspaceStatusDescFromServer(workspaceStatus model.WorkspaceStatusEnum)
 		if auth.Token != nil {
 			headers["x-token"] = auth.Token.(string)
 		}
-		response, err := common.Get(url.String(), map[string]string{"type": "smartide_workspace_status"}, headers)
+		httpClient := common.CreateHttpClientEnableRetry()
+		response, err := httpClient.Get(url.String(),
+			map[string]string{"type": "smartide_workspace_status"}, headers) //
+		//	response, err := common.Get(url.String(), map[string]string{"type": "smartide_workspace_status"}, headers)
 		if err != nil {
 			return "", err
 		}

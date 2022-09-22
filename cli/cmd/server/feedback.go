@@ -16,50 +16,6 @@ import (
 )
 
 func FeeadbackExtend(auth model.Auth, workspaceInfo workspace.WorkspaceInfo) error {
-	/* 	var _feedbackRequest struct {
-	   		ID     uint
-	   		Extend string
-	   	}
-	   	_feedbackRequest.ID = workspaceInfo.ServerWorkSpace.ID
-	   	_feedbackRequest.Extend = workspaceInfo.Extend.ToJson()
-
-	   	// 请求体
-	   	jsonBytes, err := json.Marshal(_feedbackRequest)
-	   	if err != nil {
-	   		return err
-	   	}
-	   	url := fmt.Sprint(auth.LoginUrl, "/api/smartide/workspace/update")
-	   	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(jsonBytes))
-	   	if err != nil {
-	   		return err
-	   	}
-	   	req.Header.Set("Content-Type", "application/json")
-	   	req.Header.Set("x-token", auth.Token.(string))
-
-	   	// request
-	   	reqBody, _ := ioutil.ReadAll(req.Body)
-	   	printReqStr := fmt.Sprintf("request head: %v, body: %s", req.Header, reqBody)
-	   	common.SmartIDELog.Debug(printReqStr)
-
-	   	//
-	   	client := &http.Client{
-	   		Timeout: 10 * time.Second,
-	   	}
-	   	resp, err := client.Do(req)
-
-	   	if err != nil {
-	   		return err
-	   	}
-	   	defer resp.Body.Close()
-
-	   	// response
-	   	respBody, _ := ioutil.ReadAll(resp.Body)
-	   	if len(respBody) == 0 {
-	   		return errors.New("reponse body is empty")
-	   	}
-	   	printRespStr := fmt.Sprintf("response status code: %v, head: %v, body: %s", resp.StatusCode, resp.Header, string(respBody))
-	   	common.SmartIDELog.Debug(printRespStr) */
-
 	host := auth.LoginUrl
 	token := auth.Token.(string)
 	url := fmt.Sprint(host, "/api/smartide/workspace/update")
@@ -69,7 +25,9 @@ func FeeadbackExtend(auth model.Auth, workspaceInfo workspace.WorkspaceInfo) err
 	headers := map[string]string{
 		"x-token": token,
 	}
-	_, err := common.Put(url, params, headers)
+
+	httpClient := common.CreateHttpClientEnableRetry()
+	_, err := httpClient.Put(url, params, headers)
 
 	return err
 }

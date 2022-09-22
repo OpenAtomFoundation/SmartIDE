@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-09-03 16:14:15
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-03 16:33:37
+ * @LastEditTime: 2022-09-22 09:37:14
  * @FilePath: /cli/internal/apk/server/version.go
  */
 package server
@@ -24,9 +24,10 @@ func GetVersionByApi(auth model.Auth) (version string, err error) {
 
 	url := fmt.Sprint(auth.LoginUrl, "/api/system/getVersion")
 	queryparams := map[string]string{}
-	response, err := common.Get(url,
-		queryparams,
-		map[string]string{
+
+	httpClient := common.CreateHttpClientEnableRetry()
+	response, err := httpClient.Get(url,
+		queryparams, map[string]string{
 			"Content-Type": "application/json",
 			"x-token":      auth.Token.(string),
 		})

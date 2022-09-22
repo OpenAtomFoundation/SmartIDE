@@ -2,8 +2,8 @@
  * @Author: kenan
  * @Date: 2022-02-10 16:51:36
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-05 17:37:23
- * @FilePath: /smartide-cli/cmd/login.go
+ * @LastEditTime: 2022-09-22 09:24:55
+ * @FilePath: /cli/cmd/login.go
  * @Description:
  *
  * Copyright (c) 2022 by kenanlu@leansoftx.com, All Rights Reserved.
@@ -102,7 +102,12 @@ func loginWithTokenAndSaveToken(loginUrl, userName, token string, cliRunningEnv 
 // 登录
 func loginAndSaveToken(loginUrl, userName, userPassword string) error {
 	url := fmt.Sprint(loginUrl, "/api/smartide/base/cliLogin")
-	response, err := common.PostJson(url, map[string]interface{}{"username": userName, "password": userPassword}, map[string]string{"Content-Type": "application/json"})
+	params := map[string]interface{}{"username": userName, "password": userPassword}
+	headers := map[string]string{"Content-Type": "application/json"}
+	var response string
+
+	httpClient := common.CreateHttpClientEnableRetry()
+	response, err := httpClient.PostJson(url, params, headers)
 	if err != nil {
 		return err
 	}

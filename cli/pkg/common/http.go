@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-10 18:11:42
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-21 17:27:43
+ * @LastEditTime: 2022-09-22 09:43:19
  * @FilePath: /cli/pkg/common/http.go
  * @Description:
  *
@@ -49,7 +49,36 @@ func CreateHttpClient(retryMax uint, timeOut time.Duration, responseBodyType Res
 	}
 }
 
-func (target HttpClient) Put(reqUrl string, reqParams map[string]interface{}, headers map[string]string) (string, error) {
+func CreateHttpClientDisableRetry() HttpClient {
+	return CreateHttpClient(0, 0, "application/json")
+}
+
+func CreateHttpClientEnableRetry() HttpClient {
+	return CreateHttpClient(3, time.Second*3, "application/json")
+}
+
+func (target HttpClient) Get(reqUrl string,
+	reqParams map[string]string, headers map[string]string) (string, error) {
+	result := ""
+	var err error = nil
+
+	Retry(target.RetryMax, target.TimeOut, func() error {
+		result, err = get(reqUrl, reqParams, headers)
+		if err == nil {
+			if result == "" {
+				err = errors.New("response body is empty")
+			} else if !IsJSON(result) {
+				err = errors.New("response body is not json")
+			}
+		}
+		return err
+	})
+
+	return result, err
+}
+
+func (target HttpClient) Put(reqUrl string,
+	reqParams map[string]interface{}, headers map[string]string) (string, error) {
 
 	result := ""
 	var err error = nil
@@ -58,8 +87,7 @@ func (target HttpClient) Put(reqUrl string, reqParams map[string]interface{}, he
 		timeout = target.TimeOut
 	}
 
-	var retryCount uint = 0
-	for {
+	Retry(target.RetryMax, target.TimeOut, func() error {
 		result, err = put(reqUrl, reqParams, headers)
 		if err == nil {
 			if result == "" {
@@ -68,19 +96,29 @@ func (target HttpClient) Put(reqUrl string, reqParams map[string]interface{}, he
 				err = errors.New("response body is not json")
 			}
 		}
-		if err != nil && target.RetryMax > retryCount {
-			SmartIDELog.Warning(err.Error())
-			retryCount++
-		} else {
-			break
-		}
-	}
+		return err
+	})
 
 	return result, err
 }
 
-func (target HttpClient) PostJson(reqUrl string, reqParams map[string]interface{}, headers map[string]string) (string, error) {
+func (target HttpClient) PostJson(reqUrl string,
+	reqParams map[string]interface{}, headers map[string]string) (string, error) {
+	return postRetry(target, reqUrl, reqParams, "application/json", nil, headers)
+}
 
+func (target HttpClient) PostForm(reqUrl string,
+	reqParams map[string]interface{}, headers map[string]string) (string, error) {
+	return postRetry(target, reqUrl, reqParams, "application/x-www-form-urlencoded", nil, headers)
+}
+
+func (target HttpClient) PostFile(reqUrl string,
+	reqParams map[string]interface{}, files []UploadFile, headers map[string]string) (string, error) {
+	return postRetry(target, reqUrl, reqParams, "multipart/form-data", files, headers)
+}
+
+func postRetry(target HttpClient, reqUrl string,
+	reqParams map[string]interface{}, contentType string, files []UploadFile, headers map[string]string) (string, error) {
 	result := ""
 	var err error = nil
 
@@ -88,9 +126,8 @@ func (target HttpClient) PostJson(reqUrl string, reqParams map[string]interface{
 		timeout = target.TimeOut
 	}
 
-	var retryCount uint = 0
-	for {
-		result, err = post(reqUrl, reqParams, "application/json", nil, headers)
+	Retry(target.RetryMax, target.TimeOut, func() error {
+		result, err = post(reqUrl, reqParams, contentType, files, headers)
 		if err == nil {
 			if result == "" {
 				err = errors.New("response body is empty")
@@ -98,13 +135,8 @@ func (target HttpClient) PostJson(reqUrl string, reqParams map[string]interface{
 				err = errors.New("response body is not json")
 			}
 		}
-		if err != nil && target.RetryMax > retryCount {
-			SmartIDELog.Warning(err.Error())
-			retryCount++
-		} else {
-			break
-		}
-	}
+		return err
+	})
 
 	return result, err
 }
@@ -124,7 +156,7 @@ func SetTimeOut(timeDuration time.Duration) {
 	}
 }
 
-func Get(reqUrl string, reqParams map[string]string, headers map[string]string) (string, error) {
+func get(reqUrl string, reqParams map[string]string, headers map[string]string) (string, error) {
 	urlParams := url.Values{}
 	Url, _ := url.Parse(reqUrl)
 	for key, val := range reqParams {
@@ -169,22 +201,6 @@ func Get(reqUrl string, reqParams map[string]string, headers map[string]string) 
 	return string(responseBody), nil
 }
 
-func PostForm(reqUrl string, reqParams map[string]interface{}, headers map[string]string) (string, error) {
-	return post(reqUrl, reqParams, "application/x-www-form-urlencoded", nil, headers)
-}
-
-func PostJson(reqUrl string, reqParams map[string]interface{}, headers map[string]string) (string, error) {
-	return post(reqUrl, reqParams, "application/json", nil, headers)
-}
-
-func PostFile(reqUrl string, reqParams map[string]interface{}, files []UploadFile, headers map[string]string) (string, error) {
-	return post(reqUrl, reqParams, "multipart/form-data", files, headers)
-}
-
-func Put(reqUrl string, reqParams map[string]interface{}, headers map[string]string) (string, error) {
-	return put(reqUrl, reqParams, headers)
-}
-
 func put(reqUrl string, reqParams map[string]interface{}, headers map[string]string) (string, error) {
 	jsonBytes, err := json.Marshal(reqParams)
 	if err != nil {
@@ -225,20 +241,6 @@ func put(reqUrl string, reqParams map[string]interface{}, headers map[string]str
 
 }
 
-func getClient(url string) *http.Client {
-	_httpClient := &http.Client{
-		Timeout: timeout, // 请求超时时间
-	}
-	if strings.HasPrefix(url, "https") {
-		tr := &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}
-		_httpClient.Transport = tr
-	}
-	return _httpClient
-
-}
-
 func post(reqUrl string,
 	reqParams map[string]interface{}, contentType string, files []UploadFile, headers map[string]string) (
 	string, error) {
@@ -276,6 +278,20 @@ func post(reqUrl string,
 		return "", errors.New("reponse body is empty")
 	}
 	return string(responseBody), err
+
+}
+
+func getClient(url string) *http.Client {
+	_httpClient := &http.Client{
+		Timeout: timeout, // 请求超时时间
+	}
+	if strings.HasPrefix(url, "https") {
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+		_httpClient.Transport = tr
+	}
+	return _httpClient
 
 }
 

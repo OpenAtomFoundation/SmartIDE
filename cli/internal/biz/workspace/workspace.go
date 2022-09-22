@@ -31,9 +31,8 @@ func GetServerWorkspaceList(auth model.Auth, cliRunningEnv CliRunningEvnEnum) (w
 	if auth.Token != nil {
 		headers["x-token"] = auth.Token.(string)
 	}
-	response, err := common.Get(url, map[string]string{}, headers)
-
-	// respose valid
+	httpClient := common.CreateHttpClientEnableRetry()
+	response, err := httpClient.Get(url, map[string]string{}, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +82,8 @@ func GetWorkspaceFromServer(auth model.Auth, no string, cliRunningEnv CliRunning
 	} else {
 		queryparams["no"] = no
 	}
-	response, err := common.Get(url,
+	httpClient := common.CreateHttpClientEnableRetry()
+	response, err := httpClient.Get(url,
 		queryparams,
 		map[string]string{
 			"Content-Type": "application/json",

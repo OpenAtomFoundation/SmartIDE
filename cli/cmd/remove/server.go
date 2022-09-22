@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-06-07 15:38:21
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-09 11:31:13
- * @FilePath: /smartide-cli/cmd/remove/server.go
+ * @LastEditTime: 2022-09-22 08:58:47
+ * @FilePath: /cli/cmd/remove/server.go
  */
 
 package remove
@@ -40,7 +40,6 @@ func RemoveServerWorkSpaceInClient(workspaceIdStr string, workspaceInfo workspac
 			return errors.New("工作区数据查询为空！")
 		}
 		if err != nil {
-			//common.SmartIDELog.ImportanceWithError(err)
 			return err
 		}
 		if serverWorkSpace.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Remove ||
