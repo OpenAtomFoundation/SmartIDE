@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-19 10:46:46
+ * @LastEditTime: 2022-09-22 14:11:10
  */
 package cmd
 
@@ -499,7 +499,11 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 			workspaceInfo.Mode = workingMode
 
 			// 从数据库中查找是否存在对应的workspace信息，主要是针对在当前目录再次start的情况
-			workspaceInfoDb, err := dal.GetSingleWorkspaceByParams(workspaceInfo.Mode, workspaceInfo.WorkingDirectoryPath,
+			conditionWorkingDir := ""
+			if workspaceInfo.Mode == workspace.WorkingMode_Local {
+				conditionWorkingDir = workspaceInfo.WorkingDirectoryPath
+			}
+			workspaceInfoDb, err := dal.GetSingleWorkspaceByParams(workspaceInfo.Mode, conditionWorkingDir,
 				workspaceInfo.GitCloneRepoUrl, workspaceInfo.Branch, workspaceInfo.ConfigFileRelativePath,
 				workspaceInfo.Remote.ID, workspaceInfo.Remote.Addr, workspaceInfo.Remote.UserName)
 			common.CheckError(err)
