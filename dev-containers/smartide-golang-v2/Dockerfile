@@ -4,6 +4,8 @@
 # Copyright (C) leansoftX.com
 #################################################
 
+ARG HUGO_PKG_URL=https://github.com/gohugoio/hugo/releases/download/v0.103.1/hugo_extended_0.103.1_linux-amd64.deb
+
 FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-v2:latest
 
 USER root
@@ -31,3 +33,8 @@ RUN mkdir -p /home/smartide && mkdir -p /home/smartide/go && \
 RUN wget -O go.tgz https://go.dev/dl/go$GOLANG_VERSION.linux-amd64.tar.gz --progress=dot:giga \
     && tar -C /usr/local -xzf go.tgz \
     && rm -rf go.tgz
+
+# hugo install
+RUN wget ${HUGO_PKG_URL}  -O hugo-Linux-64bit.deb​ \
+    && sudo dpkg -i hugo-Linux-64bit.deb \
+    && rm -rf hugo-Linux-64bit.deb
