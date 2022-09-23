@@ -1,0 +1,43 @@
+#################################################
+# SmartIDE Developer Container Image
+# Licensed under GPL v3.0
+# Copyright (C) leansoftX.com
+#################################################
+
+FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-golang-v2-vmlc:latest
+
+USER root
+
+RUN apt-get update && \
+    mkdir -p /usr/share/man/man1 && \
+    apt-get -y install --no-install-recommends net-tools && \
+    apt-get clean && \
+    apt-get autoremove -y && \
+    rm -rf /tmp/* /var/lib/apt/lists/* /var/tmp/*
+
+
+
+WORKDIR /home
+#复制IDE文件
+COPY openvscode-images-vmlc opvscode
+COPY openvscode-images-vmlc/bin/remote-cli/openvscode-server opvscode/bin/remote-cli/code
+
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    EDITOR=code \
+    VISUAL=code \
+    GIT_EDITOR="code --wait" \
+    OPENVSCODE_SERVER_ROOT=/home/opvscode
+
+RUN  ln -sf /home/smartide/.nvm/versions/node/v$NODE_VERSION/bin/node /home/opvscode
+
+WORKDIR opvscode
+RUN find ./  -name "*.js" | xargs perl -pi -e 's|https://open-vsx.org|https://marketplace.smartide.cn|g' 
+RUN find ./  -name "*.json" | xargs perl -pi -e 's|https://open-vsx.org|https://marketplace.smartide.cn|g'
+
+COPY openvscode.service /lib/systemd/system/
+COPY startup-openvscode.sh /idesh/startup-openvscode.sh
+
+RUN chmod +x /idesh/startup-openvscode.sh &&               \
+    ln -sf /lib/systemd/system/openvscode.service          \
+        /etc/systemd/system/multi-user.target.wants/openvscode.service
