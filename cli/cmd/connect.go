@@ -3,11 +3,13 @@
  * @Description:
  * @Date: 2022-02-25
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-19 15:06:31
+ * @LastEditTime: 2022-09-23 11:02:08
  */
 package cmd
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -23,7 +25,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-//
 var connectCmd = &cobra.Command{
 	Use:     "connect",
 	Short:   i18nInstance.Connect.Info_help_short,
@@ -59,7 +60,7 @@ var connectCmd = &cobra.Command{
 			if err == io.EOF { // 排除EOF的错误
 				common.SmartIDELog.Importance("getServerWorkspaces EOF")
 			} else {
-				common.CheckError(err)
+				common.SmartIDELog.ImportanceWithError(err)
 				connect(startedServerWorkspaces, cmd, args)
 
 				if isUnforward {
@@ -74,10 +75,10 @@ var connectCmd = &cobra.Command{
 
 // 检查并获取当前登录用户的信息
 func checkLogin(cmd *cobra.Command) (currentAuth model.Auth, err error) {
-	cliRunningEnv := workspace.CliRunningEnvEnum_Client
-	if value, _ := cmd.Flags().GetString("mode"); strings.ToLower(value) == "server" {
+	//cliRunningEnv := workspace.CliRunningEnvEnum_Client
+	/* if value, _ := cmd.Flags().GetString("mode"); strings.ToLower(value) == "server" {
 		cliRunningEnv = workspace.CliRunningEvnEnum_Server
-	}
+	} */
 
 	// 确保登录
 	isLogged := false
@@ -88,12 +89,17 @@ func checkLogin(cmd *cobra.Command) (currentAuth model.Auth, err error) {
 
 		if currentAuth != (model.Auth{}) && currentAuth.Token != "" && currentAuth.Token != nil {
 			// 从api 获取workspace
-			_, err = workspace.GetServerWorkspaceList(currentAuth, cliRunningEnv)
+			err = getServerMenu(currentAuth)
 			if err != nil {
-				common.SmartIDELog.ImportanceWithError(err)
-				common.SmartIDELog.Importance("token 已失效，请重新登录！")
+				if !strings.Contains(err.Error(), "Client.Timeout exceeded while awaiting headers") {
+					common.SmartIDELog.ImportanceWithError(err)
+					common.SmartIDELog.Importance("token 已失效，请重新登录！")
 
-				loginCmd.Run(cmd, []string{currentAuth.LoginUrl})
+					loginCmd.Run(cmd, []string{currentAuth.LoginUrl})
+				} else {
+					return currentAuth, err
+				}
+
 			} else {
 				isLogged = true
 			}
@@ -115,11 +121,42 @@ func checkLogin(cmd *cobra.Command) (currentAuth model.Auth, err error) {
 	return
 }
 
+func getServerMenu(auth model.Auth) error {
+	url := fmt.Sprint(auth.LoginUrl, "/api/menu/getMenu")
+	headers := map[string]string{
+		"Content-Type": "application/json",
+	}
+	if auth.Token != nil {
+		headers["x-token"] = auth.Token.(string)
+	}
+	headers["x-user-id"] = "1"
+	httpClient := common.CreateHttpClientEnableRetry()
+	response, err := httpClient.PostJson(url, make(map[string]interface{}), headers)
+	if err != nil {
+		return err
+	}
+	if response == "" {
+		return errors.New("服务器返回空！")
+	}
+
+	l := &model.DefaultResponse{}
+	err = json.Unmarshal([]byte(response), l)
+	if err != nil {
+		return err
+	}
+	if l.Code != 0 {
+		return errors.New(l.Msg)
+	}
+	return nil
+}
+
 // 已经连接的工作区id 列表
 var connectedWorkspaceIds []string = []string{}
 
 // 获取远程的工作区列表
-func getServerWorkspaces(currentAuth model.Auth, cliRunningEnv workspace.CliRunningEvnEnum, allowStatuses []model.WorkspaceStatusEnum) ([]workspace.WorkspaceInfo, error) {
+func getServerWorkspaces(currentAuth model.Auth,
+	cliRunningEnv workspace.CliRunningEvnEnum, allowStatuses []model.WorkspaceStatusEnum) (
+	[]workspace.WorkspaceInfo, error) {
 	var startedServerWorkspaces []workspace.WorkspaceInfo
 	serverWorkSpaces, err := workspace.GetServerWorkspaceList(currentAuth, cliRunningEnv)
 	for _, item := range serverWorkSpaces {

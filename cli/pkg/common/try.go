@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-22 14:38:48
+ * @LastEditTime: 2022-09-23 10:37:39
  */
 package common
 
@@ -63,17 +63,17 @@ func Retry(attempts uint, sleep time.Duration, f func() error) (err error) {
 	}
 
 	for i := 0; i < int(attempts); i++ {
-		SmartIDELog.InfoF("This is attempt number %v / %v", i+1, attempts)
+		SmartIDELog.DebugF("This is attempt number %v / %v", i+1, attempts)
 		// calling the important function
 		err = f()
 		if err != nil {
-			SmartIDELog.Importance(fmt.Sprintf("error occured after attempt number %d/%d: %s", i+1, attempts, err.Error()))
-
+			warning := fmt.Sprintf("error occured after attempt number %d/%d: %s", i+1, attempts, err.Error())
+			SmartIDELog.WarningF(warning)
 			if i+1 == int(attempts) {
 				continue
 			}
 
-			SmartIDELog.InfoF("sleeping for: %v", sleep.String())
+			SmartIDELog.DebugF("sleeping for: %v", sleep.String())
 			time.Sleep(sleep)
 			sleep *= 2
 			continue
