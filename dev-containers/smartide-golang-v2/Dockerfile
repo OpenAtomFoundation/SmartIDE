@@ -35,6 +35,6 @@ RUN wget -O go.tgz https://go.dev/dl/go$GOLANG_VERSION.linux-amd64.tar.gz --prog
     && rm -rf go.tgz
 
 # hugo install
-RUN wget ${HUGO_PKG_URL}  -O hugo-Linux-64bit.deb​ \
+RUN wget $HUGO_PKG_URL -O hugo-Linux-64bit.deb \
     && sudo dpkg -i hugo-Linux-64bit.deb \
     && rm -rf hugo-Linux-64bit.deb

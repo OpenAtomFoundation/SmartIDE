@@ -38,6 +38,6 @@ RUN curl -SL https://github.com/docker/compose/releases/download/v2.7.0/docker-c
 RUN chmod +x /usr/local/bin/docker-compose
 
 # hugo install
-RUN wget ${HUGO_PKG_URL}  -O hugo-Linux-64bit.deb​ \
+RUN wget $HUGO_PKG_URL -O hugo-Linux-64bit.deb \
     && sudo dpkg -i hugo-Linux-64bit.deb \
     && rm -rf hugo-Linux-64bit.deb
