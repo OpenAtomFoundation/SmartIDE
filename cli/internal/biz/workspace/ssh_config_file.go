@@ -17,12 +17,13 @@ import (
 )
 
 type SSHConfigRecord struct {
-	Host         string
-	HostName     string
-	User         string
-	Port         int
-	ForwardAgent string
-	IdentityFile string
+	Host                  string
+	HostName              string
+	User                  string
+	Port                  int
+	ForwardAgent          string
+	IdentityFile          string
+	StrictHostKeyChecking string
 }
 
 // ControlledConfigKeys 定义可进行修改的key的范围，
@@ -174,12 +175,13 @@ Host {{.Host}}
 func (configMap SSHConfigMap) ConvertToRecord() SSHConfigRecord {
 	port, err := strconv.Atoi(configMap["Port"])
 	record := SSHConfigRecord{
-		Host:         configMap["Host"],
-		HostName:     configMap["HostName"],
-		User:         configMap["User"],
-		Port:         port,
-		ForwardAgent: configMap["ForwardAgent"],
-		IdentityFile: configMap["IdentityFile"],
+		Host:                  configMap["Host"],
+		HostName:              configMap["HostName"],
+		User:                  configMap["User"],
+		Port:                  port,
+		ForwardAgent:          configMap["ForwardAgent"],
+		IdentityFile:          configMap["IdentityFile"],
+		StrictHostKeyChecking: configMap["StrictHostKeyChecking"],
 	}
 	common.CheckError(err)
 	return record
@@ -236,6 +238,7 @@ func GenerateConfigMap(workspaceId string, IdentityFile string, sshPort int) SSH
 	// 带有空格的路径，需要在两侧用双引号括起来
 	IdentityFile = normalizePathString(IdentityFile)
 	configMap["IdentityFile"] = IdentityFile
+	configMap["StrictHostKeyChecking"] = "no"
 	return configMap
 }
 
