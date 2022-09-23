@@ -3,6 +3,7 @@
 # Licensed under GPL v3.0
 # Copyright (C) leansoftX.com
 #################################################
+
 echo 'ide.sh............start'
 
 if [ -d "./openvscode-images/" ];then
@@ -16,6 +17,7 @@ if [ -d "./openvscode-images-vmlc/" ];then
 else
   echo 'openvscode-server-vmlc.............不存在'
 fi
+
 if [ -d "./vsix/" ];then
  sudo rm -rf vsix
 else
@@ -30,8 +32,8 @@ sudo chmod -R 777 vsix/extensions
 
 
 # 解压目录
-sudo tar -zxf #{OpenVScodeServerFileName}#.tar.gz --strip-components 1 -C openvscode-images
-sudo tar -zxf #{OpenVScodeServerFileName}#.tar.gz --strip-components 1 -C openvscode-images-vmlc
+sudo tar -zxf #{OpenVScodeServerVmlcFileName}#.tar.gz --strip-components 1 -C openvscode-images
+sudo tar -zxf #{OpenVScodeServerVmlcFileName}#.tar.gz --strip-components 1 -C openvscode-images-vmlc
 
 # 删除node   
 sudo rm -rf ./openvscode-images/node
