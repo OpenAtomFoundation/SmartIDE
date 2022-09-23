@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-10 18:11:42
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-22 09:43:19
+ * @LastEditTime: 2022-09-23 13:38:33
  * @FilePath: /cli/pkg/common/http.go
  * @Description:
  *
@@ -37,24 +37,28 @@ const (
 
 type HttpClient struct {
 	RetryMax         uint
+	Sleep            time.Duration
 	TimeOut          time.Duration
 	ResponseBodyType ResponseBodyTypeEnum
 }
 
-func CreateHttpClient(retryMax uint, timeOut time.Duration, responseBodyType ResponseBodyTypeEnum) HttpClient {
+func CreateHttpClient(retryMax uint,
+	timeOut time.Duration, sleep time.Duration,
+	responseBodyType ResponseBodyTypeEnum) HttpClient {
 	return HttpClient{
 		RetryMax:         retryMax,
 		TimeOut:          timeOut,
+		Sleep:            sleep,
 		ResponseBodyType: responseBodyType,
 	}
 }
 
 func CreateHttpClientDisableRetry() HttpClient {
-	return CreateHttpClient(0, 0, "application/json")
+	return CreateHttpClient(0, defaultTimeout, 0, "application/json")
 }
 
 func CreateHttpClientEnableRetry() HttpClient {
-	return CreateHttpClient(3, time.Second*3, "application/json")
+	return CreateHttpClient(3, defaultTimeout, time.Second*3, "application/json")
 }
 
 func (target HttpClient) Get(reqUrl string,
@@ -62,8 +66,8 @@ func (target HttpClient) Get(reqUrl string,
 	result := ""
 	var err error = nil
 
-	Retry(target.RetryMax, target.TimeOut, func() error {
-		result, err = get(reqUrl, reqParams, headers)
+	Retry(target.RetryMax, target.Sleep, func() error {
+		result, err = target.get(reqUrl, reqParams, headers)
 		if err == nil {
 			if result == "" {
 				err = errors.New("response body is empty")
@@ -83,12 +87,8 @@ func (target HttpClient) Put(reqUrl string,
 	result := ""
 	var err error = nil
 
-	if target.TimeOut > 0 {
-		timeout = target.TimeOut
-	}
-
-	Retry(target.RetryMax, target.TimeOut, func() error {
-		result, err = put(reqUrl, reqParams, headers)
+	Retry(target.RetryMax, target.Sleep, func() error {
+		result, err = target.put(reqUrl, reqParams, headers)
 		if err == nil {
 			if result == "" {
 				err = errors.New("response body is empty")
@@ -122,16 +122,16 @@ func postRetry(target HttpClient, reqUrl string,
 	result := ""
 	var err error = nil
 
-	if target.TimeOut > 0 {
-		timeout = target.TimeOut
+	if target.Sleep > 0 {
+		defaultTimeout = target.Sleep
 	}
 
-	Retry(target.RetryMax, target.TimeOut, func() error {
-		result, err = post(reqUrl, reqParams, contentType, files, headers)
+	Retry(target.RetryMax, target.Sleep, func() error {
+		result, err = target.post(reqUrl, reqParams, contentType, files, headers)
 		if err == nil {
 			if result == "" {
 				err = errors.New("response body is empty")
-			} else if !IsJSON(result) {
+			} else if !IsJSON(result) && contentType == "application/json" {
 				err = errors.New("response body is not json")
 			}
 		}
@@ -148,15 +148,15 @@ type UploadFile struct {
 	Filepath string
 }
 
-var timeout time.Duration = 10 * time.Second
+var defaultTimeout time.Duration = 10 * time.Second
 
-func SetTimeOut(timeDuration time.Duration) {
+/* func SetTimeOut(timeDuration time.Duration) {
 	if timeDuration != 0 {
-		timeout = timeDuration
+		defaultTimeout = timeDuration
 	}
-}
+} */
 
-func get(reqUrl string, reqParams map[string]string, headers map[string]string) (string, error) {
+func (target HttpClient) get(reqUrl string, reqParams map[string]string, headers map[string]string) (string, error) {
 	urlParams := url.Values{}
 	Url, _ := url.Parse(reqUrl)
 	for key, val := range reqParams {
@@ -164,7 +164,7 @@ func get(reqUrl string, reqParams map[string]string, headers map[string]string) 
 	}
 
 	// client
-	httpClient := getClient(reqUrl)
+	httpClient := getClient(reqUrl, target.TimeOut)
 
 	//如果参数中有中文参数,这个方法会进行URLEncode
 	Url.RawQuery = urlParams.Encode()
@@ -201,7 +201,7 @@ func get(reqUrl string, reqParams map[string]string, headers map[string]string) 
 	return string(responseBody), nil
 }
 
-func put(reqUrl string, reqParams map[string]interface{}, headers map[string]string) (string, error) {
+func (target HttpClient) put(reqUrl string, reqParams map[string]interface{}, headers map[string]string) (string, error) {
 	jsonBytes, err := json.Marshal(reqParams)
 	if err != nil {
 		return "", err
@@ -212,7 +212,7 @@ func put(reqUrl string, reqParams map[string]interface{}, headers map[string]str
 	}
 
 	// client
-	httpClient := getClient(reqUrl)
+	httpClient := getClient(reqUrl, target.TimeOut)
 
 	// 添加请求头
 	headers["Content-Type"] = "application/json" // 后续可根据需要增加其他的类型
@@ -241,7 +241,7 @@ func put(reqUrl string, reqParams map[string]interface{}, headers map[string]str
 
 }
 
-func post(reqUrl string,
+func (target HttpClient) post(reqUrl string,
 	reqParams map[string]interface{}, contentType string, files []UploadFile, headers map[string]string) (
 	string, error) {
 	requestBody, realContentType := getReader(reqParams, contentType, files)
@@ -251,7 +251,7 @@ func post(reqUrl string,
 	}
 
 	// client
-	httpClient := getClient(reqUrl)
+	httpClient := getClient(reqUrl, target.TimeOut)
 
 	// 添加请求头
 	httpRequest.Header.Add("Content-Type", realContentType)
@@ -281,7 +281,7 @@ func post(reqUrl string,
 
 }
 
-func getClient(url string) *http.Client {
+func getClient(url string, timeout time.Duration) *http.Client {
 	_httpClient := &http.Client{
 		Timeout: timeout, // 请求超时时间
 	}
