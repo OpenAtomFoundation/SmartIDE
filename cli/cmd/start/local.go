@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-14 16:46:55
+ * @LastEditTime: 2022-09-24 10:26:37
  */
 package start
 
@@ -14,7 +14,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/leansoftX/smartide-cli/internal/dal"
 	"github.com/spf13/cobra"
@@ -42,7 +41,8 @@ func saveDataAndReloadWorkSpaceId(workspace *workspace.WorkspaceInfo) {
 // 本地执行 start
 func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	endPostExecuteFun func(dockerContainerName string, docker common.Docker),
-	yamlExecuteFun func(yamlConfig config.SmartIdeConfig), args []string, cmd *cobra.Command) {
+	yamlExecuteFun func(yamlConfig config.SmartIdeConfig), args []string, cmd *cobra.Command) (
+	workspace.WorkspaceInfo, error) {
 
 	//0. 检查本地环境
 	err := common.CheckLocalEnv()
@@ -182,7 +182,7 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 	// 如果是不进行端口转发，后续就不需要运行
 	if isUnforward {
-		return
+		return workspaceInfo, nil
 	}
 
 	//6. 执行函数内容
@@ -224,10 +224,7 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		}
 	}
 
-	//99. 结束
-	common.SmartIDELog.Info(i18nInstance.Start.Info_end)
-
-	// tunnel
+	//9. tunnel
 	sshPassword := workspaceInfo.TempDockerCompose.GetSSHPassword(currentConfig.Workspace.DevContainer.ServiceName)
 	sshRemote, err := common.NewSSHRemote("localhost", sshBindingPort, model.CONST_DEV_CONTAINER_CUSTOM_USER, sshPassword)
 	common.CheckError(err)
@@ -238,10 +235,7 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	}
 	tunnel.AutoTunnel(sshRemote.Connection, options)
 
-	// 死循环，不结束
-	for {
-		time.Sleep(time.Second * 10)
-	}
+	return workspaceInfo, nil
 }
 
 // docker-compose 对应的容器是否运行

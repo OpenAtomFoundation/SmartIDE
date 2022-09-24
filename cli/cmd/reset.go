@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-21 10:48:36
+ * @LastEditTime: 2022-09-23 16:27:12
  */
 package cmd
 
@@ -139,6 +139,9 @@ var resetCmd = &cobra.Command{
 			}
 			common.CheckError(err)
 			common.SmartIDELog.InfoF(i18nInstance.Reset.Info_db_remove, sqliteFilePath)
+
+			// 删除ssh config
+			workspace.CleanupSshConfig4Smartide()
 
 			// 删除模板文件
 			configFilePath := common.PathJoin(dirname, ".ide/.ide.config")

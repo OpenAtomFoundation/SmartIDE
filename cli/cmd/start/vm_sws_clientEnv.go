@@ -26,10 +26,12 @@ import (
 )
 
 // 远程服务器执行 start 命令
-func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) error {
+func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo,
+	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) (
+	workspace.WorkspaceInfo, error) {
 	currentAuth, err := workspace.GetCurrentUser()
 	if err != nil {
-		return err
+		return workspaceInfo, err
 	}
 	if currentAuth != (model.Auth{}) && currentAuth.Token != "" && currentAuth.Token != nil {
 		wsURL := fmt.Sprint(strings.ReplaceAll(strings.ReplaceAll(currentAuth.LoginUrl, "https", "ws"), "http", "ws"), "/ws/smartide/ws")
@@ -55,13 +57,13 @@ func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo, y
 	if workspaceInfo.ServerWorkSpace.Status != model.WorkspaceStatusEnum_Start {
 		if workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Pending ||
 			workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Init {
-			return errors.New("当前工作区正在启动中，请等待！")
+			return workspaceInfo, errors.New("当前工作区正在启动中，请等待！")
 
 		} else if workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Stop {
-			return errors.New("当前工作区已停止！")
+			return workspaceInfo, errors.New("当前工作区已停止！")
 
 		} else {
-			return errors.New("当前工作区运行异常！")
+			return workspaceInfo, errors.New("当前工作区运行异常！")
 
 		}
 	}
@@ -70,11 +72,11 @@ func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo, y
 	msg := fmt.Sprintf(" %v@%v:%v ...", workspaceInfo.Remote.UserName, workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort)
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_connect_remote + msg)
 	if workspaceInfo.Remote.IsNil() {
-		return errors.New("关联 远程主机 信息为空！")
+		return workspaceInfo, errors.New("关联 远程主机 信息为空！")
 	}
 	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password)
 	if err != nil {
-		return err
+		return workspaceInfo, err
 	}
 
 	//6. 当前主机绑定到远程端口
@@ -171,5 +173,5 @@ func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo, y
 		common.SmartIDELog.Info("本地端口绑定信息 更新完成！")
 	}()
 
-	return nil
+	return workspaceInfo, nil
 }

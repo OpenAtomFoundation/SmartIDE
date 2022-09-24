@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-09-05 11:27:09
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-09 16:45:31
+ * @LastEditTime: 2022-09-24 10:23:08
  * @FilePath: /cli/cmd/start/k8s_client.go
  */
 
@@ -27,7 +27,7 @@ import (
 // 在本地启动k8s工作区
 func ExecuteK8sClientStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 	workspaceInfo workspace.WorkspaceInfo,
-	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) error {
+	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) (workspace.WorkspaceInfo, error) {
 
 	needStore := false
 	if workspaceInfo.ID == "" {
@@ -53,29 +53,29 @@ func ExecuteK8sClientStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 		// home 目录的路径
 		home, err := os.UserHomeDir()
 		if err != nil {
-			return err
+			return workspaceInfo, err
 		}
 		workingRootDir := filepath.Join(home, ".ide", ".k8s") // 工作目录，repo 会clone到当前目录下
 		workspaceInfo.WorkingDirectoryPath = workingRootDir   // 赋值避免出错
 		gitRepoRootDirPath := filepath.Join(workingRootDir, common.GetRepoName(workspaceInfo.GitCloneRepoUrl))
 		err = os.MkdirAll(gitRepoRootDirPath, os.ModePerm)
 		if err != nil {
-			return err
+			return workspaceInfo, err
 		}
 		tempK8sNamespaceYamlAbsolutePath := filepath.Join(gitRepoRootDirPath, fmt.Sprintf("k8s_deployment_%v_temp_namespace.yaml", filepath.Base(gitRepoRootDirPath)))
 		k8sYamlContent, err := config.ConvertK8sKindToString(namespaceKind)
 		if err != nil {
-			return err
+			return workspaceInfo, err
 		}
 		err = ioutil.WriteFile(tempK8sNamespaceYamlAbsolutePath, []byte(k8sYamlContent), 0777)
 		if err != nil {
-			return err
+			return workspaceInfo, err
 		}
 
 		// apply
 		err = k8sUtil.ExecKubectlCommandRealtime(fmt.Sprintf("apply -f %v", tempK8sNamespaceYamlAbsolutePath), "", false)
 		if err != nil {
-			return err
+			return workspaceInfo, err
 		}
 
 		// set value
@@ -87,7 +87,7 @@ func ExecuteK8sClientStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 		common.SmartIDELog.Info("workspace store")
 		workspaceId, err := dal.InsertOrUpdateWorkspace(workspaceInfo)
 		if err != nil {
-			return err
+			return workspaceInfo, err
 		}
 		if workspaceInfo.ID == "" {
 			common.SmartIDELog.Info(fmt.Sprintf("workspace id: %v", workspaceId))
@@ -98,8 +98,8 @@ func ExecuteK8sClientStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 	// 工作区
 	_, err = ExecuteK8sStartCmd(cmd, k8sUtil, workspaceInfo, yamlExecuteFun)
 	if err != nil {
-		return err
+		return workspaceInfo, err
 	}
 
-	return nil
+	return workspaceInfo, nil
 }
