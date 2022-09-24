@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2022-02-25
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-19 15:06:31
+ * @LastEditTime: 2022-09-24 10:31:22
  */
 package cmd
 
@@ -23,7 +23,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-//
 var connectCmd = &cobra.Command{
 	Use:     "connect",
 	Short:   i18nInstance.Connect.Info_help_short,
@@ -178,7 +177,7 @@ func connect(startedServerWorkspaces []workspace.WorkspaceInfo, cmd *cobra.Comma
 		common.SmartIDELog.Info(fmt.Sprintf("-- workspace (%v) -------------------------------", fixWorkspaceInfo.ServerWorkSpace.NO))
 		var err error
 		if fixWorkspaceInfo.Mode == workspace.WorkingMode_Remote {
-			err = start.ExecuteServerVmStartByClientEnvCmd(fixWorkspaceInfo, executeStartCmdFunc)
+			_, err = start.ExecuteServerVmStartByClientEnvCmd(fixWorkspaceInfo, executeStartCmdFunc)
 		} /* else if fixWorkspaceInfo.Mode == workspace.WorkingMode_K8s {
 			err = start.ExecuteServerK8sStartByClientEnvCmd(fixWorkspaceInfo, executeStartCmdFunc)
 		} */

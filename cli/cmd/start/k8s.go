@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-22 09:27:55
+ * @LastEditTime: 2022-09-24 08:51:55
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -208,8 +208,6 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil, workspac
 	// ssh config update
 	workspaceInfo.UpdateSSHConfig()
 
-	//99. 结束
-	common.SmartIDELog.Info(i18nInstance.Start.Info_end)
 	return &workspaceInfo, nil
 }
 

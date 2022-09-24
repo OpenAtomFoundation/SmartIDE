@@ -90,7 +90,7 @@
         "info_help_flag_filepath": "Specify a YAML file as the configuration.",
         "info_running_container": "[Docker] Creating dev containers ...",
         "info_running_openbrower": "[WebIDE] Opening brower ....",
-        "info_end": "[WebIDE] SmartIDE started successfully.",
+        "info_end": "SmartIDE started successfully.",
         "info_docker_compose_filepath": "[Docker-Compose] Using docker-compose file from : %v",
         "info_ssh_tunnel": "[SSH] Port forwarding : %v",
         "info_create_network": "[Docker] Creating network %v",
