@@ -12,7 +12,7 @@ spec:
   runtimeClassName: sysbox-runc
   containers:
   - name: smartide-dev
-    image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-base-v2-vscode-vmlc:latest
+    image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-golang-v2-vscode-vmlc:latest
     command: ["/sbin/init"]
     imagePullPolicy: Always
     resources:
