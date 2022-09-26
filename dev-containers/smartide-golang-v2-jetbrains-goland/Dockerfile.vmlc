@@ -46,7 +46,7 @@ RUN chmod 644 $PROJECTOR_DIR/ide/projector-server/lib/*
 
 # -------------配置运行环境 ##TODO image参数化
 
-FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-golang-v2:latest
+FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-golang-v2-vmlc:latest
 
 RUN true \
 # Any command which returns non-zero exit code will cause this shell script to exit immediately:
@@ -117,13 +117,11 @@ ENV HOME /home/$PROJECTOR_USER_NAME
 #     GO111MODULE=on go get -v \
 #     golang.org/x/tools/gopls@v0.7.3
 
-USER root
-
 EXPOSE 8887
+USER root
+COPY projector.service /lib/systemd/system/
+COPY startup-projector.sh /home/smartide/startup-projector.sh
 
-#CMD ["bash", "-c", "/run.sh"]
-
-COPY gosu_entrypoint_jetbrain.sh /idesh/gosu_entrypoint_jetbrain.sh
-RUN chmod +x /idesh/gosu_entrypoint_jetbrain.sh
-
-ENTRYPOINT ["/idesh/gosu_entrypoint_jetbrain.sh"]
+RUN chmod +x /home/smartide/startup-projector.sh \
+    && ln -sf /lib/systemd/system/projector.service \
+    /etc/systemd/system/multi-user.target.wants/projector.service
