@@ -1,8 +1,9 @@
 
 version: "3"
 services:
-  smartide-vscode-go-dev:
-    image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-golang-v2-vscode:latest
+  smartide-vmlc-vscode-go-dev:
+    image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-golang-v2-vscode-vmlc:latest
+    runtime: sysbox-runc
     hostname: dev-container
     restart: always
     environment:
@@ -12,7 +13,7 @@ services:
     ports:
       - 6822:22
       - 6800:3000
-      - 1313:1313
+      - 1313:3000
     networks:
       - smartide-network  
 
