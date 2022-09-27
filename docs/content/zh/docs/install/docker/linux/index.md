@@ -114,6 +114,10 @@ docker-compose -version
 本文档针对 sysbox 社区版的安装过程进行说明，如果需要安装企业版，请自行参考 [sysbox](https://github.com/nestybox/sysbox)  官方文档。
 
 ```shell
+## 国内安装地址
+wget https://smartidedl.blob.core.chinacloudapi.cn/hybrid/sysbox/sysbox-ce_0.5.2-0.linux_amd64.deb
+
+## 国际安装地址
 wget https://downloads.nestybox.com/sysbox/releases/v0.5.2/sysbox-ce_0.5.2-0.linux_amd64.deb
 ```
 
