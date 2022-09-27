@@ -192,9 +192,10 @@ docker-compose -f docker-compose.yaml --env-file docker-compose_cn.env up -d
 ### 访问环境
 完成以上安装步骤后，就可以通过以下访问地址，访问部署好的Server了：
 - 主服务 http://{deploment host ip}:8080
-- MySQL管理界面（可选）http://{deploment host ip}:8090
-- Docker环境管理界面（可选） http://{deploment host ip}:9000
-- Tekton仪表盘（可选） http://{deploment host ip}:9097
+- MySQL管理工具phpMyAdmin（可选）http://{deploment host ip}:8090
+  - 用户名：root，默认密码：SmartIDE@123
+- Docker环境管理工具Portainer（可选） http://{deploment host ip}:9000
+- Tekton流水线仪表盘（可选） http://{deploment host ip}:9097
 注：若需使用Tekton仪表盘（可选）查看流水线执行情况，需在主机执行以下命令，后访问Tekton仪表盘，这个脚本会启用9097端口，请同时确保9097端口已经在网络中打通。
 ```bash
 kubectl --namespace tekton-pipelines port-forward svc/tekton-dashboard 9097:9097 --address 0.0.0.0 &
