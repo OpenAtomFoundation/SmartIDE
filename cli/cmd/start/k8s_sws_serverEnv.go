@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-05-31 09:36:33
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-06 11:16:08
+ * @LastEditTime: 2022-09-24 10:19:10
  * @FilePath: /cli/cmd/start/k8s_sws_serverEnv.go
  */
 
@@ -26,7 +26,7 @@ import (
 
 func ExecuteK8sServerStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 	workspaceInfo workspace.WorkspaceInfo,
-	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) error {
+	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) (workspace.WorkspaceInfo, error) {
 	// 错误反馈
 	serverFeedback := func(err error) {
 		if workspaceInfo.CliRunningEnv != workspace.CliRunningEvnEnum_Server {
@@ -89,5 +89,5 @@ func ExecuteK8sServerStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 	err = smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_Start, cmd, true, containerWebIDEPort, workspaceInfo, "", pod.Name)
 	serverFeedback(err)
 
-	return err
+	return workspaceInfo, err
 }

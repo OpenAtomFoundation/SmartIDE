@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-22 14:14:13
+ * @LastEditTime: 2022-09-24 10:20:53
  */
 package start
 
@@ -14,7 +14,6 @@ import (
 	"strconv"
 	"strings"
 	"text/tabwriter"
-	"time"
 
 	initExtended "github.com/leansoftX/smartide-cli/cmd/init"
 	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
@@ -29,7 +28,8 @@ import (
 
 // 远程服务器执行 start 命令
 func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
-	yamlExecuteFun func(yamlConfig config.SmartIdeConfig), cmd *cobra.Command, args []string, disableClone bool) {
+	yamlExecuteFun func(yamlConfig config.SmartIdeConfig), cmd *cobra.Command, args []string, disableClone bool) (
+	workspace.WorkspaceInfo, error) {
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_starting)
 
 	mode, _ := cmd.Flags().GetString("mode")
@@ -97,7 +97,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 			}
 			argsTemplateSubTypeName, err = cmd.Flags().GetString("type")
 			if err != nil {
-				return
+				return workspaceInfo, err
 			}
 		}
 
@@ -280,7 +280,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 	//7. 如果是不进行端口映射，直接退出
 	if isUnforward {
-		return
+		return workspaceInfo, nil
 	}
 
 	//7.1 如果mode=pipeline，也不需要端口映射，直接退出
@@ -289,7 +289,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		IDEAddress := fmt.Sprintf("http://%v:%v/?folder=vscode-remote://%v:%v%v", workspaceInfo.Remote.Addr, ideBindingPort, workspaceInfo.Remote.Addr, ideBindingPort, workspaceInfo.GetContainerWorkingPathWithVolumes())
 		common.SmartIDELog.InfoF(IDEAddress)
 
-		return
+		return workspaceInfo, nil
 	}
 
 	//7.2. ssh config file update
@@ -380,18 +380,18 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		common.CheckError(err)
 	}
 
-	//10. finish
-	common.SmartIDELog.Info(i18nInstance.Start.Info_end)
+	/* 	//10. finish
+	   	common.SmartIDELog.Info(i18nInstance.Start.Info_end)
 
-	//99. 死循环进行驻守
-	if isModeServer {
-		common.SmartIDELog.Info("success")
-		return
-	}
-	for {
-		time.Sleep(500)
-	}
-
+	   	//99. 死循环进行驻守
+	   	if isModeServer {
+	   		common.SmartIDELog.Info("success")
+	   		return
+	   	}
+	   	for {
+	   		time.Sleep(500)
+	   	} */
+	return workspaceInfo, nil
 }
 
 // 打印 service 列表

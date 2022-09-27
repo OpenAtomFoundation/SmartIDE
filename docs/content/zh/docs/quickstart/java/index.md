@@ -441,14 +441,6 @@ smartide start https://gitee.com/smartide/sample-java-idea
 
 是不是很爽！
 
-###  5. 快速创建Spring Boot项目
-SmartIDE模板中提供了创建Spring Boot的示例模板，可以更快速地创建一个Spring Web项目。
-命令如下：
-```shell
-smartide new java -t springboot-idea
-```
-详情请参考：https://gitee.com/smartide/smartide-springboot-template
-
 基于Spring Boot并包含前端、数据库等的Java项目，可参考示例应用-**[若依项目](../../examples/ruoyi/)**。
 
 ## 远程开发

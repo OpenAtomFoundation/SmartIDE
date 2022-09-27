@@ -17,12 +17,13 @@ import (
 )
 
 type SSHConfigRecord struct {
-	Host         string
-	HostName     string
-	User         string
-	Port         int
-	ForwardAgent string
-	IdentityFile string
+	Host                  string
+	HostName              string
+	User                  string
+	Port                  int
+	ForwardAgent          string
+	IdentityFile          string
+	StrictHostKeyChecking string
 }
 
 // ControlledConfigKeys 定义可进行修改的key的范围，
@@ -142,6 +143,41 @@ func (workspaceInfo WorkspaceInfo) RemoveSSHConfig() {
 	common.RemoveWhiteLines(configPath)
 }
 
+func CleanupSshConfig4Smartide() {
+
+	// check config file
+	logger.Info("cleanup .ssh/config ....")
+
+	configPath, err := getSSHConfigPath()
+	common.CheckError(err)
+	logger.DebugF("ssh file path: %v", configPath)
+
+	// get file/ create file
+	logger.Debug("ensure config file exist...")
+	err = ensureSSHConfigFileExist(configPath)
+	common.CheckError(err)
+
+	// check host is exist?
+	logger.Debug("decoding file content to ssh config...")
+	bytes, _ := ioutil.ReadFile(configPath)
+	content := strings.TrimSpace(string(bytes))
+	cfg, _ := ssh_config.DecodeBytes([]byte(content))
+	for _, host := range cfg.Hosts {
+		hasContain, hostName := hostMatches(host, "SmartIDE-", true)
+		if hasContain {
+			line := getLineNumber(configPath, hostName)
+			if line > 0 {
+				end := len(host.Nodes) + 1
+				removeLines(configPath, line, end)
+
+			}
+		}
+	}
+
+	// remove white lines
+	common.RemoveWhiteLines(configPath)
+}
+
 func (record SSHConfigRecord) ToString() string {
 	// 不要随意修改下面的模板， 里面包含了首尾换行和首行2个空格缩进的格式
 	var templateText string
@@ -154,6 +190,7 @@ Host {{.Host}}
   ForwardAgent {{.ForwardAgent}}
   Port {{.Port}}
   IdentityFile {{.IdentityFile}}
+  StrictHostKeyChecking {{.StrictHostKeyChecking}}
 `
 	} else {
 		templateText = `
@@ -162,6 +199,7 @@ Host {{.Host}}
   User {{.User}}
   ForwardAgent {{.ForwardAgent}}
   Port {{.Port}}
+  StrictHostKeyChecking {{.StrictHostKeyChecking}}
 `
 	}
 	var tpl bytes.Buffer
@@ -174,12 +212,13 @@ Host {{.Host}}
 func (configMap SSHConfigMap) ConvertToRecord() SSHConfigRecord {
 	port, err := strconv.Atoi(configMap["Port"])
 	record := SSHConfigRecord{
-		Host:         configMap["Host"],
-		HostName:     configMap["HostName"],
-		User:         configMap["User"],
-		Port:         port,
-		ForwardAgent: configMap["ForwardAgent"],
-		IdentityFile: configMap["IdentityFile"],
+		Host:                  configMap["Host"],
+		HostName:              configMap["HostName"],
+		User:                  configMap["User"],
+		Port:                  port,
+		ForwardAgent:          configMap["ForwardAgent"],
+		IdentityFile:          configMap["IdentityFile"],
+		StrictHostKeyChecking: configMap["StrictHostKeyChecking"],
 	}
 	common.CheckError(err)
 	return record
@@ -236,6 +275,7 @@ func GenerateConfigMap(workspaceId string, IdentityFile string, sshPort int) SSH
 	// 带有空格的路径，需要在两侧用双引号括起来
 	IdentityFile = normalizePathString(IdentityFile)
 	configMap["IdentityFile"] = IdentityFile
+	configMap["StrictHostKeyChecking"] = "no"
 	return configMap
 }
 
@@ -295,6 +335,24 @@ func patchNodeKeyValue(host *ssh_config.Host, recordMap SSHConfigMap) {
 		}
 	}
 
+	// remove empty
+	length := len(host.Nodes)
+	for i := 0; i < length; i++ {
+		node := host.Nodes[i]
+		switch node.(type) {
+		case *ssh_config.KV:
+			continue
+		default:
+			if i+1 >= length {
+				host.Nodes = host.Nodes[0 : length-1]
+			} else {
+				host.Nodes = append(host.Nodes[0:i], host.Nodes[i+1:]...)
+			}
+			i--
+			length--
+		}
+	}
+
 	// patch key/value from record map
 	for k, v := range recordMap {
 		if strings.EqualFold(k, "Host") {
@@ -323,6 +381,9 @@ func patchNodeKeyValue(host *ssh_config.Host, recordMap SSHConfigMap) {
 		}
 
 	}
+
+	// add empty node
+	host.Nodes = append(host.Nodes, &ssh_config.Empty{})
 }
 
 func First(nodes []*ssh_config.KV, key string) *ssh_config.KV {
@@ -372,12 +433,28 @@ func isHostExistInConfig(cfg *ssh_config.Config, host string) bool {
 	return hostValue != ""
 }
 
+func hostMatches(host *ssh_config.Host, hostStr string, isFuzzy bool) (isContain bool, hostName string) {
+	isContain = false
+	for _, pattern := range host.Patterns {
+
+		value := pattern.String()
+		if (isFuzzy && strings.Contains(value, hostStr)) ||
+			value == hostStr {
+			isContain = true
+			hostName = value
+		}
+
+	}
+	return isContain && len(host.Nodes) > 1, hostName
+}
+
 func searchHostFromConfig(cfg *ssh_config.Config, hostStr string) *ssh_config.Host {
 
 	count := From(cfg.Hosts).CountWith(func(h interface{}) bool {
 		hst := h.(*ssh_config.Host)
-		return hst.Matches(hostStr) && len(hst.Nodes) > 1
-
+		//return hst.Matches(hostStr) && len(hst.Nodes) > 1
+		hasContain, _ := hostMatches(hst, hostStr, false)
+		return hasContain
 	})
 
 	if count <= 0 {
@@ -386,7 +463,9 @@ func searchHostFromConfig(cfg *ssh_config.Config, hostStr string) *ssh_config.Ho
 
 	first := From(cfg.Hosts).FirstWith(func(h interface{}) bool {
 		hst := h.(*ssh_config.Host)
-		return hst.Matches(hostStr) && len(hst.Nodes) > 1
+		//return hst.Matches(hostStr) && len(hst.Nodes) > 1
+		hasContain, _ := hostMatches(hst, hostStr, false)
+		return hasContain
 	})
 
 	switch t := first.(type) {

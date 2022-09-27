@@ -92,7 +92,7 @@
         "info_help_flag_filepath": "请指定yaml文件路径",
         "info_running_container": "[Docker] 容器创建中 ...",
         "info_running_openbrower": "[WebIDE] 打开浏览器 ...",
-        "info_end": "[WebIDE] SmartIDE启动完毕.",
+        "info_end": "SmartIDE启动完毕.",
         "info_docker_compose_filepath": "[Docker-Compose] 加载配置文件: %v",
         "info_ssh_tunnel": "[SSH] 转发端口：%v",
         "info_create_network": "[Docker] 创建网络 %v",

@@ -22,20 +22,20 @@ import (
 
 // 在本地start 远程服务器上的k8s工作区
 func ExecuteServerK8sStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo,
-	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) error {
+	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) (workspace.WorkspaceInfo, error) {
 
 	//0. 验证
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_starting)
 	// 检查工作区的状态
 	if workspaceInfo.ServerWorkSpace.Status != model.WorkspaceStatusEnum_Start {
 		if workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Pending || workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Init {
-			return errors.New("当前工作区正在启动中，请等待！")
+			return workspaceInfo, errors.New("当前工作区正在启动中，请等待！")
 
 		} else if workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Stop {
-			return errors.New("当前工作区已停止！")
+			return workspaceInfo, errors.New("当前工作区已停止！")
 
 		} else {
-			return errors.New("当前工作区运行异常！")
+			return workspaceInfo, errors.New("当前工作区运行异常！")
 
 		}
 	}
@@ -45,7 +45,7 @@ func ExecuteServerK8sStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo,
 		workspaceInfo.K8sInfo.Context,
 		workspaceInfo.K8sInfo.Namespace)
 	if err != nil {
-		return err
+		return workspaceInfo, err
 	}
 
 	//2. 端口转发，依然需要检查对应的端口是否占用
@@ -53,7 +53,7 @@ func ExecuteServerK8sStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo,
 	//2.1. 端口转发，并记录到extend
 	//_, _, err = GetDevContainerPod(*k8sUtil, workspaceInfo.K8sInfo.TempK8sConfig)
 	if err != nil {
-		return err
+		return workspaceInfo, err
 	}
 	//2.2. func
 	function1 := func(k8sServiceName string, availableClientPort, hostOriginPort, index int) {
@@ -93,7 +93,7 @@ func ExecuteServerK8sStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo,
 	//9. 更新server端的extend字段
 	currentAuth, err := workspace.GetCurrentUser()
 	if err != nil {
-		return err
+		return workspaceInfo, err
 	}
 	err = smartideServer.FeeadbackExtend(currentAuth, workspaceInfo)
 	if err != nil {
@@ -101,5 +101,5 @@ func ExecuteServerK8sStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo,
 	}
 	common.SmartIDELog.Info("本地端口绑定信息 更新完成！")
 
-	return nil
+	return workspaceInfo, nil
 }

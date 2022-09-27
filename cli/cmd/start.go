@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-22 14:11:10
+ * @LastEditTime: 2022-09-24 10:27:31
  */
 package cmd
 
@@ -131,39 +131,32 @@ var startCmd = &cobra.Command{
 
 		//1. 执行命令
 		if workspaceInfo.Mode == workspace.WorkingMode_Local { //1.1. 本地模式
-			start.ExecuteStartCmd(workspaceInfo, isUnforward, func(v string, d common.Docker) {}, executeStartCmdFunc, args, cmd)
+			workspaceInfo, err = start.ExecuteStartCmd(workspaceInfo, isUnforward, func(v string, d common.Docker) {}, executeStartCmdFunc, args, cmd)
+			common.CheckError(err)
 
 		} else if workspaceInfo.Mode == workspace.WorkingMode_K8s { //1.2. k8s 模式
-
 			if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server { //1.2.1. cli 在服务端运行
 				k8sUtil, err := k8s.NewK8sUtilWithContent(workspaceInfo.K8sInfo.KubeConfigContent,
 					workspaceInfo.K8sInfo.Context,
 					workspaceInfo.K8sInfo.Namespace)
-				common.SmartIDELog.Error(err)
+				common.CheckError(err)
 
-				err = start.ExecuteK8sServerStartCmd(cmd, *k8sUtil, workspaceInfo, executeStartCmdFunc)
-				common.SmartIDELog.Error(err)
+				workspaceInfo, err = start.ExecuteK8sServerStartCmd(cmd, *k8sUtil, workspaceInfo, executeStartCmdFunc)
+				common.CheckError(err)
 
 			} else { //1.2.2. cli 在客户端运行
 				k8sUtil, err := k8s.NewK8sUtil(workspaceInfo.K8sInfo.KubeConfigFilePath,
 					workspaceInfo.K8sInfo.Context,
 					workspaceInfo.K8sInfo.Namespace)
-				common.SmartIDELog.Error(err)
+				common.CheckError(err)
 
 				if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server { //1.2.2.1. 远程工作区 本地加载
-					err := start.ExecuteServerK8sStartByClientEnvCmd(workspaceInfo, executeStartCmdFunc)
+					workspaceInfo, err = start.ExecuteServerK8sStartByClientEnvCmd(workspaceInfo, executeStartCmdFunc)
 					common.CheckError(err)
 
 				} else { //1.2.2.2. 本地工作区，本地启动
-					err := start.ExecuteK8sClientStartCmd(cmd, *k8sUtil, workspaceInfo, executeStartCmdFunc)
+					workspaceInfo, err = start.ExecuteK8sClientStartCmd(cmd, *k8sUtil, workspaceInfo, executeStartCmdFunc)
 					common.CheckError(err)
-				}
-
-				//99. 死循环进行驻守
-				if !isUnforward {
-					for {
-						time.Sleep(time.Millisecond * 300)
-					}
 				}
 
 			}
@@ -175,27 +168,22 @@ var startCmd = &cobra.Command{
 				if workspaceInfo.GitCloneRepoUrl == "" {
 					disabelGitClone = true
 				}
-				start.ExecuteVmStartCmd(workspaceInfo, isUnforward, executeStartCmdFunc, cmd, args, disabelGitClone)
+				workspaceInfo, err = start.ExecuteVmStartCmd(workspaceInfo, isUnforward, executeStartCmdFunc, cmd, args, disabelGitClone)
+				common.CheckError(err)
 
 			} else { //1.3.2. cli 在客户端运行
 
 				if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server { //1.3.2.1. 远程工作区 本地加载
-					err = start.ExecuteServerVmStartByClientEnvCmd(workspaceInfo, executeStartCmdFunc)
+					workspaceInfo, err = start.ExecuteServerVmStartByClientEnvCmd(workspaceInfo, executeStartCmdFunc)
 					common.CheckError(err)
-
-					//99. 死循环进行驻守
-					if !isUnforward {
-						for {
-							time.Sleep(time.Millisecond * 300)
-						}
-					}
 
 				} else { //1.3.2.2. 本地工作区，本地启动
 					disabelGitClone := false
 					if workspaceInfo.GitCloneRepoUrl == "" {
 						disabelGitClone = true
 					}
-					start.ExecuteVmStartCmd(workspaceInfo, isUnforward, executeStartCmdFunc, cmd, args, disabelGitClone)
+					workspaceInfo, err = start.ExecuteVmStartCmd(workspaceInfo, isUnforward, executeStartCmdFunc, cmd, args, disabelGitClone)
+					common.CheckError(err)
 				}
 
 			}
@@ -203,6 +191,22 @@ var startCmd = &cobra.Command{
 		} else {
 			return errors.New("暂不支持当前模式")
 		}
+		common.CheckError(err)
+
+		//99. 结束
+		//99.1. 文本
+		common.SmartIDELog.Info(i18nInstance.Start.Info_end)
+		if workspaceInfo.ConfigYaml.Workspace.DevContainer.IdeType == config.IdeTypeEnum_SDKOnly {
+			common.SmartIDELog.Info("当前IDE环境没有提供WebIDE入口，请使用ssh连接工作区")
+		}
+		//99.2. 死循环进行驻守，允许端口转发 && 是在本地运行
+		if !isUnforward && workspaceInfo.CliRunningEnv == workspace.CliRunningEnvEnum_Client {
+			for {
+				time.Sleep(time.Millisecond * 300)
+			}
+
+		}
+
 		return nil
 	},
 }
