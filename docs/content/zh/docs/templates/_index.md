@@ -167,7 +167,7 @@ SmartIDE开发者镜像分成3层提供，分别提供不同的能力。
 
 ### L0 - 基础镜像
 
-提供基础能力，比如：认证，权限，SSH；使用Ubuntu满足日常开发基础组件的需求，还有一些其他的基础工具，如下：
+提供基础能力，比如：认证，权限，SSH,git；使用Ubuntu满足日常开发基础组件的需求，还有一些其他的基础工具，如下：
 
 - [libsecret](https://developer-old.gnome.org/libsecret/)：是一个用于存储和获取密钥和其他私密信息的库。它使用 DBUS 与“私密服务”进行通讯,
 - [apt-utils](https://github.com/bennyhuo/Apt-Utils): 与软件包管理相关的工具程序
@@ -178,6 +178,11 @@ SmartIDE开发者镜像分成3层提供，分别提供不同的能力。
 - iputils-ping： 网络命令ping
 - telnet：远程登陆
 - lsof: 列出当前系统打开文件的工具
+
+除此之外，vmlc的基础镜像还包括了以下工具：
+
+- docker && docker-compose
+- kind、helm、k9s、Dapr、Kubectl
 
 
 | **开发语言** | **镜像类型** | **tag**| **Pull命令**| **new指令**| **备注**|
