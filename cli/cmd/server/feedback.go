@@ -50,7 +50,7 @@ func Trigger_Action(action string, serverWorkspaceNo string, auth model.Auth, da
 		return err
 	}
 
-	httpClient := common.CreateHttpClient(6, 30*time.Second, common.ResponseBodyTypeEnum_JSON)
+	httpClient := common.CreateHttpClient(6, 30*time.Second, 3*time.Second, common.ResponseBodyTypeEnum_JSON)
 	response, err := httpClient.Put(url.String(), datas, headers) //
 	if err != nil {
 		return err
@@ -127,7 +127,7 @@ func Feedback_Finish(feedbackCommand FeedbackCommandEnum, cmd *cobra.Command,
 	}
 	headers := map[string]string{"Content-Type": "application/json", "x-token": serverModeInfo.ServerToken}
 
-	httpClient := common.CreateHttpClient(6, 30*time.Second, common.ResponseBodyTypeEnum_JSON)
+	httpClient := common.CreateHttpClient(6, 30*time.Second, 3*time.Second, common.ResponseBodyTypeEnum_JSON)
 	_, err = httpClient.PostJson(serverFeedbackUrl.String(), datas, headers) // post 请求
 	if err != nil {
 		return err
@@ -182,7 +182,7 @@ func Feedback_Pending(feedbackCommand FeedbackCommandEnum, workspaceStatus model
 	}
 	headers := map[string]string{"Content-Type": "application/json", "x-token": serverModeInfo.ServerToken}
 
-	httpClient := common.CreateHttpClient(6, 30*time.Second, common.ResponseBodyTypeEnum_JSON)
+	httpClient := common.CreateHttpClient(6, 30*time.Second, 3*time.Second, common.ResponseBodyTypeEnum_JSON)
 	_, err = httpClient.PostJson(serverFeedbackUrl.String(), datas, headers) // post 请求
 
 	if err != nil {
@@ -222,7 +222,7 @@ func Send_WorkspaceInfo(callbackAPI string, feedbackCommand FeedbackCommandEnum,
 	}
 	headers := map[string]string{"Content-Type": "application/json"}
 
-	httpClient := common.CreateHttpClient(6, 30*time.Second, common.ResponseBodyTypeEnum_JSON)
+	httpClient := common.CreateHttpClient(6, 30*time.Second, 3*time.Second, common.ResponseBodyTypeEnum_JSON)
 	_, err := httpClient.PostJson(serverFeedbackUrl, datas, headers) // post 请求
 
 	if err != nil {

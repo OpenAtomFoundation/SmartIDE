@@ -33,6 +33,12 @@ type WorkspaceListResponse struct {
 	Msg  string `json:"msg"`
 }
 
+type DefaultResponse struct {
+	Code int         `json:"code"`
+	Data interface{} `json:"data"`
+	Msg  string      `json:"msg"`
+}
+
 type WorkspaceLogResponse struct {
 	Code int `json:"code"`
 	Data struct {

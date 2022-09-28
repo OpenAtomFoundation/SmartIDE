@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-16 10:43:05
+ * @LastEditTime: 2022-09-23 09:09:17
  */
 package common
 
@@ -259,6 +259,9 @@ func (sLog *smartIDELogStruct) ConsoleInLine(args ...interface{}) {
 }
 
 func (sLog *smartIDELogStruct) ImportanceWithError(err error) {
+	if err == nil {
+		return
+	}
 	if _, ok := err.(*exec.ExitError); !ok {
 		sLog.Importance(err.Error())
 	}
