@@ -425,6 +425,30 @@ func (k *KubernetesUtil) ExecKubectlCommandRealtime(command string, dirctory str
 	return execCommand.Run()
 }
 
+func (k *KubernetesUtil) ExecKubectlCommandWithOutputRealtime(command string, dirctory string) (string, error) {
+	var execCommand *exec.Cmd
+
+	kubeCommand := fmt.Sprintf("%v %v %v", k.KubectlFilePath, k.Commands, command)
+	common.SmartIDELog.Debug(kubeCommand)
+	switch runtime.GOOS {
+	case "windows":
+		execCommand = exec.Command("powershell", "/c", kubeCommand)
+	default:
+		execCommand = exec.Command("bash", "-c", kubeCommand)
+	}
+
+	if dirctory != "" {
+		execCommand.Dir = dirctory
+	}
+
+	bytes, err := execCommand.CombinedOutput()
+	output := string(bytes)
+	if strings.Contains(output, "error:") || strings.Contains(output, "fatal:") {
+		return "", errors.New(output)
+	}
+	return string(bytes), err
+}
+
 func (k *KubernetesUtil) ExecKubectlCommandRealtimeBackground(command string, dirctory string, isLoop bool, isExit bool) error {
 
 	logFile := "/tmp/daemon.log"
@@ -765,6 +789,40 @@ type WorkspaceIngress struct {
 			SecretName string   `yaml:"secretName"`
 		} `yaml:"tls"`
 		Rules []struct {
+			Host string `yaml:"host"`
+			HTTP struct {
+				Paths []struct {
+					Path     string `yaml:"path"`
+					PathType string `yaml:"pathType"`
+					Backend  struct {
+						Service struct {
+							Name string `yaml:"name"`
+							Port struct {
+								Number int `yaml:"number"`
+							} `yaml:"port"`
+						} `yaml:"service"`
+					} `yaml:"backend"`
+				} `yaml:"paths"`
+			} `yaml:"http"`
+		} `yaml:"rules"`
+	} `yaml:"spec"`
+}
+
+type WorkspaceIgnoreTLSIngress struct {
+	APIVersion string `yaml:"apiVersion"`
+	Kind       string `yaml:"kind"`
+	Metadata   struct {
+		Name        string `yaml:"name"`
+		Namespace   string `yaml:"namespace"`
+		Annotations struct {
+			NginxIngressKubernetesIoAuthType   string `yaml:"nginx.ingress.kubernetes.io/auth-type"`
+			NginxIngressKubernetesIoAuthSecret string `yaml:"nginx.ingress.kubernetes.io/auth-secret"`
+			NginxIngressKubernetesIoUseRegex   string `yaml:"nginx.ingress.kubernetes.io/use-regex"`
+		} `yaml:"annotations"`
+	} `yaml:"metadata"`
+	Spec struct {
+		IngressClassName string `yaml:"ingressClassName"`
+		Rules            []struct {
 			Host string `yaml:"host"`
 			HTTP struct {
 				Paths []struct {

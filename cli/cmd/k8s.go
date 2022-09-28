@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/leansoftX/smartide-cli/cmd/k8s"
@@ -152,203 +153,388 @@ var k8sCmd = &cobra.Command{
 			return
 		}
 
-		//4. Initial Yaml Object
-		smartIdeIngress := &k8sLib.WorkspaceIngress{
-			APIVersion: "networking.k8s.io/v1",
-			Kind:       "Ingress",
-			Metadata: struct {
-				Name        string "yaml:\"name\""
-				Namespace   string "yaml:\"namespace\""
-				Annotations struct {
-					NginxIngressKubernetesIoAuthType   string "yaml:\"nginx.ingress.kubernetes.io/auth-type\""
-					NginxIngressKubernetesIoAuthSecret string "yaml:\"nginx.ingress.kubernetes.io/auth-secret\""
-					NginxIngressKubernetesIoUseRegex   string "yaml:\"nginx.ingress.kubernetes.io/use-regex\""
-					CertManagerIoClusterIssuer         string "yaml:\"cert-manager.io/cluster-issuer\""
-				} "yaml:\"annotations\""
-			}{
-				Name:      "ingress-" + namespace,
-				Namespace: namespace,
-				Annotations: struct {
-					NginxIngressKubernetesIoAuthType   string "yaml:\"nginx.ingress.kubernetes.io/auth-type\""
-					NginxIngressKubernetesIoAuthSecret string "yaml:\"nginx.ingress.kubernetes.io/auth-secret\""
-					NginxIngressKubernetesIoUseRegex   string "yaml:\"nginx.ingress.kubernetes.io/use-regex\""
-					CertManagerIoClusterIssuer         string "yaml:\"cert-manager.io/cluster-issuer\""
-				}{
-					NginxIngressKubernetesIoUseRegex: "true",
-					CertManagerIoClusterIssuer:       "letsencrypt",
-				},
-			},
-			Spec: struct {
-				IngressClassName string "yaml:\"ingressClassName\""
-				TLS              []struct {
-					Hosts      []string "yaml:\"hosts\""
-					SecretName string   "yaml:\"secretName\""
-				} "yaml:\"tls\""
-				Rules []struct {
-					Host string "yaml:\"host\""
-					HTTP struct {
-						Paths []struct {
-							Path     string "yaml:\"path\""
-							PathType string "yaml:\"pathType\""
-							Backend  struct {
-								Service struct {
-									Name string "yaml:\"name\""
-									Port struct {
-										Number int "yaml:\"number\""
-									} "yaml:\"port\""
-								} "yaml:\"service\""
-							} "yaml:\"backend\""
-						} "yaml:\"paths\""
-					} "yaml:\"http\""
-				} "yaml:\"rules\""
-			}{
-				IngressClassName: "nginx",
-				TLS: []struct {
-					Hosts      []string "yaml:\"hosts\""
-					SecretName string   "yaml:\"secretName\""
-				}{},
-				Rules: []struct {
-					Host string "yaml:\"host\""
-					HTTP struct {
-						Paths []struct {
-							Path     string "yaml:\"path\""
-							PathType string "yaml:\"pathType\""
-							Backend  struct {
-								Service struct {
-									Name string "yaml:\"name\""
-									Port struct {
-										Number int "yaml:\"number\""
-									} "yaml:\"port\""
-								} "yaml:\"service\""
-							} "yaml:\"backend\""
-						} "yaml:\"paths\""
-					} "yaml:\"http\""
-				}{},
-			},
+		//4. Get Resource by Resource ID
+		resourceInfo, err := server.GetResourceByID(currentAuth, strconv.Itoa(workspaceInfo.ResourceID))
+		common.CheckError(err)
+		if resourceInfo == nil {
+			common.SmartIDELog.Error(fmt.Sprintf("根据ID（%v）未找到资源数据！", workspaceInfo.ResourceID))
+			return
 		}
 
-		//5. Create Basic Secret
-		if authType == model.KubeAuthenticationTypeEnum_Basic {
-			// 运行htpasswd命令
-			// e.g. htpasswd -b -c auth <USERNAME> <PASSWORD>
-			common.SmartIDELog.Info(i18nInstance.K8s.Info_log_create_basic_secret_start)
-			pwd, _ := os.Getwd()
-			htpasswdCmd := exec.Command("htpasswd", "-b", "-c", "auth", username, password)
-			htpasswdCmd.Stdout = os.Stdout
-			htpasswdCmd.Stderr = os.Stderr
-			if htpasswdCmdErr := htpasswdCmd.Run(); htpasswdCmdErr != nil {
-				common.SmartIDELog.Error(htpasswdCmdErr)
-			}
-			// 运行kubectl create secret命令
-			// e.g. kubectl create secret generic basic-auth --from-file=auth -n <NAMESPACE>
-			err = k8sUtil.ExecKubectlCommandRealtime(fmt.Sprintf("create secret generic basic-auth --from-file=auth -n %v", namespace), pwd, false)
-			common.CheckError(err)
-			smartIdeIngress.Metadata.Annotations.NginxIngressKubernetesIoAuthType = "basic"
-			smartIdeIngress.Metadata.Annotations.NginxIngressKubernetesIoAuthSecret = "basic-auth"
-			common.SmartIDELog.Info(i18nInstance.K8s.Info_log_create_basic_secret_success)
-		}
-
-		//6. Genetrate AllInOne Ingress Yaml
-		for index, portInfo := range workspaceInfo.Extend.Ports {
-			if portInfo.HostPortDesc == "tools-ssh" {
-				continue
-			}
-			host := fmt.Sprintf("%v-%v-p%v.%v", namespace, portInfo.ServiceName, portInfo.ClientPort, baseDNSName)
-			//Append TLS
-			smartIdeIngress.Spec.TLS = append(smartIdeIngress.Spec.TLS, struct {
-				Hosts      []string "yaml:\"hosts\""
-				SecretName string   "yaml:\"secretName\""
-			}{
-				Hosts:      []string{host},
-				SecretName: fmt.Sprintf("%v-%v-%v", namespace, portInfo.ServiceName, portInfo.ClientPort),
-			})
-			//Append Rules
-			smartIdeIngress.Spec.Rules = append(smartIdeIngress.Spec.Rules, struct {
-				Host string "yaml:\"host\""
-				HTTP struct {
-					Paths []struct {
-						Path     string "yaml:\"path\""
-						PathType string "yaml:\"pathType\""
-						Backend  struct {
-							Service struct {
-								Name string "yaml:\"name\""
-								Port struct {
-									Number int "yaml:\"number\""
-								} "yaml:\"port\""
-							} "yaml:\"service\""
-						} "yaml:\"backend\""
-					} "yaml:\"paths\""
-				} "yaml:\"http\""
-			}{
-				Host: host,
-				HTTP: struct {
-					Paths []struct {
-						Path     string "yaml:\"path\""
-						PathType string "yaml:\"pathType\""
-						Backend  struct {
-							Service struct {
-								Name string "yaml:\"name\""
-								Port struct {
-									Number int "yaml:\"number\""
-								} "yaml:\"port\""
-							} "yaml:\"service\""
-						} "yaml:\"backend\""
-					} "yaml:\"paths\""
+		//5. Construct Ingress Yaml Object
+		var yamlData []byte
+		if resourceInfo.CertType == 3 {
+			smartIdeIngress := &k8sLib.WorkspaceIngress{
+				APIVersion: "networking.k8s.io/v1",
+				Kind:       "Ingress",
+				Metadata: struct {
+					Name        string "yaml:\"name\""
+					Namespace   string "yaml:\"namespace\""
+					Annotations struct {
+						NginxIngressKubernetesIoAuthType   string "yaml:\"nginx.ingress.kubernetes.io/auth-type\""
+						NginxIngressKubernetesIoAuthSecret string "yaml:\"nginx.ingress.kubernetes.io/auth-secret\""
+						NginxIngressKubernetesIoUseRegex   string "yaml:\"nginx.ingress.kubernetes.io/use-regex\""
+						CertManagerIoClusterIssuer         string "yaml:\"cert-manager.io/cluster-issuer\""
+					} "yaml:\"annotations\""
 				}{
-					Paths: []struct {
-						Path     string "yaml:\"path\""
-						PathType string "yaml:\"pathType\""
-						Backend  struct {
-							Service struct {
-								Name string "yaml:\"name\""
-								Port struct {
-									Number int "yaml:\"number\""
-								} "yaml:\"port\""
-							} "yaml:\"service\""
-						} "yaml:\"backend\""
+					Name:      "ingress-" + namespace,
+					Namespace: namespace,
+					Annotations: struct {
+						NginxIngressKubernetesIoAuthType   string "yaml:\"nginx.ingress.kubernetes.io/auth-type\""
+						NginxIngressKubernetesIoAuthSecret string "yaml:\"nginx.ingress.kubernetes.io/auth-secret\""
+						NginxIngressKubernetesIoUseRegex   string "yaml:\"nginx.ingress.kubernetes.io/use-regex\""
+						CertManagerIoClusterIssuer         string "yaml:\"cert-manager.io/cluster-issuer\""
 					}{
-						{
-							Path:     "/",
-							PathType: "Prefix",
-							Backend: struct {
+						NginxIngressKubernetesIoUseRegex: "true",
+						CertManagerIoClusterIssuer:       "letsencrypt",
+					},
+				},
+				Spec: struct {
+					IngressClassName string "yaml:\"ingressClassName\""
+					TLS              []struct {
+						Hosts      []string "yaml:\"hosts\""
+						SecretName string   "yaml:\"secretName\""
+					} "yaml:\"tls\""
+					Rules []struct {
+						Host string "yaml:\"host\""
+						HTTP struct {
+							Paths []struct {
+								Path     string "yaml:\"path\""
+								PathType string "yaml:\"pathType\""
+								Backend  struct {
+									Service struct {
+										Name string "yaml:\"name\""
+										Port struct {
+											Number int "yaml:\"number\""
+										} "yaml:\"port\""
+									} "yaml:\"service\""
+								} "yaml:\"backend\""
+							} "yaml:\"paths\""
+						} "yaml:\"http\""
+					} "yaml:\"rules\""
+				}{
+					IngressClassName: "nginx",
+					TLS: []struct {
+						Hosts      []string "yaml:\"hosts\""
+						SecretName string   "yaml:\"secretName\""
+					}{},
+					Rules: []struct {
+						Host string "yaml:\"host\""
+						HTTP struct {
+							Paths []struct {
+								Path     string "yaml:\"path\""
+								PathType string "yaml:\"pathType\""
+								Backend  struct {
+									Service struct {
+										Name string "yaml:\"name\""
+										Port struct {
+											Number int "yaml:\"number\""
+										} "yaml:\"port\""
+									} "yaml:\"service\""
+								} "yaml:\"backend\""
+							} "yaml:\"paths\""
+						} "yaml:\"http\""
+					}{},
+				},
+			}
+
+			// Create Basic Secret
+			if authType == model.KubeAuthenticationTypeEnum_Basic {
+				// 运行htpasswd命令
+				// e.g. htpasswd -b -c auth <USERNAME> <PASSWORD>
+				common.SmartIDELog.Info(i18nInstance.K8s.Info_log_create_basic_secret_start)
+				pwd, _ := os.Getwd()
+				htpasswdCmd := exec.Command("htpasswd", "-b", "-c", "auth", username, password)
+				htpasswdCmd.Stdout = os.Stdout
+				htpasswdCmd.Stderr = os.Stderr
+				if htpasswdCmdErr := htpasswdCmd.Run(); htpasswdCmdErr != nil {
+					common.SmartIDELog.Error(htpasswdCmdErr)
+				}
+				// 运行kubectl create secret命令
+				// e.g. kubectl create secret generic basic-auth --from-file=auth -n <NAMESPACE>
+				err = k8sUtil.ExecKubectlCommandRealtime(fmt.Sprintf("create secret generic basic-auth --from-file=auth -n %v", namespace), pwd, false)
+				common.CheckError(err)
+				smartIdeIngress.Metadata.Annotations.NginxIngressKubernetesIoAuthType = "basic"
+				smartIdeIngress.Metadata.Annotations.NginxIngressKubernetesIoAuthSecret = "basic-auth"
+				common.SmartIDELog.Info(i18nInstance.K8s.Info_log_create_basic_secret_success)
+			}
+
+			// Genetrate AllInOne Ingress Yaml
+			for index, portInfo := range workspaceInfo.Extend.Ports {
+				if portInfo.HostPortDesc == "tools-ssh" {
+					continue
+				}
+				host := fmt.Sprintf("%v-%v-p%v.%v", namespace, portInfo.ServiceName, portInfo.ClientPort, baseDNSName)
+				//Append TLS
+				smartIdeIngress.Spec.TLS = append(smartIdeIngress.Spec.TLS, struct {
+					Hosts      []string "yaml:\"hosts\""
+					SecretName string   "yaml:\"secretName\""
+				}{
+					Hosts:      []string{host},
+					SecretName: fmt.Sprintf("%v-%v-%v", namespace, portInfo.ServiceName, portInfo.ClientPort),
+				})
+				//Append Rules
+				smartIdeIngress.Spec.Rules = append(smartIdeIngress.Spec.Rules, struct {
+					Host string "yaml:\"host\""
+					HTTP struct {
+						Paths []struct {
+							Path     string "yaml:\"path\""
+							PathType string "yaml:\"pathType\""
+							Backend  struct {
 								Service struct {
 									Name string "yaml:\"name\""
 									Port struct {
 										Number int "yaml:\"number\""
 									} "yaml:\"port\""
 								} "yaml:\"service\""
-							}{
-								Service: struct {
+							} "yaml:\"backend\""
+						} "yaml:\"paths\""
+					} "yaml:\"http\""
+				}{
+					Host: host,
+					HTTP: struct {
+						Paths []struct {
+							Path     string "yaml:\"path\""
+							PathType string "yaml:\"pathType\""
+							Backend  struct {
+								Service struct {
 									Name string "yaml:\"name\""
 									Port struct {
 										Number int "yaml:\"number\""
 									} "yaml:\"port\""
-								}{
-									Name: portInfo.ServiceName,
-									Port: struct {
+								} "yaml:\"service\""
+							} "yaml:\"backend\""
+						} "yaml:\"paths\""
+					}{
+						Paths: []struct {
+							Path     string "yaml:\"path\""
+							PathType string "yaml:\"pathType\""
+							Backend  struct {
+								Service struct {
+									Name string "yaml:\"name\""
+									Port struct {
 										Number int "yaml:\"number\""
+									} "yaml:\"port\""
+								} "yaml:\"service\""
+							} "yaml:\"backend\""
+						}{
+							{
+								Path:     "/",
+								PathType: "Prefix",
+								Backend: struct {
+									Service struct {
+										Name string "yaml:\"name\""
+										Port struct {
+											Number int "yaml:\"number\""
+										} "yaml:\"port\""
+									} "yaml:\"service\""
+								}{
+									Service: struct {
+										Name string "yaml:\"name\""
+										Port struct {
+											Number int "yaml:\"number\""
+										} "yaml:\"port\""
 									}{
-										Number: portInfo.ClientPort,
+										Name: portInfo.ServiceName,
+										Port: struct {
+											Number int "yaml:\"number\""
+										}{
+											Number: portInfo.ClientPort,
+										},
 									},
 								},
 							},
 						},
 					},
-				},
-			})
+				})
 
-			//Set Public URL
-			workspaceInfo.Extend.Ports[index].IngressUrl = host
-			workspaceInfo.Extend.Ports[index].IsConnected = host != ""
+				//Set Public URL
+				workspaceInfo.Extend.Ports[index].IngressUrl = host
+				workspaceInfo.Extend.Ports[index].IsConnected = host != ""
+			}
+			yamlData, err = yaml.Marshal(&smartIdeIngress)
+			if err != nil {
+				common.SmartIDELog.Error(err)
+			}
+		} else {
+			smartIdeIngress := &k8sLib.WorkspaceIgnoreTLSIngress{
+				APIVersion: "networking.k8s.io/v1",
+				Kind:       "Ingress",
+				Metadata: struct {
+					Name        string "yaml:\"name\""
+					Namespace   string "yaml:\"namespace\""
+					Annotations struct {
+						NginxIngressKubernetesIoAuthType   string "yaml:\"nginx.ingress.kubernetes.io/auth-type\""
+						NginxIngressKubernetesIoAuthSecret string "yaml:\"nginx.ingress.kubernetes.io/auth-secret\""
+						NginxIngressKubernetesIoUseRegex   string "yaml:\"nginx.ingress.kubernetes.io/use-regex\""
+					} "yaml:\"annotations\""
+				}{
+					Name:      "ingress-" + namespace,
+					Namespace: namespace,
+					Annotations: struct {
+						NginxIngressKubernetesIoAuthType   string "yaml:\"nginx.ingress.kubernetes.io/auth-type\""
+						NginxIngressKubernetesIoAuthSecret string "yaml:\"nginx.ingress.kubernetes.io/auth-secret\""
+						NginxIngressKubernetesIoUseRegex   string "yaml:\"nginx.ingress.kubernetes.io/use-regex\""
+					}{
+						NginxIngressKubernetesIoUseRegex: "true",
+					},
+				},
+				Spec: struct {
+					IngressClassName string "yaml:\"ingressClassName\""
+					Rules            []struct {
+						Host string "yaml:\"host\""
+						HTTP struct {
+							Paths []struct {
+								Path     string "yaml:\"path\""
+								PathType string "yaml:\"pathType\""
+								Backend  struct {
+									Service struct {
+										Name string "yaml:\"name\""
+										Port struct {
+											Number int "yaml:\"number\""
+										} "yaml:\"port\""
+									} "yaml:\"service\""
+								} "yaml:\"backend\""
+							} "yaml:\"paths\""
+						} "yaml:\"http\""
+					} "yaml:\"rules\""
+				}{
+					IngressClassName: "nginx",
+					Rules: []struct {
+						Host string "yaml:\"host\""
+						HTTP struct {
+							Paths []struct {
+								Path     string "yaml:\"path\""
+								PathType string "yaml:\"pathType\""
+								Backend  struct {
+									Service struct {
+										Name string "yaml:\"name\""
+										Port struct {
+											Number int "yaml:\"number\""
+										} "yaml:\"port\""
+									} "yaml:\"service\""
+								} "yaml:\"backend\""
+							} "yaml:\"paths\""
+						} "yaml:\"http\""
+					}{},
+				},
+			}
+
+			// Create Basic Secret
+			if authType == model.KubeAuthenticationTypeEnum_Basic {
+				// 运行htpasswd命令
+				// e.g. htpasswd -b -c auth <USERNAME> <PASSWORD>
+				common.SmartIDELog.Info(i18nInstance.K8s.Info_log_create_basic_secret_start)
+				pwd, _ := os.Getwd()
+				htpasswdCmd := exec.Command("htpasswd", "-b", "-c", "auth", username, password)
+				htpasswdCmd.Stdout = os.Stdout
+				htpasswdCmd.Stderr = os.Stderr
+				if htpasswdCmdErr := htpasswdCmd.Run(); htpasswdCmdErr != nil {
+					common.SmartIDELog.Error(htpasswdCmdErr)
+				}
+				// 运行kubectl create secret命令
+				// e.g. kubectl create secret generic basic-auth --from-file=auth -n <NAMESPACE>
+				err = k8sUtil.ExecKubectlCommandRealtime(fmt.Sprintf("create secret generic basic-auth --from-file=auth -n %v", namespace), pwd, false)
+				common.CheckError(err)
+				smartIdeIngress.Metadata.Annotations.NginxIngressKubernetesIoAuthType = "basic"
+				smartIdeIngress.Metadata.Annotations.NginxIngressKubernetesIoAuthSecret = "basic-auth"
+				common.SmartIDELog.Info(i18nInstance.K8s.Info_log_create_basic_secret_success)
+			}
+
+			// Genetrate AllInOne Ingress Yaml
+			for index, portInfo := range workspaceInfo.Extend.Ports {
+				if portInfo.HostPortDesc == "tools-ssh" {
+					continue
+				}
+				host := fmt.Sprintf("%v-%v-p%v.%v", namespace, portInfo.ServiceName, portInfo.ClientPort, baseDNSName)
+				//Append Rules
+				smartIdeIngress.Spec.Rules = append(smartIdeIngress.Spec.Rules, struct {
+					Host string "yaml:\"host\""
+					HTTP struct {
+						Paths []struct {
+							Path     string "yaml:\"path\""
+							PathType string "yaml:\"pathType\""
+							Backend  struct {
+								Service struct {
+									Name string "yaml:\"name\""
+									Port struct {
+										Number int "yaml:\"number\""
+									} "yaml:\"port\""
+								} "yaml:\"service\""
+							} "yaml:\"backend\""
+						} "yaml:\"paths\""
+					} "yaml:\"http\""
+				}{
+					Host: host,
+					HTTP: struct {
+						Paths []struct {
+							Path     string "yaml:\"path\""
+							PathType string "yaml:\"pathType\""
+							Backend  struct {
+								Service struct {
+									Name string "yaml:\"name\""
+									Port struct {
+										Number int "yaml:\"number\""
+									} "yaml:\"port\""
+								} "yaml:\"service\""
+							} "yaml:\"backend\""
+						} "yaml:\"paths\""
+					}{
+						Paths: []struct {
+							Path     string "yaml:\"path\""
+							PathType string "yaml:\"pathType\""
+							Backend  struct {
+								Service struct {
+									Name string "yaml:\"name\""
+									Port struct {
+										Number int "yaml:\"number\""
+									} "yaml:\"port\""
+								} "yaml:\"service\""
+							} "yaml:\"backend\""
+						}{
+							{
+								Path:     "/",
+								PathType: "Prefix",
+								Backend: struct {
+									Service struct {
+										Name string "yaml:\"name\""
+										Port struct {
+											Number int "yaml:\"number\""
+										} "yaml:\"port\""
+									} "yaml:\"service\""
+								}{
+									Service: struct {
+										Name string "yaml:\"name\""
+										Port struct {
+											Number int "yaml:\"number\""
+										} "yaml:\"port\""
+									}{
+										Name: portInfo.ServiceName,
+										Port: struct {
+											Number int "yaml:\"number\""
+										}{
+											Number: portInfo.ClientPort,
+										},
+									},
+								},
+							},
+						},
+					},
+				})
+
+				//Set Public URL
+				workspaceInfo.Extend.Ports[index].IngressUrl = host
+				workspaceInfo.Extend.Ports[index].IsConnected = host != ""
+			}
+			yamlData, err = yaml.Marshal(&smartIdeIngress)
+			if err != nil {
+				common.SmartIDELog.Error(err)
+			}
 		}
 
 		//7. Save AllInOne Ingress to Temp Yaml
 		k8sDirPath := config.SmartIdeHome
 		common.SmartIDELog.Info(i18nInstance.K8s.Info_log_save_temp_yaml_start)
-		yamlData, err := yaml.Marshal(&smartIdeIngress)
-		if err != nil {
-			common.SmartIDELog.Error(err)
-		}
 
 		tempK8sYamlFileRelativePath := filepath.Join(k8sDirPath, "k8s_ingress_temp.yaml")
 		err = ioutil.WriteFile(tempK8sYamlFileRelativePath, []byte(yamlData), 0777)
@@ -386,4 +572,5 @@ func init() {
 	k8sCmd.Flags().StringP(k8s_flag_mode, "", "", i18nInstance.K8s.Info_help_flag_mode)
 	k8sCmd.Flags().StringP(k8s_flag_servertoken, "", "", i18nInstance.K8s.Info_help_flag_servertoken)
 	k8sCmd.AddCommand(k8s.ApplySSHCmd)
+	k8sCmd.AddCommand(k8s.K8sInitCmd)
 }

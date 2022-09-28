@@ -128,6 +128,8 @@ type WorkspaceInfo struct {
 
 	// 关联的服务端workspace
 	ServerWorkSpace *model.ServerWorkspace
+
+	ResourceID int
 }
 
 // 获取工作区状态值对应的label
@@ -193,6 +195,7 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 		CacheEnv:               CacheEnvEnum_Server,
 		CreatedTime:            serverWorkSpace.CreatedAt,
 		WorkingDirectoryPath:   common.PathJoin("~", model.CONST_REMOTE_REPO_ROOT, projectName),
+		ResourceID:             serverWorkSpace.ResourceID,
 	}
 
 	// 关联的资源信息

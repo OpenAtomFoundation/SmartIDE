@@ -88,6 +88,10 @@ spec:
           echo "smartide k8s applyssh running"
           echo "smartide k8s applyssh $(params.ARGS) --debug --mode server --isInsightDisabled false --serverhost '$(params.SERVER_HOST)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)' "
           smartide k8s applyssh $(params.ARGS) --debug --mode server --isInsightDisabled false --serverhost '$(params.SERVER_HOST)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)'
+        elif [ "$(params.COMMAND)" == "k8sinit" ]; then 
+          echo "smartide k8s init running"
+          echo "smartide k8s init $(params.ARGS) --debug --mode server --isInsightDisabled false --serverhost '$(params.SERVER_HOST)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)' "
+          smartide k8s init $(params.ARGS) --debug --mode server --isInsightDisabled false --serverhost '$(params.SERVER_HOST)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)'
         else
           echo "smartide $(params.COMMAND) $(params.SERVER_WORK_SPACE_NO) running"
 

@@ -366,8 +366,8 @@ type I18nSource struct {
 		Info_start                           string `json:"info_start"`
 		Info_help_short                      string `json:"info_help_short"`
 		Info_help_long                       string `json:"info_help_long"`
-		Info_help_flag_resourceid            string `json:"Info_help_flag_resourceid"`
-		Info_help_flag_ports                 string `json:"Info_help_flag_ports"`
+		Info_help_flag_resourceid            string `json:"info_help_flag_resourceid"`
+		Info_help_flag_ports                 string `json:"info_help_flag_ports"`
 		Info_help_flag_mode                  string `json:"info_help_flag_mode"`
 		Info_help_flag_serverhost            string `json:"info_help_flag_serverhost"`
 		Info_help_flag_servertoken           string `json:"info_help_flag_servertoken"`
@@ -376,6 +376,28 @@ type I18nSource struct {
 		Info_log_service_enable_ssh_success  string `json:"info_log_service_enable_ssh_success"`
 		Info_log_service_disable_ssh_success string `json:"info_log_service_disable_ssh_success"`
 	} `json:"applyssh"`
+
+	K8sInit struct {
+		Info_start                                 string `json:"info_start"`
+		Info_help_short                            string `json:"info_help_short"`
+		Info_help_long                             string `json:"info_help_long"`
+		Info_help_flag_resourceid                  string `json:"Info_help_flag_resourceid"`
+		Info_help_flag_mode                        string `json:"info_help_flag_mode"`
+		Info_help_flag_serverhost                  string `json:"info_help_flag_serverhost"`
+		Info_help_flag_servertoken                 string `json:"info_help_flag_servertoken"`
+		Info_log_init_start                        string `json:"info_log_init_start"`
+		Info_log_init_success                      string `json:"info_log_init_success"`
+		Info_log_apply_ingress_controller_start    string `json:"info_log_apply_ingress_controller_start"`
+		Info_log_apply_ingress_controller_success  string `json:"info_log_apply_ingress_controller_success"`
+		Info_log_create_certificate_secret_start   string `json:"info_log_create_certificate_secret_start"`
+		Info_log_create_certificate_secret_success string `json:"info_log_create_certificate_secret_success"`
+		Info_log_apply_certificate_manager_start   string `json:"info_log_apply_certificate_manager_start"`
+		Info_log_apply_certificate_manager_success string `json:"info_log_apply_certificate_manager_success"`
+		Info_log_apply_storage_class_start         string `json:"info_log_apply_storage_class_start"`
+		Info_log_apply_storage_class_success       string `json:"info_log_apply_storage_class_success"`
+		Info_log_feedback_start                    string `json:"info_log_feedback_start"`
+		Info_log_feedback_success                  string `json:"info_log_feedback_success"`
+	} `json:"k8sinit"`
 
 	Init struct {
 		Info_help_short          string `json:"info_help_short"`

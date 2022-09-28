@@ -317,8 +317,8 @@
         "info_start": "工作区服务 SSH 端口设置开始",
         "info_help_short": "工作区服务 SSH 端口设置",
         "info_help_long": "工作区服务 SSH 端口设置",
-        "Info_help_flag_resourceid": "K8s 资源ID",
-        "Info_help_flag_ports": "SSH 端口全集",
+        "info_help_flag_resourceid": "K8s 资源ID",
+        "info_help_flag_ports": "SSH 端口全集",
         "info_help_flag_mode": "运行模式",
         "info_help_flag_serverhost": "SmartIDE 服务地址",
         "info_help_flag_servertoken": "SmartIDE 服务密钥",
@@ -326,5 +326,26 @@
         "info_log_enable_ssh_success" : "设置 SSH 端口成功！",
         "info_log_service_enable_ssh_success" : "工作区 %v 服务 %v 开启 SSH 端口成功, 使用端口为 %v!",
         "info_log_service_disable_ssh_success" : "工作区 %v 服务 %v 关闭 SSH 端口成功, 释放端口 %v!"
+    },
+    "k8sinit": {
+        "info_start": "k8s资源初始化开始",
+        "info_help_short": "k8s资源初始化",
+        "info_help_long": "k8s资源初始化",
+        "info_help_flag_resourceid": "K8s 资源ID",
+        "info_help_flag_mode": "运行模式",
+        "info_help_flag_serverhost": "SmartIDE 服务地址",
+        "info_help_flag_servertoken": "SmartIDE 服务密钥",
+        "info_log_init_start" : "开始初始化k8s资源...",
+        "info_log_init_success" : "初始化k8s资源成功！",
+        "info_log_apply_ingress_controller_start" : "开始创建 Ingress Controller...",
+        "info_log_apply_ingress_controller_success" : "创建 Ingress Controller 成功！",
+        "info_log_create_certificate_secret_start" : "开始创建证书秘钥...",
+        "info_log_create_certificate_secret_success" : "创建证书秘钥成功！",
+        "info_log_apply_certificate_manager_start" : "开始创建 Certificate Manager...",
+        "info_log_apply_certificate_manager_success" : "创建 Certificate Manager 成功！",
+        "info_log_apply_storage_class_start" : "开始创建 Storage Class...",
+        "info_log_apply_storage_class_success" : "创建 Storage Class 成功！",
+        "info_log_feedback_start" : "开始获取 External IP 并回调反馈结果...",
+        "info_log_feedback_success" : "获取 External IP 并回调反馈结果成功！"
     }
 }
