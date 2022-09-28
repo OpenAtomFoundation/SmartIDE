@@ -78,10 +78,9 @@ var K8sInitCmd = &cobra.Command{
 
 		//3. Kubectl apply ingress controller
 		common.SmartIDELog.Info(i18nInstance.K8sInit.Info_log_apply_ingress_controller_start)
-		ingressControllerYamlPath := "https://raw.githubusercontent.com/zlweicoder/SmartIDE/main/ingress-controller.yaml"
-		//fmt.Sprintf("%v/api/smartide/ingress-controller.yaml", serverHost)
+		ingressControllerYamlPath := fmt.Sprintf("%v/api/smartide/ingress-controller.yaml", serverHost)
 		if resourceInfo.CertType == 2 {
-			ingressControllerYamlPath = "https://raw.githubusercontent.com/zlweicoder/SmartIDE/main/ingress-controller-default-cert.yaml"
+			ingressControllerYamlPath = fmt.Sprintf("%v/api/smartide/ingress-controller-default-cert.yaml", serverHost)
 		}
 		err = k8sUtil.ExecKubectlCommandRealtime(fmt.Sprintf("apply -f %v", ingressControllerYamlPath), "", false)
 		common.SmartIDELog.Info(i18nInstance.K8sInit.Info_log_apply_ingress_controller_success)
@@ -100,8 +99,7 @@ var K8sInitCmd = &cobra.Command{
 		//5. Https dynamic certificate, Kubectl apply cert-manager.yaml & cluster-issuer.yaml
 		if resourceInfo.CertType == 3 {
 			common.SmartIDELog.Info(i18nInstance.K8sInit.Info_log_apply_certificate_manager_start)
-			certManagerYamlPath := "https://raw.githubusercontent.com/zlweicoder/SmartIDE/main/cert-manager.yaml"
-			//fmt.Sprintf("%v/api/smartide/cert-manager.yaml", serverHost)
+			certManagerYamlPath := fmt.Sprintf("%v/api/smartide/cert-manager.yaml", serverHost)
 			err = k8sUtil.ExecKubectlCommandRealtime(fmt.Sprintf("apply -f %v", certManagerYamlPath), "", false)
 			clusterIssuerYamlPath := fmt.Sprintf("%v/api/smartide/cluster-issuer.yaml", serverHost)
 			for {
@@ -116,7 +114,7 @@ var K8sInitCmd = &cobra.Command{
 
 		//6. Kubectl apply storage class
 		common.SmartIDELog.Info(i18nInstance.K8sInit.Info_log_apply_storage_class_start)
-		storageClassYamlPath := "https://raw.githubusercontent.com/zlweicoder/SmartIDE/main/smartide-file-storageclass.yaml"
+		storageClassYamlPath := fmt.Sprintf("%v/api/smartide/smartide-file-storageclass.yaml", serverHost)
 		err = k8sUtil.ExecKubectlCommandRealtime(fmt.Sprintf("apply -f %v", storageClassYamlPath), "", false)
 		common.SmartIDELog.Info(i18nInstance.K8sInit.Info_log_apply_storage_class_success)
 
