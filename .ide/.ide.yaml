@@ -16,6 +16,16 @@ workspace:
       ssh-key: true
     command:
       - go env -w GOPROXY=https://goproxy.cn,direct
+      - go mod tidy
+      - go111MODULE=on go install github.com/uudashr/gopkgs/v2/cmd/gopkgs@latest
+      - go111MODULE=on go install github.com/ramya-rao-a/go-outline@latest
+      - go111MODULE=on go install github.com/cweill/gotests/gotests@latest
+      - go111MODULE=on go install github.com/fatih/gomodifytags@latest
+      - go111MODULE=on go install github.com/josharian/impl@latest
+      - go111MODULE=on go install github.com/haya14busa/goplay/cmd/goplay@latest
+      - go111MODULE=on go install github.com/go-delve/delve/cmd/dlv@latest
+      - go111MODULE=on go install honnef.co/go/tools/cmd/staticcheck@latest
+      - go111MODULE=on go install golang.org/x/tools/gopls@latest
 
   kube-deploy-files: "vscode-vmlc-k8s-deployment.yaml" 
   docker-compose-file: "vscode-vmlc-docker-compose.yaml"

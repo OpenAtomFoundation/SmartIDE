@@ -23,7 +23,7 @@ RUN apt-get update &&                            \
             sudo                                 \
             git                                  \
             wget                                 \
-            udev libsecret-1-dev zip apt-utils vim iputils-ping telnet jq moreutils &&                              \
+            udev libsecret-1-dev zip apt-utils vim iputils-ping telnet jq moreutils lsof strace gdp &&                              \
                                                  \
     # Prevents journald from reading kernel messages from /dev/kmsg
     echo "ReadKMsg=no" >> /etc/systemd/journald.conf &&               \
