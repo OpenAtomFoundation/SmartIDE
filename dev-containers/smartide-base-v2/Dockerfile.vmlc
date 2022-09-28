@@ -99,6 +99,9 @@ RUN mkdir k9s && cd k9s \
     && tar -xf k9s.tgz \
     && install k9s /usr/local/bin/
 
+RUN curl -SL https://github.com/docker/compose/releases/download/v2.7.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+RUN chmod +x /usr/local/bin/docker-compose
+
 # Housekeeping
 RUN apt-get clean -y &&                                            \
     rm -rf                                                         \

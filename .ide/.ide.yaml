@@ -14,9 +14,9 @@ workspace:
     volumes: 
       git-config: true
       ssh-key: true
-    command:
+    command:      
       - go env -w GOPROXY=https://goproxy.cn,direct
-      - go mod tidy
+      - cd cli      
       - go111MODULE=on go install github.com/uudashr/gopkgs/v2/cmd/gopkgs@latest
       - go111MODULE=on go install github.com/ramya-rao-a/go-outline@latest
       - go111MODULE=on go install github.com/cweill/gotests/gotests@latest
@@ -26,7 +26,32 @@ workspace:
       - go111MODULE=on go install github.com/go-delve/delve/cmd/dlv@latest
       - go111MODULE=on go install honnef.co/go/tools/cmd/staticcheck@latest
       - go111MODULE=on go install golang.org/x/tools/gopls@latest
+      - go mod tidy
+      # run in terminal: go run build or go run main.go
 
   kube-deploy-files: "vscode-vmlc-k8s-deployment.yaml" 
   docker-compose-file: "vscode-vmlc-docker-compose.yaml"
-  # default .ide.yaml for cli project
+
+# default .ide.yaml for cli project
+# add json file to: cli/.vscode/launch.json before use vscode debug
+#   {
+#     // Use IntelliSense to learn about possible attributes.
+#     // Hover to view descriptions of existing attributes.
+#     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+#     "version": "0.2.0",
+#     "configurations": [
+#         {
+#             "name": "List",
+#             "type": "go",
+#             "request": "launch",
+#             "trace": "verbose",
+#             "program": "${workspaceFolder}",
+#             "args": [
+#                 "list",
+#                 "-d"
+#             ],
+#             "console": "integratedTerminal",
+#             "mode": "debug",
+#         },
+#     ]
+# }
