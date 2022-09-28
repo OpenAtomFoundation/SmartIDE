@@ -120,7 +120,15 @@ var K8sInitCmd = &cobra.Command{
 
 		//7. Get Ingress Controller and Callback
 		common.SmartIDELog.Info(i18nInstance.K8sInit.Info_log_feedback_start)
-		externalIp, err := k8sUtil.ExecKubectlCommandWithOutputRealtime("get services --namespace ingress-nginx ingress-nginx-controller --output jsonpath='{.status.loadBalancer.ingress[0].ip}'", "")
+		var externalIp string
+		for {
+			externalIp, err = k8sUtil.ExecKubectlCommandWithOutputRealtime("get services --namespace ingress-nginx ingress-nginx-controller --output jsonpath='{.status.loadBalancer.ingress[0].ip}'", "")
+			if externalIp != "" {
+				break
+			}
+			time.Sleep(5 * time.Second)
+		}
+		common.SmartIDELog.Info(fmt.Sprintf("External IP : %v", externalIp))
 		resourceInfo.IP = externalIp
 		err = server.UpdateResourceByID(currentAuth, resourceInfo)
 		common.SmartIDELog.Info(i18nInstance.K8sInit.Info_log_feedback_success)
