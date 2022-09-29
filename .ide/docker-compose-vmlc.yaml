@@ -1,7 +1,7 @@
 version : '3'
 services:
   smartide-dev:
-    image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-base-v2-vscode-vmlc:latest
+    image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-golang-v2-vscode-vmlc:latest
     restart: always
     runtime: sysbox-runc
     hostname: smartide-dev
