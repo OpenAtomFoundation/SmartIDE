@@ -32,5 +32,6 @@ RUN echo 'PATH=${M2_HOME}/bin:${PATH}' >> .bashrc
 
 RUN rm -rf apache-maven-3.8.6-bin.tar.gz apache-maven-3.8.6 
 
-RUN curl -SL https://github.com/docker/compose/releases/download/v2.7.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
-RUN chmod +x /usr/local/bin/docker-compose
+# alread move to base vmlc image
+# RUN curl -SL https://github.com/docker/compose/releases/download/v2.7.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+# RUN chmod +x /usr/local/bin/docker-compose

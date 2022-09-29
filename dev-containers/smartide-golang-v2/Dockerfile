@@ -26,13 +26,16 @@ ENV GOROOT=/usr/local/go
 ENV PATH=/usr/local/go/bin:$PATH
 ENV PATH=/home/smartide/go/bin:$PATH
 
-RUN mkdir -p /home/smartide && mkdir -p /home/smartide/go && \
+RUN mkdir -p /home/smartide && mkdir -p /home/smartide/go mkdir -p /home/smartide/tmp && \
     mkdir -p "$GOPATH/src" "$GOPATH/bin" "$GOPATH/pkg/mod" && chmod -R 777 "$GOPATH" && \
     echo "export PATH=/usr/local/go/bin:/home/smartide/go/bin:$PATH" >> /etc/profile
 
 RUN wget -O go.tgz https://go.dev/dl/go$GOLANG_VERSION.linux-amd64.tar.gz --progress=dot:giga \
     && tar -C /usr/local -xzf go.tgz \
     && rm -rf go.tgz
+
+#指定go临时目录
+RUN go env -w GOTMPDIR="/home/smartide/tmp"
 
 # hugo install $HUGO_PKG_URL
 RUN wget https://github.com/gohugoio/hugo/releases/download/v0.103.1/hugo_extended_0.103.1_linux-amd64.deb -O hugo-Linux-64bit.deb \

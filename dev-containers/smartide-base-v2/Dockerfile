@@ -15,7 +15,7 @@ ENV LESSCHARSET=utf-8
 # sshd
 RUN mkdir /var/run/sshd && \
     apt-get update && \
-    apt-get -y install --no-install-recommends supervisor net-tools openssh-server curl git wget sudo ca-certificates gosu libsecret-1-dev zip apt-utils vim iputils-ping telnet jq moreutils && \
+    apt-get -y install --no-install-recommends supervisor net-tools openssh-server curl git wget sudo ca-certificates gosu libsecret-1-dev zip apt-utils vim iputils-ping telnet jq moreutils lsof strace && \
     apt-get clean && \
     apt-get autoremove -y && \
     rm -rf /tmp/* /var/lib/apt/lists/* /var/tmp/*
