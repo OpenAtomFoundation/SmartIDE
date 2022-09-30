@@ -66,7 +66,27 @@ sudo vim /etc/sudoers
 ## 在 Allow root to run any commands anywhere 的root下方设置sudo免密权限
 smartide   ALL=(ALL) NOPASSWD: ALL
 ```
-完成以上操作后用所创建的账号重新SSH登录系统，比如以上使用的是 smartide 账号，那么你的登录指令是：
+## 配置用户使用bash作为默认的shell
+
+SmartIDE安装脚本 使用一些特定的bash指令，因此请确保你所使用的用户或者以上所创建的smartide用户的默认shell为bash。
+
+```shell
+vim /etc/passwd
+```
+
+更新 
+
+```shell
+smartide:x:1000:1000::/home/smartide:/bin/sh 
+```
+
+改为
+
+```shell
+smartide:x:1000:1000::/home/smartide:/bin/bash
+```
+
+完成以上操作后使用所创建的账号重新SSH登录系统，比如以上使用的是 smartide 账号，那么你的登录指令是：
 ```
 ssh smartide@<server ip address> -p <server SSH port>
 ```
@@ -230,6 +250,14 @@ docker restart gva-server
 
 ### 验证Server工作情况
 可以参考 [Server快速开始](/zh/docs/quickstart/server) 文档完成主机资源注册和工作区创建操作，即可验证当前SmartIDE Server的功能工作正常。
+
+## 常见安装使用问题
+- 问题1. MiniKube启动失败，导致新建工作区报错。
+  - 原因1：MiniKube启动，不支持root账号，所以导致MiniKube启动失败，这样在新建工作区时，就会导致访问不到Tekton流水线，从而报错。
+  - 原因2：默认脚本中MiniKube启动时指定CPU为2核，内存为4G。如果准备环境配置过低，则无法正常启动MiniKube，导致部署错误，从而新建工作区时报错。
+
+- 问题2. 安装使用操作系统为非Ubuntu，导致安装出错。
+  - 原因：目前安装脚本只支持Ubuntu版本，请根据环境要求准备环境。
 
 ## 技术支持
 如果您在以上安装过程或者日常使用过程中遇到问题，请通过提交 Issue 的方式与我们取得联系。
