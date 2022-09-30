@@ -6,12 +6,14 @@
 
 FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-dotnet-v2:latest
 
-USER root
+USER root 
 
 WORKDIR /home
 #复制IDE文件
 COPY openvscode-images opvscode
 
+#fix 1686
+RUN ln -sf /home/opvscode/bin/remote-cli/openvscode-server /home/opvscode/bin/remote-cli/code
 RUN dir /home/opvscode/bin/remote-cli
 
 ENV LANG=C.UTF-8 \
