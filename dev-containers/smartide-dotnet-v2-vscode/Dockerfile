@@ -12,7 +12,7 @@ WORKDIR /home
 #复制IDE文件
 COPY openvscode-images opvscode
 
-RUN ll -ls /home/opvscode/bin/remote-cli
+RUN dir /home/opvscode/bin/remote-cli
 
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
