@@ -26,7 +26,7 @@ ENV GOROOT=/usr/local/go
 ENV PATH=/usr/local/go/bin:$PATH
 ENV PATH=/home/smartide/go/bin:$PATH
 
-RUN mkdir -p /home/smartide && mkdir -p /home/smartide/go mkdir -p /home/smartide/tmp && \
+RUN mkdir -p /home/smartide && mkdir -p /home/smartide/go && mkdir -p /home/smartide/tmp && chmod -R 777 /home/smartide/tmp && \
     mkdir -p "$GOPATH/src" "$GOPATH/bin" "$GOPATH/pkg/mod" && chmod -R 777 "$GOPATH" && \
     echo "export PATH=/usr/local/go/bin:/home/smartide/go/bin:$PATH" >> /etc/profile
 
