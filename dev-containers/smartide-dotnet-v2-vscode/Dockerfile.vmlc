@@ -25,6 +25,11 @@ RUN  ln -sf /home/smartide/.nvm/versions/node/v$NODE_VERSION/bin/node /home/opvs
 COPY openvscode.service /lib/systemd/system/
 COPY startup-openvscode.sh /idesh/startup-openvscode.sh
 
+#替换Smartide插件市场
+WORKDIR opvscode
+RUN find ./  -name "*.js" | xargs perl -pi -e 's|https://open-vsx.org|https://marketplace.smartide.cn|g' 
+RUN find ./  -name "*.json" | xargs perl -pi -e 's|https://open-vsx.org|https://marketplace.smartide.cn|g'
+
 RUN chmod +x /idesh/startup-openvscode.sh &&               \
     ln -sf /lib/systemd/system/openvscode.service          \
         /etc/systemd/system/multi-user.target.wants/openvscode.service

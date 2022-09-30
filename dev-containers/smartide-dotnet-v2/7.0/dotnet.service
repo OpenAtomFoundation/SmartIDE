@@ -1,0 +1,12 @@
+[Unit]
+Description=Install Dotnet Sdk
+After=docker.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+ExecStart=/idesh/install-dotnet.sh
+ExecReload=/idesh/install-dotnet.sh
+
+[Install]
+WantedBy=multi-user.target
