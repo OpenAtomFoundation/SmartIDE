@@ -102,11 +102,14 @@ var K8sInitCmd = &cobra.Command{
 			certManagerYamlPath := fmt.Sprintf("%v/api/smartide/cert-manager.yaml", serverHost)
 			err = k8sUtil.ExecKubectlCommandRealtime(fmt.Sprintf("apply -f %v", certManagerYamlPath), "", false)
 			clusterIssuerYamlPath := fmt.Sprintf("%v/api/smartide/cluster-issuer.yaml", serverHost)
-			for {
-				err = k8sUtil.ExecKubectlCommandRealtime(fmt.Sprintf("apply -f %v", clusterIssuerYamlPath), "", false)
-				if err == nil {
+			maxRetryCount := 30
+			retryCount := 1
+			for retryCount <= maxRetryCount {
+				clusterIssuerErr := k8sUtil.ExecKubectlCommandRealtime(fmt.Sprintf("apply -f %v", clusterIssuerYamlPath), "", false)
+				if clusterIssuerErr == nil {
 					break
 				}
+				retryCount++
 				time.Sleep(5 * time.Second)
 			}
 			common.SmartIDELog.Info(i18nInstance.K8sInit.Info_log_apply_certificate_manager_success)
@@ -121,19 +124,19 @@ var K8sInitCmd = &cobra.Command{
 		//7. Get Ingress Controller and Callback
 		common.SmartIDELog.Info(i18nInstance.K8sInit.Info_log_feedback_start)
 		externalIp := ""
-		maxRetryCount := 30
-		retryCount := 1
-		for retryCount <= maxRetryCount {
+		getIPMaxRetryCount := 30
+		getIPRetryCount := 1
+		for getIPRetryCount <= getIPMaxRetryCount {
 			externalIp, err = k8sUtil.ExecKubectlCommandWithOutputRealtime("get services --namespace ingress-nginx ingress-nginx-controller --output jsonpath='{.status.loadBalancer.ingress[0].ip}'", "")
 			if externalIp != "" {
 				break
 			}
-			retryCount++
-			time.Sleep(10 * time.Second)
+			getIPRetryCount++
+			time.Sleep(5 * time.Second)
 		}
 		if externalIp == "" {
 			externalIp = "0.0.0.0"
-			common.SmartIDELog.Info(fmt.Sprintf("获取 External IP 超过最大尝试次数(%v * 10s)", maxRetryCount))
+			common.SmartIDELog.Info(fmt.Sprintf("获取 External IP 超过最大尝试次数(%v * 10s)", getIPMaxRetryCount))
 		} else {
 			common.SmartIDELog.Info(fmt.Sprintf("External IP : %v", externalIp))
 		}
