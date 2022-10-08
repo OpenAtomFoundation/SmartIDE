@@ -78,10 +78,9 @@ var K8sInitCmd = &cobra.Command{
 
 		//3. Kubectl apply ingress controller
 		common.SmartIDELog.Info(i18nInstance.K8sInit.Info_log_apply_ingress_controller_start)
-		ingressControllerYamlPath := "https://raw.githubusercontent.com/zlweicoder/SmartIDE/main/ingress-controller.yaml"
-		//fmt.Sprintf("%v/api/smartide/ingress-controller.yaml", serverHost)
+		ingressControllerYamlPath := fmt.Sprintf("%v/api/smartide/ingress-controller.yaml", serverHost)
 		if resourceInfo.CertType == 2 {
-			ingressControllerYamlPath = "https://raw.githubusercontent.com/zlweicoder/SmartIDE/main/ingress-controller-default-cert.yaml"
+			ingressControllerYamlPath = fmt.Sprintf("%v/api/smartide/ingress-controller-default-cert.yaml", serverHost)
 		}
 		err = k8sUtil.ExecKubectlCommandRealtime(fmt.Sprintf("apply -f %v", ingressControllerYamlPath), "", false)
 		common.SmartIDELog.Info(i18nInstance.K8sInit.Info_log_apply_ingress_controller_success)
@@ -100,15 +99,17 @@ var K8sInitCmd = &cobra.Command{
 		//5. Https dynamic certificate, Kubectl apply cert-manager.yaml & cluster-issuer.yaml
 		if resourceInfo.CertType == 3 {
 			common.SmartIDELog.Info(i18nInstance.K8sInit.Info_log_apply_certificate_manager_start)
-			certManagerYamlPath := "https://raw.githubusercontent.com/zlweicoder/SmartIDE/main/cert-manager.yaml"
-			//fmt.Sprintf("%v/api/smartide/cert-manager.yaml", serverHost)
+			certManagerYamlPath := fmt.Sprintf("%v/api/smartide/cert-manager.yaml", serverHost)
 			err = k8sUtil.ExecKubectlCommandRealtime(fmt.Sprintf("apply -f %v", certManagerYamlPath), "", false)
 			clusterIssuerYamlPath := fmt.Sprintf("%v/api/smartide/cluster-issuer.yaml", serverHost)
-			for {
-				err = k8sUtil.ExecKubectlCommandRealtime(fmt.Sprintf("apply -f %v", clusterIssuerYamlPath), "", false)
-				if err == nil {
+			maxRetryCount := 30
+			retryCount := 1
+			for retryCount <= maxRetryCount {
+				clusterIssuerErr := k8sUtil.ExecKubectlCommandRealtime(fmt.Sprintf("apply -f %v", clusterIssuerYamlPath), "", false)
+				if clusterIssuerErr == nil {
 					break
 				}
+				retryCount++
 				time.Sleep(5 * time.Second)
 			}
 			common.SmartIDELog.Info(i18nInstance.K8sInit.Info_log_apply_certificate_manager_success)
@@ -116,13 +117,29 @@ var K8sInitCmd = &cobra.Command{
 
 		//6. Kubectl apply storage class
 		common.SmartIDELog.Info(i18nInstance.K8sInit.Info_log_apply_storage_class_start)
-		storageClassYamlPath := "https://raw.githubusercontent.com/zlweicoder/SmartIDE/main/smartide-file-storageclass.yaml"
+		storageClassYamlPath := fmt.Sprintf("%v/api/smartide/smartide-file-storageclass.yaml", serverHost)
 		err = k8sUtil.ExecKubectlCommandRealtime(fmt.Sprintf("apply -f %v", storageClassYamlPath), "", false)
 		common.SmartIDELog.Info(i18nInstance.K8sInit.Info_log_apply_storage_class_success)
 
 		//7. Get Ingress Controller and Callback
 		common.SmartIDELog.Info(i18nInstance.K8sInit.Info_log_feedback_start)
-		externalIp, err := k8sUtil.ExecKubectlCommandWithOutputRealtime("get services --namespace ingress-nginx ingress-nginx-controller --output jsonpath='{.status.loadBalancer.ingress[0].ip}'", "")
+		externalIp := ""
+		getIPMaxRetryCount := 30
+		getIPRetryCount := 1
+		for getIPRetryCount <= getIPMaxRetryCount {
+			externalIp, err = k8sUtil.ExecKubectlCommandWithOutputRealtime("get services --namespace ingress-nginx ingress-nginx-controller --output jsonpath='{.status.loadBalancer.ingress[0].ip}'", "")
+			if externalIp != "" {
+				break
+			}
+			getIPRetryCount++
+			time.Sleep(5 * time.Second)
+		}
+		if externalIp == "" {
+			externalIp = "0.0.0.0"
+			common.SmartIDELog.Info(fmt.Sprintf("获取 External IP 超过最大尝试次数(%v * 10s)", getIPMaxRetryCount))
+		} else {
+			common.SmartIDELog.Info(fmt.Sprintf("External IP : %v", externalIp))
+		}
 		resourceInfo.IP = externalIp
 		err = server.UpdateResourceByID(currentAuth, resourceInfo)
 		common.SmartIDELog.Info(i18nInstance.K8sInit.Info_log_feedback_success)

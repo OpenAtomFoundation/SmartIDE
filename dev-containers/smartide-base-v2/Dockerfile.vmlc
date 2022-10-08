@@ -23,7 +23,7 @@ RUN apt-get update &&                            \
             sudo                                 \
             git                                  \
             wget                                 \
-            udev libsecret-1-dev zip apt-utils vim iputils-ping telnet jq moreutils &&                              \
+            udev libsecret-1-dev zip apt-utils vim iputils-ping telnet jq moreutils lsof strace &&                              \
                                                  \
     # Prevents journald from reading kernel messages from /dev/kmsg
     echo "ReadKMsg=no" >> /etc/systemd/journald.conf &&               \
@@ -98,6 +98,9 @@ RUN mkdir k9s && cd k9s \
     && curl -Lo k9s.tgz https://github.com/derailed/k9s/releases/download/v0.25.18/k9s_Linux_x86_64.tar.gz \
     && tar -xf k9s.tgz \
     && install k9s /usr/local/bin/
+
+RUN curl -SL https://github.com/docker/compose/releases/download/v2.7.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+RUN chmod +x /usr/local/bin/docker-compose
 
 # Housekeeping
 RUN apt-get clean -y &&                                            \
