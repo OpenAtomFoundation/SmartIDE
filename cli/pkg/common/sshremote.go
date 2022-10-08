@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-22 09:29:06
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-10-08 11:31:49
  */
 package common
 
@@ -521,8 +521,16 @@ func (instance *SSHRemote) ExecSSHkeyPolicy(no string, cmd *cobra.Command) {
 	}
 
 	if len(ws) > 0 {
-		idRsa = ws[len(ws)-1].IdRsA
-		idRsaPub = ws[len(ws)-1].IdRsAPub
+		detail := Detail{}
+		if ws[len(ws)-1].Detail != "" {
+			err := json.Unmarshal([]byte(ws[len(ws)-1].Detail), &detail)
+			if err != nil {
+				return
+			}
+			idRsa = detail.IdRsa
+			idRsaPub = detail.IdRsaPub
+		}
+
 	}
 	// 远程公私钥都不为空
 	if strings.ReplaceAll(remoteRsaPri, "\n", "") != "" && strings.ReplaceAll(remoteRsaPub, "\n", "") != "" {
@@ -614,7 +622,14 @@ func GetBasicPassword(no string, cmd *cobra.Command) (password string, err error
 	}
 
 	if len(ws) > 0 {
-		password = ws[len(ws)-1].Password
+
+		detail := Detail{}
+		if ws[len(ws)-1].Detail != "" {
+			err = json.Unmarshal([]byte(ws[len(ws)-1].Detail), &detail)
+			password = detail.Password
+
+		}
+
 	}
 	return password, err
 }
@@ -1020,24 +1035,35 @@ type GVA_MODEL struct {
 	CreatedAt time.Time // 创建时间
 	UpdatedAt time.Time // 更新时间
 }
+
 type WorkspacePolicy struct {
 	GVA_MODEL
-	Wid                string `json:"wid" form:"wid" `
-	Name               string `json:"name" form:"name"`
-	Status             *bool  `json:"status" form:"status" ` // 状态
-	JustOne            *bool  `json:"justone" form:"justone" `
-	Schdule            int    `json:"schdule" form:"schdule" `
-	Type               int    `json:"type" form:"type" `
-	Tasks              string `json:"tasks" form:"tasks" `
-	OwnerGUID          string `json:"ownerGuid" form:"ownerGuid"`
-	GitConifgContent   string `json:"gitConfigContent" form:"gitConfigContent" `
-	IdRsA              string `json:"id_rsa" form:"id_rsa"`
-	IdRsAPub           string `json:"id_rsa_pub" form:"id_rsa_pub" `
-	BlockCommit        *bool  `json:"blockCommit"`
-	TeamID             int    `json:"teamId"`
-	ScanerServerConfig string `json:"scanerServerConfig"`
-	UserName           string `json:"username"`
-	Password           string `json:"password"`
+	Wid     string `json:"wid" form:"wid" `
+	Name    string `json:"name" form:"name"`
+	Status  *bool  `json:"status" form:"status" ` // 状态
+	JustOne *bool  `json:"justone" form:"justone" `
+	Schdule int    `json:"schdule"`
+	Type    int    `json:"type" form:"type" `
+	Tasks   []Task `json:"tasks" form:"tasks" `
+
+	OwnerGUID string `json:"ownerGuid" form:"ownerGuid" `
+	Detail    string `json:"detail" form:"detail"`
+}
+type Task struct {
+	GVA_MODEL
+	Sort              int    `json:"sort" form:"sort" `
+	Content           string `json:"content" form:"content" `
+	Status            int    `json:"status" form:"status"`
+	Label             string `json:"lable" form:"lable"`
+	WorkspacePolicyId uint
+}
+
+type Detail struct {
+	GitConfigContent string `json:"gitConfigContent"`
+	IdRsa            string `json:"id_rsa"`
+	IdRsaPub         string `json:"id_rsa_pub"`
+	Username         string `json:"username"`
+	Password         string `json:"password"`
 }
 
 type WSPolicyResponse struct {

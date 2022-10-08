@@ -1,13 +1,14 @@
 /*
  * @Date: 2022-03-23 16:15:38
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-24 08:51:55
- * @FilePath: /cli/cmd/start/k8s.go
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-10-08 11:35:18
+ * @FilePath: /smartide/cli/cmd/start/k8s.go
  */
 
 package start
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -243,20 +244,26 @@ func setSSHPWD(tempK8sConfig config.SmartIdeK8SConfig, cmd *cobra.Command) (err 
 func execSSHPolicy(workspaceInfo workspace.WorkspaceInfo, cmd *cobra.Command) {
 	if ws, err := common.GetWSPolicies(workspaceInfo.ServerWorkSpace.NO, "2", cmd); err == nil {
 		if len(ws) > 0 {
-			idRsa := ws[len(ws)-1].IdRsA
-			idRsaPub := ws[len(ws)-1].IdRsAPub
-			if homeDir, err := os.UserHomeDir(); err == nil {
-				path := filepath.Join(homeDir, ".ssh")
-				if _, err := common.PathExists(path, 0700); err == nil {
+			detail := common.Detail{}
+			if ws[len(ws)-1].Detail != "" {
+				if err := json.Unmarshal([]byte(ws[len(ws)-1].Detail), &detail); err == nil {
+					idRsa := detail.IdRsa
+					idRsaPub := detail.IdRsaPub
+					if homeDir, err := os.UserHomeDir(); err == nil {
+						path := filepath.Join(homeDir, ".ssh")
+						if _, err := common.PathExists(path, 0700); err == nil {
 
-					commad := `echo -e 'Host *\n	StrictHostKeyChecking no' >>  ~/.ssh/config && sudo chmod 700 ~/.ssh/config`
-					common.RunCmd(commad, true)
-					commad = fmt.Sprintf(`echo -e '%v' >>  ~/.ssh/id_rsa && sudo chmod 600 ~/.ssh/id_rsa`, idRsa)
-					common.RunCmd(commad, true)
-					commad = fmt.Sprintf(`echo -e '%v' >>  ~/.ssh/id_rsa.pub && sudo chmod 644 ~/.ssh/id_rsa.pub`, idRsaPub)
-					common.RunCmd(commad, true)
+							commad := `echo -e 'Host *\n	StrictHostKeyChecking no' >>  ~/.ssh/config && sudo chmod 700 ~/.ssh/config`
+							common.RunCmd(commad, true)
+							commad = fmt.Sprintf(`echo -e '%v' >>  ~/.ssh/id_rsa && sudo chmod 600 ~/.ssh/id_rsa`, idRsa)
+							common.RunCmd(commad, true)
+							commad = fmt.Sprintf(`echo -e '%v' >>  ~/.ssh/id_rsa.pub && sudo chmod 644 ~/.ssh/id_rsa.pub`, idRsaPub)
+							common.RunCmd(commad, true)
 
+						}
+					}
 				}
+
 			}
 
 		}
