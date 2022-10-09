@@ -815,9 +815,11 @@ type WorkspaceIgnoreTLSIngress struct {
 		Name        string `yaml:"name"`
 		Namespace   string `yaml:"namespace"`
 		Annotations struct {
-			NginxIngressKubernetesIoAuthType   string `yaml:"nginx.ingress.kubernetes.io/auth-type"`
-			NginxIngressKubernetesIoAuthSecret string `yaml:"nginx.ingress.kubernetes.io/auth-secret"`
-			NginxIngressKubernetesIoUseRegex   string `yaml:"nginx.ingress.kubernetes.io/use-regex"`
+			NginxIngressKubernetesIoAuthType         string `yaml:"nginx.ingress.kubernetes.io/auth-type"`
+			NginxIngressKubernetesIoAuthSecret       string `yaml:"nginx.ingress.kubernetes.io/auth-secret"`
+			NginxIngressKubernetesIoUseRegex         string `yaml:"nginx.ingress.kubernetes.io/use-regex"`
+			NginxIngressKubernetesIoForceSSLRedirect string `yaml:"nginx.ingress.kubernetes.io/force-ssl-redirect"`
+			NginxIngressKubernetesIoSSLPassThrough   string `yaml:"nginx.ingress.kubernetes.io/ssl-passthrough"`
 		} `yaml:"annotations"`
 	} `yaml:"metadata"`
 	Spec struct {

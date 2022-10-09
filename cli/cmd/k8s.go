@@ -163,6 +163,8 @@ var k8sCmd = &cobra.Command{
 
 		//5. Construct Ingress Yaml Object
 		var yamlData []byte
+
+		//Use WorkspaceIngress construct when certificate policy is dynamic https, otherwise use WorkspaceIgnoreTLSIngress construct
 		if resourceInfo.CertType == 3 {
 			smartIdeIngress := &k8sLib.WorkspaceIngress{
 				APIVersion: "networking.k8s.io/v1",
@@ -364,17 +366,21 @@ var k8sCmd = &cobra.Command{
 					Name        string "yaml:\"name\""
 					Namespace   string "yaml:\"namespace\""
 					Annotations struct {
-						NginxIngressKubernetesIoAuthType   string "yaml:\"nginx.ingress.kubernetes.io/auth-type\""
-						NginxIngressKubernetesIoAuthSecret string "yaml:\"nginx.ingress.kubernetes.io/auth-secret\""
-						NginxIngressKubernetesIoUseRegex   string "yaml:\"nginx.ingress.kubernetes.io/use-regex\""
+						NginxIngressKubernetesIoAuthType         string "yaml:\"nginx.ingress.kubernetes.io/auth-type\""
+						NginxIngressKubernetesIoAuthSecret       string "yaml:\"nginx.ingress.kubernetes.io/auth-secret\""
+						NginxIngressKubernetesIoUseRegex         string "yaml:\"nginx.ingress.kubernetes.io/use-regex\""
+						NginxIngressKubernetesIoForceSSLRedirect string "yaml:\"nginx.ingress.kubernetes.io/force-ssl-redirect\""
+						NginxIngressKubernetesIoSSLPassThrough   string "yaml:\"nginx.ingress.kubernetes.io/ssl-passthrough\""
 					} "yaml:\"annotations\""
 				}{
 					Name:      "ingress-" + namespace,
 					Namespace: namespace,
 					Annotations: struct {
-						NginxIngressKubernetesIoAuthType   string "yaml:\"nginx.ingress.kubernetes.io/auth-type\""
-						NginxIngressKubernetesIoAuthSecret string "yaml:\"nginx.ingress.kubernetes.io/auth-secret\""
-						NginxIngressKubernetesIoUseRegex   string "yaml:\"nginx.ingress.kubernetes.io/use-regex\""
+						NginxIngressKubernetesIoAuthType         string "yaml:\"nginx.ingress.kubernetes.io/auth-type\""
+						NginxIngressKubernetesIoAuthSecret       string "yaml:\"nginx.ingress.kubernetes.io/auth-secret\""
+						NginxIngressKubernetesIoUseRegex         string "yaml:\"nginx.ingress.kubernetes.io/use-regex\""
+						NginxIngressKubernetesIoForceSSLRedirect string "yaml:\"nginx.ingress.kubernetes.io/force-ssl-redirect\""
+						NginxIngressKubernetesIoSSLPassThrough   string "yaml:\"nginx.ingress.kubernetes.io/ssl-passthrough\""
 					}{
 						NginxIngressKubernetesIoUseRegex: "true",
 					},
@@ -418,6 +424,12 @@ var k8sCmd = &cobra.Command{
 						} "yaml:\"http\""
 					}{},
 				},
+			}
+
+			// Auto Redirect http to https when certificate policy is static https
+			if resourceInfo.CertType == 2 {
+				smartIdeIngress.Metadata.Annotations.NginxIngressKubernetesIoForceSSLRedirect = "true"
+				smartIdeIngress.Metadata.Annotations.NginxIngressKubernetesIoSSLPassThrough = "true"
 			}
 
 			// Create Basic Secret
