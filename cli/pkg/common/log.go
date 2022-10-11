@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-23 09:09:17
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-10-11 17:40:11
  */
 package common
 
@@ -25,8 +25,9 @@ import (
 )
 
 type smartIDELogStruct struct {
-	Ws_id    string
-	ParentId int
+	Ws_id      string
+	ParentId   int
+	TekEventId string
 }
 
 var SmartIDELog = &smartIDELogStruct{Ws_id: "", ParentId: 0}

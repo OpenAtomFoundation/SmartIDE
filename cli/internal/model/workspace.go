@@ -1,8 +1,8 @@
 /*
  * @Author: kenan
  * @Date: 2022-02-15 19:32:44
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-09 09:57:36
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-10-11 17:52:15
  * @FilePath: /cli/internal/model/workspace.go
  * @Description:
  *
@@ -140,15 +140,16 @@ type ServerWorkspace struct {
 
 type ServerWorkspaceLog struct {
 	GVA_MODEL
-	Title    string     `json:"title"`
-	ParentId int        `json:"parentID" `
-	Content  string     `json:"content" `
-	Ws_id    string     `json:"ws_id" `
-	Level    int        `json:"level" `
-	Type     int        `json:"type" `
-	StartAt  *time.Time `json:"startAt" `
-	EndAt    *time.Time `json:"endAt" `
-	Status   int        `json:"status" `
+	Title      string     `json:"title"`
+	ParentId   int        `json:"parentID" `
+	Content    string     `json:"content" `
+	Ws_id      string     `json:"ws_id" `
+	Level      int        `json:"level" `
+	Type       int        `json:"type" `
+	StartAt    *time.Time `json:"startAt" `
+	EndAt      *time.Time `json:"endAt" `
+	Status     int        `json:"status" `
+	TekEventId string     `json:"tekEventId"`
 }
 
 // 资源

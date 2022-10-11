@@ -37,10 +37,12 @@ import (
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
-var isDebug bool = false
-
-var instanceI18nMain = i18n.GetInstance().Main
+var (
+	serverEventID    string = "servereventid"
+	instanceI18nMain        = i18n.GetInstance().Main
+	isDebug          bool   = false
+	cfgFile          string
+)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -48,6 +50,7 @@ var rootCmd = &cobra.Command{
 	Short: instanceI18nMain.Info_help_short,
 	Long:  instanceI18nMain.Info_help_long, // logo only show in init
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		fflags := cmd.Flags()
 
 		// appInsight 是否开启收集
 		mode, _ := cmd.Flags().GetString("mode")
@@ -106,6 +109,8 @@ var rootCmd = &cobra.Command{
 			logLevel = "debug"
 		}
 		common.SmartIDELog.InitLogger(logLevel)
+		common.SmartIDELog.TekEventId, _ = fflags.GetString(serverEventID)
+
 	},
 }
 
