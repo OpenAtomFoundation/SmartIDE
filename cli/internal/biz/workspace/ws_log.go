@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-03-14 09:54:06
  * @LastEditors: kenan
- * @LastEditTime: 2022-10-11 17:52:31
+ * @LastEditTime: 2022-10-11 18:02:41
  * @FilePath: /cli/internal/biz/workspace/ws_log.go
  * @Description:
  *
@@ -157,7 +157,7 @@ func UpdateWsLog(token string, apiHost string, wslog model.ServerWorkspaceLog) (
 	json.Unmarshal(data, &wslogMap)
 	url := fmt.Sprint(apiHost, "/api/smartide/wslog/update")
 	httpClient := common.CreateHttpClientEnableRetry()
-	response, err = httpClient.PostJson(url, wslogMap, map[string]string{"Content-Type": "application/json", "x-token": token})
+	response, err = httpClient.Put(url, wslogMap, map[string]string{"Content-Type": "application/json", "x-token": token})
 	if response != "" {
 		l := &model.WorkspaceLogResponse{}
 		//err = json.Unmarshal([]byte(response), l)
