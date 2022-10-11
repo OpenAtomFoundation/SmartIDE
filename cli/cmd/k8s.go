@@ -69,22 +69,23 @@ var k8sCmd = &cobra.Command{
 					workspaceNo = no
 				}
 			}
-			if pid, err := workspace.GetParentId(workspaceNo, workspaceIngressAction, currentAuth.Token.(string), currentAuth.LoginUrl); err == nil && pid > 0 {
+			/* 			if pid, err := workspace.GetParentId(workspaceNo, workspaceIngressAction, currentAuth.Token.(string), currentAuth.LoginUrl); err == nil && pid > 0 {
+			   				common.SmartIDELog.Ws_id = workspaceNo
+			   				common.SmartIDELog.ParentId = pid
+			   			} else {
+
+			   			} */
+
+			title := "??"
+			if workspaceIngressAction == workspace.ActionEnum_Ingress_Enable {
+				title = "创建Ingress"
+			} else if workspaceIngressAction == workspace.ActionEnum_Ingress_Disable {
+				title = "删除Ingress"
+			}
+			pid, err := workspace.CreateWsLog(workspaceNo, serverToken, currentAuth.LoginUrl, title, "")
+			if err == nil {
 				common.SmartIDELog.Ws_id = workspaceNo
 				common.SmartIDELog.ParentId = pid
-			} else {
-				title := "??"
-				if workspaceIngressAction == workspace.ActionEnum_Ingress_Enable {
-					title = "创建Ingress"
-				} else if workspaceIngressAction == workspace.ActionEnum_Ingress_Disable {
-					title = "删除Ingress"
-				}
-				if err := workspace.CreateWsLog(workspaceNo, serverToken, currentAuth.LoginUrl, title, ""); err == nil {
-					if pid, err := workspace.GetParentId(workspaceNo, workspaceIngressAction, currentAuth.Token.(string), currentAuth.LoginUrl); err == nil && pid > 0 {
-						common.SmartIDELog.Ws_id = workspaceNo
-						common.SmartIDELog.ParentId = pid
-					}
-				}
 			}
 		}
 		common.SmartIDELog.Info("-----------------------")
