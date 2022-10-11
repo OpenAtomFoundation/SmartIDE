@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-03-14 09:54:06
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-22 09:36:12
+ * @LastEditTime: 2022-10-11 16:14:11
  * @FilePath: /cli/internal/biz/workspace/ws_log.go
  * @Description:
  *
@@ -121,7 +121,7 @@ func GetWorkspaceNo(wid string, token string, apiHost string) (no string, err er
 
 }
 
-func CreateWsLog(wid string, token string, apiHost string, title string, content string) (err error) {
+func CreateWsLog(wid string, token string, apiHost string, title string, content string) (parentId int, err error) {
 	var response = ""
 	url := fmt.Sprint(apiHost, "/api/smartide/wslog/create")
 	httpClient := common.CreateHttpClientEnableRetry()
@@ -140,9 +140,9 @@ func CreateWsLog(wid string, token string, apiHost string, title string, content
 		//err = json.Unmarshal([]byte(response), l)
 		if err = json.Unmarshal([]byte(response), l); err == nil {
 			if l.Code == 0 {
-				return nil
+				return l.Data.ResServerWorkspaceLog.ParentId, nil
 			}
 		}
 	}
-	return err
+	return -1, err
 }

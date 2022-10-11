@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-16 17:44:45
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-16 09:56:04
+ * @LastEditTime: 2022-10-11 16:15:06
  * @FilePath: /cli/cmd/start/vm_sws_clientEnv.go
  * @Description:
  *
@@ -41,7 +41,7 @@ func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo,
 			common.SmartIDELog.Ws_id = workspaceInfo.ServerWorkSpace.NO
 			common.SmartIDELog.ParentId = pid
 		} else {
-			if err := workspace.CreateWsLog(workspaceInfo.ServerWorkSpace.NO, currentAuth.Token.(string), currentAuth.LoginUrl, "客户端启动工作区", "客户端启动工作区"); err == nil {
+			if _, err := workspace.CreateWsLog(workspaceInfo.ServerWorkSpace.NO, currentAuth.Token.(string), currentAuth.LoginUrl, "客户端启动工作区", "客户端启动工作区"); err == nil {
 				if pid, err := workspace.GetParentId(workspaceInfo.ServerWorkSpace.NO, workspace.ActionEnum_Workspace_Connect, currentAuth.Token.(string), currentAuth.LoginUrl); err == nil && pid > 0 {
 					common.SmartIDELog.Ws_id = workspaceInfo.ServerWorkSpace.NO
 					common.SmartIDELog.ParentId = pid

@@ -174,30 +174,25 @@ var ApplySSHCmd = &cobra.Command{
 		common.WebsocketStart(wsURL)
 		for _, applySsh := range applySshArray {
 			if applySsh.Action != "" {
-				sshAction := workspace.ActionEnum_SSH_Disable
-				if applySsh.Action == "add" {
-					sshAction = workspace.ActionEnum_SSH_Enable
-				}
+				/* 				sshAction := workspace.ActionEnum_SSH_Disable
+				   				if applySsh.Action == "add" {
+				   					sshAction = workspace.ActionEnum_SSH_Enable
+				   				} */
 				workspaceInfo, err := workspace.GetWorkspaceFromServer(currentAuth, applySsh.WorkspaceNo, workspace.CliRunningEvnEnum_Server)
 				common.CheckError(err)
 
-				// ws
-				if pid, err := workspace.GetParentId(workspaceInfo.ServerWorkSpace.NO, sshAction, currentAuth.Token.(string), currentAuth.LoginUrl); err == nil && pid > 0 {
+				title := "??"
+				if applySsh.Action == "add" {
+					title = "创建SSH通道"
+				} else if applySsh.Action == "remove" {
+					title = "删除SSH通道"
+				}
+				pid, err := workspace.CreateWsLog(workspaceInfo.ServerWorkSpace.NO, currentAuth.Token.(string), currentAuth.LoginUrl, title, "")
+				if err == nil {
+					//if pid, err := workspace.GetParentId(workspaceInfo.ServerWorkSpace.NO, sshAction, currentAuth.Token.(string), currentAuth.LoginUrl); err == nil && pid > 0 {
 					common.SmartIDELog.Ws_id = workspaceInfo.ServerWorkSpace.NO
 					common.SmartIDELog.ParentId = pid
-				} else {
-					title := "??"
-					if applySsh.Action == "add" {
-						title = "创建SSH通道"
-					} else if applySsh.Action == "remove" {
-						title = "删除SSH通道"
-					}
-					if err := workspace.CreateWsLog(workspaceInfo.ServerWorkSpace.NO, currentAuth.Token.(string), currentAuth.LoginUrl, title, ""); err == nil {
-						if pid, err := workspace.GetParentId(workspaceInfo.ServerWorkSpace.NO, sshAction, currentAuth.Token.(string), currentAuth.LoginUrl); err == nil && pid > 0 {
-							common.SmartIDELog.Ws_id = workspaceInfo.ServerWorkSpace.NO
-							common.SmartIDELog.ParentId = pid
-						}
-					}
+					//}
 				}
 
 				// log
