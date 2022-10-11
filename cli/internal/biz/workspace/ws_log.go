@@ -1,8 +1,8 @@
 /*
  * @Author: kenan
  * @Date: 2022-03-14 09:54:06
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-22 09:36:12
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-10-11 16:41:46
  * @FilePath: /cli/internal/biz/workspace/ws_log.go
  * @Description:
  *
@@ -122,6 +122,32 @@ func GetWorkspaceNo(wid string, token string, apiHost string) (no string, err er
 }
 
 func CreateWsLog(wid string, token string, apiHost string, title string, content string) (err error) {
+	var response = ""
+	url := fmt.Sprint(apiHost, "/api/smartide/wslog/create")
+	httpClient := common.CreateHttpClientEnableRetry()
+	response, err = httpClient.PostJson(url,
+		map[string]interface{}{
+			"ws_id":   wid,
+			"title":   title,
+			"content": content,
+			"level":   1,
+			"type":    1,
+			"startAt": time.Now(),
+			"endAt":   time.Now(),
+		}, map[string]string{"Content-Type": "application/json", "x-token": token})
+	if response != "" {
+		l := &model.WorkspaceLogResponse{}
+		//err = json.Unmarshal([]byte(response), l)
+		if err = json.Unmarshal([]byte(response), l); err == nil {
+			if l.Code == 0 {
+				return nil
+			}
+		}
+	}
+	return err
+}
+
+func UpdateWsLog(wid string, token string, apiHost string, title string, content string) (err error) {
 	var response = ""
 	url := fmt.Sprint(apiHost, "/api/smartide/wslog/create")
 	httpClient := common.CreateHttpClientEnableRetry()
