@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-03-14 09:54:06
  * @LastEditors: kenan
- * @LastEditTime: 2022-10-11 16:45:44
+ * @LastEditTime: 2022-10-11 17:52:31
  * @FilePath: /cli/internal/biz/workspace/ws_log.go
  * @Description:
  *
@@ -92,6 +92,8 @@ func GetParentId(wid string, action ActionEnum, token string, apiHost string) (p
 		l := &model.WorkspaceLogResponse{}
 		if err = json.Unmarshal([]byte(response), l); err == nil {
 			if l.Code == 0 && l.Data.ResServerWorkspaceLog.ID > 0 {
+				l.Data.ResServerWorkspaceLog.TekEventId = common.SmartIDELog.TekEventId
+				UpdateWsLog(token, apiHost, l.Data.ResServerWorkspaceLog)
 				return int(l.Data.ResServerWorkspaceLog.ID), err
 			}
 		}
@@ -121,19 +123,20 @@ func GetWorkspaceNo(wid string, token string, apiHost string) (no string, err er
 
 }
 
-func CreateWsLog(wid string, token string, apiHost string, title string, content string) (parentId int, err error) {
+func CreateWsLog(wid string, token string, apiHost string, title string, content string, eid string) (parentId int, err error) {
 	var response = ""
 	url := fmt.Sprint(apiHost, "/api/smartide/wslog/create")
 	httpClient := common.CreateHttpClientEnableRetry()
 	response, err = httpClient.PostJson(url,
 		map[string]interface{}{
-			"ws_id":   wid,
-			"title":   title,
-			"content": content,
-			"level":   1,
-			"type":    1,
-			"startAt": time.Now(),
-			"endAt":   time.Now(),
+			"ws_id":      wid,
+			"title":      title,
+			"content":    content,
+			"level":      1,
+			"type":       1,
+			"startAt":    time.Now(),
+			"endAt":      time.Now(),
+			"tekEventId": eid,
 		}, map[string]string{"Content-Type": "application/json", "x-token": token})
 	if response != "" {
 		l := &model.WorkspaceLogResponse{}
@@ -147,20 +150,14 @@ func CreateWsLog(wid string, token string, apiHost string, title string, content
 	return -1, err
 }
 
-func UpdateWsLog(wid string, token string, apiHost string, title string, content string) (err error) {
+func UpdateWsLog(token string, apiHost string, wslog model.ServerWorkspaceLog) (err error) {
 	var response = ""
-	url := fmt.Sprint(apiHost, "/api/smartide/wslog/create")
+	var wslogMap map[string]interface{}
+	data, _ := json.Marshal(wslog)
+	json.Unmarshal(data, &wslogMap)
+	url := fmt.Sprint(apiHost, "/api/smartide/wslog/update")
 	httpClient := common.CreateHttpClientEnableRetry()
-	response, err = httpClient.PostJson(url,
-		map[string]interface{}{
-			"ws_id":   wid,
-			"title":   title,
-			"content": content,
-			"level":   1,
-			"type":    1,
-			"startAt": time.Now(),
-			"endAt":   time.Now(),
-		}, map[string]string{"Content-Type": "application/json", "x-token": token})
+	response, err = httpClient.PostJson(url, wslogMap, map[string]string{"Content-Type": "application/json", "x-token": token})
 	if response != "" {
 		l := &model.WorkspaceLogResponse{}
 		//err = json.Unmarshal([]byte(response), l)

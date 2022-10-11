@@ -82,7 +82,7 @@ var k8sCmd = &cobra.Command{
 			} else if workspaceIngressAction == workspace.ActionEnum_Ingress_Disable {
 				title = "删除Ingress"
 			}
-			pid, err := workspace.CreateWsLog(workspaceNo, serverToken, currentAuth.LoginUrl, title, "")
+			pid, err := workspace.CreateWsLog(workspaceNo, serverToken, currentAuth.LoginUrl, title, "", common.SmartIDELog.TekEventId)
 			if err == nil {
 				common.SmartIDELog.Ws_id = workspaceNo
 				common.SmartIDELog.ParentId = pid

@@ -187,7 +187,7 @@ var ApplySSHCmd = &cobra.Command{
 				} else if applySsh.Action == "remove" {
 					title = "删除SSH通道"
 				}
-				pid, err := workspace.CreateWsLog(workspaceInfo.ServerWorkSpace.NO, currentAuth.Token.(string), currentAuth.LoginUrl, title, "")
+				pid, err := workspace.CreateWsLog(workspaceInfo.ServerWorkSpace.NO, currentAuth.Token.(string), currentAuth.LoginUrl, title, "", common.SmartIDELog.TekEventId)
 				if err == nil {
 					//if pid, err := workspace.GetParentId(workspaceInfo.ServerWorkSpace.NO, sshAction, currentAuth.Token.(string), currentAuth.LoginUrl); err == nil && pid > 0 {
 					common.SmartIDELog.Ws_id = workspaceInfo.ServerWorkSpace.NO
