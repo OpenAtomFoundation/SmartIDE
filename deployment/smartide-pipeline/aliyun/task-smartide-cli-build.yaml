@@ -98,10 +98,13 @@ spec:
           echo "smartide $(params.COMMAND) $(params.SERVER_WORK_SPACE_NO) running"
 
           if [ "$(params.COMMAND)" == "stop" ]; then
+            echo "smartide $(params.COMMAND) $(params.ARGS) $(params.SERVER_WORK_SPACE_NO) --debug --mode server --isInsightDisabled false --serverhost '$(params.SERVER_HOST)' --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)'"
             smartide $(params.COMMAND) $(params.ARGS) $(params.SERVER_WORK_SPACE_NO) --debug --mode server --isInsightDisabled false --serverhost '$(params.SERVER_HOST)' --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)'
-          elif [ "$(params.COMMAND)" == "remove" ]; then   
+          elif [ "$(params.COMMAND)" == "remove" ]; then  
+            echo "smartide $(params.COMMAND) $(params.ARGS) $(params.SERVER_WORK_SPACE_NO) -pyfi --debug --mode server --isInsightDisabled false --serverhost '$(params.SERVER_HOST)' --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)'"  
             smartide $(params.COMMAND) $(params.ARGS) $(params.SERVER_WORK_SPACE_NO) -pyfi --debug --mode server --isInsightDisabled false --serverhost '$(params.SERVER_HOST)' --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)'
           elif [ "$(params.COMMAND)" == "remove_container" ]; then   
+            echo "smartide remove $(params.SERVER_WORK_SPACE_NO) $(params.ARGS) -y -c --debug --mode server --isInsightDisabled false --serverhost '$(params.SERVER_HOST)' --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)'"
             smartide remove $(params.SERVER_WORK_SPACE_NO) $(params.ARGS) -y -c --debug --mode server --isInsightDisabled false --serverhost '$(params.SERVER_HOST)' --serverworkspaceid '$(params.SERVER_WORK_SPACE_ID)' --serverusername '$(params.SERVER_USER_NAME)' --servertoken '$(params.SERVER_TOKEN)'
           else
             echo "未知的命令！"
