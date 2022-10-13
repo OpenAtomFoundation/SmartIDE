@@ -127,7 +127,7 @@ var K8sInitCmd = &cobra.Command{
 		getIPMaxRetryCount := 30
 		getIPRetryCount := 1
 		for getIPRetryCount <= getIPMaxRetryCount {
-			externalIp, err = k8sUtil.ExecKubectlCommandWithOutputRealtime("get services --namespace ingress-nginx ingress-nginx-controller --output jsonpath='{.status.loadBalancer.ingress[0].ip}'", "")
+			externalIp, err = k8sUtil.ExecKubectlCommandWithOutputRealtime("get services --namespace smartide-ingress-nginx ingress-nginx-controller --output jsonpath='{.status.loadBalancer.ingress[0].ip}'", "")
 			if externalIp != "" {
 				break
 			}

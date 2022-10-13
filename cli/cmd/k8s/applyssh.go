@@ -65,7 +65,7 @@ var ApplySSHCmd = &cobra.Command{
 		ports, _ := fflags.GetString(k8s_applyssh_flag_ports)
 		serverHost, _ := fflags.GetString(k8s_applyssh_flag_serverhost)
 		serverToken, _ := fflags.GetString(k8s_applyssh_flag_servertoken)
-		configMapNamespace := "ingress-nginx"
+		configMapNamespace := "smartide-ingress-nginx"
 
 		currentAuth := model.Auth{
 			LoginUrl: serverHost,
@@ -91,7 +91,7 @@ var ApplySSHCmd = &cobra.Command{
 				Namespace string "yaml:\"namespace\""
 			}{
 				Name:      "ingress-nginx-tcp",
-				Namespace: "ingress-nginx",
+				Namespace: "smartide-ingress-nginx",
 			},
 			Data: map[string]string{},
 		}
