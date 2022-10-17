@@ -38,7 +38,7 @@ func (g gitOperation) CheckGitRemoteUrl(url string) bool {
 // 使用git下载指定的文件
 func (g gitOperation) SparseCheckout(rootDir string, gitCloneUrl string, fileExpression string, branch string) ([]string, error) {
 	if gitCloneUrl == "" {
-		return []string{}, errors.New("git clone url is null!")
+		return []string{}, errors.New("actual git repo url is null!")
 	}
 	repoName := GetRepoName(gitCloneUrl)
 
