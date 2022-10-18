@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2022-10-11 17:40:11
+ * @LastEditTime: 2022-10-18 17:54:34
  */
 package common
 
@@ -25,9 +25,10 @@ import (
 )
 
 type smartIDELogStruct struct {
-	Ws_id      string
-	ParentId   int
-	TekEventId string
+	Ws_id          string
+	ParentId       int
+	TekEventId     string
+	ServerUserName string
 }
 
 var SmartIDELog = &smartIDELogStruct{Ws_id: "", ParentId: 0}

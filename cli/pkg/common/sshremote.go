@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2022-10-08 11:31:49
+ * @LastEditTime: 2022-10-18 17:59:11
  */
 package common
 
@@ -921,6 +921,9 @@ func (instance *SSHRemote) RemoteUpload(filesMaps map[string]string) (err error)
 			CheckError(err)
 		}
 		filePath := filepath.Join(homePath, "/.ssh/id_rsa")
+		if SmartIDELog.Ws_id != "" && SmartIDELog.ServerUserName != "" {
+			filePath = fmt.Sprintf("%s_%s_%s", filePath, SmartIDELog.ServerUserName, SmartIDELog.Ws_id)
+		}
 		key, err := ioutil.ReadFile(filePath)
 		CheckError(err, "unable to read private key:")
 
@@ -1005,6 +1008,9 @@ func connectionDial(sshHost string, sshPort int, sshUserName, sshPassword string
 		homePath, err := os.UserHomeDir()
 		CheckError(err)
 		filePath := filepath.Join(homePath, "/.ssh/id_rsa")
+		if SmartIDELog.Ws_id != "" && SmartIDELog.ServerUserName != "" {
+			filePath = fmt.Sprintf("%s_%s_%s", filePath, SmartIDELog.ServerUserName, SmartIDELog.Ws_id)
+		}
 		key, err := ioutil.ReadFile(filePath)
 		CheckError(err, "unable to read private key:")
 
