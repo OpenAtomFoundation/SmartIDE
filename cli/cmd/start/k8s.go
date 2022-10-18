@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-03-23 16:15:38
- * @LastEditors: kenan
- * @LastEditTime: 2022-10-08 11:35:18
- * @FilePath: /smartide/cli/cmd/start/k8s.go
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-10-18 15:19:26
+ * @FilePath: /cli/cmd/start/k8s.go
  */
 
 package start
@@ -358,7 +358,15 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 		}
 	}
 
-	//5.3. git clone
+	//5.3. 缓存git 用户名、密码
+	if workspaceInfo.GitRepoAuthType == workspace.GitRepoAuthType_Basic {
+		common.SmartIDELog.Info("容器缓存git 用户名、密码")
+		command := fmt.Sprintf(` git config --global user.name '%v' && git config --global user.password '%v' && git config --global credential.helper store`,
+			workspaceInfo.GitUserName, workspaceInfo.GitPassword)
+		kubernetes.ExecKubectlCommandRealtime(command, "", false)
+	}
+
+	//5.4. git clone
 	common.SmartIDELog.Info("git clone")
 	containerGitCloneDir := originK8sConfig.GetProjectDirctory()
 	err = kubernetes.GitClone(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName, workspaceInfo.GitCloneRepoUrl, containerGitCloneDir, workspaceInfo.Branch)
@@ -366,7 +374,7 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 		return err
 	}
 
-	//5.4. 复制config文件
+	//5.5. 复制config文件
 	common.SmartIDELog.Info("copy config file")
 	configFileAbsolutePath := common.PathJoin(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath)
 	err = copyConfigToPod(*kubernetes, *devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, containerGitCloneDir, configFileAbsolutePath, runAsUserName)

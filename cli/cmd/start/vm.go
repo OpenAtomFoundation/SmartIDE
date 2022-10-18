@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-24 10:20:53
+ * @LastEditTime: 2022-10-18 15:15:28
  */
 package start
 
@@ -372,6 +372,8 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		if containerId, err = sshRemote.ExeSSHCommand(fmt.Sprintf("docker ps  -f 'name=%s' -q", dcc[len(dcc)-1].ContainerName)); containerId != "" && err == nil {
 			// smartide-agent install
 			workspace.StartSmartideAgent(sshRemote, containerId, cmd, workspaceInfo.ServerWorkSpace.ID)
+			// 缓存git 用户名、密码
+			remoteContainerCredentialCache(sshRemote, containerId, workspaceInfo)
 		}
 
 		common.SmartIDELog.Info("feedback...")
@@ -392,6 +394,21 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	   		time.Sleep(500)
 	   	} */
 	return workspaceInfo, nil
+}
+
+// 缓存git 用户名、密码
+func remoteContainerCredentialCache(sshRemote common.SSHRemote, containerId string, workspaceInfo workspace.WorkspaceInfo) {
+
+	if workspaceInfo.GitRepoAuthType != workspace.GitRepoAuthType_Basic {
+		return
+	}
+
+	common.SmartIDELog.Info("容器缓存git 用户名、密码")
+	command := fmt.Sprintf(` docker exec -d %v  /bin/sh -c \"git config --global user.name '%v' && git config --global user.password '%v' && git config --global credential.helper store\"`,
+		containerId, workspaceInfo.GitUserName, workspaceInfo.GitPassword)
+
+	sshRemote.ExecSSHCommandRealTime(command)
+
 }
 
 // 打印 service 列表
