@@ -39,6 +39,7 @@ import (
 
 var (
 	serverEventID    string = "servereventid"
+	serverUserName   string = "serverusername"
 	instanceI18nMain        = i18n.GetInstance().Main
 	isDebug          bool   = false
 	cfgFile          string
@@ -110,6 +111,7 @@ var rootCmd = &cobra.Command{
 		}
 		common.SmartIDELog.InitLogger(logLevel)
 		common.SmartIDELog.TekEventId, _ = fflags.GetString(serverEventID)
+		common.SmartIDELog.ServerUserName, _ = fflags.GetString(serverUserName)
 
 	},
 }
