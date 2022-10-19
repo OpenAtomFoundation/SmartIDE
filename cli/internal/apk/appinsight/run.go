@@ -3,6 +3,7 @@ package appinsight
 import (
 	_ "embed"
 	"flag"
+	"os"
 
 	"github.com/microsoft/ApplicationInsights-Go/appinsights"
 )
@@ -28,6 +29,8 @@ func SetTrack(cmd, version, args, workModel, imageName string) {
 	event.Properties["args"] = args
 	event.Properties["workmodel"] = workModel
 	event.Properties["image"] = imageName
+	hostname, _ := os.Hostname()
+	event.Tags.User().SetId(hostname)
 
 	telemetryClient.Track(event)
 }
