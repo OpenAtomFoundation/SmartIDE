@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-24 10:20:53
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-10-19 10:54:22
  */
 package start
 
@@ -46,6 +46,10 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		if err != nil {
 			smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_Start, cmd, false, nil, workspaceInfo, err.Error(), "")
 		}
+	}
+	//密码为空将使用ssh私钥链接主机。 - 将工作区策略密钥对写入本地.ssh 目录
+	if workspaceInfo.Remote.Password == "" {
+		common.SetSSHkeyPolicy(common.SmartIDELog.Ws_id, cmd)
 	}
 
 	//0. 连接到远程主机

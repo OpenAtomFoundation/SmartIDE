@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2022-10-18 17:59:11
+ * @LastEditTime: 2022-10-19 10:50:44
  */
 package common
 
@@ -611,6 +611,49 @@ func (instance *SSHRemote) ExecSSHkeyPolicy(no string, cmd *cobra.Command) {
 
 		}
 	}
+}
+
+func SetSSHkeyPolicy(no string, cmd *cobra.Command) (err error) {
+	fflags := cmd.Flags()
+	var ws []WorkspacePolicy
+	if no != "" {
+		ws, err = GetWSPolicies(no, "2", cmd)
+		CheckError(err)
+	}
+
+	if len(ws) > 0 {
+		detail := Detail{}
+		if ws[len(ws)-1].Detail != "" {
+			err = json.Unmarshal([]byte(ws[len(ws)-1].Detail), &detail)
+			if err != nil {
+				return
+			}
+			userName, _ := fflags.GetString(Flags_ServerUserName)
+			idRsa := detail.IdRsa
+			idRsaPub := detail.IdRsaPub
+			if idRsa != "" && idRsaPub != "" {
+				command := fmt.Sprintf(`mkdir -p .ssh
+									chmod 700 -R ~/.ssh
+									rm -rf ~/.ssh/id_rsa_%s_%s
+									echo "%v" >> ~/.ssh/id_rsa_%s_%s
+									chmod 600 ~/.ssh/id_rsa_%s_%s
+
+									rm -rf ~/.ssh/id_rsa.pub_%s_%s
+									echo "%v" >> ~/.ssh/id_rsa.pub_%s_%s
+									chmod 600 ~/.ssh/id_rsa.pub_%s_%s
+
+`, userName, no, string(idRsa), userName, no, userName, no, userName, no, string(idRsaPub), userName, no, userName, no)
+				cmd := exec.Command("sh", "-c", command)
+				output, _ := cmd.CombinedOutput()
+				fmt.Printf("%v >> %v", command, string(output))
+			}
+
+			//
+		}
+
+	}
+	return err
+	// 远程公私钥都不为空
 }
 
 // ExecSSHSetPasswordPolicy
