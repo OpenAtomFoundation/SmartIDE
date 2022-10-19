@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2022-07
  * @LastEditors: kenan
- * @LastEditTime: 2022-10-19 12:58:44
+ * @LastEditTime: 2022-10-19 14:58:20
  */
 
 package init
@@ -61,7 +61,7 @@ func VmInit(cmd *cobra.Command, args []string, workspaceInfo workspace.Workspace
 	idRsa := ""
 	//密码为空将使用ssh私钥链接主机。 - 将工作区策略密钥对写入本地.ssh 目录
 	if workspaceInfo.Remote.Password == "" && common.Mode == "server" {
-		_, idRsa = common.GetSSHkeyPolicyIdRsa(common.SmartIDELog.Ws_id, common.ServerHost, common.ServerToken, common.ServerUserGuid)
+		_, idRsa = common.GetSSHkeyPolicyIdRsa(common.ServerHost, common.ServerToken, common.ServerUserGuid)
 	}
 	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password, idRsa)
 	common.CheckErrorFunc(err, serverFeedback)

@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2022-10-19 13:26:35
+ * @LastEditTime: 2022-10-19 15:05:14
  */
 package common
 
@@ -516,7 +516,7 @@ func (instance *SSHRemote) ExecSSHkeyPolicy(no string, userName string, host str
 	idRsaPub := ""
 	var ws []WorkspacePolicy
 	if no != "" {
-		ws, err = GetWSPolicies(no, "2", host, token, ownerGuid)
+		ws, err = GetWSPolicies("2", host, token, ownerGuid)
 		CheckError(err)
 	}
 
@@ -613,12 +613,10 @@ func (instance *SSHRemote) ExecSSHkeyPolicy(no string, userName string, host str
 	}
 }
 
-func GetSSHkeyPolicyIdRsa(no string, host string, token string, ownerGuid string) (err error, idRsa string) {
+func GetSSHkeyPolicyIdRsa(host string, token string, ownerGuid string) (err error, idRsa string) {
 	var ws []WorkspacePolicy
-	if no != "" {
-		ws, err = GetWSPolicies(no, "2", host, token, ownerGuid)
-		CheckError(err)
-	}
+	ws, err = GetWSPolicies("2", host, token, ownerGuid)
+	CheckError(err)
 
 	if len(ws) > 0 {
 		detail := Detail{}
@@ -636,25 +634,24 @@ func GetSSHkeyPolicyIdRsa(no string, host string, token string, ownerGuid string
 }
 
 // ExecSSHSetPasswordPolicy
-func GetBasicPassword(no string, host string, token string, ownerGuid string) (password string, err error) {
-	password = ""
-	var ws []WorkspacePolicy
-	if no != "" {
-		ws, err = GetWSPolicies(no, "3", host, token, ownerGuid)
-	}
+// func GetBasicPassword(host string, token string, ownerGuid string) (password string, err error) {
+// 	password = ""
+// 	var ws []WorkspacePolicy
 
-	if len(ws) > 0 {
+// 	ws, err = GetWSPolicies("3", host, token, ownerGuid)
 
-		detail := Detail{}
-		if ws[len(ws)-1].Detail != "" {
-			err = json.Unmarshal([]byte(ws[len(ws)-1].Detail), &detail)
-			password = detail.Password
+// 	if len(ws) > 0 {
 
-		}
+// 		detail := Detail{}
+// 		if ws[len(ws)-1].Detail != "" {
+// 			err = json.Unmarshal([]byte(ws[len(ws)-1].Detail), &detail)
+// 			password = detail.Password
 
-	}
-	return password, err
-}
+// 		}
+
+// 	}
+// 	return password, err
+// }
 
 // 保存一个空密码，保证后续的git clone不需要输入私钥的密码
 func (instance *SSHRemote) sshSaveEmptyPassphrase() {
@@ -1111,7 +1108,7 @@ const (
 	Flags_ServerUserName  = "serverusername"
 )
 
-func GetWSPolicies(no string, t string, host string, token string, ownerGuid string) (ws []WorkspacePolicy, err error) {
+func GetWSPolicies(t string, host string, token string, ownerGuid string) (ws []WorkspacePolicy, err error) {
 	var response = ""
 	url := fmt.Sprint(host, "/api/smartide/workspacepolicy/getList")
 

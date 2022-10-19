@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-04-20 10:46:40
  * @LastEditors: kenan
- * @LastEditTime: 2022-10-19 12:40:46
+ * @LastEditTime: 2022-10-19 14:58:02
  * @FilePath: /cli/cmd/new/newVm.go
  */
 
@@ -60,7 +60,7 @@ func VmNew(cmd *cobra.Command, args []string, workspaceInfo workspace.WorkspaceI
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_connect_remote + msg)
 	idRsa := ""
 	if workspaceInfo.Remote.Password == "" && common.Mode == "server" {
-		_, idRsa = common.GetSSHkeyPolicyIdRsa(common.SmartIDELog.Ws_id, common.ServerHost, common.ServerToken, common.ServerUserGuid)
+		_, idRsa = common.GetSSHkeyPolicyIdRsa(common.ServerHost, common.ServerToken, common.ServerUserGuid)
 	}
 	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password, idRsa)
 	common.CheckErrorFunc(err, serverFeedback)
