@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-04-20 10:46:40
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-17 15:31:46
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-10-19 12:40:46
  * @FilePath: /cli/cmd/new/newVm.go
  */
 
@@ -58,7 +58,11 @@ func VmNew(cmd *cobra.Command, args []string, workspaceInfo workspace.WorkspaceI
 	//0. 连接到远程主机
 	msg := fmt.Sprintf(" %v@%v:%v ...", workspaceInfo.Remote.UserName, workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort)
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_connect_remote + msg)
-	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password)
+	idRsa := ""
+	if workspaceInfo.Remote.Password == "" && common.Mode == "server" {
+		_, idRsa = common.GetSSHkeyPolicyIdRsa(common.SmartIDELog.Ws_id, common.ServerHost, common.ServerToken, common.ServerUserGuid)
+	}
+	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password, idRsa)
 	common.CheckErrorFunc(err, serverFeedback)
 
 	//1. 检查远程主机是否有docker、docker-compose、git

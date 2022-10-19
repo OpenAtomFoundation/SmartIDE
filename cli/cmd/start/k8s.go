@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: kenan
- * @LastEditTime: 2022-10-08 11:35:18
- * @FilePath: /smartide/cli/cmd/start/k8s.go
+ * @LastEditTime: 2022-10-19 12:28:33
+ * @FilePath: /cli/cmd/start/k8s.go
  */
 
 package start
@@ -43,7 +43,7 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil, workspac
 	runAsUserName := "smartide"
 
 	if common.SmartIDELog.Ws_id != "" {
-		execSSHPolicy(workspaceInfo, cmd)
+		execSSHPolicy(workspaceInfo, common.ServerHost, common.ServerToken, common.ServerUserGuid)
 
 	}
 
@@ -212,7 +212,7 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil, workspac
 	return &workspaceInfo, nil
 }
 
-func setSSHPWD(tempK8sConfig config.SmartIdeK8SConfig, cmd *cobra.Command) (err error) {
+func setSSHPWD(tempK8sConfig config.SmartIdeK8SConfig, host string, token string, ownerGuid string) (err error) {
 
 	for _, d := range tempK8sConfig.Workspace.Deployments {
 		for _, c := range d.Spec.Template.Spec.Containers {
@@ -226,12 +226,12 @@ func setSSHPWD(tempK8sConfig config.SmartIdeK8SConfig, cmd *cobra.Command) (err 
 			}()
 			if i >= 0 {
 				p := ""
-				if p, err = common.GetBasicPassword(common.SmartIDELog.Ws_id, cmd); p != "" {
+				if p, err = common.GetBasicPassword(common.SmartIDELog.Ws_id, host, token, ownerGuid); p != "" {
 					c.Env[i].Value = p
 				}
 			} else {
 				p := ""
-				if p, err = common.GetBasicPassword(common.SmartIDELog.Ws_id, cmd); p != "" {
+				if p, err = common.GetBasicPassword(common.SmartIDELog.Ws_id, host, token, ownerGuid); p != "" {
 					c.Env = append(c.Env, coreV1.EnvVar{Name: model.CONST_ENV_NAME_LoalUserPassword, Value: p})
 				}
 			}
@@ -241,8 +241,8 @@ func setSSHPWD(tempK8sConfig config.SmartIdeK8SConfig, cmd *cobra.Command) (err 
 	return nil
 }
 
-func execSSHPolicy(workspaceInfo workspace.WorkspaceInfo, cmd *cobra.Command) {
-	if ws, err := common.GetWSPolicies(workspaceInfo.ServerWorkSpace.NO, "2", cmd); err == nil {
+func execSSHPolicy(workspaceInfo workspace.WorkspaceInfo, host string, token string, ownerGuid string) {
+	if ws, err := common.GetWSPolicies(workspaceInfo.ServerWorkSpace.NO, "2", host, token, ownerGuid); err == nil {
 		if len(ws) > 0 {
 			detail := common.Detail{}
 			if ws[len(ws)-1].Detail != "" {

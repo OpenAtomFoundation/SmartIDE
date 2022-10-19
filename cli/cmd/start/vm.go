@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2022-10-19 10:54:22
+ * @LastEditTime: 2022-10-19 12:54:53
  */
 package start
 
@@ -37,7 +37,6 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	userName, _ := cmd.Flags().GetString("serverusername")
 	isModeServer := strings.ToLower(mode) == "server"
 	isModePipeline := strings.ToLower(mode) == "pipeline"
-
 	// 错误反馈
 	serverFeedback := func(err error) {
 		if !isModeServer {
@@ -47,15 +46,17 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 			smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_Start, cmd, false, nil, workspaceInfo, err.Error(), "")
 		}
 	}
+
+	idRsa := ""
 	//密码为空将使用ssh私钥链接主机。 - 将工作区策略密钥对写入本地.ssh 目录
-	if workspaceInfo.Remote.Password == "" {
-		common.SetSSHkeyPolicy(common.SmartIDELog.Ws_id, cmd)
+	if workspaceInfo.Remote.Password == "" && common.Mode == "server" {
+		_, idRsa = common.GetSSHkeyPolicyIdRsa(common.SmartIDELog.Ws_id, common.ServerHost, common.ServerToken, common.ServerUserGuid)
 	}
 
 	//0. 连接到远程主机
 	msg := fmt.Sprintf(" %v@%v:%v ...", workspaceInfo.Remote.UserName, workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort)
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_connect_remote + msg)
-	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password)
+	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password, idRsa)
 	common.CheckErrorFunc(err, serverFeedback)
 
 	//1. 检查远程主机是否有docker、docker-compose、git
@@ -73,7 +74,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 			common.SmartIDELog.Info(i18nInstance.VmStart.Info_git_cloned)
 		} else {
 			// 执行ssh-key 策略
-			sshRemote.ExecSSHkeyPolicy(common.SmartIDELog.Ws_id, cmd)
+			sshRemote.ExecSSHkeyPolicy(common.SmartIDELog.Ws_id, userName, common.ServerHost, common.ServerToken, common.ServerUserGuid)
 			// Generate Authorizedkeys
 			err = gitAction(sshRemote, workspaceInfo, cmd)
 			common.CheckErrorFunc(err, serverFeedback)

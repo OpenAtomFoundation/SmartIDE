@@ -2,8 +2,8 @@
  * @Author: Bo Dai (daibo@leansoftx.com)
  * @Description:
  * @Date: 2022-07
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-17 15:31:23
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-10-19 12:58:44
  */
 
 package init
@@ -58,7 +58,12 @@ func VmInit(cmd *cobra.Command, args []string, workspaceInfo workspace.Workspace
 	//0. 连接到远程主机
 	msg := fmt.Sprintf(" %v@%v:%v ...", workspaceInfo.Remote.UserName, workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort)
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_connect_remote + msg)
-	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password)
+	idRsa := ""
+	//密码为空将使用ssh私钥链接主机。 - 将工作区策略密钥对写入本地.ssh 目录
+	if workspaceInfo.Remote.Password == "" && common.Mode == "server" {
+		_, idRsa = common.GetSSHkeyPolicyIdRsa(common.SmartIDELog.Ws_id, common.ServerHost, common.ServerToken, common.ServerUserGuid)
+	}
+	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password, idRsa)
 	common.CheckErrorFunc(err, serverFeedback)
 
 	//1. 检查远程主机是否有docker、docker-compose、git
