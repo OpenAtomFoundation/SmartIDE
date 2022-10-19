@@ -39,8 +39,8 @@ type workspaceDo struct {
 	w_config_file              sql.NullString
 	w_git_clone_repo_url       sql.NullString
 	w_git_auth_type            string
-	w_git_username             string
-	w_git_password             string
+	w_git_username             sql.NullString
+	w_git_password             sql.NullString
 	w_branch                   string
 	r_id                       sql.NullInt32
 	k_id                       sql.NullInt32
@@ -371,6 +371,8 @@ func workspaceDataMap(workspaceInfo *workspace.WorkspaceInfo, do workspaceDo) er
 	// git 相关
 	workspaceInfo.GitCloneRepoUrl = do.w_git_clone_repo_url.String
 	workspaceInfo.Branch = do.w_branch
+	workspaceInfo.GitUserName = do.w_git_username.String
+	workspaceInfo.GitPassword = do.w_git_password.String
 
 	// 远程主机信息
 	if workspaceInfo.Mode == workspace.WorkingMode_Remote {
