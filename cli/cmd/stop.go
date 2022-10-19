@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2022-10-19 12:41:07
+ * @LastEditTime: 2022-10-19 14:59:07
  */
 package cmd
 
@@ -144,7 +144,7 @@ func stopRemote(workspaceInfo workspace.WorkspaceInfo) error {
 	common.SmartIDELog.Info(i18nInstance.Stop.Info_sshremote_connection_creating)
 	idRsa := ""
 	if workspaceInfo.Remote.Password == "" && common.Mode == "server" {
-		_, idRsa = common.GetSSHkeyPolicyIdRsa(common.SmartIDELog.Ws_id, common.ServerHost, common.ServerToken, common.ServerUserGuid)
+		_, idRsa = common.GetSSHkeyPolicyIdRsa(common.ServerHost, common.ServerToken, common.ServerUserGuid)
 	}
 	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password, idRsa)
 	if err != nil {

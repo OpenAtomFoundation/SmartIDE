@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-06-07 14:02:14
  * @LastEditors: kenan
- * @LastEditTime: 2022-10-19 13:00:17
+ * @LastEditTime: 2022-10-19 14:58:30
  * @FilePath: /cli/cmd/remove/vm.go
  */
 
@@ -25,7 +25,7 @@ func RemoveRemote(workspaceInfo workspace.WorkspaceInfo,
 	idRsa := ""
 	//密码为空将使用ssh私钥链接主机。 - 将工作区策略密钥对写入本地.ssh 目录
 	if workspaceInfo.Remote.Password == "" && common.Mode == "server" {
-		_, idRsa = common.GetSSHkeyPolicyIdRsa(common.SmartIDELog.Ws_id, common.ServerHost, common.ServerToken, common.ServerUserGuid)
+		_, idRsa = common.GetSSHkeyPolicyIdRsa(common.ServerHost, common.ServerToken, common.ServerUserGuid)
 	}
 	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password, idRsa)
 	if err != nil {

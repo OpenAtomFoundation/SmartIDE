@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2022-10-19 12:54:53
+ * @LastEditTime: 2022-10-19 14:58:54
  */
 package start
 
@@ -50,7 +50,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	idRsa := ""
 	//密码为空将使用ssh私钥链接主机。 - 将工作区策略密钥对写入本地.ssh 目录
 	if workspaceInfo.Remote.Password == "" && common.Mode == "server" {
-		_, idRsa = common.GetSSHkeyPolicyIdRsa(common.SmartIDELog.Ws_id, common.ServerHost, common.ServerToken, common.ServerUserGuid)
+		_, idRsa = common.GetSSHkeyPolicyIdRsa(common.ServerHost, common.ServerToken, common.ServerUserGuid)
 	}
 
 	//0. 连接到远程主机
