@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-17 15:33:22
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-10-19 12:41:07
  */
 package cmd
 
@@ -142,7 +142,11 @@ func stopLocal(workspace workspace.WorkspaceInfo) {
 func stopRemote(workspaceInfo workspace.WorkspaceInfo) error {
 	// ssh 连接
 	common.SmartIDELog.Info(i18nInstance.Stop.Info_sshremote_connection_creating)
-	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password)
+	idRsa := ""
+	if workspaceInfo.Remote.Password == "" && common.Mode == "server" {
+		_, idRsa = common.GetSSHkeyPolicyIdRsa(common.SmartIDELog.Ws_id, common.ServerHost, common.ServerToken, common.ServerUserGuid)
+	}
+	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password, idRsa)
 	if err != nil {
 		return err
 	}

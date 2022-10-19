@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-23 16:27:12
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-10-19 12:46:33
  */
 package cmd
 
@@ -74,8 +74,12 @@ var resetCmd = &cobra.Command{
 			// ssh remote 链接检查
 			if workspaceInfo.Mode == workspace.WorkingMode_Remote {
 				ssmRemote := common.SSHRemote{}
+				idRsa := ""
+				if workspaceInfo.Remote.Password == "" && common.Mode == "server" {
+					_, idRsa = common.GetSSHkeyPolicyIdRsa(common.SmartIDELog.Ws_id, common.ServerHost, common.ServerToken, common.ServerUserGuid)
+				}
 				common.SmartIDELog.InfoF(i18nInstance.Main.Info_ssh_connect_check, workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort)
-				err = ssmRemote.CheckDail(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password)
+				err = ssmRemote.CheckDail(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password, idRsa)
 				if err != nil {
 					if resetCmdFalgs.IsAll { // 删除所有的时候，不顾及太多
 						common.SmartIDELog.ImportanceWithError(err)

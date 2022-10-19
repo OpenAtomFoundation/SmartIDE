@@ -2,8 +2,8 @@
  * @Author: vincent wei (vincentwei@leansoftx.com, https://github.com/zlweicoder)
  * @Description:
  * @Date: 2021-12-31
- * @LastEditors:
- * @LastEditTime:
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-10-19 12:59:20
  */
 package host
 
@@ -62,7 +62,8 @@ var HostAddCmd = &cobra.Command{
 		// 在远程模式下，首先验证远程服务器是否可以登录
 		ssmRemote := common.SSHRemote{}
 		common.SmartIDELog.InfoF(i18nInstance.Main.Info_ssh_connect_check, remoteInfo.Addr, remoteInfo.SSHPort)
-		err = ssmRemote.CheckDail(remoteInfo.Addr, remoteInfo.SSHPort, remoteInfo.UserName, remoteInfo.Password)
+
+		err = ssmRemote.CheckDail(remoteInfo.Addr, remoteInfo.SSHPort, remoteInfo.UserName, remoteInfo.Password, "")
 		if err != nil {
 			common.CheckError(err)
 		}

@@ -40,6 +40,10 @@ import (
 var (
 	serverEventID    string = "servereventid"
 	serverUserName   string = "serverusername"
+	serverToken      string = "servertoken"
+	serverUserGuid   string = "serverownerguid"
+	serverHost       string = "serverhost"
+	serverMode       string = "mode"
 	instanceI18nMain        = i18n.GetInstance().Main
 	isDebug          bool   = false
 	cfgFile          string
@@ -111,7 +115,11 @@ var rootCmd = &cobra.Command{
 		}
 		common.SmartIDELog.InitLogger(logLevel)
 		common.SmartIDELog.TekEventId, _ = fflags.GetString(serverEventID)
-		common.SmartIDELog.ServerUserName, _ = fflags.GetString(serverUserName)
+		common.ServerUserName, _ = fflags.GetString(serverUserName)
+		common.ServerHost, _ = fflags.GetString(serverHost)
+		common.ServerToken, _ = fflags.GetString(serverToken)
+		common.ServerUserGuid, _ = fflags.GetString(serverUserGuid)
+		common.Mode, _ = fflags.GetString(serverMode)
 
 	},
 }
@@ -151,6 +159,7 @@ func init() {
 	rootCmd.PersistentFlags().StringP("serveruserguid", "", "", i18n.GetInstance().Main.Info_help_flag_server_userguid)
 	rootCmd.PersistentFlags().StringP("serverhost", "", "", i18n.GetInstance().Main.Info_help_flag_server_host)
 	rootCmd.PersistentFlags().StringP("servereventid", "", "", "trigger event id")
+	rootCmd.PersistentFlags().StringP("serverownerguid", "", "", "serverownerguid")
 
 	// disable completion command
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
