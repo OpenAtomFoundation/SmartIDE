@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-17 16:49:19
+ * @LastEditTime: 2022-10-20 14:45:15
  */
 package cmd
 
@@ -464,14 +464,21 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 				workspaceInfo.Name = filepath.Base(pwd)
 
 				// 本地模式下，不需要录入git库的克隆地址、分支
-				checkFlagUnnecessary(fflags, flag_repourl, "mode=local")
+				//checkFlagUnnecessary(fflags, flag_repourl, "mode=local")
 				checkFlagUnnecessary(fflags, flag_branch, "mode=local")
 
 				// 本地模式下需要clone repo的情况：smartide start https://gitee.com/idcf-boat-house/boathouse-calculator.git
 				if workspaceInfo.GitCloneRepoUrl != "" {
 					common.SmartIDELog.Info(i18nInstance.Start.Info_git_clone)
-					clonedRepoDir, err := cloneRepo4LocalWithCommand(pwd,
-						workspaceInfo.GitCloneRepoUrl, workspaceInfo.GitUserName, workspaceInfo.GitPassword) //
+					actualGtiRepoUrl := workspaceInfo.GitCloneRepoUrl
+					if workspaceInfo.GitRepoAuthType == workspace.GitRepoAuthType_Basic {
+						actualGtiRepoUrl, err =
+							common.AddUsernamePassword4ActualGitRpoUrl(actualGtiRepoUrl, workspaceInfo.GitUserName, workspaceInfo.GitPassword)
+						if err != nil {
+							common.SmartIDELog.Warning(err.Error())
+						}
+					}
+					clonedRepoDir, err := cloneRepo4LocalWithCommand(pwd, actualGtiRepoUrl) //
 					common.CheckError(err)
 					common.SmartIDELog.Info(i18nInstance.Common.Info_gitrepo_clone_done)
 
@@ -790,26 +797,24 @@ func getGitUrlFromArgs(cmd *cobra.Command, args []string) string {
 		str := args[0]
 		if strings.Index(str, "git@") == 0 || strings.Index(str, "http://") == 0 || strings.Index(str, "https://") == 0 {
 			gitUrl = str
-		} else {
-			gitUrl = getFlagValue(cmd.Flags(), flag_repourl)
 		}
 	}
+
+	//
+	if gitUrl == "" {
+		gitUrl = getFlagValue(cmd.Flags(), flag_repourl)
+	}
+
 	return gitUrl
 }
 
 // 直接调用git命令进行git clone
-func cloneRepo4LocalWithCommand(rootDir string, gitUrl string, gitUsername string, gitPAT string) (string, error) {
-	repoName := common.GetRepoName(gitUrl)
+func cloneRepo4LocalWithCommand(rootDir string, actualGitRepoUrl string) (string, error) {
+	repoName := common.GetRepoName(actualGitRepoUrl)
 	repoPath := common.PathJoin(rootDir, repoName)
 
-	// 带用户名密码的形式
-	gitUrl, err0 := common.AddUsernamePassword4ActualGitRpoUrl(gitUrl, gitUsername, gitPAT)
-	if err0 != nil {
-		common.SmartIDELog.Warning(err0.Error())
-	}
-
 	var execCommand *exec.Cmd
-	command := "git clone " + gitUrl
+	command := "git clone " + actualGitRepoUrl
 	switch runtime.GOOS {
 	case "windows":
 		execCommand = exec.Command("powershell", "/c", command)

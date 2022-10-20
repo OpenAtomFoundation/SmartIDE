@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-18 15:19:26
+ * @LastEditTime: 2022-10-20 14:22:51
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -360,7 +360,7 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 
 	//5.3. 缓存git 用户名、密码
 	if workspaceInfo.GitRepoAuthType == workspace.GitRepoAuthType_Basic {
-		common.SmartIDELog.Info("容器缓存git 用户名、密码")
+		common.SmartIDELog.Info("container cache git username and password...")
 		command := fmt.Sprintf(` git config --global user.name '%v' && git config --global user.password '%v' && git config --global credential.helper store`,
 			workspaceInfo.GitUserName, workspaceInfo.GitPassword)
 		kubernetes.ExecKubectlCommandRealtime(command, "", false)
@@ -369,7 +369,15 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 	//5.4. git clone
 	common.SmartIDELog.Info("git clone")
 	containerGitCloneDir := originK8sConfig.GetProjectDirctory()
-	err = kubernetes.GitClone(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName, workspaceInfo.GitCloneRepoUrl, containerGitCloneDir, workspaceInfo.Branch)
+	actualGitRepoUrl := workspaceInfo.GitCloneRepoUrl
+	if workspaceInfo.GitRepoAuthType == workspace.GitRepoAuthType_Basic {
+		actualGitRepoUrl, err =
+			common.AddUsernamePassword4ActualGitRpoUrl(actualGitRepoUrl, workspaceInfo.GitUserName, workspaceInfo.GitPassword)
+		if err != nil {
+			common.SmartIDELog.Warning(err.Error())
+		}
+	}
+	err = kubernetes.GitClone(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName, actualGitRepoUrl, containerGitCloneDir, workspaceInfo.Branch)
 	if err != nil {
 		return err
 	}
