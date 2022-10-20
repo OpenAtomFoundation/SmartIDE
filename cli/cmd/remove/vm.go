@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-06-07 14:02:14
  * @LastEditors: kenan
- * @LastEditTime: 2022-10-19 14:58:30
+ * @LastEditTime: 2022-10-20 10:10:19
  * @FilePath: /cli/cmd/remove/vm.go
  */
 
@@ -22,12 +22,8 @@ func RemoveRemote(workspaceInfo workspace.WorkspaceInfo,
 	cmd *cobra.Command) error {
 	// ssh 连接
 	common.SmartIDELog.Info(i18nInstance.Remove.Info_sshremote_connection_creating)
-	idRsa := ""
-	//密码为空将使用ssh私钥链接主机。 - 将工作区策略密钥对写入本地.ssh 目录
-	if workspaceInfo.Remote.Password == "" && common.Mode == "server" {
-		_, idRsa = common.GetSSHkeyPolicyIdRsa(common.ServerHost, common.ServerToken, common.ServerUserGuid)
-	}
-	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password, idRsa)
+
+	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password, workspaceInfo.Remote.SSHKey)
 	if err != nil {
 		return err
 	}
