@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2022-10-19 14:58:47
+ * @LastEditTime: 2022-10-20 10:11:22
  */
 package cmd
 
@@ -573,11 +573,8 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 		// 在远程模式下，首先验证远程服务器是否可以登录
 		ssmRemote := common.SSHRemote{}
 		common.SmartIDELog.InfoF(i18nInstance.Main.Info_ssh_connect_check, workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort)
-		idRsa := ""
-		if workspaceInfo.Remote.Password == "" && common.Mode == "server" {
-			_, idRsa = common.GetSSHkeyPolicyIdRsa(common.ServerHost, common.ServerToken, common.ServerUserGuid)
-		}
-		err = ssmRemote.CheckDail(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password, idRsa)
+
+		err = ssmRemote.CheckDail(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password, workspaceInfo.Remote.SSHKey)
 		if err != nil {
 			return workspaceInfo, err
 		}

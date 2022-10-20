@@ -208,6 +208,7 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 			UserName: serverWorkSpace.Resource.UserName,
 			Password: serverWorkSpace.Resource.Password,
 			SSHPort:  serverWorkSpace.Resource.Port,
+			SSHKey:   serverWorkSpace.Resource.SSHKey,
 		}
 		workspaceInfo.TempYamlFileAbsolutePath = workspaceInfo.GetTempDockerComposeFilePath()
 	case model.ReourceTypeEnum_K8S:
@@ -579,6 +580,7 @@ type RemoteInfo struct {
 	AuthType    RemoteAuthType
 	Password    string
 	SSHPort     int
+	SSHKey      string
 	CreatedTime time.Time
 }
 

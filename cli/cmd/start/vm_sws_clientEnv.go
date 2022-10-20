@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-16 17:44:45
  * @LastEditors: kenan
- * @LastEditTime: 2022-10-19 14:59:00
+ * @LastEditTime: 2022-10-20 10:11:18
  * @FilePath: /cli/cmd/start/vm_sws_clientEnv.go
  * @Description:
  *
@@ -66,11 +66,8 @@ func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo,
 	if workspaceInfo.Remote.IsNil() {
 		return workspaceInfo, errors.New("关联 远程主机 信息为空！")
 	}
-	idRsa := ""
-	if workspaceInfo.Remote.Password == "" && common.Mode == "server" {
-		_, idRsa = common.GetSSHkeyPolicyIdRsa(common.ServerHost, common.ServerToken, common.ServerUserGuid)
-	}
-	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password, idRsa)
+
+	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password, workspaceInfo.Remote.SSHKey)
 	if err != nil {
 		return workspaceInfo, err
 	}
