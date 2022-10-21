@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-21 10:08:31
+ * @LastEditTime: 2022-10-21 12:45:54
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -502,7 +502,11 @@ func downloadConfigAndLinkFiles(workspaceInfo workspace.WorkspaceInfo) (
 	configFileRelativePath string, linkK8sYamlRelativePaths []string, err error) {
 
 	//3.1. 下载配置文件
-	gitRepoRootDirPath, fileRelativePaths, err := downloadFilesByGit(workspaceInfo.GitCloneRepoUrl, workspaceInfo.Branch, workspaceInfo.ConfigFileRelativePath)
+	gitActualRepoUrl := workspaceInfo.GitCloneRepoUrl
+	if workspaceInfo.GitRepoAuthType == workspace.GitRepoAuthType_Basic {
+		gitActualRepoUrl, _ = common.AddUsernamePassword4ActualGitRpoUrl(gitActualRepoUrl, workspaceInfo.GitUserName, workspaceInfo.GitPassword)
+	}
+	gitRepoRootDirPath, fileRelativePaths, err := downloadFilesByGit(gitActualRepoUrl, workspaceInfo.Branch, workspaceInfo.ConfigFileRelativePath)
 	if err != nil {
 		return
 	}
@@ -530,7 +534,7 @@ func downloadConfigAndLinkFiles(workspaceInfo workspace.WorkspaceInfo) (
 	filePathExpression = filepath.Join(".ide", filePathExpression)
 
 	//
-	_, linkK8sYamlRelativePaths, err = downloadFilesByGit(workspaceInfo.GitCloneRepoUrl, workspaceInfo.Branch, filePathExpression)
+	_, linkK8sYamlRelativePaths, err = downloadFilesByGit(gitActualRepoUrl, workspaceInfo.Branch, filePathExpression)
 	if err != nil {
 		return "", "", []string{}, err
 	}
