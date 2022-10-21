@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-16 17:44:45
  * @LastEditors: kenan
- * @LastEditTime: 2022-10-11 17:44:02
+ * @LastEditTime: 2022-10-20 10:11:18
  * @FilePath: /cli/cmd/start/vm_sws_clientEnv.go
  * @Description:
  *
@@ -33,6 +33,7 @@ func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo,
 	if err != nil {
 		return workspaceInfo, err
 	}
+
 	if currentAuth != (model.Auth{}) && currentAuth.Token != "" && currentAuth.Token != nil {
 		wsURL := fmt.Sprint(strings.ReplaceAll(strings.ReplaceAll(currentAuth.LoginUrl, "https", "ws"), "http", "ws"), "/ws/smartide/ws")
 		common.WebsocketStart(wsURL)
@@ -40,7 +41,6 @@ func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo,
 			common.SmartIDELog.Ws_id = workspaceInfo.ServerWorkSpace.NO
 			common.SmartIDELog.ParentId = pid
 		}
-
 	}
 
 	//
@@ -66,7 +66,8 @@ func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo,
 	if workspaceInfo.Remote.IsNil() {
 		return workspaceInfo, errors.New("关联 远程主机 信息为空！")
 	}
-	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password)
+
+	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password, workspaceInfo.Remote.SSHKey)
 	if err != nil {
 		return workspaceInfo, err
 	}

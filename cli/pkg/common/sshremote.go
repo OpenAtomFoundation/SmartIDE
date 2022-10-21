@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-21 09:02:54
+ * @LastEditTime: 2022-10-21 10:09:53
  */
 package common
 
@@ -50,7 +50,7 @@ type SSHRemote struct {
 var i18nInstance = i18n.GetInstance()
 
 // 实例
-func NewSSHRemote(host string, port int, userName, password string) (instance SSHRemote, err error) {
+func NewSSHRemote(host string, port int, userName, password string, idRsa string) (instance SSHRemote, err error) {
 
 	instance = SSHRemote{}
 
@@ -60,7 +60,7 @@ func NewSSHRemote(host string, port int, userName, password string) (instance SS
 		instance.SSHUserName = userName
 		instance.SSHPassword = password
 
-		connection, err := connectionDial(host, port, userName, password)
+		connection, err := connectionDial(host, port, userName, password, idRsa)
 		if err != nil {
 			return instance, err
 		}
@@ -72,11 +72,11 @@ func NewSSHRemote(host string, port int, userName, password string) (instance SS
 }
 
 // 验证
-func (instance *SSHRemote) CheckDail(host string, port int, userName, password string) error {
+func (instance *SSHRemote) CheckDail(host string, port int, userName, password string, idRsa string) error {
 
 	if (instance.Connection == &ssh.Client{}) || instance.Connection == nil {
 
-		connection, err := connectionDial(host, port, userName, password)
+		connection, err := connectionDial(host, port, userName, password, idRsa)
 
 		if err != nil {
 			return err
@@ -475,12 +475,12 @@ func (instance *SSHRemote) GitClone(gitRepoUrl string, workSpaceDir string, no s
 	return err
 }
 
-func (instance *SSHRemote) ExecSSHkeyPolicy(no string, cmd *cobra.Command) {
+func (instance *SSHRemote) ExecSSHkeyPolicy(no string, userName string, host string, token string, ownerGuid string) {
 
 	isOverwrite := "y"
 	isAllowCopyPrivateKey := ""
-	fflags := cmd.Flags()
-	userName, _ := fflags.GetString(Flags_ServerUserName)
+	// fflags := cmd.Flags()
+	// userName, _ := fflags.GetString(Flags_ServerUserName)
 	commandRsa := fmt.Sprintf(`[[ -f ".ssh/id_rsa_%s_%s" ]] && cat ~/.ssh/id_rsa_%s_%s || echo ""`, userName, no, userName, no)
 	remoteRsaPri, err := instance.ExeSSHCommandConsole(commandRsa, false)
 	CheckError(err)
@@ -495,7 +495,7 @@ func (instance *SSHRemote) ExecSSHkeyPolicy(no string, cmd *cobra.Command) {
 	idRsaPub := ""
 	var ws []WorkspacePolicy
 	if no != "" {
-		ws, err = GetWSPolicies(no, "2", cmd)
+		ws, err = GetWSPolicies("2", host, token, ownerGuid)
 		CheckError(err)
 	}
 
@@ -592,26 +592,45 @@ func (instance *SSHRemote) ExecSSHkeyPolicy(no string, cmd *cobra.Command) {
 	}
 }
 
-// ExecSSHSetPasswordPolicy
-func GetBasicPassword(no string, cmd *cobra.Command) (password string, err error) {
-	password = ""
+func GetSSHkeyPolicyIdRsa(host string, token string, ownerGuid string) (err error, idRsa string) {
 	var ws []WorkspacePolicy
-	if no != "" {
-		ws, err = GetWSPolicies(no, "3", cmd)
-	}
+	ws, err = GetWSPolicies("2", host, token, ownerGuid)
+	CheckError(err)
 
 	if len(ws) > 0 {
-
 		detail := Detail{}
 		if ws[len(ws)-1].Detail != "" {
 			err = json.Unmarshal([]byte(ws[len(ws)-1].Detail), &detail)
-			password = detail.Password
-
+			if err == nil {
+				idRsa = detail.IdRsa
+			}
+			//
 		}
 
 	}
-	return password, err
+	return err, idRsa
+	// 远程公私钥都不为空
 }
+
+// ExecSSHSetPasswordPolicy
+// func GetBasicPassword(host string, token string, ownerGuid string) (password string, err error) {
+// 	password = ""
+// 	var ws []WorkspacePolicy
+
+// 	ws, err = GetWSPolicies("3", host, token, ownerGuid)
+
+// 	if len(ws) > 0 {
+
+// 		detail := Detail{}
+// 		if ws[len(ws)-1].Detail != "" {
+// 			err = json.Unmarshal([]byte(ws[len(ws)-1].Detail), &detail)
+// 			password = detail.Password
+
+// 		}
+
+// 	}
+// 	return password, err
+// }
 
 // 保存一个空密码，保证后续的git clone不需要输入私钥的密码
 func (instance *SSHRemote) sshSaveEmptyPassphrase() {
@@ -900,6 +919,9 @@ func (instance *SSHRemote) RemoteUpload(filesMaps map[string]string) (err error)
 			CheckError(err)
 		}
 		filePath := filepath.Join(homePath, "/.ssh/id_rsa")
+		if SmartIDELog.Ws_id != "" && ServerUserName != "" {
+			filePath = fmt.Sprintf("%s_%s_%s", filePath, ServerUserName, SmartIDELog.Ws_id)
+		}
 		key, err := ioutil.ReadFile(filePath)
 		CheckError(err, "unable to read private key:")
 
@@ -954,7 +976,7 @@ func (instance *SSHRemote) RemoteUpload(filesMaps map[string]string) (err error)
 }
 
 // 连接到远程主机
-func connectionDial(sshHost string, sshPort int, sshUserName, sshPassword string) (clientConn *ssh.Client, err error) {
+func connectionDial(sshHost string, sshPort int, sshUserName, sshPassword string, idRsa string) (clientConn *ssh.Client, err error) {
 	// initialize SSH connection
 	var clientConfig *ssh.ClientConfig
 	if sshPort <= 0 {
@@ -980,12 +1002,17 @@ func connectionDial(sshHost string, sshPort int, sshUserName, sshPassword string
 		}
 
 	} else { // 如果用户不输入用户名和密码，则尝试使用ssh key pair的方式链接远程服务器
+		var key []byte
 		//var hostKey ssh.PublicKey
-		homePath, err := os.UserHomeDir()
-		CheckError(err)
-		filePath := filepath.Join(homePath, "/.ssh/id_rsa")
-		key, err := ioutil.ReadFile(filePath)
-		CheckError(err, "unable to read private key:")
+		if idRsa == "" {
+			homePath, err := os.UserHomeDir()
+			CheckError(err)
+			filePath := filepath.Join(homePath, "/.ssh/id_rsa")
+			key, err = ioutil.ReadFile(filePath)
+			CheckError(err, "unable to read private key:")
+		} else {
+			key = []byte(idRsa)
+		}
 
 		// Create the Signer for this private key.
 		signer, err := ssh.ParsePrivateKey(key)
@@ -1060,11 +1087,7 @@ const (
 	Flags_ServerUserName  = "serverusername"
 )
 
-func GetWSPolicies(no string, t string, cmd *cobra.Command) (ws []WorkspacePolicy, err error) {
-	fflags := cmd.Flags()
-	host, _ := fflags.GetString(Flags_ServerHost)
-	token, _ := fflags.GetString(Flags_ServerToken)
-	ownerGuid, _ := fflags.GetString(Flags_ServerOwnerGuid)
+func GetWSPolicies(t string, host string, token string, ownerGuid string) (ws []WorkspacePolicy, err error) {
 	var response = ""
 	url := fmt.Sprint(host, "/api/smartide/workspacepolicy/getList")
 

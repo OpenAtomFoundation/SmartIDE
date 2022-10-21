@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-20 14:22:51
+ * @LastEditTime: 2022-10-21 10:08:31
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -22,7 +22,6 @@ import (
 
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
-	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/k8s"
 	"github.com/spf13/cobra"
@@ -43,7 +42,7 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil, workspac
 	runAsUserName := "smartide"
 
 	if common.SmartIDELog.Ws_id != "" {
-		execSSHPolicy(workspaceInfo, cmd)
+		execSSHPolicy(workspaceInfo, common.ServerHost, common.ServerToken, common.ServerUserGuid)
 
 	}
 
@@ -212,37 +211,38 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil, workspac
 	return &workspaceInfo, nil
 }
 
-func setSSHPWD(tempK8sConfig config.SmartIdeK8SConfig, cmd *cobra.Command) (err error) {
+// func setSSHPWD(tempK8sConfig config.SmartIdeK8SConfig, host string, token string, ownerGuid string) (err error) {
 
-	for _, d := range tempK8sConfig.Workspace.Deployments {
-		for _, c := range d.Spec.Template.Spec.Containers {
-			i := func() (i int) {
-				for i, ev := range c.Env {
-					if ev.Name == model.CONST_ENV_NAME_LoalUserPassword {
-						return i
-					}
-				}
-				return -1
-			}()
-			if i >= 0 {
-				p := ""
-				if p, err = common.GetBasicPassword(common.SmartIDELog.Ws_id, cmd); p != "" {
-					c.Env[i].Value = p
-				}
-			} else {
-				p := ""
-				if p, err = common.GetBasicPassword(common.SmartIDELog.Ws_id, cmd); p != "" {
-					c.Env = append(c.Env, coreV1.EnvVar{Name: model.CONST_ENV_NAME_LoalUserPassword, Value: p})
-				}
-			}
+// 	for _, d := range tempK8sConfig.Workspace.Deployments {
+// 		for _, c := range d.Spec.Template.Spec.Containers {
+// 			i := func() (i int) {
+// 				for i, ev := range c.Env {
+// 					if ev.Name == model.CONST_ENV_NAME_LoalUserPassword {
+// 						return i
+// 					}
+// 				}
+// 				return -1
+// 			}()
+// 			if i >= 0 {
+// 				p := ""
+// 				if p, err = common.GetBasicPassword(host, token, ownerGuid); p != "" {
+// 					c.Env[i].Value = p
+// 				}
+// 			} else {
+// 				p := ""
+// 				if p, err = common.GetBasicPassword(host, token, ownerGuid); p != "" {
+// 					c.Env = append(c.Env, coreV1.EnvVar{Name: model.CONST_ENV_NAME_LoalUserPassword, Value: p})
+// 				}
+// 			}
 
-		}
-	}
-	return nil
-}
+// 		}
+// 	}
+// 	return nil
+// }
 
-func execSSHPolicy(workspaceInfo workspace.WorkspaceInfo, cmd *cobra.Command) {
-	if ws, err := common.GetWSPolicies(workspaceInfo.ServerWorkSpace.NO, "2", cmd); err == nil {
+// k8s模式将ssh-key 写入本地
+func execSSHPolicy(workspaceInfo workspace.WorkspaceInfo, host string, token string, ownerGuid string) {
+	if ws, err := common.GetWSPolicies("2", host, token, ownerGuid); err == nil {
 		if len(ws) > 0 {
 			detail := common.Detail{}
 			if ws[len(ws)-1].Detail != "" {

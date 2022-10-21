@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-18 15:10:19
+ * @LastEditTime: 2022-10-21 10:09:03
  */
 package start
 
@@ -227,7 +227,7 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 	//9. tunnel
 	sshPassword := workspaceInfo.TempDockerCompose.GetSSHPassword(currentConfig.Workspace.DevContainer.ServiceName)
-	sshRemote, err := common.NewSSHRemote("localhost", sshBindingPort, model.CONST_DEV_CONTAINER_CUSTOM_USER, sshPassword)
+	sshRemote, err := common.NewSSHRemote("localhost", sshBindingPort, model.CONST_DEV_CONTAINER_CUSTOM_USER, sshPassword, "")
 	common.CheckError(err)
 	options := tunnel.AutoTunnelMultipleOptions{}
 	for _, portMap := range workspaceInfo.Extend.Ports {
