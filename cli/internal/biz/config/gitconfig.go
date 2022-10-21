@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2021-10-13 15:31:52
  * @LastEditors: kenan
- * @LastEditTime: 2022-09-14 09:51:23
+ * @LastEditTime: 2022-10-21 17:21:48
  * @Description: file content
  */
 
@@ -127,8 +127,8 @@ func GitConfig(isVmCommand bool, containerName string, cli *client.Client,
 		return
 	}
 	// git config 默认设置
-
-	gitconfigs := strings.ReplaceAll(configStr, "file:", "")
+	gitconfigs := "core.autocrlf=true\n"
+	gitconfigs = fmt.Sprintf("%s%s", gitconfigs, strings.ReplaceAll(configStr, "file:", ""))
 	s := bufio.NewScanner(strings.NewReader(gitconfigs))
 
 	for s.Scan() {
