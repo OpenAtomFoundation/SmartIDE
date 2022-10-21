@@ -113,7 +113,7 @@
         "info_start": "查询中 ...",
         "info_end": "查询结束",
         "info_dal_none": "没有查询到工作区(Workspace)数据！",
-        "info_workspace_list_header": "Id\tName\tMode\tGit Clone Url\tGit Branch\tConfig File\tHost\tCreate Time"
+        "info_workspace_list_header": "Id\tName\tMode\tactual git repo url\tGit Branch\tConfig File\tHost\tCreate Time"
     },
     "get": {
         "info_help_short": "获取工作区(Workspace)详情",

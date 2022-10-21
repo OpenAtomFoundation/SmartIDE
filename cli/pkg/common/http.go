@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-10 18:11:42
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-23 13:38:33
+ * @LastEditTime: 2022-10-17 14:55:28
  * @FilePath: /cli/pkg/common/http.go
  * @Description:
  *
@@ -403,4 +403,20 @@ func parsingResponse(resp *http.Response) (string, error) {
 	SmartIDELog.Debug(printRespStr)
 
 	return result, nil
+}
+
+func AddUsernamePassword4ActualGitRpoUrl(actualGitRepoUrl string, gitUsername, gitPassword string) (string, error) {
+	if gitUsername == "" || gitPassword == "" {
+		return actualGitRepoUrl, errors.New("username or password is nil")
+	}
+	uri, _ := url.Parse(actualGitRepoUrl)
+	if uri.Scheme == "git" {
+		return actualGitRepoUrl, errors.New("不支持git协议")
+	}
+
+	// 带用户名密码的形式
+	uri.User = url.UserPassword(gitUsername, gitPassword)
+	actualGitRepoUrl = uri.String()
+
+	return actualGitRepoUrl, nil
 }

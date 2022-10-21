@@ -60,9 +60,14 @@ const (
 type GitRepoAuthType string
 
 const (
-	GitRepoAuthType_SSH   GitRepoAuthType = "ssh"
-	GitRepoAuthType_HTTPS GitRepoAuthType = "https"
-	GitRepoAuthType_HTTP  GitRepoAuthType = "http"
+	// ssh
+	GitRepoAuthType_SSH GitRepoAuthType = "ssh"
+	// 用户名密码
+	GitRepoAuthType_Basic GitRepoAuthType = "basic"
+	// 公共的，没有读写限制
+	GitRepoAuthType_Public GitRepoAuthType = "public"
+	/* GitRepoAuthType_HTTPS GitRepoAuthType = "https"
+	GitRepoAuthType_HTTP  GitRepoAuthType = "http" */
 )
 
 type WorkspaceType string
@@ -104,6 +109,9 @@ type WorkspaceInfo struct {
 	projectDirctoryName string
 	// git 库的认证方式
 	GitRepoAuthType GitRepoAuthType
+
+	GitUserName string
+	GitPassword string
 
 	// 指定的分支
 	Branch string

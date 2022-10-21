@@ -2,12 +2,13 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2022-10-20 10:11:20
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-10-21 10:09:30
  */
 package start
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -356,26 +357,23 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		}
 	}
 
-	//9. 反馈给smartide server
+	//9.
+	remoteWorkspaceContainerId := getRemoteWorkspaceContainerId(sshRemote, workspaceInfo, cmd)
+
+	//9.1.
+	common.SmartIDELog.Info("container cache git username and password ...")
+	remoteContainerCredentialCache(sshRemote, remoteWorkspaceContainerId, workspaceInfo) // 缓存git 用户名、密码
+
+	//9.2.  smartide-agent install && 反馈给smartide server
 	if isModeServer {
-		//获取容器id
-		containerId := ""
-		dcc, err := GetRemoteContainersWithServices(sshRemote,
-			workspaceInfo.WorkingDirectoryPath, []string{workspaceInfo.ConfigYaml.Workspace.DevContainer.ServiceName})
-		if err != nil {
-			common.SmartIDELog.ImportanceWithError(err)
-		}
-		if len(dcc) == 0 {
-			common.SmartIDELog.Error("没有查找到运行的容器！")
-		}
-		if containerId, err = sshRemote.ExeSSHCommand(fmt.Sprintf("docker ps  -f 'name=%s' -q", dcc[len(dcc)-1].ContainerName)); containerId != "" && err == nil {
-			// smartide-agent install
-			workspace.StartSmartideAgent(sshRemote, containerId, cmd, workspaceInfo.ServerWorkSpace.ID)
-		}
+		// smartide-agent install
+		common.SmartIDELog.Info("smartide-agent install...")
+		workspace.StartSmartideAgent(sshRemote, remoteWorkspaceContainerId, cmd, workspaceInfo.ServerWorkSpace.ID)
 
 		common.SmartIDELog.Info("feedback...")
 		containerWebIDEPort := workspaceInfo.ConfigYaml.GetContainerWebIDEPort()
-		err = smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_Start, cmd, true, containerWebIDEPort, workspaceInfo, "", containerId)
+		err = smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_Start, cmd, true,
+			containerWebIDEPort, workspaceInfo, "", remoteWorkspaceContainerId)
 		common.CheckError(err)
 	}
 
@@ -391,6 +389,37 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	   		time.Sleep(500)
 	   	} */
 	return workspaceInfo, nil
+}
+
+// 获取容器id
+func getRemoteWorkspaceContainerId(sshRemote common.SSHRemote, workspaceInfo workspace.WorkspaceInfo, cmd *cobra.Command) string {
+	dcc, err := GetRemoteContainersWithServices(sshRemote,
+		workspaceInfo.WorkingDirectoryPath, []string{workspaceInfo.ConfigYaml.Workspace.DevContainer.ServiceName})
+	if err != nil {
+		common.SmartIDELog.ImportanceWithError(err)
+	}
+	if len(dcc) == 0 {
+		common.SmartIDELog.Error("没有查找到运行的容器！")
+	}
+	containerId, err := sshRemote.ExeSSHCommand(fmt.Sprintf("docker ps  -f 'name=%s' -q", dcc[len(dcc)-1].ContainerName))
+	if err != nil {
+		common.SmartIDELog.Warning(err.Error())
+	}
+	return containerId
+}
+
+// 缓存git 用户名、密码
+func remoteContainerCredentialCache(sshRemote common.SSHRemote, containerId string, workspaceInfo workspace.WorkspaceInfo) {
+
+	if workspaceInfo.GitRepoAuthType != workspace.GitRepoAuthType_Basic {
+		return
+	}
+
+	command := fmt.Sprintf(` docker exec -d %v  /bin/sh -c \"git config --global user.name '%v' && git config --global user.password '%v' && git config --global credential.helper store\"`,
+		containerId, workspaceInfo.GitUserName, workspaceInfo.GitPassword)
+
+	sshRemote.ExecSSHCommandRealTime(command)
+
 }
 
 // 打印 service 列表
@@ -421,26 +450,34 @@ func isRemoteDockerComposeRunning(sshRemote common.SSHRemote, workingDir string,
 }
 
 // git 相关操作
-func gitAction(sshRemote common.SSHRemote, workspace workspace.WorkspaceInfo, cmd *cobra.Command) error {
+func gitAction(sshRemote common.SSHRemote, workspaceInfo workspace.WorkspaceInfo, cmd *cobra.Command) error {
 	// 执行 git clone
-	err := sshRemote.GitClone(workspace.GitCloneRepoUrl, workspace.WorkingDirectoryPath, common.SmartIDELog.Ws_id, cmd)
-	//common.CheckErrorFunc(err, serverFeedback)
+	actualGitRepoUrl := workspaceInfo.GitCloneRepoUrl
+	if workspaceInfo.GitRepoAuthType == workspace.GitRepoAuthType_Basic {
+		var err error
+		actualGitRepoUrl, err =
+			common.AddUsernamePassword4ActualGitRpoUrl(actualGitRepoUrl, workspaceInfo.GitUserName, workspaceInfo.GitPassword)
+		if err != nil {
+			return err
+		}
+	}
+	err := sshRemote.GitClone(actualGitRepoUrl, workspaceInfo.WorkingDirectoryPath, common.SmartIDELog.Ws_id, cmd)
 	if err != nil {
 		return err
 	}
 	checkoutCommand := ""
-	isSSHClone := strings.Index(workspace.GitCloneRepoUrl, "git@") == 0
+	isSSHClone := strings.Index(workspaceInfo.GitCloneRepoUrl, "git@") == 0
 	fflags := cmd.Flags()
 	userName, _ := fflags.GetString("serverusername")
 	GIT_SSH_COMMAND := fmt.Sprintf(`GIT_SSH_COMMAND='ssh -i ~/.ssh/id_rsa_%s_%s -o IdentitiesOnly=yes'`, userName, common.SmartIDELog.Ws_id)
 	// git checkout
 	if isSSHClone {
 		checkoutCommand = fmt.Sprintf("%s git fetch ", GIT_SSH_COMMAND)
-		if workspace.Branch != "" {
-			checkoutCommand += fmt.Sprintf("&& %s git checkout ", GIT_SSH_COMMAND) + workspace.Branch
+		if workspaceInfo.Branch != "" {
+			checkoutCommand += fmt.Sprintf("&& %s git checkout ", GIT_SSH_COMMAND) + workspaceInfo.Branch
 		} else { // 有可能当前目录所处的分支非主分支
 			// 获取分支列表，确认主分支是master 还是 main
-			command := fmt.Sprintf("cd %v && %s git branch", workspace.WorkingDirectoryPath, GIT_SSH_COMMAND)
+			command := fmt.Sprintf("cd %v && %s git branch", workspaceInfo.WorkingDirectoryPath, GIT_SSH_COMMAND)
 			output, _ := sshRemote.ExeSSHCommand(command)
 			branches := strings.Split(output, "\n")
 			//isContainMaster := false
@@ -454,11 +491,11 @@ func gitAction(sshRemote common.SSHRemote, workspace workspace.WorkspaceInfo, cm
 		}
 	} else {
 		checkoutCommand = "git fetch "
-		if workspace.Branch != "" {
-			checkoutCommand += "&& git checkout " + workspace.Branch
+		if workspaceInfo.Branch != "" {
+			checkoutCommand += "&& git checkout " + workspaceInfo.Branch
 		} else { // 有可能当前目录所处的分支非主分支
 			// 获取分支列表，确认主分支是master 还是 main
-			output, _ := sshRemote.ExeSSHCommand(fmt.Sprintf("cd %v && git branch", workspace.WorkingDirectoryPath))
+			output, _ := sshRemote.ExeSSHCommand(fmt.Sprintf("cd %v && git branch", workspaceInfo.WorkingDirectoryPath))
 			branches := strings.Split(output, "\n")
 			//isContainMaster := false
 			for _, branch := range branches {
@@ -476,12 +513,23 @@ func gitAction(sshRemote common.SSHRemote, workspace workspace.WorkspaceInfo, cm
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_git_checkout_and_pull)
 	gitPullCommand := ""
 	if isSSHClone {
-		gitPullCommand = fmt.Sprintf("cd %v && %v && %s git pull && cd ~", workspace.WorkingDirectoryPath, checkoutCommand, GIT_SSH_COMMAND)
+		gitPullCommand = fmt.Sprintf("cd %v && %v && %s git pull && cd ~", workspaceInfo.WorkingDirectoryPath, checkoutCommand, GIT_SSH_COMMAND)
 
 	} else {
-		gitPullCommand = fmt.Sprintf("cd %v && %v && git pull && cd ~", workspace.WorkingDirectoryPath, checkoutCommand)
+		gitPullCommand = fmt.Sprintf("cd %v && %v && git pull && cd ~", workspaceInfo.WorkingDirectoryPath, checkoutCommand)
 
 	}
-	err = sshRemote.ExecSSHCommandRealTime(gitPullCommand)
+	err = sshRemote.ExecSSHCommandRealTimeFunc(gitPullCommand, func(output string) error {
+		if strings.Contains(output, "error") || strings.Contains(output, "fatal") {
+			// git credential-store" store: 1: git credential-store" store: Syntax error: Unterminated quoted string
+			if strings.Contains(output, "git credential-store") && strings.Contains(output, "Syntax error: Unterminated quoted string") {
+
+			} else {
+				return errors.New(output)
+			}
+		}
+
+		return nil
+	})
 	return err
 }

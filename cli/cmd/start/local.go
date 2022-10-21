@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2022-10-19 11:55:52
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-10-21 10:09:03
  */
 package start
 
@@ -155,7 +155,8 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	}
 	docker := *common.NewDocker(cli)
 	dockerContainerName := strings.ReplaceAll(devContainerName, "/", "")
-	config.LocalContainerGitSet(docker, dockerContainerName)
+	config.LocalContainerGitSet(docker, dockerContainerName)                  //git 设置
+	localContainerCredentialCache(docker, dockerContainerName, workspaceInfo) // 缓存git 用户名、密码
 
 	//5. 保存 workspace
 	//5.1.
@@ -236,6 +237,24 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	tunnel.AutoTunnel(sshRemote.Connection, options)
 
 	return workspaceInfo, nil
+}
+
+func localContainerCredentialCache(docker common.Docker, dockerContainerName string, workspaceInfo workspace.WorkspaceInfo) {
+
+	if workspaceInfo.GitRepoAuthType != workspace.GitRepoAuthType_Basic {
+		return
+	}
+
+	common.SmartIDELog.Info("容器缓存git 用户名、密码")
+	command := fmt.Sprintf(`git config --global user.name "%v" && git config --global user.password "%v" && git config --global credential.helper store`,
+		workspaceInfo.GitUserName, workspaceInfo.GitPassword)
+
+	out, err := docker.Exec(context.Background(), dockerContainerName, "/usr/bin -c", strings.Split(command, " "), []string{})
+	common.CheckError(err)
+	common.SmartIDELog.Debug(out)
+
+	common.SmartIDELog.Debug(out)
+
 }
 
 // docker-compose 对应的容器是否运行

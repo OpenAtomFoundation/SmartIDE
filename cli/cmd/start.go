@@ -2,18 +2,16 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2022-10-20 10:11:22
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-10-21 10:08:17
  */
 package cmd
 
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
-	"os/user"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -34,11 +32,9 @@ import (
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/k8s"
 	"gopkg.in/src-d/go-git.v4"
-	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	ssh2 "golang.org/x/crypto/ssh"
 )
 
 // var i18nInstance.Start = i18n.GetInstance().Start
@@ -56,14 +52,14 @@ var startCmd = &cobra.Command{
 	Example: `  smartide start
   smartide start --workspaceid {workspaceid}
   smartide start <workspaceid>
-  smartide start <git clone url>
-  smartide start <git clone url> <templatetype> -T {typename}
-  smartide start --host <host> --username <username> --password <password> --repourl <git clone url> --branch <branch name> --filepath <config file path>
-  smartide start --host <host> --username <username> --password <password> --repourl <git clone url> --branch <branch name> --filepath <config file path> <templatetype> -T {typename}
-  smartide start --host <hostid> <git clone url> 
-  smartide start --host <hostid> <git clone url> <templatetype> -T {typename}
-  smartide start --k8s <context> --repoUrl <git clone url> --branch master
-  smartide start --k8s <context> <git clone url>`,
+  smartide start <actual git repo url>
+  smartide start <actual git repo url> <templatetype> -T {typename}
+  smartide start --host <host> --username <username> --password <password> --repourl <actual git repo url> --branch <branch name> --filepath <config file path>
+  smartide start --host <host> --username <username> --password <password> --repourl <actual git repo url> --branch <branch name> --filepath <config file path> <templatetype> -T {typename}
+  smartide start --host <hostid> <actual git repo url> 
+  smartide start --host <hostid> <actual git repo url> <templatetype> -T {typename}
+  smartide start --k8s <context> --repoUrl <actual git repo url> --branch master
+  smartide start --k8s <context> <actual git repo url>`,
 	PreRunE: preRunValid,
 	RunE: func(cmd *cobra.Command, args []string) error {
 
@@ -306,8 +302,7 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 	//1.
 	// 从args或flags中获取workspaceid，如 : smartide start 1
 	workspaceIdStr := getWorkspaceIdFromFlagsOrArgs(cmd, args)
-	// 从args或flags中获取giturl，如 : smartide start https://github.com/idcf-boat-house/boathouse-calculator.git
-	gitUrl := getGitUrlFromArgs(cmd, args)
+
 	// 加载workspace
 	workspaceInfo = workspace.WorkspaceInfo{
 		CliRunningEnv: workspace.CliRunningEnvEnum_Client,
@@ -376,8 +371,11 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 			if workspaceInfo_ == nil {
 				return workspace.WorkspaceInfo{}, fmt.Errorf("get workspace (%v) is null", workspaceIdStr)
 			}
-
 			workspaceInfo = *workspaceInfo_
+
+			// 在 server 上运行的时候，git 用户名密码会从cmd中传递过来
+			loadGitInfo4Workspace(&workspaceInfo, cmd, args)
+
 			// 使用是否关联 server workspace 进行判断
 			if workspaceInfo.ServerWorkSpace == nil {
 				errMsg := ""
@@ -420,24 +418,27 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 			}
 
 		} else { //1.2. 没有指定 workspaceid 的情况
-			workingMode := workspace.WorkingMode_Local
 
-			// 当前目录
-			pwd, err := os.Getwd()
-			if err != nil {
-				return workspace.WorkspaceInfo{}, err
+			//1.2.0.1. 工作区类型
+			workspaceInfo.Mode = workspace.WorkingMode_Local
+			if getFlagValue(fflags, flag_host) != "" {
+				workspaceInfo.Mode = workspace.WorkingMode_Remote
+			} else if getFlagValue(fflags, "k8s") != "" {
+				workspaceInfo.Mode = workspace.WorkingMode_K8s
 			}
 
+			//1.2.0.2. git 相关
+			loadGitInfo4Workspace(&workspaceInfo, cmd, args)
+
 			// 模式
-			hostValue, _ := fflags.GetString(flag_host)
-			if fflags.Changed(flag_host) && hostValue != "" { //1.2.1. vm 模式
-				workingMode = workspace.WorkingMode_Remote
+			if workspaceInfo.Mode == workspace.WorkingMode_Remote { //1.2.1. vm 模式
 				hostInfo, err := getRemoteAndValid(fflags)
 				if err != nil {
 					return workspace.WorkspaceInfo{}, err
 				}
+				workspaceInfo.Remote = *hostInfo
 
-				// 项目名称 ！！！！！ //TODO: 应该作为一个公共的方法
+				// new 命令时，项目名称
 				if cmd.Name() == "new" {
 					if tmp, er := fflags.GetString("workspacename"); tmp == "" || er != nil {
 						return workspace.WorkspaceInfo{}, errors.New("参数 workspacename 不为空！")
@@ -445,62 +446,50 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 					workspaceInfo.Name, _ = fflags.GetString("workspacename")
 				}
 
-				workspaceInfo.Remote = *hostInfo
-				if gitUrl != "" {
-					workspaceInfo.GitCloneRepoUrl = gitUrl
-				} else {
-					workspaceInfo.GitCloneRepoUrl = getFlagValue(fflags, flag_repourl)
-				}
-				if strings.Index(workspaceInfo.GitCloneRepoUrl, "git") == 0 {
-					workspaceInfo.GitRepoAuthType = workspace.GitRepoAuthType_SSH
-				} else if strings.Index(workspaceInfo.GitCloneRepoUrl, "https") == 0 {
-					workspaceInfo.GitRepoAuthType = workspace.GitRepoAuthType_HTTPS
-				} else if strings.Index(workspaceInfo.GitCloneRepoUrl, "http") == 0 {
-					workspaceInfo.GitRepoAuthType = workspace.GitRepoAuthType_HTTP
-				}
-
 				if workspaceInfo.Name == "" {
 					workspaceInfo.Name = common.GetRepoName(workspaceInfo.GitCloneRepoUrl) + "-" + common.RandLowStr(3)
 				}
-
 				workspaceInfo.WorkingDirectoryPath = common.FilePahtJoin4Linux("~", model.CONST_REMOTE_REPO_ROOT, workspaceInfo.Name)
 
-			} else if fflags.Changed("k8s") { //1.2.2. k8s模式
-				workspaceInfo.GitCloneRepoUrl = getFlagValue(fflags, flag_repourl)
-				if gitUrl != "" {
-					workspaceInfo.GitCloneRepoUrl = gitUrl
-				} else {
-					workspaceInfo.GitCloneRepoUrl = getFlagValue(fflags, flag_repourl)
-				}
-
-				workingMode = workspace.WorkingMode_K8s
+			} else if workspaceInfo.Mode == workspace.WorkingMode_K8s { //1.2.2. k8s模式
 				workspaceInfo.K8sInfo.KubeConfigFilePath = getFlagValue(fflags, flag_kubeconfig)
 				workspaceInfo.K8sInfo.Context = getFlagValue(fflags, flag_k8s)
 
 			} else { //1.2.3. 本地模式
+				// 当前目录
+				pwd, err := os.Getwd()
+				if err != nil {
+					return workspace.WorkspaceInfo{}, err
+				}
 				workspaceInfo.Name = filepath.Base(pwd)
 
 				// 本地模式下，不需要录入git库的克隆地址、分支
-				checkFlagUnnecessary(fflags, flag_repourl, "mode=local")
+				//checkFlagUnnecessary(fflags, flag_repourl, "mode=local")
 				checkFlagUnnecessary(fflags, flag_branch, "mode=local")
-				//本地模式下需要clone repo的情况：smartide start https://gitee.com/idcf-boat-house/boathouse-calculator.git
-				if gitUrl != "" {
+
+				// 本地模式下需要clone repo的情况：smartide start https://gitee.com/idcf-boat-house/boathouse-calculator.git
+				if workspaceInfo.GitCloneRepoUrl != "" {
 					common.SmartIDELog.Info(i18nInstance.Start.Info_git_clone)
-					clonedRepoDir, err := cloneRepo4LocalWithCommand(pwd, gitUrl) //
+					actualGtiRepoUrl := workspaceInfo.GitCloneRepoUrl
+					if workspaceInfo.GitRepoAuthType == workspace.GitRepoAuthType_Basic {
+						actualGtiRepoUrl, err =
+							common.AddUsernamePassword4ActualGitRpoUrl(actualGtiRepoUrl, workspaceInfo.GitUserName, workspaceInfo.GitPassword)
+						if err != nil {
+							common.SmartIDELog.Warning(err.Error())
+						}
+					}
+					clonedRepoDir, err := cloneRepo4LocalWithCommand(pwd, actualGtiRepoUrl) //
 					common.CheckError(err)
 					common.SmartIDELog.Info(i18nInstance.Common.Info_gitrepo_clone_done)
 
 					workspaceInfo.WorkingDirectoryPath = clonedRepoDir
-					workspaceInfo.GitCloneRepoUrl, _ = getLocalGitRepoUrl(clonedRepoDir) // 获取本地关联的repo url
 					os.Chdir(clonedRepoDir)
 				} else {
 					workspaceInfo.WorkingDirectoryPath = pwd
-					workspaceInfo.GitCloneRepoUrl, _ = getLocalGitRepoUrl(pwd) // 获取本地关联的repo url
+					workspaceInfo.GitCloneRepoUrl, _, err = getLocalGitRepoUrl(pwd) // 获取本地关联的repo url
+					common.CheckError(err)
 				}
 			}
-
-			// 运行模式
-			workspaceInfo.Mode = workingMode
 
 			// 从数据库中查找是否存在对应的workspace信息，主要是针对在当前目录再次start的情况
 			conditionWorkingDir := ""
@@ -589,25 +578,62 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 	return workspaceInfo, err
 }
 
-func getLocalGitRepoUrl(pwd string) (gitRemmoteUrl, pathName string) {
+// 从命令行中加载 git 相关信息
+func loadGitInfo4Workspace(workspaceInfo *workspace.WorkspaceInfo, cmd *cobra.Command, args []string) error {
+	if workspaceInfo.GitCloneRepoUrl == "" {
+		// 从args或flags中获取giturl，如 : smartide start https://github.com/idcf-boat-house/boathouse-calculator.git
+		workspaceInfo.GitCloneRepoUrl = getGitUrlFromArgs(cmd, args)
+	}
+
+	// 用户名密码
+	fflags := cmd.Flags()
+	gitUsername := getFlagValue(fflags, "gitusername")
+	gitPassword := getFlagValue(fflags, "gitpassword")
+	if gitPassword != "" && gitUsername == "" {
+		return errors.New("当参数 --gitpassword 不为空时，--gitusername 参数必须设置")
+	} else if gitPassword == "" && gitUsername != "" {
+		return errors.New("当参数 --gitusername 不为空时，--gitpassword 参数必须设置")
+	}
+	workspaceInfo.GitUserName = gitUsername
+	workspaceInfo.GitPassword = gitPassword
+
+	// 认证类型
+	if strings.Index(workspaceInfo.GitCloneRepoUrl, "git") == 0 {
+		workspaceInfo.GitRepoAuthType = workspace.GitRepoAuthType_SSH
+	} else if workspaceInfo.GitUserName != "" && workspaceInfo.GitPassword != "" {
+		workspaceInfo.GitRepoAuthType = workspace.GitRepoAuthType_Basic
+	} else {
+		workspaceInfo.GitRepoAuthType = workspace.GitRepoAuthType_Public
+	}
+
+	return nil
+}
+
+// 从文件夹中获取git repo url
+func getLocalGitRepoUrl(pwd string) (gitRemmoteUrl, pathName string, err error) {
 	// current directory
 	fileInfo, err := os.Stat(pwd)
-	common.CheckError(err)
+	if err != nil {
+		return
+	}
 	pathName = fileInfo.Name()
 
 	// git remote url
 	gitRepo, err := git.PlainOpen(pwd)
-	//common.CheckError(err)
-	if err == nil {
-		gitRemote, err := gitRepo.Remote("origin")
-		if err == nil {
-			//common.CheckError(err)
-			gitRemmoteUrl = gitRemote.Config().URLs[0]
-		}
+	if err != nil {
+		return
 	}
-	return gitRemmoteUrl, pathName
+
+	gitRemote, err := gitRepo.Remote("origin")
+	if err != nil {
+		return
+	}
+	gitRemmoteUrl = gitRemote.Config().URLs[0]
+
+	return gitRemmoteUrl, pathName, nil
 }
 
+// 获取命令行参数的值
 func getFlagValue(fflags *pflag.FlagSet, flag string) string {
 	value, err := fflags.GetString(flag)
 	if err != nil {
@@ -747,24 +773,21 @@ func init() {
 	startCmd.Flags().IntP("port", "p", 22, i18nInstance.Start.Info_help_flag_port)
 	startCmd.Flags().StringP("username", "u", "", i18nInstance.Start.Info_help_flag_username)
 	startCmd.Flags().StringP("password", "t", "", i18nInstance.Start.Info_help_flag_password)
-	startCmd.Flags().StringP("repourl", "r", "", i18nInstance.Start.Info_help_flag_repourl)
-	startCmd.Flags().StringP("callback-api-address", "", "", i18nInstance.Start.Info_help_flag_callback_api_address)
 
-	startCmd.Flags().StringVarP(&configYamlFileRelativePath, "filepath", "f", "", i18nInstance.Start.Info_help_flag_filepath)
+	startCmd.Flags().StringP("repourl", "r", "", i18nInstance.Start.Info_help_flag_repourl)
 	startCmd.Flags().StringP("branch", "b", "", i18nInstance.Start.Info_help_flag_branch)
+	startCmd.Flags().StringP("gitusername", "", "", "访问当前git库的用户信息")
+	startCmd.Flags().StringP("gitpassword", "", "", "对当前git库拥有访问权限的令牌")
+
+	startCmd.Flags().StringP("callback-api-address", "", "", i18nInstance.Start.Info_help_flag_callback_api_address)
+	startCmd.Flags().StringVarP(&configYamlFileRelativePath, "filepath", "f", "", i18nInstance.Start.Info_help_flag_filepath)
+
 	startCmd.Flags().StringP("k8s", "k", "", i18nInstance.Start.Info_help_flag_k8s)
 	startCmd.Flags().StringP("kubeconfig", "", "", "自定义 kube config 文件的本地路径")
 	// startCmd.Flags().StringP("namespace", "n", "", i18nInstance.Start.Info_help_flag_k8s_namespace)
 	startCmd.Flags().StringP("serverownerguid", "g", "", i18nInstance.Start.Info_help_flag_ownerguid)
 	startCmd.Flags().StringP("addon", "", "", "addon webterminal")
 	startCmd.Flags().StringP("type", "T", "", i18nInstance.New.Info_help_flag_type)
-}
-
-// get repo name
-func getRepoName(repoUrl string) string {
-
-	index := strings.LastIndex(repoUrl, "/")
-	return strings.Replace(repoUrl[index+1:], ".git", "", -1)
 }
 
 // 获取参数gitUrl
@@ -777,16 +800,22 @@ func getGitUrlFromArgs(cmd *cobra.Command, args []string) string {
 			gitUrl = str
 		}
 	}
+
+	//
+	if gitUrl == "" {
+		gitUrl = getFlagValue(cmd.Flags(), flag_repourl)
+	}
+
 	return gitUrl
 }
 
 // 直接调用git命令进行git clone
-func cloneRepo4LocalWithCommand(rootDir string, gitUrl string) (string, error) {
-	repoName := getRepoName(gitUrl)
+func cloneRepo4LocalWithCommand(rootDir string, actualGitRepoUrl string) (string, error) {
+	repoName := common.GetRepoName(actualGitRepoUrl)
 	repoPath := common.PathJoin(rootDir, repoName)
 
 	var execCommand *exec.Cmd
-	command := "git clone " + gitUrl
+	command := "git clone " + actualGitRepoUrl
 	switch runtime.GOOS {
 	case "windows":
 		execCommand = exec.Command("powershell", "/c", command)
@@ -806,9 +835,9 @@ func cloneRepo4LocalWithCommand(rootDir string, gitUrl string) (string, error) {
 	return repoPath, err
 }
 
-// clone repos for local mode
+/* // clone repos for local mode
 func cloneRepo4Local(rootDir string, gitUrl string) string {
-	repoName := getRepoName(gitUrl)
+	repoName := common.GetRepoName(gitUrl)
 	repoPath := common.PathJoin(rootDir, repoName)
 	options := &git.CloneOptions{
 		URL:      gitUrl,
@@ -850,3 +879,4 @@ func cloneRepo4Local(rootDir string, gitUrl string) string {
 	}
 	return repoPath
 }
+*/
