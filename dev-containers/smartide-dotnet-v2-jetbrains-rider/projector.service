@@ -1,0 +1,12 @@
+[Unit]
+Description=Rider Projector Service
+After=docker.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+ExecStart=/home/smartide/startup-projector.sh
+ExecReload=/home/smartide/startup-projector.sh
+
+[Install]
+WantedBy=multi-user.target

@@ -1,11 +1,21 @@
 #!/bin/bash
+###
+ # @Author: kenan
+ # @Date: 2022-05-24 14:37:27
+ # @LastEditors: kenan
+ # @LastEditTime: 2022-05-24 15:11:47
+ # @FilePath: /smartide/dev-containers/smartide-python-v2-jetbrains-clion/gosu_entrypoint.sh
+ # @Description: 
+ # 
+ # Copyright (c) 2022 by kenanlu@leansoftx.com, All Rights Reserved. 
+### 
 
 USER_UID=${LOCAL_USER_UID:-1000}
 USER_GID=${LOCAL_USER_GID:-1000}
 USER_PASS=${LOCAL_USER_PASSWORD:-"smartide123.@IDE"}
 USERNAME=smartide
 
-echo "gosu_entrypoint_node.sh"
+echo "gosu_entrypoint.sh"
 echo "Starting with USER_UID : $USER_UID"
 echo "Starting with USER_GID : $USER_GID"
 echo "Starting with USER_PASS : $USER_PASS"
@@ -30,8 +40,9 @@ if [ $USER_UID == '0' ]; then
     echo "-----------Starting sshd"
     /usr/sbin/sshd
 
-    echo "-----------Starting ide"
-    exec  run.sh "$@"
+    echo "-----------Starting ide CLion"
+    # exec run.sh "$@"
+    cd /home/smartide && exec ./run.sh
 
 else
 
@@ -73,7 +84,7 @@ else
     #exec /usr/sbin/sshd -D -e "$@"
     /usr/sbin/sshd
     
-    echo "-----smartide-----Starting gosu ide"
-    exec gosu smartide /home/smartide/run.sh "$@"
+    echo "-----smartide-----Starting gosu CLion"
+    cd /home/smartide && exec gosu smartide ./run.sh
 
 fi

@@ -4,13 +4,16 @@
 # Copyright (C) leansoftX.com
 #################################################
 
-FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-python-v2:latest
+ARG BUILD_PYTHON_VERSION=3.10.8
+
+FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-python-v2:${BUILD_PYTHON_VERSION}
 
 USER root
 
 WORKDIR /home
 #复制IDE文件
 COPY openvscode-images opvscode
+COPY openvscode-images/bin/remote-cli/openvscode-server opvscode/bin/remote-cli/code
 
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
@@ -21,5 +24,10 @@ ENV LANG=C.UTF-8 \
 
 COPY gosu_entrypoint_node.sh /idesh/gosu_entrypoint_node.sh
 RUN chmod +x /idesh/gosu_entrypoint_node.sh
+
+#替换Smartide插件市场
+WORKDIR opvscode
+RUN find ./  -name "*.js" | xargs perl -pi -e 's|https://open-vsx.org|https://marketplace.smartide.cn|g' 
+RUN find ./  -name "*.json" | xargs perl -pi -e 's|https://open-vsx.org|https://marketplace.smartide.cn|g'
 
 ENTRYPOINT ["/idesh/gosu_entrypoint_node.sh"]

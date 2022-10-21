@@ -3,7 +3,7 @@
  # @Author: kenan
  # @Date: 2022-05-24 14:37:27
  # @LastEditors: kenan
- # @LastEditTime: 2022-05-24 15:15:32
+ # @LastEditTime: 2022-05-24 15:13:16
  # @FilePath: /smartide/dev-containers/smartide-python-v2-vscode/gosu_entrypoint_node.sh
  # @Description: 
  # 
@@ -13,12 +13,14 @@
 USER_UID=${LOCAL_USER_UID:-1000}
 USER_GID=${LOCAL_USER_GID:-1000}
 USER_PASS=${LOCAL_USER_PASSWORD:-"smartide123.@IDE"}
+DISABLE_CHOWN=${DISABLE_CHOWN:-0}
 USERNAME=smartide
 
 echo "gosu_entrypoint_node.sh"
 echo "Starting with USER_UID : $USER_UID"
 echo "Starting with USER_GID : $USER_GID"
 echo "Starting with USER_PASS : $USER_PASS"
+echo "Starting with DISABLE_CHOWN : $DISABLE_CHOWN"
 
 # root运行容器，容器里面一样root运行
 if [ $USER_UID == '0' ]; then
@@ -30,7 +32,7 @@ if [ $USER_UID == '0' ]; then
     chown -R $USERNAMEROOT:$USERNAMEROOT /home/project
     chown -R $USERNAMEROOT:$USERNAMEROOT /home/opvscode
 
-    chmod +x /home/opvscode/server.sh
+    #chmod +x /home/opvscode/server.sh
     ln -sf /home/$USERNAME/.nvm/versions/node/v$NODE_VERSION/bin/node /home/opvscode
 
     export HOME=/root
@@ -40,8 +42,9 @@ if [ $USER_UID == '0' ]; then
     echo "-----------Starting sshd"
     /usr/sbin/sshd
 
-    echo "-----------Starting ide"
-    exec /home/opvscode/server.sh "$@"
+    echo "-----------Starting smartide-python-v2-vscode"
+    exec /home/smartide/.nvm/versions/node/v16.9.1/bin/node /home/opvscode/out/server-main.js --host 0.0.0.0 --without-connection-token
+
 
 else
 
@@ -70,7 +73,7 @@ else
     chown -R $USERNAME:$USERNAME /home/opvscode
     chown -R $USERNAME:$USERNAME /home/$USERNAME/.ssh
 
-    chmod +x /home/opvscode/server.sh
+    #chmod +x /home/opvscode/server.sh
 
     echo "root:$USER_PASS" | chpasswd
     echo "smartide:$USER_PASS" | chpasswd
@@ -83,7 +86,7 @@ else
     # exec /usr/sbin/sshd -D -e "$@"
     /usr/sbin/sshd
 
-    echo "-----smartide-----Starting gosu ide"
-    exec gosu smartide /home/opvscode/server.sh "$@"
+    echo "-----smartide-----Starting gosu smartide-python-v2-vscode"
+    exec su smartide -c "/home/smartide/.nvm/versions/node/v16.9.1/bin/node /home/opvscode/out/server-main.js --host 0.0.0.0 --without-connection-token"
 
 fi

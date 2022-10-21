@@ -51,7 +51,7 @@ for i in ./extensions/*.vsix;
     done
 
 sudo \cp -rf ./vsix/extensions openvscode-images
-sudo \cp -rf ./vsix/extensions  openvscode-images-vmlc
+sudo \cp -rf ./vsix/extensions openvscode-images-vmlc
 
 echo 'ide.sh............end'
 
