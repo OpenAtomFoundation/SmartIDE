@@ -3,11 +3,12 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-19 17:51:03
+ * @LastEditTime: 2022-10-21 09:07:53
  */
 package start
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -519,6 +520,17 @@ func gitAction(sshRemote common.SSHRemote, workspaceInfo workspace.WorkspaceInfo
 		gitPullCommand = fmt.Sprintf("cd %v && %v && git pull && cd ~", workspaceInfo.WorkingDirectoryPath, checkoutCommand)
 
 	}
-	err = sshRemote.ExecSSHCommandRealTime(gitPullCommand)
+	err = sshRemote.ExecSSHCommandRealTimeFunc(gitPullCommand, func(output string) error {
+		if strings.Contains(output, "error") || strings.Contains(output, "fatal") {
+			// git credential-store" store: 1: git credential-store" store: Syntax error: Unterminated quoted string
+			if strings.Contains(output, "git credential-store") && strings.Contains(output, "Syntax error: Unterminated quoted string") {
+
+			} else {
+				return errors.New(output)
+			}
+		}
+
+		return nil
+	})
 	return err
 }

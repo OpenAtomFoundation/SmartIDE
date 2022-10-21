@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2022-10-08 11:31:49
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-10-21 09:02:54
  */
 package common
 
@@ -423,26 +423,6 @@ func (instance *SSHRemote) GitClone(gitRepoUrl string, workSpaceDir string, no s
 		workSpaceDir = GetRepoName(gitRepoUrl)
 	}
 
-	// 检测是否为ssh模式
-	// 是否覆盖服务器上的私钥文件
-	// 文件存在时提示是否覆盖
-	// 获取工作区策略中的 ssh-key
-	// workspace.GetWSPolicies(no, "2")
-	// 读取本地的ssh配置文件
-	// 读取本地的 id_rsa 文件
-	// , string(localRsaPub)
-	// 公钥 文件不同时才会提示覆盖
-	// fmt.Scanln(&isOverwrite)
-	// 提示私钥文件是否覆盖（不覆盖就无法执行git clone）
-	// fmt.Scanln(&isAllowCopyPrivateKey)
-	// 读取本地的 id_rsa 文件
-	// 读取本地的 id_rsa.pub 文件
-	// 执行私钥文件复制
-	// log
-	// 执行私钥密码的取消 —— 把私钥密码设置为空
-	// https://docs.github.com/cn/authentication/connecting-to-github-with-ssh/working-with-ssh-key-passphrases
-	// instance.ExecSSHkeyPolicy(gitRepoUrl, no, cmd)
-
 	// 执行clone
 	//gitDirPath := strings.Replace(FilePahtJoin4Linux(workSpaceDir, ".git"), "~/", "", -1) // 把路径变成 “a/b/c” 的形式，不支持 “./a/b/c”、“～/a/b/c”、“./a/b/c”
 	GIT_SSH_COMMAND := fmt.Sprintf(`GIT_SSH_COMMAND='ssh -i ~/.ssh/id_rsa_%s_%s -o IdentitiesOnly=yes'`, userName, no)
@@ -452,9 +432,9 @@ func (instance *SSHRemote) GitClone(gitRepoUrl string, workSpaceDir string, no s
 	err := instance.ExecSSHCommandRealTimeFunc(cloneCommand, func(output string) error {
 		if strings.Contains(output, "error") || strings.Contains(output, "fatal") {
 
-			newGitRepoUrl := strings.ToLower(gitRepoUrl)
+			//newGitRepoUrl := strings.ToLower(gitRepoUrl)
 
-			// 需要录入密码的情况
+			/* // 需要录入密码的情况
 			if strings.Contains(output, "could not read Password for") { // 常规录入密码
 				SmartIDELog.Console(i18n.GetInstance().Common.Info_please_enter_password)
 				passwordBytes, _ := gopass.GetPasswdMasked()
@@ -474,16 +454,15 @@ func (instance *SSHRemote) GitClone(gitRepoUrl string, workSpaceDir string, no s
 				// 再次运行 git clone
 				instance.ExecSSHCommandRealTimeFunc(cloneCommand, nil)
 
+			}else */
+			// git credential-store" store: 1: git credential-store" store: Syntax error: Unterminated quoted string
+			if strings.Contains(output, "git credential-store") && strings.Contains(output, "Syntax error: Unterminated quoted string") {
+
 			} else {
 				return errors.New(output)
 			}
 
-		} /* else {
-			SmartIDELog.ConsoleInLine(output)
-			if strings.Contains(output, "done.") {
-				fmt.Println()
-			}
-		} */
+		}
 
 		return nil
 	})
@@ -819,7 +798,10 @@ func (instance *SSHRemote) ExecSSHCommandRealTimeFunc(sshCommand string, customE
 	originExecuteFun := func(output string) error {
 		output = strings.ToLower(output)
 		if strings.Contains(output, "error") || strings.Contains(output, "fatal") {
+			//if !strings.Contains(output, `git credential-store" store: syntax error: unterminated quoted string`) {
 			return fmt.Errorf(output)
+			//}
+
 		} else {
 			fmt.Print(output) // 进度信息不需要记录到日志
 			if strings.Contains(output, "done.") {
@@ -860,15 +842,12 @@ func (instance *SSHRemote) ExecSSHCommandRealTimeFunc(sshCommand string, customE
 			}
 
 			err = originExecuteFun(originMsg)
-			if err != nil {
-				return err
-			}
-
 			if customExecuteFun != nil {
 				err = customExecuteFun(originMsg)
-				if err != nil {
-					return err
-				}
+			}
+
+			if err != nil {
+				return err
 			}
 
 		}
