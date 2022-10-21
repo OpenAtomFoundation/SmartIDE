@@ -31,7 +31,7 @@ func SetTrack(cmd, version, args, workModel, imageName string) {
 	event.Properties["image"] = imageName
 	hostname, _ := os.Hostname()
 	event.Tags.User().SetId(hostname)
-
+	event.Tags.Application().SetVer(version)
 	telemetryClient.Track(event)
 }
 
