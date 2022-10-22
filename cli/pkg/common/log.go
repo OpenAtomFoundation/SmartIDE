@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2022-10-19 12:35:17
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-10-22 16:41:30
  */
 package common
 
@@ -78,6 +78,42 @@ func (sLog *smartIDELogStruct) InitLogger(logLevel string) {
 	initLogger()
 }
 
+var _entryptionKeys []string
+
+// 添加需要加密的密钥信息
+func (sLog *smartIDELogStruct) AddEntryptionKey(key string) {
+	isContain := false
+	for _, item := range _entryptionKeys {
+		if item == key {
+			isContain = true
+		}
+	}
+	if !isContain {
+		_entryptionKeys = append(_entryptionKeys, key)
+	}
+}
+
+func entryptionKeys(contents []string) []string {
+	result := []string{}
+	for _, content := range contents {
+		result = append(result, entryptionKey(content))
+	}
+
+	return result
+}
+
+func entryptionKey(content string) string {
+	for _, key := range _entryptionKeys {
+		if len(key) > 18 {
+			content = strings.ReplaceAll(content, key, content[:3]+"******"+content[len(content)-3:])
+		} else {
+			content = strings.ReplaceAll(content, key, "***")
+		}
+	}
+
+	return content
+}
+
 func (sLog *smartIDELogStruct) Error(err interface{}, headers ...string) (reErr error) {
 
 	if err == nil {
@@ -108,6 +144,8 @@ func (sLog *smartIDELogStruct) Error(err interface{}, headers ...string) (reErr 
 			EndAt:    time.Now(),
 		})
 	}
+	fullContents = entryptionKeys(fullContents) // 加密密钥
+
 	// 调试模式时向控制台输出堆栈
 	if isDebugLevel {
 		fmt.Println(prefix, strings.Join(fullContents, "; "))
@@ -135,9 +173,8 @@ func (sLog *smartIDELogStruct) Fatal(fatal interface{}, headers ...string) {
 		// 堆栈
 		stack := string(debug.Stack())
 		contents = append(contents, stack)
-
-		// 去重
-		contents = RemoveDuplicatesAndEmpty(contents)
+		contents = RemoveDuplicatesAndEmpty(contents) // 去重
+		contents = entryptionKeys(contents)           // 加密密钥
 
 		// 打印日志
 		fmt.Println(strings.Join(contents, "; "))
@@ -158,6 +195,7 @@ func (sLog *smartIDELogStruct) Info(args ...string) {
 	if isRepeat(msg, zapcore.InfoLevel) { // 是否重复
 		return
 	}
+	msg = entryptionKey(msg) // 加密
 
 	prefix := getPrefix(zapcore.InfoLevel)
 	fmt.Println(prefix, msg)
@@ -209,6 +247,7 @@ func (sLog *smartIDELogStruct) Debug(args ...string) {
 	}
 
 	msg := strings.Join(args, " ")
+	msg = entryptionKey(msg) // 加密
 
 	prefix := getPrefix(zapcore.DebugLevel)
 	if isDebugLevel {
@@ -262,9 +301,14 @@ func (sLog *smartIDELogStruct) ConsoleInLine(args ...interface{}) {
 	if len(args) <= 0 {
 		return
 	}
+	strs := []string{}
+	for _, item := range args {
+		strs = append(strs, fmt.Sprint(item))
+	}
+	strs = entryptionKeys(strs) // 加密
 
-	fmt.Printf("\r%v\r", args...)
-	sugarLogger.Info(args...)
+	fmt.Printf("\r%v\r", strs)
+	sugarLogger.Info(strs)
 }
 
 func (sLog *smartIDELogStruct) ImportanceWithError(err error) {
@@ -287,6 +331,7 @@ func (sLog *smartIDELogStruct) Importance(infos ...string) {
 	if isRepeat(msg, zapcore.WarnLevel) { // 是否重复
 		return
 	}
+	msg = entryptionKey(msg) // 加密
 
 	prefix := getPrefix(zapcore.WarnLevel)
 	fmt.Println(prefix, msg)
@@ -306,6 +351,7 @@ func (sLog *smartIDELogStruct) Warning(warning ...string) {
 	if len(msg) <= 0 {
 		return
 	}
+	msg = entryptionKey(msg) // 加密
 
 	prefix := getPrefix(zapcore.WarnLevel)
 	if isDebugLevel {

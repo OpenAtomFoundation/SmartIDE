@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-21 10:08:17
+ * @LastEditTime: 2022-10-22 16:56:54
  */
 package cmd
 
@@ -60,7 +60,7 @@ var startCmd = &cobra.Command{
   smartide start --host <hostid> <actual git repo url> <templatetype> -T {typename}
   smartide start --k8s <context> --repoUrl <actual git repo url> --branch master
   smartide start --k8s <context> <actual git repo url>`,
-	PreRunE: preRunValid,
+	PreRunE: preRun,
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		if apiHost, _ := cmd.Flags().GetString(server.Flags_ServerHost); apiHost != "" {
@@ -93,6 +93,7 @@ var startCmd = &cobra.Command{
 		//0.1. 从参数中获取结构体，并做基本的数据有效性校验
 		common.SmartIDELog.Info(i18nInstance.Main.Info_workspace_loading)
 		workspaceInfo, err := getWorkspaceFromCmd(cmd, args) // 获取 workspace 对象 ★★★★★
+		entryptionKey4Workspace(workspaceInfo)               // 申明需要加密的文本
 		common.CheckErrorFunc(err, func(err error) {
 			mode, _ := cmd.Flags().GetString("mode")
 			isModeServer := strings.ToLower(mode) == "server"
@@ -207,20 +208,30 @@ var startCmd = &cobra.Command{
 	},
 }
 
-// 运行前的参数验证
-func preRunValid(cmd *cobra.Command, args []string) error {
+// 运行前
+func preRun(cmd *cobra.Command, args []string) error {
 	kubeconfig, _ := cmd.Flags().GetString(flag_kubeconfig)
 	context, _ := cmd.Flags().GetString(flag_k8s)
 	mode, _ := cmd.Flags().GetString("mode")
 
+	// 参数验证
 	if mode == "server" {
 		if kubeconfig != "" {
 			common.SmartIDELog.Importance("server 模式下，--kubeconfig参数无效")
 		}
 	}
-
 	if kubeconfig != "" && context == "" {
 		return errors.New("k8s 参数为空！")
+	}
+
+	// 密钥加密显示
+	gitPassword, _ := cmd.Flags().GetString(flag_gitpassword)
+	if gitPassword != "" {
+		common.SmartIDELog.AddEntryptionKey(gitPassword)
+	}
+	remotePassword, _ := cmd.Flags().GetString(flag_password)
+	if remotePassword != "" {
+		common.SmartIDELog.AddEntryptionKey(remotePassword)
 	}
 
 	return nil
@@ -252,6 +263,7 @@ var (
 	flag_branch      = "branch"
 	flag_k8s         = "k8s"
 	flag_kubeconfig  = "kubeconfig"
+	flag_gitpassword = "gitpassword"
 )
 
 // 获取工作区id
@@ -576,6 +588,15 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 	}
 
 	return workspaceInfo, err
+}
+
+func entryptionKey4Workspace(workspaceInfo workspace.WorkspaceInfo) {
+	if workspaceInfo.Remote.Password != "" {
+		common.SmartIDELog.AddEntryptionKey(workspaceInfo.Remote.Password)
+	}
+	if workspaceInfo.K8sInfo.KubeConfigContent != "" {
+		common.SmartIDELog.AddEntryptionKey(workspaceInfo.K8sInfo.KubeConfigContent)
+	}
 }
 
 // 从命令行中加载 git 相关信息

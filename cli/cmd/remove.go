@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-16 10:40:20
+ * @LastEditTime: 2022-10-22 16:59:04
  */
 package cmd
 
@@ -97,6 +97,7 @@ var removeCmd = &cobra.Command{
 		//1. 获取 workspace 信息
 		common.SmartIDELog.Info(i18nInstance.Main.Info_workspace_loading) // log
 		workspaceInfo, err := getWorkspaceFromCmd(cmd, args)
+		entryptionKey4Workspace(workspaceInfo) // 申明需要加密的文本
 		common.CheckError(err)
 		if workspaceInfo.IsNil() {
 			common.SmartIDELog.Error(i18nInstance.Main.Err_workspace_none)

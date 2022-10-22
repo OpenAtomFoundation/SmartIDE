@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-04-20 17:08:53
- * @LastEditors: kenan
- * @LastEditTime: 2022-09-09 16:40:54
- * @FilePath: /smartide/cli/cmd/new.go
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-10-22 16:59:10
+ * @FilePath: /cli/cmd/new.go
  */
 package cmd
 
@@ -33,6 +33,7 @@ var newCmd = &cobra.Command{
 		}
 
 		workspaceInfo, err := getWorkspaceFromCmd(cmd, args)
+		entryptionKey4Workspace(workspaceInfo) // 申明需要加密的文本
 		common.CheckError(err)
 		executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
 			if config.GlobalSmartIdeConfig.IsInsightEnabled != config.IsInsightEnabledEnum_Enabled {

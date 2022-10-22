@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-04-29 16:41:28
+ * @LastEditTime: 2022-10-22 16:59:23
  */
 package cmd
 
@@ -17,7 +17,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-//
 var getCmd = &cobra.Command{
 	Use:   "get",
 	Short: i18nInstance.Get.Info_help_short,
@@ -36,6 +35,7 @@ var getCmd = &cobra.Command{
 
 		// 从数据库中查询
 		workspaceInfo, err := getWorkspaceFromCmd(cmd, args)
+		entryptionKey4Workspace(workspaceInfo) // 申明需要加密的文本
 		common.CheckError(err)
 		if workspaceInfo.IsNil() {
 			workspaceIdStr := getWorkspaceIdFromFlagsOrArgs(cmd, args)
