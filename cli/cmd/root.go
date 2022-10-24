@@ -121,6 +121,12 @@ var rootCmd = &cobra.Command{
 		common.ServerUserGuid, _ = fflags.GetString(serverUserGuid)
 		common.Mode, _ = fflags.GetString(serverMode)
 
+		// 加密
+		servertoken, _ := fflags.GetString("servertoken")
+		if servertoken != "" {
+			common.SmartIDELog.AddEntryptionKeyWithReservePart(servertoken)
+		}
+
 	},
 }
 
