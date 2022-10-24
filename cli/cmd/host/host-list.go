@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors:
- * @LastEditTime:
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-10-24 10:02:33
  */
 package host
 
@@ -41,10 +41,11 @@ func printRemotes(remotes []workspace.RemoteInfo) {
 	}
 	w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
 	fmt.Fprintln(w, i18nInstance.Host.Info_host_table_header)
-	for _, worksapce := range remotes {
+	for _, remoteInfo := range remotes {
+		entryptionKey4Host(remoteInfo)
 
-		createTime := worksapce.CreatedTime.Format("2006-01-02 15:04:05")
-		line := fmt.Sprintf("%v\t%v\t%v\t%v", worksapce.ID, worksapce.Addr, worksapce.SSHPort, createTime)
+		createTime := remoteInfo.CreatedTime.Format("2006-01-02 15:04:05")
+		line := fmt.Sprintf("%v\t%v\t%v\t%v", remoteInfo.ID, remoteInfo.Addr, remoteInfo.SSHPort, createTime)
 		fmt.Fprintln(w, line)
 	}
 	w.Flush()

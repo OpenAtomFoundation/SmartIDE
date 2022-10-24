@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-22 16:41:30
+ * @LastEditTime: 2022-10-24 15:04:50
  */
 package common
 
@@ -78,18 +78,34 @@ func (sLog *smartIDELogStruct) InitLogger(logLevel string) {
 	initLogger()
 }
 
-var _entryptionKeys []string
+type entryptionKeyConfig struct {
+	SecretKey     string
+	IsReservePart bool
+}
+
+var _entryptionKeyConfigs []entryptionKeyConfig
 
 // 添加需要加密的密钥信息
 func (sLog *smartIDELogStruct) AddEntryptionKey(key string) {
+	sLog.addEntryptionKey(key, false)
+}
+
+func (sLog *smartIDELogStruct) AddEntryptionKeyWithReservePart(key string) {
+	sLog.addEntryptionKey(key, true)
+}
+
+func (sLog *smartIDELogStruct) addEntryptionKey(key string, isReservePart bool) {
+	if strings.TrimSpace(key) == "" {
+		return
+	}
 	isContain := false
-	for _, item := range _entryptionKeys {
-		if item == key {
+	for _, item := range _entryptionKeyConfigs {
+		if item.SecretKey == key {
 			isContain = true
 		}
 	}
 	if !isContain {
-		_entryptionKeys = append(_entryptionKeys, key)
+		_entryptionKeyConfigs = append(_entryptionKeyConfigs, entryptionKeyConfig{key, isReservePart})
 	}
 }
 
@@ -103,11 +119,12 @@ func entryptionKeys(contents []string) []string {
 }
 
 func entryptionKey(content string) string {
-	for _, key := range _entryptionKeys {
-		if len(key) > 18 {
-			content = strings.ReplaceAll(content, key, content[:3]+"******"+content[len(content)-3:])
+	for _, entryptionKeyConfig := range _entryptionKeyConfigs {
+		if entryptionKeyConfig.IsReservePart && len(entryptionKeyConfig.SecretKey) > 3 {
+			newStr := entryptionKeyConfig.SecretKey[:3] + "******" + entryptionKeyConfig.SecretKey[len(entryptionKeyConfig.SecretKey)-3:]
+			content = strings.ReplaceAll(content, entryptionKeyConfig.SecretKey, newStr)
 		} else {
-			content = strings.ReplaceAll(content, key, "***")
+			content = strings.ReplaceAll(content, entryptionKeyConfig.SecretKey, "***")
 		}
 	}
 
@@ -281,8 +298,13 @@ func (sLog *smartIDELogStruct) Console(args ...interface{}) {
 		return
 	}
 
-	fmt.Println(args...)
-	sugarLogger.Info(args...)
+	strs := []string{}
+	for _, item := range args {
+		strs = append(strs, fmt.Sprint(item))
+	}
+	strs = entryptionKeys(strs)
+	fmt.Println(strs)
+	sugarLogger.Info(strs)
 }
 
 // 输出到控制台，但是不加任何的修饰

@@ -2,8 +2,8 @@
  * @Author: vincent wei (vincentwei@leansoftx.com, https://github.com/zlweicoder)
  * @Description:
  * @Date: 2021-12-31
- * @LastEditors: kenan
- * @LastEditTime: 2022-10-19 12:59:20
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-10-24 14:40:46
  */
 package host
 
@@ -70,6 +70,12 @@ var HostAddCmd = &cobra.Command{
 		hostId, err := dal.InsertOrUpdateRemote(remoteInfo)
 		common.CheckError(err)
 		common.SmartIDELog.Info(fmt.Sprintf(i18nInstance.Host.Info_host_add_success, host, hostId))
+	},
+	PreRun: func(cmd *cobra.Command, args []string) {
+		password := getFlagValue(cmd.Flags(), flag_password)
+		if password != "" {
+			common.SmartIDELog.AddEntryptionKey(password)
+		}
 	},
 }
 

@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-22 16:56:54
+ * @LastEditTime: 2022-10-24 14:39:12
  */
 package cmd
 
@@ -227,7 +227,7 @@ func preRun(cmd *cobra.Command, args []string) error {
 	// 密钥加密显示
 	gitPassword, _ := cmd.Flags().GetString(flag_gitpassword)
 	if gitPassword != "" {
-		common.SmartIDELog.AddEntryptionKey(gitPassword)
+		common.SmartIDELog.AddEntryptionKeyWithReservePart(gitPassword)
 	}
 	remotePassword, _ := cmd.Flags().GetString(flag_password)
 	if remotePassword != "" {
@@ -595,7 +595,7 @@ func entryptionKey4Workspace(workspaceInfo workspace.WorkspaceInfo) {
 		common.SmartIDELog.AddEntryptionKey(workspaceInfo.Remote.Password)
 	}
 	if workspaceInfo.K8sInfo.KubeConfigContent != "" {
-		common.SmartIDELog.AddEntryptionKey(workspaceInfo.K8sInfo.KubeConfigContent)
+		common.SmartIDELog.AddEntryptionKeyWithReservePart(workspaceInfo.K8sInfo.KubeConfigContent)
 	}
 }
 

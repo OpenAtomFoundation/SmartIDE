@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-15 17:18:27
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-23 10:51:25
+ * @LastEditTime: 2022-10-24 14:39:58
  * @FilePath: /cli/internal/biz/workspace/workspace.go
  * @Description:
  *
@@ -121,5 +121,10 @@ func GetCurrentUser() (auth model.Auth, err error) {
 			break
 		}
 	}
+
+	if auth.Token != "" {
+		common.SmartIDELog.AddEntryptionKeyWithReservePart(fmt.Sprint(auth.Token))
+	}
+
 	return auth, err
 }
