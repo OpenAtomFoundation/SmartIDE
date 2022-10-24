@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:13:54
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-08 09:39:37
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-10-21 17:20:58
  * @FilePath: /cli/pkg/k8s/k8sUtil.go
  */
 
@@ -235,8 +235,8 @@ func (k *KubernetesUtil) CopyLocalGitConfigToPod(pod coreV1.Pod, containerName s
 	if err != nil {
 		return err
 	}
-	gitconfigs := string(bytes)
-	gitconfigs = strings.ReplaceAll(gitconfigs, "file:", "")
+	gitconfigs := "core.autocrlf=true\n"
+	gitconfigs = fmt.Sprintf("%s%s", gitconfigs, strings.ReplaceAll(string(bytes), "file:", ""))
 	for _, str := range strings.Split(gitconfigs, "\n") {
 		str = strings.TrimSpace(str)
 		if str == "" {
@@ -248,7 +248,7 @@ func (k *KubernetesUtil) CopyLocalGitConfigToPod(pod coreV1.Pod, containerName s
 		}
 		var key = str[0:index]
 		var value = str[index+1:]
-		if strings.Contains(key, "user.name") || strings.Contains(key, "user.email") {
+		if strings.Contains(key, "user.name") || strings.Contains(key, "user.email") || strings.Contains(key, "core.autocrlf") {
 			gitConfigCmd := fmt.Sprintf(`git config --global --replace-all %v '%v'`, key, value)
 			err = k.ExecuteCommandRealtimeInPod(pod, containerName, gitConfigCmd, runAsUser)
 			if err != nil {

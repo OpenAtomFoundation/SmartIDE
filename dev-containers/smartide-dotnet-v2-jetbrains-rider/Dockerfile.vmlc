@@ -46,7 +46,7 @@ RUN chmod 644 $PROJECTOR_DIR/ide/projector-server/lib/*
 
 # -------------配置运行环境
 
-FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-dotnet-v2:latest
+FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-dotnet-v2-vmlc:latest
 
 RUN true \
 # Any command which returns non-zero exit code will cause this shell script to exit immediately:
@@ -119,8 +119,9 @@ RUN sudo echo "Running 'sudo' for smartide: success" && \
 
 EXPOSE 8887
 USER root
+COPY projector.service /lib/systemd/system/
+COPY startup-projector.sh /home/smartide/startup-projector.sh
 
-COPY gosu_entrypoint.sh /idesh/gosu_entrypoint.sh
-RUN chmod +x /idesh/gosu_entrypoint.sh
-
-ENTRYPOINT ["/idesh/gosu_entrypoint.sh"]
+RUN chmod +x /home/smartide/startup-projector.sh \
+    && ln -sf /lib/systemd/system/projector.service \
+    /etc/systemd/system/multi-user.target.wants/projector.service

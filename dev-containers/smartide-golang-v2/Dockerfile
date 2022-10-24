@@ -28,7 +28,9 @@ ENV PATH=/home/smartide/go/bin:$PATH
 
 RUN mkdir -p /home/smartide && mkdir -p /home/smartide/go && mkdir -p /home/smartide/tmp && chmod -R 777 /home/smartide/tmp && \
     mkdir -p "$GOPATH/src" "$GOPATH/bin" "$GOPATH/pkg/mod" && chmod -R 777 "$GOPATH" && \
+    echo "export GOROOT=/usr/local/go" >> /etc/profile && echo "export GOPATH=/home/smartide/go" >> /etc/profile && \
     echo "export PATH=/usr/local/go/bin:/home/smartide/go/bin:$PATH" >> /etc/profile
+
 
 RUN wget -O go.tgz https://go.dev/dl/go$GOLANG_VERSION.linux-amd64.tar.gz --progress=dot:giga \
     && tar -C /usr/local -xzf go.tgz \

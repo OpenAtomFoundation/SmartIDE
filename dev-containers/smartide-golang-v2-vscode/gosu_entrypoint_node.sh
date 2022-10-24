@@ -42,7 +42,7 @@ if [ $USER_UID == '0' ]; then
     echo "-----------Starting sshd"
     /usr/sbin/sshd
 
-    echo "-----------Starting ide"
+    echo "-----------Starting smartide-golang-v2-vscode"
     exec /home/smartide/.nvm/versions/node/v16.9.1/bin/node /home/opvscode/out/server-main.js --host 0.0.0.0 --without-connection-token
 
 
@@ -86,7 +86,7 @@ else
     # exec /usr/sbin/sshd -D -e "$@"
     /usr/sbin/sshd
 
-    echo "-----smartide-----Starting gosu ide"
+    echo "-----smartide-----Starting gosu smartide-golang-v2-vscode"
     exec su smartide -c "/home/smartide/.nvm/versions/node/v16.9.1/bin/node /home/opvscode/out/server-main.js --host 0.0.0.0 --without-connection-token"
 
 fi

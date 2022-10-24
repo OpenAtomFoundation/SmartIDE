@@ -27,6 +27,7 @@ workspace:
       - go111MODULE=on go install honnef.co/go/tools/cmd/staticcheck@latest
       - go111MODULE=on go install golang.org/x/tools/gopls@latest
       - go mod tidy
+      - code --install-extension golang.go
       # run in terminal: go run build or go run main.go
 
   kube-deploy-files: "vscode-vmlc-k8s-deployment.yaml" 
@@ -45,7 +46,7 @@ workspace:
 #             "type": "go",
 #             "request": "launch",
 #             "trace": "verbose",
-#             "program": "${workspaceFolder}",
+#             "program": "${workspaceFolder}/cli",
 #             "args": [
 #                 "list",
 #                 "-d"

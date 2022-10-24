@@ -22,6 +22,14 @@ spec:
         - containerPort: 3000
         - containerPort: 22
         - containerPort: 1313
+      resources:
+        requests:
+          memory: "2Gi"
+          cpu: "2000m"
+        limits:
+          memory: "4Gi"
+          cpu: "3000m"
+
 
 ---
 

@@ -11,6 +11,8 @@ USER root
 WORKDIR /home
 #复制IDE文件
 COPY openvscode-images opvscode
+COPY openvscode-images/bin/remote-cli/openvscode-server opvscode/bin/remote-cli/code
+
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     EDITOR=code \

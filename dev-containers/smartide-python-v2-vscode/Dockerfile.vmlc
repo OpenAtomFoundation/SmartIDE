@@ -4,9 +4,9 @@
 # Copyright (C) leansoftX.com
 #################################################
 
-ARG BUILD_GOLANG_VERSION=1.19.1
+ARG BUILD_PYTHON_VERSION=3.10.8
 
-FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-golang-v2-vmlc:${BUILD_GOLANG_VERSION}
+FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-python-v2-vmlc:${BUILD_PYTHON_VERSION}
 
 USER root
 
