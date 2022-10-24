@@ -94,6 +94,7 @@ var k8sCmd = &cobra.Command{
 		//1. Get Workspace Info
 		common.SmartIDELog.Info(i18nInstance.K8s.Info_log_get_workspace_start)
 		workspaceInfo, err := getWorkspaceFromCmd(cmd, args)
+		entryptionKey4Workspace(workspaceInfo) // 申明需要加密的文本
 		common.CheckError(err)
 		if workspaceInfo.IsNil() {
 			workspaceIdStr := getWorkspaceIdFromFlagsOrArgs(cmd, args)

@@ -3,11 +3,12 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-19 16:21:19
+ * @LastEditTime: 2022-10-24 15:03:24
  */
 package config
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -29,7 +30,7 @@ const (
 	IsInsightEnabledEnum_Disabled IsInsightEnabledEnum = "false"
 )
 
-//userhome下的config
+// userhome下的config
 type GlobalConfig struct {
 	TemplateRepo     string               `yaml:"template-repo"`
 	ImagesRegistry   string               `yaml:"images-registry"`
@@ -47,7 +48,7 @@ func GetCurrentAuth(auths []model.Auth) model.Auth {
 	return model.Auth{}
 }
 
-//加载config配置文件
+// 加载config配置文件
 func (c *GlobalConfig) LoadConfigYaml() *GlobalConfig {
 	ideConfigPath := common.PathJoin(SmartIdeHome, configFileName)
 	isIdeConfigExist := common.IsExist(ideConfigPath)
@@ -70,10 +71,18 @@ func (c *GlobalConfig) LoadConfigYaml() *GlobalConfig {
 		c.SaveConfigYaml()
 	}
 
+	// 加密
+	for _, auth := range c.Auths {
+
+		if auth.Token != "" {
+			common.SmartIDELog.AddEntryptionKeyWithReservePart(fmt.Sprint(auth.Token))
+		}
+	}
+
 	return c
 }
 
-//保存config
+// 保存config
 func (c *GlobalConfig) SaveConfigYaml() {
 	ideConfigPath := common.PathJoin(SmartIdeHome, configFileName)
 	templatesByte, err := yaml.Marshal(&c)

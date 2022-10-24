@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-21 10:09:53
+ * @LastEditTime: 2022-10-24 14:40:16
  */
 package common
 
@@ -482,14 +482,14 @@ func (instance *SSHRemote) ExecSSHkeyPolicy(no string, userName string, host str
 	// fflags := cmd.Flags()
 	// userName, _ := fflags.GetString(Flags_ServerUserName)
 	commandRsa := fmt.Sprintf(`[[ -f ".ssh/id_rsa_%s_%s" ]] && cat ~/.ssh/id_rsa_%s_%s || echo ""`, userName, no, userName, no)
-	remoteRsaPri, err := instance.ExeSSHCommandConsole(commandRsa, false)
+	remoteRsaPri, err := instance.ExeSSHCommandConsoleAndEncryptedOutput(commandRsa)
 	CheckError(err)
-	SmartIDELog.DebugF("%v >> `%v`", commandRsa, "****")
+	//SmartIDELog.DebugF("%v >> `%v`", commandRsa, "****")
 
 	commandRsaPub := fmt.Sprintf(`[[ -f ".ssh/id_rsa.pub_%s_%s" ]] && cat ~/.ssh/id_rsa.pub_%s_%s || echo ""`, userName, no, userName, no)
-	remoteRsaPub, err := instance.ExeSSHCommandConsole(commandRsaPub, false)
+	remoteRsaPub, err := instance.ExeSSHCommandConsoleAndEncryptedOutput(commandRsaPub)
 	CheckError(err)
-	SmartIDELog.DebugF("%v >> `%v`", commandRsaPub, "****")
+	//SmartIDELog.DebugF("%v >> `%v`", commandRsaPub, "****")
 
 	idRsa := ""
 	idRsaPub := ""
@@ -557,9 +557,11 @@ func (instance *SSHRemote) ExecSSHkeyPolicy(no string, userName string, host str
 				if homeDir, err := os.UserHomeDir(); err == nil {
 					if rsa, err := ioutil.ReadFile(filepath.Join(homeDir, "/.ssh/id_rsa")); err == nil {
 						idRsa = string(rsa)
+						SmartIDELog.AddEntryptionKeyWithReservePart(idRsa)
 					}
 					if rsaPub, err := ioutil.ReadFile(filepath.Join(homeDir, "/.ssh/id_rsa.pub")); err == nil {
 						idRsaPub = string(rsaPub)
+						SmartIDELog.AddEntryptionKeyWithReservePart(idRsaPub)
 					}
 				}
 
@@ -576,7 +578,7 @@ func (instance *SSHRemote) ExecSSHkeyPolicy(no string, userName string, host str
 									chmod 600 ~/.ssh/id_rsa.pub_%s_%s
 
 `, userName, no, string(idRsa), userName, no, userName, no, userName, no, string(idRsaPub), userName, no, userName, no)
-				output, err := instance.ExeSSHCommandConsole(command, false)
+				output, err := instance.ExeSSHCommandConsole(command)
 				CheckError(err, output)
 
 				consoleCommand := strings.ReplaceAll(command, string(idRsa), "***")
@@ -704,7 +706,7 @@ func GetRepoName(repoUrl string) string {
 // 执行ssh command，在session模式下，standard output 只能在执行结束的时候获取到
 func (instance *SSHRemote) ExeSSHCommand(sshCommand string) (outContent string, err error) {
 
-	return instance.ExeSSHCommandConsole(sshCommand, true)
+	return instance.ExeSSHCommandConsole(sshCommand)
 }
 
 // 复制文件
@@ -754,7 +756,15 @@ func (instance *SSHRemote) CopyFile(localFilePath string, remoteFilepath string)
 }
 
 // 执行ssh command，在session模式下，standard output 只能在执行结束的时候获取到
-func (instance *SSHRemote) ExeSSHCommandConsole(sshCommand string, isConsoleAndLog bool) (outContent string, err error) {
+func (instance *SSHRemote) ExeSSHCommandConsole(sshCommand string) (outContent string, err error) {
+	return instance.exeSSHCommandConsole(sshCommand, false)
+}
+
+func (instance *SSHRemote) ExeSSHCommandConsoleAndEncryptedOutput(sshCommand string) (outContent string, err error) {
+	return instance.exeSSHCommandConsole(sshCommand, true)
+}
+
+func (instance *SSHRemote) exeSSHCommandConsole(sshCommand string, isEncryptedOutput bool) (outContent string, err error) {
 	if len(sshCommand) <= 0 {
 		return "", nil
 	}
@@ -776,10 +786,12 @@ func (instance *SSHRemote) ExeSSHCommandConsole(sshCommand string, isConsoleAndL
 	}
 
 	// 记录日志，有些情况下不想输出信息，比如cat id_rsa时
-	if isConsoleAndLog {
-		outContent = strings.Trim(outContent, "\n")
-		SmartIDELog.Debug(fmt.Sprintf("SSH Console %v:%v -> %v >> `%v`", instance.SSHHost, instance.SSHPort, sshCommand, outContent))
+	outContent = strings.Trim(outContent, "\n")
+	if isEncryptedOutput {
+		SmartIDELog.AddEntryptionKeyWithReservePart(outContent)
 	}
+	SmartIDELog.Debug(fmt.Sprintf("SSH Console %v:%v -> %v >> `%v`",
+		instance.SSHHost, instance.SSHPort, sshCommand, outContent))
 
 	return outContent, err
 }

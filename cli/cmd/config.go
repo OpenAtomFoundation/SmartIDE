@@ -1,3 +1,9 @@
+/*
+ * @Date: 2022-07-11 15:38:06
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-10-24 14:47:18
+ * @FilePath: /cli/cmd/config.go
+ */
 package cmd
 
 import (
@@ -28,7 +34,7 @@ var configCmd = &cobra.Command{
 			bytes, err := json.MarshalIndent(configStruct, "", "    ")
 			common.CheckError(err)
 			str := string(bytes)
-			fmt.Println(str)
+			common.SmartIDELog.Console(str)
 
 		} else if len(args) == 2 && args[0] == "set" {
 			if args[1] != "" {

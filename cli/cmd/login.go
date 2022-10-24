@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-10 16:51:36
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-23 09:14:52
+ * @LastEditTime: 2022-10-24 14:39:41
  * @FilePath: /cli/cmd/login.go
  * @Description:
  *
@@ -68,6 +68,7 @@ var loginCmd = &cobra.Command{
 		//TODO: 如果密码错误，可以重新录入再试
 
 		//2. 登录
+		common.SmartIDELog.AddEntryptionKey(userPassword) // 密码加密
 		cliRunningEnv := workspace.CliRunningEnvEnum_Client
 		if value, _ := fflags.GetString("mode"); strings.ToLower(value) == "server" {
 			cliRunningEnv = workspace.CliRunningEvnEnum_Server
@@ -117,6 +118,7 @@ func loginAndSaveToken(loginUrl, userName, userPassword string) error {
 		return fmt.Errorf("login fail %q", msg)
 	} else {
 		token := gojsonq.New().JSONString(response).Find("data.token")
+		common.SmartIDELog.AddEntryptionKeyWithReservePart(fmt.Sprint(token)) // token 加密输出
 		saveToken(loginUrl, userName, token)
 	}
 
