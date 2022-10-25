@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-24 15:03:24
+ * @LastEditTime: 2022-10-25 16:43:59
  */
 package config
 
@@ -69,6 +69,11 @@ func (c *GlobalConfig) LoadConfigYaml() *GlobalConfig {
 	if c.DefaultLoginUrl == "" {
 		c.DefaultLoginUrl = model.CONST_LOGIN_URL
 		c.SaveConfigYaml()
+	}
+
+	// 默认开启
+	if c.IsInsightEnabled == "" {
+		c.IsInsightEnabled = IsInsightEnabledEnum_Enabled
 	}
 
 	// 加密
