@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-25 16:43:59
+ * @LastEditTime: 2022-10-25 16:46:32
  */
 package config
 
@@ -36,7 +36,7 @@ type GlobalConfig struct {
 	ImagesRegistry   string               `yaml:"images-registry"`
 	DefaultLoginUrl  string               `yaml:"default-login-url"`
 	Auths            []model.Auth         `yaml:"auths"`
-	IsInsightEnabled IsInsightEnabledEnum `yaml:"isInsightEnabled"`
+	IsInsightEnabled IsInsightEnabledEnum `yaml:"isInsight"`
 }
 
 func GetCurrentAuth(auths []model.Auth) model.Auth {
