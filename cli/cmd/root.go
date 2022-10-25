@@ -57,7 +57,7 @@ var rootCmd = &cobra.Command{
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		fflags := cmd.Flags()
 
-		// appInsight 是否开启收集
+		// appInsight 是否开启收集smartide
 		mode, _ := cmd.Flags().GetString("mode")
 		if common.Contains([]string{"pipeline", "server"}, strings.ToLower(mode)) {
 			isInsightDisabled, _ := cmd.Flags().GetString("isInsightDisabled")
@@ -74,7 +74,7 @@ var rootCmd = &cobra.Command{
 			}
 		} else {
 			isInsightDisabled, _ := cmd.Flags().GetString("isInsightDisabled")
-			if isInsightDisabled != "" {
+			if isInsightDisabled != "" && cmd.Flags().Changed("isInsightDisabled") {
 				common.SmartIDELog.Importance("isInsightDisabled 参数仅在 mode = server|pipeline 下生效")
 			}
 
