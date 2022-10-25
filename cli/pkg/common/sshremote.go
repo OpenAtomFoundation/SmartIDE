@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-24 14:40:16
+ * @LastEditTime: 2022-10-25 15:54:31
  */
 package common
 
@@ -1021,7 +1021,7 @@ func connectionDial(sshHost string, sshPort int, sshUserName, sshPassword string
 			CheckError(err)
 			filePath := filepath.Join(homePath, "/.ssh/id_rsa")
 			key, err = ioutil.ReadFile(filePath)
-			CheckError(err, "unable to read private key:")
+			CheckError(err, "unable to read ssh private key:")
 		} else {
 			key = []byte(idRsa)
 		}

@@ -157,7 +157,7 @@ func init() {
 	rootCmd.Flags().BoolP("help", "h", false, i18n.GetInstance().Help.Info_help_short)
 	rootCmd.PersistentFlags().BoolVarP(&isDebug, "debug", "d", false, i18n.GetInstance().Main.Info_help_flag_debug)
 	rootCmd.PersistentFlags().StringP("mode", "m", string(model.RuntimeModeEnum_Client), i18n.GetInstance().Main.Info_help_flag_mode)
-	rootCmd.PersistentFlags().StringP("isInsightDisabled", "", "", "在mode = server|pipeline 模式下是否禁用“收集部分运行信息用于改进产品”")
+	rootCmd.PersistentFlags().StringP("isInsightDisabled", "", "true", "在mode = server|pipeline 模式下是否禁用“收集部分运行信息用于改进产品”")
 
 	rootCmd.PersistentFlags().StringP("serverworkspaceid", "", "", i18n.GetInstance().Main.Info_help_flag_server_workspace_id)
 	rootCmd.PersistentFlags().StringP("servertoken", "", "", i18n.GetInstance().Main.Info_help_flag_server_token)
