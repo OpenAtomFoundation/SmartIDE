@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-25 16:46:32
+ * @LastEditTime: 2022-10-26 14:31:11
  */
 package config
 
@@ -32,11 +32,11 @@ const (
 
 // userhome下的config
 type GlobalConfig struct {
-	TemplateRepo     string               `yaml:"template-repo"`
-	ImagesRegistry   string               `yaml:"images-registry"`
-	DefaultLoginUrl  string               `yaml:"default-login-url"`
-	Auths            []model.Auth         `yaml:"auths"`
-	IsInsightEnabled IsInsightEnabledEnum `yaml:"isInsight"`
+	TemplateRepo     string               `yaml:"template-repo" json:"template-repo"`
+	ImagesRegistry   string               `yaml:"images-registry" json:"images-registry"`
+	DefaultLoginUrl  string               `yaml:"default-login-url" json:"default-login-url"`
+	Auths            []model.Auth         `yaml:"auths" json:"auths"`
+	IsInsightEnabled IsInsightEnabledEnum `yaml:"isInsight" json:"isInsight"`
 }
 
 func GetCurrentAuth(auths []model.Auth) model.Auth {

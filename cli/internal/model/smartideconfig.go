@@ -2,8 +2,8 @@
  * @Author: kenan
  * @Date: 2022-02-15 17:56:00
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-05 09:23:22
- * @FilePath: /smartide-cli/internal/model/smartideconfig.go
+ * @LastEditTime: 2022-10-26 14:33:25
+ * @FilePath: /cli/internal/model/smartideconfig.go
  * @Description:
  *
  * Copyright (c) 2022 by kenanlu@leansoftx.com, All Rights Reserved.
@@ -25,10 +25,10 @@ type Config struct {
 }
 
 type Auth struct {
-	UserName   string      `yaml:"username"`
-	Token      interface{} `yaml:"token"`
-	LoginUrl   string      `yaml:"login_url"`
-	CurrentUse bool        `yaml:"current_use"`
+	UserName   string      `yaml:"username" json:"username"`
+	Token      interface{} `yaml:"token" json:"token"`
+	LoginUrl   string      `yaml:"login_url" json:"login_url"`
+	CurrentUse bool        `yaml:"current_use" json:"current_use"`
 }
 
 func (auth Auth) IsNil() bool {
