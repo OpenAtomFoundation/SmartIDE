@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
+	templateModel "github.com/leansoftX/smartide-cli/internal/biz/template/model"
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/docker/compose"
@@ -101,32 +102,35 @@ type WorkspaceInfo struct {
 	CliRunningEnv CliRunningEvnEnum
 	// 缓存环境
 	CacheEnv CacheEnvEnum
-	// host信息
-	Remote RemoteInfo
-	// git 库的克隆地址
-	GitCloneRepoUrl string
+
 	// WebIDE中文件所在根目录名称 （git库名称 或者 当前目录名）
 	projectDirctoryName string
+
+	// git 库的克隆地址
+	GitCloneRepoUrl string
 	// git 库的认证方式
 	GitRepoAuthType GitRepoAuthType
-
-	GitUserName string
-	GitPassword string
-
+	GitUserName     string
+	GitPassword     string
 	// 指定的分支
-	Branch string
+	GitBranch string
+
+	// GitRepo *GitRepoInfo // 合并到一个对象中
+
+	// 模板信息
+	SelectedTemplate *templateModel.SelectedTemplateTypeBo
 
 	// 配置文件
 	ConfigYaml config.SmartIdeConfig
 
-	//
+	// host信息
+	Remote RemoteInfo
+
+	// k8s
 	K8sInfo K8sInfo
 
 	// 临时的docker-compose文件
 	TempDockerCompose compose.DockerComposeYml
-
-	// 链接的docker-compose文件
-	//LinkDockerCompose compose.DockerComposeYml
 
 	// 扩展信息
 	Extend WorkspaceExtend
@@ -135,58 +139,72 @@ type WorkspaceInfo struct {
 	CreatedTime time.Time
 
 	// 关联的服务端workspace
-	ServerWorkSpace *model.ServerWorkspace
+	ServerWorkSpace *model.ServerWorkspaceResponse
 
 	ResourceID int
 }
 
-// 获取工作区状态值对应的label
+type GitRepoInfo struct {
+	// git 库的克隆地址
+	GitCloneRepoUrl string
+	// git 库的认证方式
+	GitRepoAuthType GitRepoAuthType
+	GitUserName     string
+	GitPassword     string
+	// 指定的分支
+	GitBranch string
+}
+
+/*
+	// 获取工作区状态值对应的label
+
 var _workspaceStatusMap map[int]string
 
 func getWorkspaceStatusDescFromServer(workspaceStatus model.WorkspaceStatusEnum) (string, error) {
 
-	if len(_workspaceStatusMap) == 0 { // 如果缓存中没有，就从服务器去取
-		auth, err := GetCurrentUser()
-		if err != nil {
-			return "", err
-		}
+		if len(_workspaceStatusMap) == 0 { // 如果缓存中没有，就从服务器去取
+			auth, err := GetCurrentUser()
+			if err != nil {
+				return "", err
+			}
 
-		url, _ := common.UrlJoin(auth.LoginUrl, "/api/sysDictionary/findSysDictionary")
-		headers := map[string]string{
-			"Content-Type": "application/json",
-		}
-		if auth.Token != nil {
-			headers["x-token"] = auth.Token.(string)
-		}
-		httpClient := common.CreateHttpClientEnableRetry()
-		response, err := httpClient.Get(url.String(),
-			map[string]string{"type": "smartide_workspace_status"}, headers) //
-		//	response, err := common.Get(url.String(), map[string]string{"type": "smartide_workspace_status"}, headers)
-		if err != nil {
-			return "", err
-		}
+			url, _ := common.UrlJoin(auth.LoginUrl, "/api/sysDictionary/findSysDictionary")
+			headers := map[string]string{
+				"Content-Type": "application/json",
+			}
+			if auth.Token != nil {
+				headers["x-token"] = auth.Token.(string)
+			}
+			httpClient := common.CreateHttpClientEnableRetry()
+			response, err := httpClient.Get(url.String(),
+				map[string]string{"type": "smartide_workspace_status"}, headers) //
+			//	response, err := common.Get(url.String(), map[string]string{"type": "smartide_workspace_status"}, headers)
+			if err != nil {
+				return "", err
+			}
 
-		workspaceStatusDictionaryResponse := &model.WorkspaceStatusDictionaryResponse{}
-		err = json.Unmarshal([]byte(response), workspaceStatusDictionaryResponse)
-		if err != nil {
-			return "", err
-		}
+			workspaceStatusDictionaryResponse := &model.WorkspaceStatusDictionaryResponse{}
+			err = json.Unmarshal([]byte(response), workspaceStatusDictionaryResponse)
+			if err != nil {
+				return "", err
+			}
 
-		for _, item := range workspaceStatusDictionaryResponse.Data.ResysDictionary.SysDictionaryDetails {
-			if item.Value == int(workspaceStatus) {
-				return item.Label, nil
+			for _, item := range workspaceStatusDictionaryResponse.Data.ResysDictionary.SysDictionaryDetails {
+				if item.Value == int(workspaceStatus) {
+					return item.Label, nil
+				}
 			}
 		}
+
+		if _, ok := _workspaceStatusMap[int(workspaceStatus)]; ok {
+			return _workspaceStatusMap[int(workspaceStatus)], nil
+		}
+
+		return "", nil
 	}
+*/
 
-	if _, ok := _workspaceStatusMap[int(workspaceStatus)]; ok {
-		return _workspaceStatusMap[int(workspaceStatus)], nil
-	}
-
-	return "", nil
-}
-
-func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (WorkspaceInfo, error) {
+func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspaceResponse) (WorkspaceInfo, error) {
 	projectName := serverWorkSpace.Name
 	if projectName == "" {
 		projectName = getRepoName(serverWorkSpace.GitRepoUrl)
@@ -198,7 +216,7 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 		Name:                   serverWorkSpace.Name, //+ fmt.Sprintf(" (%v)", label),
 		ConfigFileRelativePath: serverWorkSpace.ConfigFilePath,
 		GitCloneRepoUrl:        serverWorkSpace.GitRepoUrl,
-		Branch:                 serverWorkSpace.Branch,
+		GitBranch:              serverWorkSpace.Branch,
 		Mode:                   WorkingMode_Remote,
 		CacheEnv:               CacheEnvEnum_Server,
 		CreatedTime:            serverWorkSpace.CreatedAt,
@@ -328,9 +346,6 @@ func (w WorkspaceInfo) IsNotNil() bool {
 
 // 验证
 func (w WorkspaceInfo) Valid() error {
-	/* if w.GetProjectDirctoryName() == "" {
-		return errors.New("[Workspace] 项目名不能为空")
-	} */
 
 	if w.Mode == "" {
 		return errors.New(i18nInstance.Main.Err_workspace_mode_none)

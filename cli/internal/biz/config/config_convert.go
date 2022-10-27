@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-30 23:10:52
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-20 11:17:16
+ * @LastEditTime: 2022-10-27 15:43:00
  * @FilePath: /cli/internal/biz/config/config_convert.go
  */
 
@@ -67,7 +67,7 @@ func (originK8sConfig SmartIdeK8SConfig) GetSystemUserName() string {
 }
 
 // 转换为临时的yaml文件
-func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(repoName string, namespace string, systemUserName string, labels map[string]string) SmartIdeK8SConfig {
+func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(workspaceName string, namespace string, systemUserName string, labels map[string]string) SmartIdeK8SConfig {
 	//0.
 	k8sConfig := SmartIdeK8SConfig{}
 	copier.CopyWithOption(&k8sConfig, originK8sConfig, copier.Option{IgnoreEmpty: true, DeepCopy: true}) // 把一个对象赋值给另外一个对象
@@ -115,9 +115,9 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(repoName string, n
 	return k8sConfig
 
 	//2. 创建 一个pvc
-	repoName = strings.TrimSpace(strings.ToLower(repoName))
+	workspaceName = strings.TrimSpace(strings.ToLower(workspaceName))
 	pvc := coreV1.PersistentVolumeClaim{}
-	pvcName := fmt.Sprintf("%v-pvc-claim", repoName)
+	pvcName := fmt.Sprintf("%v-pvc-claim", workspaceName)
 	storageClassName := "smartide-file-storageclass" //TODO: const
 	pvc.ObjectMeta.Name = pvcName
 	pvc.Spec.AccessModes = append(pvc.Spec.AccessModes, coreV1.ReadWriteMany) // ReadWriteMany 可以在多个节点 和 多个pod间访问

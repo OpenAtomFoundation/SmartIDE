@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-24 14:39:12
+ * @LastEditTime: 2022-10-27 15:23:01
  */
 package cmd
 
@@ -138,7 +138,7 @@ var startCmd = &cobra.Command{
 					workspaceInfo.K8sInfo.Namespace)
 				common.CheckError(err)
 
-				workspaceInfo, err = start.ExecuteK8sServerStartCmd(cmd, *k8sUtil, workspaceInfo, executeStartCmdFunc)
+				workspaceInfo, err = start.ExecuteK8s_ServerWS_ServerEnv(cmd, *k8sUtil, workspaceInfo, executeStartCmdFunc)
 				common.CheckError(err)
 
 			} else { //1.2.2. cli 在客户端运行
@@ -148,11 +148,11 @@ var startCmd = &cobra.Command{
 				common.CheckError(err)
 
 				if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server { //1.2.2.1. 远程工作区 本地加载
-					workspaceInfo, err = start.ExecuteServerK8sStartByClientEnvCmd(workspaceInfo, executeStartCmdFunc)
+					workspaceInfo, err = start.ExecuteK8s_ServerWS_LocalEnv(workspaceInfo, executeStartCmdFunc)
 					common.CheckError(err)
 
 				} else { //1.2.2.2. 本地工作区，本地启动
-					workspaceInfo, err = start.ExecuteK8sClientStartCmd(cmd, *k8sUtil, workspaceInfo, executeStartCmdFunc)
+					workspaceInfo, err = start.ExecuteK8s_LocalWS_LocalEnv(cmd, *k8sUtil, workspaceInfo, executeStartCmdFunc)
 					common.CheckError(err)
 				}
 
@@ -357,7 +357,7 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 		common.CheckError(err)
 
 		if branch != "" {
-			workspaceInfo.Branch = branch
+			workspaceInfo.GitBranch = branch
 		}
 	}
 
@@ -509,7 +509,7 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 				conditionWorkingDir = workspaceInfo.WorkingDirectoryPath
 			}
 			workspaceInfoDb, err := dal.GetSingleWorkspaceByParams(workspaceInfo.Mode, conditionWorkingDir,
-				workspaceInfo.GitCloneRepoUrl, workspaceInfo.Branch, workspaceInfo.ConfigFileRelativePath,
+				workspaceInfo.GitCloneRepoUrl, workspaceInfo.GitBranch, workspaceInfo.ConfigFileRelativePath,
 				workspaceInfo.Remote.ID, workspaceInfo.Remote.Addr, workspaceInfo.Remote.UserName)
 			common.CheckError(err)
 			isNew := true

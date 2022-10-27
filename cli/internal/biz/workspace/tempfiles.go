@@ -20,7 +20,7 @@ var i18nInstance = i18n.GetInstance()
 func (workspace WorkspaceInfo) GetTempDockerComposeFilePath() string {
 	dockerComposeFileName := fmt.Sprintf("docker-compose-%s.yaml", workspace.GetProjectDirctoryName()) // docker-compose 文件的名称
 	//yamlFileDirPath := common.PathJoin(workspace.WorkingDirectoryPath, model.CONST_TempDirPath)        //
-	yamlFilePath := filepath.Join(workspace.WorkingDirectoryPath, model.CONST_TempDirPath, dockerComposeFileName)
+	yamlFilePath := filepath.Join(workspace.WorkingDirectoryPath, model.CONST_GlobalTempDirPath, dockerComposeFileName)
 
 	return yamlFilePath
 }
@@ -86,12 +86,12 @@ func (workspace WorkspaceInfo) SaveTempFilesForRemote(sshRemote common.SSHRemote
 	// 检查临时文件 是否写入到	.gitignore
 	tempDirName := ""        // 临时文件夹所在目录
 	tempParentDirPath := "." // 保存临时文件夹的上级目录
-	index := strings.LastIndex(model.CONST_TempDirPath, "/")
+	index := strings.LastIndex(model.CONST_GlobalTempDirPath, "/")
 	if index >= 0 {
-		tempDirName = model.CONST_TempDirPath[index+1:]
-		tempParentDirPath = model.CONST_TempDirPath[:index]
+		tempDirName = model.CONST_GlobalTempDirPath[index+1:]
+		tempParentDirPath = model.CONST_GlobalTempDirPath[:index]
 	} else {
-		tempDirName = model.CONST_TempDirPath
+		tempDirName = model.CONST_GlobalTempDirPath
 	}
 
 	// 临时文件夹
@@ -124,7 +124,7 @@ func (workspace WorkspaceInfo) SaveTempFilesForRemote(sshRemote common.SSHRemote
 	}
 
 	// 创建 或者 清空文件夹中的内容
-	remoteTempDirPath := common.FilePahtJoin4Linux(workspace.WorkingDirectoryPath, model.CONST_TempDirPath)
+	remoteTempDirPath := common.FilePahtJoin4Linux(workspace.WorkingDirectoryPath, model.CONST_GlobalTempDirPath)
 	if strings.Index(remoteTempDirPath, "~") == 0 {
 		remoteTempDirPath = strings.Replace(remoteTempDirPath, "~", pwd, -1)
 	}
@@ -173,8 +173,8 @@ func getTempConfigFilePath(localWorkingDir string, projectName string) string {
 		workingDir = localWorkingDir
 	}
 
-	dockerComposeFileName := fmt.Sprintf("config-%s.yaml", projectName)   // docker-compose 文件的名称
-	yamlFileDirPath := filepath.Join(workingDir, model.CONST_TempDirPath) //
+	dockerComposeFileName := fmt.Sprintf("config-%s.yaml", projectName)         // docker-compose 文件的名称
+	yamlFileDirPath := filepath.Join(workingDir, model.CONST_GlobalTempDirPath) //
 	yamlFilePath := filepath.Join(yamlFileDirPath, dockerComposeFileName)
 
 	return yamlFilePath
@@ -189,12 +189,12 @@ func checkLocalGitignoreContainTmpDir(workingDir string) {
 
 	// 临时文件夹的名称，以及临时文件夹的上级目录
 	var tempDirName, tempParentDir string
-	index := strings.LastIndex(model.CONST_TempDirPath, "/")
+	index := strings.LastIndex(model.CONST_GlobalTempDirPath, "/")
 	if index >= 0 {
-		tempDirName = model.CONST_TempDirPath[index+1:]
-		tempParentDir = model.CONST_TempDirPath[:index]
+		tempDirName = model.CONST_GlobalTempDirPath[index+1:]
+		tempParentDir = model.CONST_GlobalTempDirPath[:index]
 	} else {
-		tempDirName = model.CONST_TempDirPath
+		tempDirName = model.CONST_GlobalTempDirPath
 	}
 
 	// ignore

@@ -101,7 +101,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 			}
 		}
 
-		initExtended.GitCloneTemplateRepo4Remote(sshRemote, workspaceInfo.WorkingDirectoryPath, config.GlobalSmartIdeConfig.TemplateRepo, argsTemplateTypeName, argsTemplateSubTypeName)
+		initExtended.GitCloneTemplateRepo4Remote(sshRemote, workspaceInfo.WorkingDirectoryPath, config.GlobalSmartIdeConfig.TemplateActualRepoUrl, argsTemplateTypeName, argsTemplateSubTypeName)
 
 	}
 	currentConfig, err := config.NewRemoteConfig(&sshRemote,
@@ -473,8 +473,8 @@ func gitAction(sshRemote common.SSHRemote, workspaceInfo workspace.WorkspaceInfo
 	// git checkout
 	if isSSHClone {
 		checkoutCommand = fmt.Sprintf("%s git fetch ", GIT_SSH_COMMAND)
-		if workspaceInfo.Branch != "" {
-			checkoutCommand += fmt.Sprintf("&& %s git checkout ", GIT_SSH_COMMAND) + workspaceInfo.Branch
+		if workspaceInfo.GitBranch != "" {
+			checkoutCommand += fmt.Sprintf("&& %s git checkout ", GIT_SSH_COMMAND) + workspaceInfo.GitBranch
 		} else { // 有可能当前目录所处的分支非主分支
 			// 获取分支列表，确认主分支是master 还是 main
 			command := fmt.Sprintf("cd %v && %s git branch", workspaceInfo.WorkingDirectoryPath, GIT_SSH_COMMAND)
@@ -491,8 +491,8 @@ func gitAction(sshRemote common.SSHRemote, workspaceInfo workspace.WorkspaceInfo
 		}
 	} else {
 		checkoutCommand = "git fetch "
-		if workspaceInfo.Branch != "" {
-			checkoutCommand += "&& git checkout " + workspaceInfo.Branch
+		if workspaceInfo.GitBranch != "" {
+			checkoutCommand += "&& git checkout " + workspaceInfo.GitBranch
 		} else { // 有可能当前目录所处的分支非主分支
 			// 获取分支列表，确认主分支是master 还是 main
 			output, _ := sshRemote.ExeSSHCommand(fmt.Sprintf("cd %v && git branch", workspaceInfo.WorkingDirectoryPath))

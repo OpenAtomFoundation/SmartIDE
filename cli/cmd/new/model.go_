@@ -1,13 +1,13 @@
 /*
  * @Date: 2022-04-20 10:54:55
- * @LastEditors: kenan
- * @LastEditTime: 2022-04-26 09:41:20
- * @FilePath: /smartide-cli/cmd/new/model.go
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-10-27 10:45:49
+ * @FilePath: /cli/cmd/new/model.go_
  */
 
 package new
 
-type NewTypeBO struct {
+type NewTypeInfo struct {
 	TypeName string    `json:"typename"`
 	SubTypes []SubType `json:"subtype"`
 	Commands []string  `json:"command"`

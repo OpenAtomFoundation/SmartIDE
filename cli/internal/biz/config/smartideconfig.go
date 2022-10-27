@@ -32,11 +32,11 @@ const (
 
 // userhome下的config
 type GlobalConfig struct {
-	TemplateRepo     string               `yaml:"template-repo" json:"template-repo"`
-	ImagesRegistry   string               `yaml:"images-registry" json:"images-registry"`
-	DefaultLoginUrl  string               `yaml:"default-login-url" json:"default-login-url"`
-	Auths            []model.Auth         `yaml:"auths" json:"auths"`
-	IsInsightEnabled IsInsightEnabledEnum `yaml:"isInsight" json:"isInsight"`
+	TemplateActualRepoUrl string               `yaml:"template-repo" json:"template-repo"`
+	ImagesRegistry        string               `yaml:"images-registry" json:"images-registry"`
+	DefaultLoginUrl       string               `yaml:"default-login-url" json:"default-login-url"`
+	Auths                 []model.Auth         `yaml:"auths" json:"auths"`
+	IsInsightEnabled      IsInsightEnabledEnum `yaml:"isInsight" json:"isInsight"`
 }
 
 func GetCurrentAuth(auths []model.Auth) model.Auth {
@@ -58,7 +58,7 @@ func (c *GlobalConfig) LoadConfigYaml() *GlobalConfig {
 		err = yaml.Unmarshal(yamlByte, &c)
 		common.SmartIDELog.Error(err, i18nInstance.Config.Err_read_config, ideConfigPath)
 	} else { // 如果配置文件不存在
-		c.TemplateRepo = "https://gitee.com/smartide/smartide-templates.git"
+		c.TemplateActualRepoUrl = "https://gitee.com/smartide/smartide-templates.git"
 		c.DefaultLoginUrl = model.CONST_LOGIN_URL
 		c.ImagesRegistry = "registry.cn-hangzhou.aliyuncs.com"
 

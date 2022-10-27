@@ -1,8 +1,8 @@
 /*
  * @Author: kenan
  * @Date: 2022-02-15 19:32:44
- * @LastEditors: kenan
- * @LastEditTime: 2022-10-11 17:52:15
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-10-27 14:56:38
  * @FilePath: /cli/internal/model/workspace.go
  * @Description:
  *
@@ -42,7 +42,7 @@ type DefaultResponse struct {
 type WorkspaceLogResponse struct {
 	Code int `json:"code"`
 	Data struct {
-		ResServerWorkspaceLog ServerWorkspaceLog `json:"rewsLog"`
+		ResServerWorkspaceLog ServerWorkspaceLogResponse `json:"rewsLog"`
 	}
 	Msg string `json:"msg"`
 }
@@ -50,13 +50,13 @@ type WorkspaceLogResponse struct {
 type WorkspaceResponse struct {
 	Code int `json:"code"`
 	Data struct {
-		ResmartideWorkspace ServerWorkspace `json:"resmartideWorkspaces"`
+		ResmartideWorkspace ServerWorkspaceResponse `json:"resmartideWorkspaces"`
 	} `json:"data"`
 	Msg string `json:"msg"`
 }
 
 type Data struct {
-	List []ServerWorkspace `json:"list"`
+	List []ServerWorkspaceResponse `json:"list"`
 }
 
 //	{
@@ -85,10 +85,10 @@ type Data struct {
 //	  "msg": "获取成功"
 //	}
 type LogData struct {
-	List     []ServerWorkspaceLog `json:"list"`
-	Total    int64                `json:"total"`
-	Page     int                  `json:"page"`
-	PageSize int                  `json:"pageSize"`
+	List     []ServerWorkspaceLogResponse `json:"list"`
+	Total    int64                        `json:"total"`
+	Page     int                          `json:"page"`
+	PageSize int                          `json:"pageSize"`
 }
 
 type GVA_MODEL struct {
@@ -98,7 +98,7 @@ type GVA_MODEL struct {
 }
 
 // 工作区
-type ServerWorkspace struct {
+type ServerWorkspaceResponse struct {
 	GVA_MODEL
 	NO   string `json:"no" `
 	Name string `json:"name" `
@@ -113,8 +113,8 @@ type ServerWorkspace struct {
 
 	Status WorkspaceStatusEnum `json:"status" `
 
-	ResourceID int      `json:"ResourceID" `
-	Resource   Resource `json:"Resource"`
+	ResourceID int                    `json:"ResourceID" `
+	Resource   ServerResourceResponse `json:"Resource"`
 
 	OwnerGUID string `json:"ownerGuid" `
 	OwnerName string `json:"ownerName" `
@@ -138,7 +138,7 @@ type ServerWorkspace struct {
 // "endAt": "2022-03-22T06:28:36.196Z",
 // "status": 0
 
-type ServerWorkspaceLog struct {
+type ServerWorkspaceLogResponse struct {
 	GVA_MODEL
 	Title      string     `json:"title"`
 	ParentId   int        `json:"parentID" `
@@ -153,7 +153,7 @@ type ServerWorkspaceLog struct {
 }
 
 // 资源
-type Resource struct {
+type ServerResourceResponse struct {
 	GVA_MODEL
 	Type               ReourceTypeEnum        `json:"type"`
 	Name               string                 `json:"name"`

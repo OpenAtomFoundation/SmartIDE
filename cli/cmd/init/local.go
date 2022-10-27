@@ -36,7 +36,7 @@ func InitLocalConfig(cmd *cobra.Command, args []string) {
 	common.SmartIDELog.Info(i18nInstance.Init.Info_Init_Complete)
 }
 
-//复制templates
+// 复制templates
 func CopyTemplateToCurrentDir(modelType, newProjectType string) {
 	if newProjectType == "" {
 		newProjectType = "_default"
@@ -91,7 +91,7 @@ func copyDir(srcPath string, destPath string) error {
 	return err
 }
 
-//生成目录并拷贝文件
+// 生成目录并拷贝文件
 func copyFile(src, dest string) (w int64, err error) {
 	srcFile, err := os.Open(src)
 	if err != nil {
@@ -280,7 +280,7 @@ git pull
 			return err
 		}
 
-		command := fmt.Sprintf("git clone %v %v", config.GlobalSmartIdeConfig.TemplateRepo, templatePath)
+		command := fmt.Sprintf("git clone %v %v", config.GlobalSmartIdeConfig.TemplateActualRepoUrl, templatePath)
 		err = common.EXEC.Realtime(command, "")
 		if err != nil {
 			return err

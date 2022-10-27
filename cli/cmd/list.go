@@ -109,7 +109,7 @@ func printWorkspaces(cliRunningEnv workspace.CliRunningEvnEnum) {
 			label := worksapceInfo.ServerWorkSpace.Status.GetDesc()
 			workspaceName = fmt.Sprintf("%v (%v)", workspaceName, label)
 		}
-		gitBranch := worksapceInfo.Branch
+		gitBranch := worksapceInfo.GitBranch
 		if gitBranch == "" {
 			gitBranch = "master"
 		}

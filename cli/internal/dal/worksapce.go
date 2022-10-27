@@ -143,7 +143,7 @@ func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId in
 		}
 
 		res, err := stmt.Exec(workspaceInfo.Name, workspaceInfo.WorkingDirectoryPath, workspaceInfo.TempYamlFileAbsolutePath, workspaceInfo.ConfigFileRelativePath, remoteId, k8sId,
-			workspaceInfo.Mode, workspaceInfo.GitCloneRepoUrl, workspaceInfo.GitUserName, workspaceInfo.GitPassword, workspaceInfo.GitRepoAuthType, workspaceInfo.Branch,
+			workspaceInfo.Mode, workspaceInfo.GitCloneRepoUrl, workspaceInfo.GitUserName, workspaceInfo.GitPassword, workspaceInfo.GitRepoAuthType, workspaceInfo.GitBranch,
 			string(jsonBytes), configStr, linkComposeStr, tempComposeStr)
 		if err != nil {
 			return -1, err
@@ -160,7 +160,7 @@ func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId in
 			return -1, err
 		}
 		_, err = stmt.Exec(workspaceInfo.Name, workspaceInfo.WorkingDirectoryPath, workspaceInfo.TempYamlFileAbsolutePath, workspaceInfo.ConfigFileRelativePath,
-			workspaceInfo.Mode, workspaceInfo.GitCloneRepoUrl, workspaceInfo.GitUserName, workspaceInfo.GitPassword, workspaceInfo.GitRepoAuthType, workspaceInfo.Branch,
+			workspaceInfo.Mode, workspaceInfo.GitCloneRepoUrl, workspaceInfo.GitUserName, workspaceInfo.GitPassword, workspaceInfo.GitRepoAuthType, workspaceInfo.GitBranch,
 			string(jsonBytes), configStr, linkComposeStr, tempComposeStr,
 			affectId)
 		if err != nil {
@@ -370,7 +370,7 @@ func workspaceDataMap(workspaceInfo *workspace.WorkspaceInfo, do workspaceDo) er
 
 	// git 相关
 	workspaceInfo.GitCloneRepoUrl = do.w_git_clone_repo_url.String
-	workspaceInfo.Branch = do.w_branch
+	workspaceInfo.GitBranch = do.w_branch
 	workspaceInfo.GitUserName = do.w_git_username.String
 	workspaceInfo.GitPassword = do.w_git_password.String
 
