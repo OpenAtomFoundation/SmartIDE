@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-27 16:20:13
+ * @LastEditTime: 2022-10-27 16:28:45
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
@@ -444,19 +443,19 @@ func copyConfigToPod(k k8s.KubernetesUtil, pod coreV1.Pod, containerName string,
 	}
 
 	// 把文件写入到临时文件中
-	input, err := ioutil.ReadFile(configFilePath)
+	input, err := os.ReadFile(configFilePath)
 	if err != nil {
 		return err
 	}
 	tempConfigFilePath := common.PathJoin(tempDirPath, "config-temp.yaml")
-	err = ioutil.WriteFile(tempConfigFilePath, input, 0644)
+	err = os.WriteFile(tempConfigFilePath, input, 0644)
 	if err != nil {
 		return err
 	}
 
 	// 增加.gitigorne文件
 	gitignoreFile := common.PathJoin(configFileDir, ".gitignore")
-	err = ioutil.WriteFile(gitignoreFile, []byte("/.temp/"), 0644)
+	err = os.WriteFile(gitignoreFile, []byte("/.temp/"), 0644)
 	if err != nil {
 		return err
 	}
@@ -488,12 +487,12 @@ func copyAgentToPod(k k8s.KubernetesUtil, pod coreV1.Pod, containerName string, 
 	}
 
 	// 把文件写入到临时文件中
-	input, err := ioutil.ReadFile(agentFilePath)
+	input, err := os.ReadFile(agentFilePath)
 	if err != nil {
 		return err
 	}
 	tempAgentFilePath := common.PathJoin(tempDirPath, "smartide-agent")
-	err = ioutil.WriteFile(tempAgentFilePath, input, 0775)
+	err = os.WriteFile(tempAgentFilePath, input, 0775)
 	if err != nil {
 		return err
 	}
@@ -532,7 +531,7 @@ func downloadConfigAndLinkFiles(workspaceInfo workspace.WorkspaceInfo) (
 	common.SmartIDELog.Info("下载配置文件 关联的 k8s yaml 文件")
 	configFileRelativePath = fileRelativePaths[0]
 	var configYaml map[string]interface{}
-	configFileBytes, err := ioutil.ReadFile(filepath.Join(gitRepoRootDirPath, configFileRelativePath))
+	configFileBytes, err := os.ReadFile(filepath.Join(gitRepoRootDirPath, configFileRelativePath))
 	if err != nil {
 		return
 	}

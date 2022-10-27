@@ -11,7 +11,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -173,7 +172,7 @@ func newK8sConfig(localWorkingDir string, configFileRelativePath string, linkK8s
 
 		for _, k8sYamlFileAbsolutePath := range k8sYamlFileAbsolutePaths {
 
-			yamlFileBytes, err := ioutil.ReadFile(k8sYamlFileAbsolutePath)
+			yamlFileBytes, err := os.ReadFile(k8sYamlFileAbsolutePath)
 			if err != nil {
 				return nil, err
 			}
@@ -280,7 +279,7 @@ func loadConfigWithYamlFile(workingDirectoryPath, configRelativeFilePath string)
 	}
 
 	// read
-	yamlFile, err := ioutil.ReadFile(configFilePath)
+	yamlFile, err := os.ReadFile(configFilePath)
 	common.CheckError(err)
 
 	// parse

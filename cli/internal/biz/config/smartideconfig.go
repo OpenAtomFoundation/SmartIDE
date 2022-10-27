@@ -9,7 +9,6 @@ package config
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/leansoftX/smartide-cli/internal/model"
@@ -92,7 +91,7 @@ func (c *GlobalConfig) SaveConfigYaml() {
 	ideConfigPath := common.PathJoin(SmartIdeHome, configFileName)
 	templatesByte, err := yaml.Marshal(&c)
 	common.SmartIDELog.Error(err)
-	err = ioutil.WriteFile(ideConfigPath, templatesByte, 0777)
+	err = os.WriteFile(ideConfigPath, templatesByte, 0777)
 	common.SmartIDELog.Error(err)
 }
 

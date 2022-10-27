@@ -2,7 +2,7 @@ package k8s
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 
@@ -149,7 +149,7 @@ var ApplySSHCmd = &cobra.Command{
 
 		//2. Save temp k8s config file
 		tempK8sConfigFileAbsolutePath := common.PathJoin(config.SmartIdeHome, "tempconfig")
-		err = ioutil.WriteFile(tempK8sConfigFileAbsolutePath, []byte(resourceInfo.KubeConfig), 0777)
+		err = os.WriteFile(tempK8sConfigFileAbsolutePath, []byte(resourceInfo.KubeConfig), 0777)
 		feedbackError(err)
 		k8sUtil, err := k8s.NewK8sUtilWithFile(tempK8sConfigFileAbsolutePath,
 			resourceInfo.KubeContext,
@@ -160,7 +160,7 @@ var ApplySSHCmd = &cobra.Command{
 		configMapYamlData, err := yaml.Marshal(&configMap)
 		feedbackError(err)
 		tempK8sConfigMapYamlFilePath := common.PathJoin(config.SmartIdeHome, "k8s_configmap_temp.yaml")
-		err = ioutil.WriteFile(tempK8sConfigMapYamlFilePath, []byte(configMapYamlData), 0777)
+		err = os.WriteFile(tempK8sConfigMapYamlFilePath, []byte(configMapYamlData), 0777)
 		feedbackError(err)
 
 		//5. Kubectl Apply

@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-04-20 10:46:56
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-27 11:15:54
+ * @LastEditTime: 2022-10-27 16:29:59
  * @FilePath: /cli/cmd/new/newLocal.go
  */
 package new
@@ -12,7 +12,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -209,7 +208,7 @@ func copyTemplateToCurrentDir(modelType, newProjectType string) {
 // 判断文件夹是坦为空
 // 空为true
 func folderEmpty(dirPth string) (bool, error) {
-	fis, err := ioutil.ReadDir(dirPth)
+	fis, err := os.ReadDir(dirPth)
 	if err != nil {
 		return false, err
 	}

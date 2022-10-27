@@ -2,7 +2,6 @@ package workspace
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -42,7 +41,7 @@ func (workspace WorkspaceInfo) SaveTempFiles() (err error) { // dockerComposeFil
 		os.MkdirAll(tempDirPath, os.ModePerm)
 		common.SmartIDELog.InfoF(i18nInstance.Common.Info_temp_create_directory, tempDirPath)
 	} else { // 清空文件夹
-		dir, err := ioutil.ReadDir(tempDirPath)
+		dir, err := os.ReadDir(tempDirPath)
 		common.SmartIDELog.Error(err)
 		for _, d := range dir {
 			os.RemoveAll(common.PathJoin([]string{tempDirPath, d.Name()}...))
@@ -58,7 +57,7 @@ func (workspace WorkspaceInfo) SaveTempFiles() (err error) { // dockerComposeFil
 	if sYaml == "" {
 		common.SmartIDELog.Error("docker-compose 为空")
 	}
-	err = ioutil.WriteFile(tempDockerComposeFilePath, []byte(sYaml), 0)
+	err = os.WriteFile(tempDockerComposeFilePath, []byte(sYaml), 0)
 	if err != nil {
 		common.SmartIDELog.Fatal(err)
 	}
@@ -72,7 +71,7 @@ func (workspace WorkspaceInfo) SaveTempFiles() (err error) { // dockerComposeFil
 	if sConfig == "" {
 		common.SmartIDELog.Error("配置文件 为空")
 	}
-	err = ioutil.WriteFile(tempConfigFilePath, []byte(sConfig), 0)
+	err = os.WriteFile(tempConfigFilePath, []byte(sConfig), 0)
 	if err != nil {
 		common.SmartIDELog.Fatal(err)
 	}
@@ -206,13 +205,13 @@ func checkLocalGitignoreContainTmpDir(workingDir string) {
 			os.Create(dirPath)
 		}
 
-		err := ioutil.WriteFile(gitignorePath, []byte("/"+tempDirName+"/"), 0666)
+		err := os.WriteFile(gitignorePath, []byte("/"+tempDirName+"/"), 0666)
 		common.CheckError(err)
 	} else {
-		bytes, _ := ioutil.ReadFile(gitignorePath)
+		bytes, _ := os.ReadFile(gitignorePath)
 		content := string(bytes)
 		if !strings.Contains(content, "/"+tempDirName+"/") { // 不包含时，要附加
-			err := ioutil.WriteFile(gitignorePath, []byte(content+"\n"+"/"+tempDirName+"/"), 0666)
+			err := os.WriteFile(gitignorePath, []byte(content+"\n"+"/"+tempDirName+"/"), 0666)
 			common.CheckError(err)
 		}
 	}

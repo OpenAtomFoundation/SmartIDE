@@ -2,7 +2,7 @@ package k8s
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 	"time"
 
@@ -70,7 +70,7 @@ var K8sInitCmd = &cobra.Command{
 
 		//2. Save temp k8s config file
 		tempK8sConfigFileAbsolutePath := common.PathJoin(config.SmartIdeHome, "tempconfig")
-		err = ioutil.WriteFile(tempK8sConfigFileAbsolutePath, []byte(resourceInfo.KubeConfig), 0777)
+		err = os.WriteFile(tempK8sConfigFileAbsolutePath, []byte(resourceInfo.KubeConfig), 0777)
 		k8sUtil, err := k8s.NewK8sUtilWithFile(tempK8sConfigFileAbsolutePath,
 			resourceInfo.KubeContext,
 			defaultNamespace)
@@ -89,9 +89,9 @@ var K8sInitCmd = &cobra.Command{
 		if resourceInfo.CertType == 2 {
 			common.SmartIDELog.Info(i18nInstance.K8sInit.Info_log_create_certificate_secret_start)
 			crtFileAbsolutePath := common.PathJoin(config.SmartIdeHome, "ssl_cert.crt")
-			err = ioutil.WriteFile(crtFileAbsolutePath, []byte(resourceInfo.CertCrt), 0777)
+			err = os.WriteFile(crtFileAbsolutePath, []byte(resourceInfo.CertCrt), 0777)
 			keyFileAbsolutePath := common.PathJoin(config.SmartIdeHome, "ssl_key.key")
-			err = ioutil.WriteFile(keyFileAbsolutePath, []byte(resourceInfo.CertKey), 0777)
+			err = os.WriteFile(keyFileAbsolutePath, []byte(resourceInfo.CertKey), 0777)
 			err = k8sUtil.ExecKubectlCommandRealtime(fmt.Sprintf("create secret tls ws.smartide.cn --key %v --cert %v", keyFileAbsolutePath, crtFileAbsolutePath), "", false)
 			common.SmartIDELog.Info(i18nInstance.K8sInit.Info_log_create_certificate_secret_success)
 		}

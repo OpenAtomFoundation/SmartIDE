@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -256,7 +255,7 @@ func (instance *SSHRemote) CopyDirectory(srcDirPath string, remoteDestDirPath st
 			if instance.IsFileExist(remoteFilePath) {
 				return fmt.Errorf("%v 文件已经存在！", remoteFilePath)
 			}
-			//	content, _ := ioutil.ReadFile(localFilePath)
+			//	content, _ := os.ReadFile(localFilePath)
 			/* command := fmt.Sprintf(`echo '%v' >> %v`, content, remoteFilePath)
 			_, err := instance.ExeSSHCommand(command) */
 
@@ -522,7 +521,7 @@ func (instance *SSHRemote) ExecSSHkeyPolicy(no string, userName string, host str
 		} else {
 			homeDir, err := os.UserHomeDir()
 			CheckError(err)
-			rsaPub, err := ioutil.ReadFile(filepath.Join(homeDir, "/.ssh/id_rsa.pub"))
+			rsaPub, err := os.ReadFile(filepath.Join(homeDir, "/.ssh/id_rsa.pub"))
 			localRsaPub = string(rsaPub)
 			CheckError(err)
 
@@ -555,11 +554,11 @@ func (instance *SSHRemote) ExecSSHkeyPolicy(no string, userName string, host str
 
 			if no == "" {
 				if homeDir, err := os.UserHomeDir(); err == nil {
-					if rsa, err := ioutil.ReadFile(filepath.Join(homeDir, "/.ssh/id_rsa")); err == nil {
+					if rsa, err := os.ReadFile(filepath.Join(homeDir, "/.ssh/id_rsa")); err == nil {
 						idRsa = string(rsa)
 						SmartIDELog.AddEntryptionKeyWithReservePart(idRsa)
 					}
-					if rsaPub, err := ioutil.ReadFile(filepath.Join(homeDir, "/.ssh/id_rsa.pub")); err == nil {
+					if rsaPub, err := os.ReadFile(filepath.Join(homeDir, "/.ssh/id_rsa.pub")); err == nil {
 						idRsaPub = string(rsaPub)
 						SmartIDELog.AddEntryptionKeyWithReservePart(idRsaPub)
 					}
@@ -934,7 +933,7 @@ func (instance *SSHRemote) RemoteUpload(filesMaps map[string]string) (err error)
 		if SmartIDELog.Ws_id != "" && ServerUserName != "" {
 			filePath = fmt.Sprintf("%s_%s_%s", filePath, ServerUserName, SmartIDELog.Ws_id)
 		}
-		key, err := ioutil.ReadFile(filePath)
+		key, err := os.ReadFile(filePath)
 		CheckError(err, "unable to read private key:")
 
 		// Create the Signer for this private key.
@@ -1020,7 +1019,7 @@ func connectionDial(sshHost string, sshPort int, sshUserName, sshPassword string
 			homePath, err := os.UserHomeDir()
 			CheckError(err)
 			filePath := filepath.Join(homePath, "/.ssh/id_rsa")
-			key, err = ioutil.ReadFile(filePath)
+			key, err = os.ReadFile(filePath)
 			CheckError(err, "unable to read ssh private key:")
 		} else {
 			key = []byte(idRsa)

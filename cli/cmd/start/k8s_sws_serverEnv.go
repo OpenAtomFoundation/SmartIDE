@@ -9,7 +9,6 @@ package start
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -65,7 +64,7 @@ func ExecuteK8s_ServerWS_ServerEnv(cmd *cobra.Command, k8sUtil k8s.KubernetesUti
 		tempK8sNamespaceYamlAbsolutePath := filepath.Join(gitRepoRootDirPath, fmt.Sprintf("k8s_deployment_%v_temp_namespace.yaml", filepath.Base(gitRepoRootDirPath)))
 		k8sYamlContent, err := config.ConvertK8sKindToString(namespaceKind)
 		serverFeedback(err)
-		err = ioutil.WriteFile(tempK8sNamespaceYamlAbsolutePath, []byte(k8sYamlContent), 0777)
+		err = os.WriteFile(tempK8sNamespaceYamlAbsolutePath, []byte(k8sYamlContent), 0777)
 		serverFeedback(err)
 
 		// apply

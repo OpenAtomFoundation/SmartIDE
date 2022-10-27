@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -115,7 +114,7 @@ var k8sCmd = &cobra.Command{
 		//2. Save temp k8s config file
 		k8sConfigDirPath := config.SmartIdeHome
 		tempK8sConfigFileRelativePath := filepath.Join(k8sConfigDirPath, "tempconfig")
-		err = ioutil.WriteFile(tempK8sConfigFileRelativePath, []byte(workspaceInfo.K8sInfo.KubeConfigContent), 0777)
+		err = os.WriteFile(tempK8sConfigFileRelativePath, []byte(workspaceInfo.K8sInfo.KubeConfigContent), 0777)
 		if err != nil {
 			common.SmartIDELog.Error(err)
 		}
@@ -551,7 +550,7 @@ var k8sCmd = &cobra.Command{
 		common.SmartIDELog.Info(i18nInstance.K8s.Info_log_save_temp_yaml_start)
 
 		tempK8sYamlFileRelativePath := filepath.Join(k8sDirPath, "k8s_ingress_temp.yaml")
-		err = ioutil.WriteFile(tempK8sYamlFileRelativePath, []byte(yamlData), 0777)
+		err = os.WriteFile(tempK8sYamlFileRelativePath, []byte(yamlData), 0777)
 		if err != nil {
 			common.SmartIDELog.Error(err)
 		}

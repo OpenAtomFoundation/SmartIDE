@@ -9,7 +9,6 @@ package start
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -66,7 +65,7 @@ func ExecuteK8s_LocalWS_LocalEnv(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 		if err != nil {
 			return workspaceInfo, err
 		}
-		err = ioutil.WriteFile(tempK8sNamespaceYamlAbsolutePath, []byte(k8sYamlContent), 0777)
+		err = os.WriteFile(tempK8sNamespaceYamlAbsolutePath, []byte(k8sYamlContent), 0777)
 		if err != nil {
 			return workspaceInfo, err
 		}

@@ -8,7 +8,6 @@
 package config
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -63,7 +62,7 @@ func (instance SmartIdeConfig) getLinkDockerComposeFile(sshRemote *common.SSHRem
 	if localLinkDockerComposeFilePath != "" {
 		if sshRemote == nil || (sshRemote == &common.SSHRemote{}) { // 本地模式
 			// read and parse
-			localLinkDockerComposeFileContentBytes, err := ioutil.ReadFile(localLinkDockerComposeFilePath)
+			localLinkDockerComposeFileContentBytes, err := os.ReadFile(localLinkDockerComposeFilePath)
 			common.CheckError(err)
 			localLinkDockerComposeFileContent = string(localLinkDockerComposeFileContentBytes)
 		} else { // 远程主机模式

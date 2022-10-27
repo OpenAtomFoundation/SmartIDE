@@ -3,13 +3,13 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-03-24 15:07:14
+ * @LastEditTime: 2022-10-27 16:32:32
  */
 package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -59,7 +59,7 @@ var udpateCmd = &cobra.Command{
 				common.SmartIDELog.Error(err)
 			}
 			defer resp.Body.Close()
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				common.SmartIDELog.Error(err)
 			}

@@ -8,8 +8,8 @@
 package common
 
 import (
-	"io/ioutil"
 	"math/rand"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -44,9 +44,9 @@ func RandLowStr(ln int) string {
 
 // 删除连续的空行
 func RemoveWhiteLines(filePath string) {
-	bytes, _ := ioutil.ReadFile(filePath)
+	bytes, _ := os.ReadFile(filePath)
 	newLine := GetNewline()
 	content := regexp.MustCompile(`\s+(\n|\r\n){2,}`).ReplaceAllString(strings.TrimSpace(string(bytes)), newLine)
 	content += newLine
-	ioutil.WriteFile(filePath, []byte(content), 0700)
+	os.WriteFile(filePath, []byte(content), 0700)
 }

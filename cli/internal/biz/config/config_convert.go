@@ -10,7 +10,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -230,7 +230,7 @@ func (k8sConfig *SmartIdeK8SConfig) SaveK8STempYaml(gitRepoRootDirPath string) (
 	}
 
 	tempConfigFileRelativePath := common.PathJoin(gitRepoRootDirPath, fmt.Sprintf("k8s_deployment_%v_temp.yaml", filepath.Base(gitRepoRootDirPath)))
-	err = ioutil.WriteFile(tempConfigFileRelativePath, []byte(k8sYamlContent), 0777)
+	err = os.WriteFile(tempConfigFileRelativePath, []byte(k8sYamlContent), 0777)
 	if err != nil {
 		return "", err
 	}
