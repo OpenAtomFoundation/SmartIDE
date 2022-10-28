@@ -37,7 +37,7 @@ func LocalNew(cmd *cobra.Command, args []string, workspaceInfo workspace.Workspa
 	common.CheckError(err)
 
 	// 获取command中的配置
-	selectedTemplateType, err := getTemplateSetting(cmd, args)
+	selectedTemplateType, err := GetTemplateSetting(cmd, args)
 	common.CheckError(err)
 	if selectedTemplateType == nil { // 未指定模板类型的时候，提示用户后退出
 		return // 退出
@@ -88,86 +88,6 @@ func LocalNew(cmd *cobra.Command, args []string, workspaceInfo workspace.Workspa
 		start.ExecuteStartCmd(workspaceInfo, isUnforward, func1, yamlExecuteFun, args, cmd)
 	}
 
-}
-
-// 从command的参数中获取模板设置信息（下载模板库文件到本地）
-func getTemplateSetting(cmd *cobra.Command, args []string) (*templateModel.SelectedTemplateTypeBo, error) {
-	common.SmartIDELog.Info(i18nInstance.New.Info_loading_templates)
-
-	// git clone
-	err := templatesClone() //
-	if err != nil {
-		return nil, err
-	}
-
-	templateTypes, err := loadTemplatesJson() // 解析json文件
-	if err != nil {
-		return nil, err
-	}
-
-	if len(args) == 0 {
-		// print
-		fmt.Println(i18nInstance.New.Info_help_info)
-		printTemplates(templateTypes) // 打印支持的模版列表
-		fmt.Println(i18nInstance.New.Info_help_info_operation)
-		fmt.Println(cmd.Flags().FlagUsages())
-		return nil, nil
-	}
-
-	//2.
-	//2.1.
-	selectedTemplateTypeName := ""
-	if len(args) > 0 {
-		selectedTemplateTypeName = args[0]
-	}
-	selectedTemplateTypeName = strings.TrimSpace(selectedTemplateTypeName)
-	//2.2.
-	selectedTemplateSubTypeName, err := cmd.Flags().GetString("type")
-	selectedTemplateSubTypeName = strings.TrimSpace(selectedTemplateSubTypeName)
-	if err != nil {
-		return nil, err
-	}
-	if selectedTemplateSubTypeName == "" {
-		selectedTemplateSubTypeName = "_default"
-	}
-
-	//3. 遍历进行查找
-	var selectedTemplate *templateModel.SelectedTemplateTypeBo
-	for _, currentTemplateType := range templateTypes {
-		if currentTemplateType.TypeName == selectedTemplateTypeName {
-
-			isSelected := false
-			if selectedTemplateSubTypeName == "_default" {
-				isSelected = true
-
-			} else {
-				for _, currentSubTemplateType := range currentTemplateType.SubTypes {
-					if currentSubTemplateType.Name == selectedTemplateSubTypeName {
-						isSelected = true
-						break
-					}
-
-				}
-			}
-
-			if isSelected {
-				tmp := templateModel.SelectedTemplateTypeBo{
-					TypeName: selectedTemplateTypeName,
-					SubType:  selectedTemplateSubTypeName,
-					Commands: currentTemplateType.Commands,
-				}
-				selectedTemplate = &tmp
-
-				break
-			}
-
-		}
-	}
-	if selectedTemplate == nil {
-		return nil, errors.New(i18nInstance.New.Info_type_no_exist)
-	}
-	selectedTemplate.TemplateActualRepoUrl = config.GlobalSmartIdeConfig.TemplateActualRepoUrl
-	return selectedTemplate, nil
 }
 
 // 打印 service 列表

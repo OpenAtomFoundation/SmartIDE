@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-27 15:23:01
+ * @LastEditTime: 2022-10-28 15:07:45
  */
 package cmd
 
@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/jinzhu/copier"
+	"github.com/leansoftX/smartide-cli/cmd/new"
 	"github.com/leansoftX/smartide-cli/cmd/server"
 	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
 	"github.com/leansoftX/smartide-cli/cmd/start"
@@ -169,7 +170,6 @@ var startCmd = &cobra.Command{
 				common.CheckError(err)
 
 			} else { //1.3.2. cli 在客户端运行
-
 				if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server { //1.3.2.1. 远程工作区 本地加载
 					workspaceInfo, err = start.ExecuteServerVmStartByClientEnvCmd(workspaceInfo, executeStartCmdFunc)
 					common.CheckError(err)
@@ -442,6 +442,14 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 			//1.2.0.2. git 相关
 			loadGitInfo4Workspace(&workspaceInfo, cmd, args)
 
+			// 模板相关
+			selectedTemplateSettings, err := new.GetTemplateSetting(cmd, args) // 包含了“clone 模板文件到本地”
+			common.CheckError(err)
+			if selectedTemplateSettings == nil { // 未指定模板类型的时候，提示用户后退出
+				common.CheckError(errors.New("模板配置为空！"))
+			}
+			workspaceInfo.SelectedTemplate = selectedTemplateSettings
+
 			// 模式
 			if workspaceInfo.Mode == workspace.WorkingMode_Remote { //1.2.1. vm 模式
 				hostInfo, err := getRemoteAndValid(fflags)
@@ -503,16 +511,29 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 				}
 			}
 
+			// 当为 new command 时，再次处理 workspace name
+			if workspaceInfo.Name == "" {
+				if cmd.Use == "new" {
+					workspaceInfo.Name = fmt.Sprintf("%v_%v",
+						workspaceInfo.SelectedTemplate.TypeName, workspaceInfo.SelectedTemplate.SubType)
+				}
+			}
+
 			// 从数据库中查找是否存在对应的workspace信息，主要是针对在当前目录再次start的情况
 			conditionWorkingDir := ""
 			if workspaceInfo.Mode == workspace.WorkingMode_Local {
 				conditionWorkingDir = workspaceInfo.WorkingDirectoryPath
+			} else {
+				if cmd.Use == "new" {
+					conditionWorkingDir = filepath.Join(workspaceInfo.SelectedTemplate.GetTemplateRootDirAbsolutePath(),
+						workspaceInfo.SelectedTemplate.GetTemplateDirRelativePath())
+				}
 			}
 			workspaceInfoDb, err := dal.GetSingleWorkspaceByParams(workspaceInfo.Mode, conditionWorkingDir,
 				workspaceInfo.GitCloneRepoUrl, workspaceInfo.GitBranch, workspaceInfo.ConfigFileRelativePath,
 				workspaceInfo.Remote.ID, workspaceInfo.Remote.Addr, workspaceInfo.Remote.UserName)
 			common.CheckError(err)
-			isNew := true
+			isNewWorkspace := true
 			if workspaceInfoDb.ID != "" {
 				if workspaceInfo.CliRunningEnv != workspace.CliRunningEnvEnum_Client {
 					common.SmartIDELog.Error("Not running on the server")
@@ -522,18 +543,18 @@ func getWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 					fmt.Printf("远程工作区重复（可通过smartide list查看），是否创建新的工作区？（y | n）")
 					fmt.Scanln(&isEnable)
 					if strings.ToLower(isEnable) != "y" {
-						isNew = false
+						isNewWorkspace = false
 						os.Exit(1)
 					}
 
 				} else {
-					isNew = false
+					isNewWorkspace = false
 					copier.CopyWithOption(&workspaceInfo, workspaceInfoDb, copier.Option{IgnoreEmpty: false, DeepCopy: true})
 				}
 
 			}
 
-			if isNew {
+			if isNewWorkspace {
 				if workspaceInfo.Mode != workspace.WorkingMode_K8s {
 					// docker-compose 文件路径
 					workspaceInfo.TempYamlFileAbsolutePath = workspaceInfo.GetTempDockerComposeFilePath()

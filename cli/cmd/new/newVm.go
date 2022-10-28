@@ -67,7 +67,7 @@ func VmNew(cmd *cobra.Command, args []string, workspaceInfo workspace.WorkspaceI
 	common.CheckErrorFunc(err, serverFeedback)
 
 	// 获取command中的配置
-	selectedTemplateSettings, err := getTemplateSetting(cmd, args)
+	selectedTemplateSettings, err := GetTemplateSetting(cmd, args)
 	common.CheckError(err)
 	if selectedTemplateSettings == nil { // 未指定模板类型的时候，提示用户后退出
 		common.SmartIDELog.Error("模板配置为空！")

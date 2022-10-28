@@ -1,13 +1,14 @@
 /*
  * @Date: 2022-04-20 17:08:53
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-28 11:40:55
+ * @LastEditTime: 2022-10-28 15:10:10
  * @FilePath: /cli/cmd/new.go
  */
 package cmd
 
 import (
 	"strings"
+	"time"
 
 	newExtend "github.com/leansoftX/smartide-cli/cmd/new"
 	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
@@ -63,6 +64,14 @@ smartide new <template_type> -T {type_name} --k8s {kubernetes_context} --kubecon
 				newExtend.K8sNew_Local(cmd, args, k8sUtil, workspaceInfo, executeStartCmdFunc)
 			} else {
 				newExtend.K8sNew_Server(cmd, args, k8sUtil, workspaceInfo, executeStartCmdFunc)
+			}
+
+		}
+
+		// 如果在本地运行，需要驻守
+		if workspaceInfo.CliRunningEnv == workspace.CliRunningEnvEnum_Client {
+			for {
+				time.Sleep(time.Millisecond * 300)
 			}
 
 		}
