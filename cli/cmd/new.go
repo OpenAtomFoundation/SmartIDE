@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-04-20 17:08:53
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-28 15:10:10
+ * @LastEditTime: 2022-10-28 16:55:56
  * @FilePath: /cli/cmd/new.go
  */
 package cmd
@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	cmdCommon "github.com/leansoftX/smartide-cli/cmd/common"
 	newExtend "github.com/leansoftX/smartide-cli/cmd/new"
 	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
@@ -34,8 +35,8 @@ smartide new <template_type> -T {type_name} --k8s {kubernetes_context} --kubecon
 			trackEvent = trackEvent + " " + val
 		}
 
-		workspaceInfo, err := getWorkspaceFromCmd(cmd, args) // 加载工作区信息
-		entryptionKey4Workspace(workspaceInfo)               // 申明需要加密的文本
+		workspaceInfo, err := cmdCommon.GetWorkspaceFromCmd(cmd, args) // 加载工作区信息
+		entryptionKey4Workspace(workspaceInfo)                         // 申明需要加密的文本
 		common.CheckError(err)
 		executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
 			if config.GlobalSmartIdeConfig.IsInsightEnabled != config.IsInsightEnabledEnum_Enabled {
