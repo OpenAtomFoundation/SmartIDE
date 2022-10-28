@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:13:54
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-27 16:22:26
+ * @LastEditTime: 2022-10-28 12:44:36
  * @FilePath: /cli/pkg/k8s/k8sUtil.go
  */
 
@@ -246,7 +246,7 @@ func (k *KubernetesUtil) GitClone(pod coreV1.Pod,
 
 	// 直接 git clone
 	cloneCommand := fmt.Sprintf(`	    
-		 [[ -d '%v' ]] && echo 'git repo existed！' || ( ([[ -d '%v' ]] && rm -rf %v) && git clone %v %v)
+		 [[ -d '%v' ]] && echo 'git repo existed！' || ( ([[ -d '%v' ]] && rm -rf %v || echo 'floder not exitsed!') && git clone %v %v)
 		 `, //sudo chown -R smartide:smartide %v
 		filepath.Join(containerCloneDir, ".git"),
 		containerCloneDir, containerCloneDir+"/*",

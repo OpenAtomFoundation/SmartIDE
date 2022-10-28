@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-04-20 17:08:53
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-27 11:23:45
+ * @LastEditTime: 2022-10-28 11:40:55
  * @FilePath: /cli/cmd/new.go
  */
 package cmd
@@ -84,6 +84,6 @@ func init() {
 
 	newCmd.Flags().StringP("workspacename", "w", "", "工作区名称")
 
-	startCmd.Flags().StringP("k8s", "k", "", i18nInstance.Start.Info_help_flag_k8s)
-	startCmd.Flags().StringP("kubeconfig", "", "", "自定义 kube config 文件的本地路径")
+	newCmd.Flags().StringP("k8s", "k", "", i18nInstance.Start.Info_help_flag_k8s)
+	newCmd.Flags().StringP("kubeconfig", "", "", "自定义 kube config 文件的本地路径")
 }

@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2021-12-30 19:48:33
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-27 16:05:37
+ * @LastEditTime: 2022-10-28 12:11:39
  * @FilePath: /cli/internal/model/const.go
  * @Description:
  *
