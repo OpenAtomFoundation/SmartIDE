@@ -56,7 +56,7 @@ smartide new <template_type> -T {type_name} --k8s {kubernetes_context} --kubecon
 			newExtend.VmNew(cmd, args, workspaceInfo, executeStartCmdFunc)
 
 		} else if workspaceInfo.Mode == workspace.WorkingMode_K8s { // k8s
-			k8sUtil, err := k8s.NewK8sUtil(workspaceInfo.K8sInfo.KubeConfigFilePath,
+			k8sUtil, err := k8s.NewK8sUtilWithContent(workspaceInfo.K8sInfo.KubeConfigContent,
 				workspaceInfo.K8sInfo.Context,
 				workspaceInfo.K8sInfo.Namespace)
 			common.CheckError(err)
