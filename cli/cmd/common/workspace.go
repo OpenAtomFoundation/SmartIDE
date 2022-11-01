@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-10-28 16:49:11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-28 17:22:29
+ * @LastEditTime: 2022-11-01 22:38:48
  * @FilePath: /cli/cmd/common/workspace.go
  */
 
@@ -20,9 +20,11 @@ import (
 	"github.com/jinzhu/copier"
 	"github.com/leansoftX/smartide-cli/cmd/new"
 	"github.com/leansoftX/smartide-cli/cmd/server"
+	templateModel "github.com/leansoftX/smartide-cli/internal/biz/template/model"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/dal"
 	"github.com/leansoftX/smartide-cli/internal/model"
+
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -121,7 +123,7 @@ func GetWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 			if strings.Contains(configFilePath, "/") || strings.Contains(configFilePath, "\\") {
 				workspaceInfo.ConfigFileRelativePath = configFilePath
 			} else {
-				workspaceInfo.ConfigFileRelativePath = ".ide/" + configFilePath
+				workspaceInfo.ConfigFileRelativePath = filepath.Join(".ide", configFilePath)
 			}
 
 		}
@@ -199,6 +201,7 @@ func GetWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 			checkFlagUnnecessary(fflags, flag_password, flag_workspaceid)
 
 			err := getWorkspaceWithDbAndValid(workspaceId, &workspaceInfo) // 从数据库中加载
+
 			if err != nil {
 				return workspace.WorkspaceInfo{}, err
 			}
@@ -220,12 +223,7 @@ func GetWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 			loadGitInfo4Workspace(&workspaceInfo, cmd, args)
 
 			// 模板相关
-			selectedTemplateSettings, err := new.GetTemplateSetting(cmd, args) // 包含了“clone 模板文件到本地”
-			common.CheckError(err)
-			if selectedTemplateSettings == nil { // 未指定模板类型的时候，提示用户后退出
-				common.CheckError(errors.New("模板配置为空！"))
-			}
-			workspaceInfo.SelectedTemplate = selectedTemplateSettings
+			workspaceInfo.SelectedTemplate, _ = getSeletedTemplate(cmd, args) // selectedTemplateSettings
 
 			// 模式
 			if workspaceInfo.Mode == workspace.WorkingMode_Remote { //1.2.1. vm 模式
@@ -258,7 +256,8 @@ func GetWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 				if err != nil {
 					return workspace.WorkspaceInfo{}, err
 				}
-				workspaceInfo.Name = filepath.Base(pwd)
+				workspaceInfo.Name = filepath.Base(pwd) + "-" + common.RandLowStr(3) // 工作区名称
+				workspaceInfo.WorkingDirectoryPath = pwd                             // 工作目录默认使用当前文件夹
 
 				// 本地模式下，不需要录入git库的克隆地址、分支
 				checkFlagUnnecessary(fflags, flag_branch, "mode=local")
@@ -281,11 +280,8 @@ func GetWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 					workspaceInfo.WorkingDirectoryPath = clonedRepoDir
 					os.Chdir(clonedRepoDir)
 				} else {
-					if cmd.Use == "new" {
-						workspaceInfo.WorkingDirectoryPath = filepath.Join(workspaceInfo.SelectedTemplate.GetTemplateRootDirAbsolutePath(),
-							workspaceInfo.SelectedTemplate.GetTemplateDirRelativePath())
-					} else {
-						workspaceInfo.WorkingDirectoryPath = pwd
+					// 非 new 命令，才会从本地获取 git remote url
+					if cmd.Use != "new" {
 						workspaceInfo.GitCloneRepoUrl, _, err = getLocalGitRepoUrl(pwd) // 获取本地关联的repo url
 						common.CheckError(err)
 					}
@@ -296,16 +292,12 @@ func GetWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 			// 当为 new command 时，再次处理 workspace name
 			if workspaceInfo.Name == "" {
 				if cmd.Use == "new" {
-					workspaceInfo.Name = fmt.Sprintf("%v_%v",
-						workspaceInfo.SelectedTemplate.TypeName, workspaceInfo.SelectedTemplate.SubType)
+					workspaceInfo.Name = fmt.Sprintf("%v_%v-%v",
+						workspaceInfo.SelectedTemplate.TypeName, workspaceInfo.SelectedTemplate.SubType, common.RandLowStr(3))
 				}
 			}
 
 			// 从数据库中查找是否存在对应的workspace信息
-			/* conditionWorkingDir := ""
-			if workspaceInfo.Mode == workspace.WorkingMode_Local { //
-				conditionWorkingDir = workspaceInfo.WorkingDirectoryPath
-			}  */
 			workspaceInfoDb, err := dal.GetSingleWorkspaceByParams(workspaceInfo.Mode, workspaceInfo.WorkingDirectoryPath,
 				workspaceInfo.GitCloneRepoUrl, workspaceInfo.GitBranch, workspaceInfo.ConfigFileRelativePath,
 				workspaceInfo.Remote.ID, workspaceInfo.Remote.Addr, workspaceInfo.Remote.UserName)
@@ -326,7 +318,17 @@ func GetWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 
 				} else {
 					isNewWorkspace = false
-					copier.CopyWithOption(&workspaceInfo, workspaceInfoDb, copier.Option{IgnoreEmpty: false, DeepCopy: true})
+					selectedTemplate := workspaceInfo.SelectedTemplate
+					copier.CopyWithOption(&workspaceInfo, workspaceInfoDb,
+						copier.Option{
+							IgnoreEmpty: false,
+							DeepCopy:    true,
+						})
+					// 防止拷贝后，模板信息为空
+					if workspaceInfo.SelectedTemplate == nil && selectedTemplate != nil {
+						workspaceInfo.SelectedTemplate = selectedTemplate
+					}
+
 				}
 
 			}
@@ -386,6 +388,21 @@ func GetWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 	}
 
 	return workspaceInfo, err
+}
+
+func getSeletedTemplate(cmd *cobra.Command, args []string) (*templateModel.SelectedTemplateTypeBo, error) {
+	if cmd.Use != "new" {
+		return nil, nil
+	}
+	selectedTemplateSettings, err := new.GetTemplateSetting(cmd, args) // 包含了“clone 模板文件到本地”
+	if err != nil {
+		return nil, err
+	}
+	/* if selectedTemplateSettings == nil { // 未指定模板类型的时候，提示用户后退出
+		common.CheckError(errors.New("模板配置为空！"))
+	} */
+	// workspaceInfo.SelectedTemplate = selectedTemplateSettings
+	return selectedTemplateSettings, err
 }
 
 func entryptionKey4Workspace(workspaceInfo workspace.WorkspaceInfo) {

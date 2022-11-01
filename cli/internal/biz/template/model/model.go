@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-10-27 10:43:57
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-27 11:12:36
+ * @LastEditTime: 2022-11-01 17:32:58
  * @FilePath: /cli/internal/biz/template/model/model.go
  */
 
@@ -51,4 +51,8 @@ func (target SelectedTemplateTypeBo) GetTemplateRootDirAbsolutePath() string {
 // 获取模板文件所在相对目录
 func (target SelectedTemplateTypeBo) GetTemplateDirRelativePath() string {
 	return filepath.Join(target.TypeName, target.SubType)
+}
+
+func (target SelectedTemplateTypeBo) IsNil() bool {
+	return target.TypeName == "" || target.SubType == "" || target.TemplateActualRepoUrl == ""
 }

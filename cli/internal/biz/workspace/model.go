@@ -647,3 +647,11 @@ func (r RemoteInfo) IsNil() bool {
 func (w RemoteInfo) IsNotNil() bool {
 	return !w.IsNil()
 }
+
+func (r K8sInfo) IsNil() bool {
+	return r.Context == ""
+}
+
+func (w K8sInfo) IsNotNil() bool {
+	return !w.IsNil()
+}
