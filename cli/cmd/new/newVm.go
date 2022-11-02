@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-04-20 10:46:40
- * @LastEditors: kenan
- * @LastEditTime: 2022-10-20 10:10:08
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-10-27 09:50:48
  * @FilePath: /cli/cmd/new/newVm.go
  */
 
@@ -67,9 +67,10 @@ func VmNew(cmd *cobra.Command, args []string, workspaceInfo workspace.WorkspaceI
 	common.CheckErrorFunc(err, serverFeedback)
 
 	// 获取command中的配置
-	selectedTemplateSettings, err := getTemplateSetting(cmd, args)
+	selectedTemplateSettings, err := GetTemplateSetting(cmd, args)
 	common.CheckError(err)
 	if selectedTemplateSettings == nil { // 未指定模板类型的时候，提示用户后退出
+		common.SmartIDELog.Error("模板配置为空！")
 		return // 退出
 	}
 
@@ -86,7 +87,7 @@ func VmNew(cmd *cobra.Command, args []string, workspaceInfo workspace.WorkspaceI
 		selectedTemplateSettings.SubType = "_default"
 	}
 	projectDir := common.FilePahtJoin4Linux("~", model.CONST_REMOTE_REPO_ROOT, workspaceDirName)
-	err = gitCloneTemplateRepo4Remote(sshRemote, projectDir, config.GlobalSmartIdeConfig.TemplateRepo,
+	err = gitCloneTemplateRepo4Remote(sshRemote, projectDir, config.GlobalSmartIdeConfig.TemplateActualRepoUrl,
 		selectedTemplateSettings.TypeName, selectedTemplateSettings.SubType)
 	common.CheckErrorFunc(err, serverFeedback)
 

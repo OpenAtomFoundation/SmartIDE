@@ -14,7 +14,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-//定义函数Map类型，便于后续快捷使用
+// 定义函数Map类型，便于后续快捷使用
 type ControllerMapsType map[string]reflect.Value
 
 type ClientMethod struct {
@@ -114,7 +114,7 @@ func (w *receiver) pushMap(k int, c chan []byte) int {
 		return 51003
 	}
 	w.receiver[k] = c
-	w.receiverMtx.Unlock()
+	defer w.receiverMtx.Unlock()
 
 	return 200
 }
@@ -128,14 +128,14 @@ func (w *receiver) deleteMap(k int) {
 		close(w.receiver[k])
 		delete(w.receiver, k)
 	}
-	w.receiverMtx.Unlock()
+	defer w.receiverMtx.Unlock()
 }
 
 func (w *receiver) getCmd() (v int) {
 	w.cmdMtx.Lock()
 	w.curMaxCmd += 1
 	v = w.curMaxCmd
-	w.cmdMtx.Unlock()
+	defer w.cmdMtx.Unlock()
 	return
 }
 
@@ -143,14 +143,14 @@ func (w *receiver) recoverCmd(v int) {
 	if len(w.receiver) == 0 {
 		w.cmdMtx.Lock()
 		w.curMaxCmd = 0
-		w.cmdMtx.Unlock()
+		defer w.cmdMtx.Unlock()
 		return
 	}
 
 	if v == w.curMaxCmd {
 		w.cmdMtx.Lock()
 		w.curMaxCmd -= 1
-		w.cmdMtx.Unlock()
+		defer w.cmdMtx.Unlock()
 	}
 }
 
@@ -186,7 +186,7 @@ func connServer(key, Addr string) {
 		}
 
 		clientArr[key] = nil
-		wsclient.mtx.Unlock()
+		defer wsclient.mtx.Unlock()
 		WSLog(Addr + " 自动重连")
 		//自动重连机制
 		time.Sleep(3 * time.Second)
@@ -218,7 +218,7 @@ func connServer(key, Addr string) {
 	}
 }
 
-//发送给固定客户端
+// 发送给固定客户端
 func (w *receiver) receiveMsg(cmd int, msg []byte) {
 	w.receiverMtx.RLock()
 	defer w.receiverMtx.RUnlock()
@@ -273,7 +273,7 @@ func SendAndReceive(key, Actioncode, ModID, Token string, Data interface{}) (dat
 	wsclient.mtx.Lock()
 	if clientArr[key] != nil {
 		sErr := clientArr[key].WriteMessage(websocket.BinaryMessage, msgByte)
-		wsclient.mtx.Unlock()
+		defer wsclient.mtx.Unlock()
 		if sErr != nil {
 			return data, 51004
 		}
@@ -295,7 +295,7 @@ func SendAndReceive(key, Actioncode, ModID, Token string, Data interface{}) (dat
 		}
 	}
 
-	wsclient.mtx.Unlock()
+	defer wsclient.mtx.Unlock()
 	return data, 51006
 }
 

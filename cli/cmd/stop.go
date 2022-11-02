@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-22 16:59:29
+ * @LastEditTime: 2022-10-28 17:15:21
  */
 package cmd
 
@@ -14,6 +14,8 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+
+	cmdCommon "github.com/leansoftX/smartide-cli/cmd/common"
 
 	"github.com/leansoftX/smartide-cli/cmd/server"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
@@ -30,7 +32,7 @@ var stopCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		mode, _ := cmd.Flags().GetString("mode")
-		workspaceIdStr := getWorkspaceIdFromFlagsOrArgs(cmd, args)
+		workspaceIdStr := cmdCommon.GetWorkspaceIdFromFlagsOrArgs(cmd, args)
 		if strings.ToLower(mode) == "server" || strings.Contains(workspaceIdStr, "SWS") {
 			serverModeInfo, _ := server.GetServerModeInfo(cmd)
 			if serverModeInfo.ServerHost != "" {
@@ -56,7 +58,7 @@ var stopCmd = &cobra.Command{
 
 		// 获取 workspace 信息
 		common.SmartIDELog.Info(i18nInstance.Main.Info_workspace_loading)
-		workspaceInfo, err := getWorkspaceFromCmd(cmd, args)
+		workspaceInfo, err := cmdCommon.GetWorkspaceFromCmd(cmd, args)
 		entryptionKey4Workspace(workspaceInfo) // 申明需要加密的文本
 		common.CheckError(err)
 

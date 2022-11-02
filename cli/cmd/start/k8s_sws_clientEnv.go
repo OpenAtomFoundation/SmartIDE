@@ -1,8 +1,8 @@
 /*
  * @Date: 2022-06-07 09:26:55
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-04 11:21:21
- * @FilePath: /smartide/cli/cmd/start/k8s_sws_clientEnv.go
+ * @LastEditTime: 2022-10-27 15:22:50
+ * @FilePath: /cli/cmd/start/k8s_sws_clientEnv.go
  */
 
 package start
@@ -21,7 +21,7 @@ import (
 )
 
 // 在本地start 远程服务器上的k8s工作区
-func ExecuteServerK8sStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo,
+func ExecuteK8s_ServerWS_LocalEnv(workspaceInfo workspace.WorkspaceInfo,
 	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) (workspace.WorkspaceInfo, error) {
 
 	//0. 验证

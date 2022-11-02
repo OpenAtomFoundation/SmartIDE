@@ -14,8 +14,6 @@ import (
 	"strconv"
 	"strings"
 
-	"io/ioutil"
-
 	"github.com/leansoftX/smartide-cli/internal/apk/user"
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
@@ -64,7 +62,7 @@ func (yamlFileConfig *SmartIdeConfig) LoadDockerComposeFromTempFile(sshRemote co
 		common.SmartIDELog.InfoF(i18nInstance.Config.Info_read_docker_compose, tempDockerComposeFilePath)
 
 		// read and parse
-		yamlFileBytes, err = ioutil.ReadFile(tempDockerComposeFilePath)
+		yamlFileBytes, err = os.ReadFile(tempDockerComposeFilePath)
 		common.CheckError(err)
 
 	}
@@ -432,7 +430,7 @@ func (yamlFileConfig SmartIdeConfig) getDockerCompose(sshRemote common.SSHRemote
 			// read and parse
 			common.SmartIDELog.InfoF(i18nInstance.Config.Info_read_docker_compose, yamlFileConfig.Workspace.DockerComposeFile)
 			linkDockerComposeFilePath, _ := yamlFileConfig.GetLocalLinkDockerComposeFile()
-			dockerComposeFileBytes, err = ioutil.ReadFile(linkDockerComposeFilePath)
+			dockerComposeFileBytes, err = os.ReadFile(linkDockerComposeFilePath)
 			if err != nil {
 				return dockerCompose, err
 			}

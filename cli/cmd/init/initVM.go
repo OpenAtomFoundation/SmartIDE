@@ -85,7 +85,7 @@ func VmInit(cmd *cobra.Command, args []string, workspaceInfo workspace.Workspace
 		selectedTemplateSettings.SubType = "_default"
 	}
 	projectDir := common.FilePahtJoin4Linux("~", model.CONST_REMOTE_REPO_ROOT, workspaceDirName)
-	err = GitCloneTemplateRepo4Remote(sshRemote, projectDir, config.GlobalSmartIdeConfig.TemplateRepo,
+	err = GitCloneTemplateRepo4Remote(sshRemote, projectDir, config.GlobalSmartIdeConfig.TemplateActualRepoUrl,
 		selectedTemplateSettings.TypeName, selectedTemplateSettings.SubType)
 	common.CheckErrorFunc(err, serverFeedback)
 

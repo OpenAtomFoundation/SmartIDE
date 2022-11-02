@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-18 11:06:52
+ * @LastEditTime: 2022-10-27 16:14:44
  */
 package config
 
@@ -32,7 +32,6 @@ import (
 	} `yaml:"orchestrator"`
 } */
 
-//
 type OrchestratorTypeEnum string
 
 const (
@@ -230,7 +229,6 @@ func (p PortMapInfo) GetSSHPortAtLocalHost() int {
 	return p.ClientPort
 }
 
-//
 type PortMapTypeEnum string
 
 const (
@@ -256,7 +254,6 @@ func (customBool CustomBool) Value() bool {
 	return tmp == "true" || tmp == "1"
 }
 
-//
 func NewPortMap(
 	mapType PortMapTypeEnum, orginLocalPort int, currentLocalPort int, localPortDesc string, containerPort int, serviceName string) *PortMapInfo {
 	result := &PortMapInfo{
@@ -283,7 +280,7 @@ func (w SmartIdeConfig) GetWorkingDirectoryPath() string {
 
 }
 
-//返回容器内IDE端口，web ide的默认端口：3000，JetBrains IDE的默认端口：8887
+// 返回容器内IDE端口，web ide的默认端口：3000，JetBrains IDE的默认端口：8887
 func (w SmartIdeConfig) GetContainerWebIDEPort() (port *int) {
 	switch w.Workspace.DevContainer.IdeType {
 	case IdeTypeEnum_VsCode:
@@ -302,7 +299,6 @@ func (w SmartIdeConfig) GetContainerWebIDEPort() (port *int) {
 	return port
 }
 
-//
 func (originK8sConfig SmartIdeK8SConfig) GetProjectDirctory() string {
 	containerGitCloneDir := "/home/project"
 	for containerName, item := range originK8sConfig.Workspace.Containers { // git clone 的目录是否设置

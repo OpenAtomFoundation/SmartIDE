@@ -49,7 +49,7 @@ var configCmd = &cobra.Command{
 				paramVal := paramArry[1]
 				paramStr := fmt.Sprintf("%v=%v", paramKey, paramVal)
 				if paramKey == "template-repo" {
-					configStruct.TemplateRepo = paramVal
+					configStruct.TemplateActualRepoUrl = paramVal
 				} else if paramKey == "images-registry" {
 					configStruct.ImagesRegistry = paramVal
 				} else {

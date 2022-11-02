@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2022-02-25
- * @LastEditors: kenan
- * @LastEditTime: 2022-10-11 17:38:17
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-10-28 09:52:08
  */
 package cmd
 
@@ -225,7 +225,7 @@ func connect(startedServerWorkspaces []workspace.WorkspaceInfo, cmd *cobra.Comma
 			connectedWorkspaceIds = common.RemoveItem(connectedWorkspaceIds, fixWorkspaceInfo.ServerWorkSpace.NO)
 		}
 		time.Sleep(time.Second * 26)
-		mutex.Unlock()
+		defer mutex.Unlock()
 
 		for {
 			if !common.Contains(connectedWorkspaceIds, fixWorkspaceInfo.ServerWorkSpace.NO) {

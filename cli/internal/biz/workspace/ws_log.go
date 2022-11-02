@@ -150,7 +150,7 @@ func CreateWsLog(wid string, token string, apiHost string, title string, content
 	return -1, err
 }
 
-func UpdateWsLog(token string, apiHost string, wslog model.ServerWorkspaceLog) (err error) {
+func UpdateWsLog(token string, apiHost string, wslog model.ServerWorkspaceLogResponse) (err error) {
 	var response = ""
 	var wslogMap map[string]interface{}
 	data, _ := json.Marshal(wslog)

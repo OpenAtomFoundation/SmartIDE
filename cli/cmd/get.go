@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-22 16:59:23
+ * @LastEditTime: 2022-10-28 17:14:56
  */
 package cmd
 
@@ -12,6 +12,7 @@ import (
 	"os"
 	"text/tabwriter"
 
+	cmdCommon "github.com/leansoftX/smartide-cli/cmd/common"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
@@ -34,11 +35,11 @@ var getCmd = &cobra.Command{
 			} */
 
 		// 从数据库中查询
-		workspaceInfo, err := getWorkspaceFromCmd(cmd, args)
+		workspaceInfo, err := cmdCommon.GetWorkspaceFromCmd(cmd, args)
 		entryptionKey4Workspace(workspaceInfo) // 申明需要加密的文本
 		common.CheckError(err)
 		if workspaceInfo.IsNil() {
-			workspaceIdStr := getWorkspaceIdFromFlagsOrArgs(cmd, args)
+			workspaceIdStr := cmdCommon.GetWorkspaceIdFromFlagsOrArgs(cmd, args)
 			common.SmartIDELog.Error(fmt.Sprintf("根据ID（%v）未找到数据！", workspaceIdStr))
 		}
 

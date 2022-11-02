@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -122,7 +122,7 @@ func (workspaceInfo WorkspaceInfo) RemoveSSHConfig() {
 
 	// check host is exist?
 	logger.Debug("decoding file content to ssh config...")
-	bytes, _ := ioutil.ReadFile(configPath)
+	bytes, _ := os.ReadFile(configPath)
 	content := strings.TrimSpace(string(bytes))
 	cfg, _ := ssh_config.DecodeBytes([]byte(content))
 	hostName := fmt.Sprintf("SmartIDE-%v", workspaceInfo.ID)
@@ -159,7 +159,7 @@ func CleanupSshConfig4Smartide() {
 
 	// check host is exist?
 	logger.Debug("decoding file content to ssh config...")
-	bytes, _ := ioutil.ReadFile(configPath)
+	bytes, _ := os.ReadFile(configPath)
 	content := strings.TrimSpace(string(bytes))
 	cfg, _ := ssh_config.DecodeBytes([]byte(content))
 	for _, host := range cfg.Hosts {
@@ -505,7 +505,7 @@ func removeLines(fn string, start, n int) (err error) {
 		}
 	}()
 	var b []byte
-	if b, err = ioutil.ReadAll(f); err != nil {
+	if b, err = io.ReadAll(f); err != nil {
 		return
 	}
 	cut, ok := skip(b, start-1)

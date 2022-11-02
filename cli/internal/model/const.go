@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2021-12-30 19:48:33
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-15 09:46:22
+ * @LastEditTime: 2022-10-28 12:11:39
  * @FilePath: /cli/internal/model/const.go
  * @Description:
  *
@@ -34,10 +34,13 @@ const (
 const CONST_Container_SSHPort int = 22
 
 // 临时文件夹的路径（相对于工作目录）
-const CONST_TempDirPath string = "/.ide/.temp"
+const CONST_GlobalTempDirPath string = "/.ide/.temp"
+
+// k8s 文件夹
+const CONST_GlobalK8sDirPath string = "/.ide/.k8s"
 
 // .ide 文件的路径
-const CONST_IDEDirPath string = "/.ide/"
+const CONST_GlobalIDEDirPath string = "/.ide/"
 
 // SSH 默认的本地绑定端口，默认是6822 可能会因为端口占用被改为其他的端口
 const CONST_Local_Default_BindingPort_SSH int = 6822
@@ -50,13 +53,13 @@ const CONST_Default_ConfigRelativeFilePath = ".ide/.ide.yaml"
 
 //const CONST_Default_K8S_ConfigRelativeFilePath = ".ide/.k8s.ide.yaml"
 
-//环境变量名称，映射到容器里面，当前用户uid,windows默认1000
+// 环境变量名称，映射到容器里面，当前用户uid,windows默认1000
 const CONST_LOCAL_USER_UID = "LOCAL_USER_UID"
 
-//环境变量名称，映射到容器里面，当前用户gid,windows默认1000
+// 环境变量名称，映射到容器里面，当前用户gid,windows默认1000
 const CONST_LOCAL_USER_GID = "LOCAL_USER_GID"
 
-//环境变量名称，容器ssh账号密码，root,smartide密码一样
+// 环境变量名称，容器ssh账号密码，root,smartide密码一样
 const CONST_ENV_NAME_LoalUserPassword = "LOCAL_USER_PASSWORD"
 
 // 容器ssh,端口转发用户
@@ -65,10 +68,13 @@ const CONST_DEV_CONTAINER_ROOT = "root"
 // 自定义的用户
 const CONST_DEV_CONTAINER_CUSTOM_USER = "smartide"
 
-//容器ssh账号默认密码
+// 容器ssh账号默认密码
 const CONST_DEV_CONTAINER_USER_DEFAULT_PASSWORD = "smartide123.@IDE"
 
-//默认登录地址
+// 默认登录地址
 const CONST_LOGIN_URL = "https://dev.smartide.cn"
 
 const CONST_WS_URL = "ws://dev.smartide.cn/smartide/ws"
+
+// 模板文件夹的名称
+const TMEPLATE_DIR_NAME = "templates"

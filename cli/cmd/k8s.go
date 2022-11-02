@@ -2,13 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
 
+	cmdCommon "github.com/leansoftX/smartide-cli/cmd/common"
 	"github.com/leansoftX/smartide-cli/cmd/k8s"
 	"github.com/leansoftX/smartide-cli/cmd/server"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
@@ -16,6 +16,7 @@ import (
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	k8sLib "github.com/leansoftX/smartide-cli/pkg/k8s"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v2"
@@ -93,11 +94,11 @@ var k8sCmd = &cobra.Command{
 
 		//1. Get Workspace Info
 		common.SmartIDELog.Info(i18nInstance.K8s.Info_log_get_workspace_start)
-		workspaceInfo, err := getWorkspaceFromCmd(cmd, args)
+		workspaceInfo, err := cmdCommon.GetWorkspaceFromCmd(cmd, args)
 		entryptionKey4Workspace(workspaceInfo) // 申明需要加密的文本
 		common.CheckError(err)
 		if workspaceInfo.IsNil() {
-			workspaceIdStr := getWorkspaceIdFromFlagsOrArgs(cmd, args)
+			workspaceIdStr := cmdCommon.GetWorkspaceIdFromFlagsOrArgs(cmd, args)
 			common.SmartIDELog.Error(fmt.Sprintf("根据ID（%v）未找到工作区数据!", workspaceIdStr))
 		}
 		print := fmt.Sprintf(i18nInstance.Get.Info_workspace_detail_template,
@@ -115,7 +116,7 @@ var k8sCmd = &cobra.Command{
 		//2. Save temp k8s config file
 		k8sConfigDirPath := config.SmartIdeHome
 		tempK8sConfigFileRelativePath := filepath.Join(k8sConfigDirPath, "tempconfig")
-		err = ioutil.WriteFile(tempK8sConfigFileRelativePath, []byte(workspaceInfo.K8sInfo.KubeConfigContent), 0777)
+		err = os.WriteFile(tempK8sConfigFileRelativePath, []byte(workspaceInfo.K8sInfo.KubeConfigContent), 0777)
 		if err != nil {
 			common.SmartIDELog.Error(err)
 		}
@@ -551,7 +552,7 @@ var k8sCmd = &cobra.Command{
 		common.SmartIDELog.Info(i18nInstance.K8s.Info_log_save_temp_yaml_start)
 
 		tempK8sYamlFileRelativePath := filepath.Join(k8sDirPath, "k8s_ingress_temp.yaml")
-		err = ioutil.WriteFile(tempK8sYamlFileRelativePath, []byte(yamlData), 0777)
+		err = os.WriteFile(tempK8sYamlFileRelativePath, []byte(yamlData), 0777)
 		if err != nil {
 			common.SmartIDELog.Error(err)
 		}

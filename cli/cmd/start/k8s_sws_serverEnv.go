@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-05-31 09:36:33
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-24 10:19:10
+ * @LastEditTime: 2022-10-27 11:28:25
  * @FilePath: /cli/cmd/start/k8s_sws_serverEnv.go
  */
 
@@ -9,7 +9,6 @@ package start
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -17,6 +16,7 @@ import (
 	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
+
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/k8s"
@@ -24,7 +24,8 @@ import (
 	coreV1 "k8s.io/api/core/v1"
 )
 
-func ExecuteK8sServerStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
+// 在服务器上运行 k8s start
+func ExecuteK8s_ServerWS_ServerEnv(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 	workspaceInfo workspace.WorkspaceInfo,
 	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) (workspace.WorkspaceInfo, error) {
 	// 错误反馈
@@ -63,7 +64,7 @@ func ExecuteK8sServerStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 		tempK8sNamespaceYamlAbsolutePath := filepath.Join(gitRepoRootDirPath, fmt.Sprintf("k8s_deployment_%v_temp_namespace.yaml", filepath.Base(gitRepoRootDirPath)))
 		k8sYamlContent, err := config.ConvertK8sKindToString(namespaceKind)
 		serverFeedback(err)
-		err = ioutil.WriteFile(tempK8sNamespaceYamlAbsolutePath, []byte(k8sYamlContent), 0777)
+		err = os.WriteFile(tempK8sNamespaceYamlAbsolutePath, []byte(k8sYamlContent), 0777)
 		serverFeedback(err)
 
 		// apply

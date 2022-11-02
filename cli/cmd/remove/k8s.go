@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-06-07 14:02:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-09 16:22:21
+ * @LastEditTime: 2022-10-28 15:05:27
  * @FilePath: /cli/cmd/remove/k8s.go
  */
 /*
@@ -49,8 +49,10 @@ func RemoveK8s(k8sUtil k8s.KubernetesUtil, workspaceInfo workspace.WorkspaceInfo
 		return err
 	}
 	repoName := common.GetRepoName(workspaceInfo.GitCloneRepoUrl)
-	filePath := common.PathJoin(home, ".ide", repoName)
-	os.RemoveAll(filePath)
+	if repoName != "" {
+		filePath := common.PathJoin(home, ".ide", repoName)
+		os.RemoveAll(filePath)
+	}
 
 	//remove config note from .ssh/config file
 	workspaceInfo.RemoveSSHConfig()

@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-09-05 11:27:09
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-24 10:23:08
+ * @LastEditTime: 2022-10-27 15:27:22
  * @FilePath: /cli/cmd/start/k8s_client.go
  */
 
@@ -9,7 +9,6 @@ package start
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -25,7 +24,7 @@ import (
 )
 
 // 在本地启动k8s工作区
-func ExecuteK8sClientStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
+func ExecuteK8s_LocalWS_LocalEnv(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 	workspaceInfo workspace.WorkspaceInfo,
 	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) (workspace.WorkspaceInfo, error) {
 
@@ -34,10 +33,9 @@ func ExecuteK8sClientStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 		needStore = true
 	}
 
-	// create namespace
-	// namespace 是否存在
+	//1. create namespace
 	_, err := k8sUtil.ExecKubectlCommandCombined(" get namespace "+k8sUtil.Namespace, "")
-	if _, isExitError := err.(*exec.ExitError); isExitError {
+	if _, isExitError := err.(*exec.ExitError); isExitError { // 如果不存在，才需要创建
 		needStore = true
 		common.SmartIDELog.Info("create namespace：" + k8sUtil.Namespace)
 
@@ -67,7 +65,7 @@ func ExecuteK8sClientStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 		if err != nil {
 			return workspaceInfo, err
 		}
-		err = ioutil.WriteFile(tempK8sNamespaceYamlAbsolutePath, []byte(k8sYamlContent), 0777)
+		err = os.WriteFile(tempK8sNamespaceYamlAbsolutePath, []byte(k8sYamlContent), 0777)
 		if err != nil {
 			return workspaceInfo, err
 		}
@@ -82,7 +80,7 @@ func ExecuteK8sClientStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 		workspaceInfo.K8sInfo.Namespace = k8sUtil.Namespace
 	}
 
-	// store
+	//2. store
 	if needStore {
 		common.SmartIDELog.Info("workspace store")
 		workspaceId, err := dal.InsertOrUpdateWorkspace(workspaceInfo)

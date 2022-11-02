@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-15 18:03:06
+ * @LastEditTime: 2022-10-28 12:20:04
  */
 package config
 
@@ -11,7 +11,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -106,9 +105,6 @@ func newK8sConfig(localWorkingDir string, configFileRelativePath string, linkK8s
 	configContent string, k8sYamlContent string) (
 	result *SmartIdeK8SConfig, err error) {
 
-	//configFileAbsolutePath := filepath.Join(localWorkingDir, configFileRelativePath)
-	//localWorkingDir := filepath.Dir(configFileAbsolutePath)
-	//fileName := filepath.Base(configFileAbsolutePath)
 	config := newConfig(localWorkingDir, configFileRelativePath, configContent, OrchestratorTypeEnum_K8S, false)
 	result = config.ConvertToSmartIdeK8SConfig()
 
@@ -159,11 +155,11 @@ func newK8sConfig(localWorkingDir string, configFileRelativePath string, linkK8s
 			common.SmartIDELog.Debug(k8sYamlContent)
 			return nil, err
 		}
-	} else {
+	} else if config.Workspace.KubeDeployFileExpression != "" {
 		var k8sYamlFileAbsolutePaths []string
 		if len(linkK8sYamlRelativePaths) == 0 {
-			//dir := path.Dir(configFileAbsolutePath)
-			tempExpression := common.PathJoin(localWorkingDir, ".ide", config.Workspace.KubeDeployFileExpression) // 链接文件是相对于.ide目录的
+			dir := filepath.Dir(filepath.Join(localWorkingDir, configFileRelativePath))
+			tempExpression := common.PathJoin(dir, config.Workspace.KubeDeployFileExpression) // 链接文件是相对于.ide.yaml文件所在目录的
 			files, err := filepath.Glob(tempExpression)
 			if err != nil {
 				return nil, err
@@ -172,8 +168,7 @@ func newK8sConfig(localWorkingDir string, configFileRelativePath string, linkK8s
 		}
 
 		for _, k8sYamlFileAbsolutePath := range k8sYamlFileAbsolutePaths {
-
-			yamlFileBytes, err := ioutil.ReadFile(k8sYamlFileAbsolutePath)
+			yamlFileBytes, err := os.ReadFile(k8sYamlFileAbsolutePath)
 			if err != nil {
 				return nil, err
 			}
@@ -280,7 +275,7 @@ func loadConfigWithYamlFile(workingDirectoryPath, configRelativeFilePath string)
 	}
 
 	// read
-	yamlFile, err := ioutil.ReadFile(configFilePath)
+	yamlFile, err := os.ReadFile(configFilePath)
 	common.CheckError(err)
 
 	// parse
