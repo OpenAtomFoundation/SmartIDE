@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-28 13:31:09
+ * @LastEditTime: 2022-11-02 08:37:00
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -298,7 +298,7 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 
 	//5.5. agent
 	common.SmartIDELog.Info("install agent")
-	if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server {
+	if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server { // 只有是server的模式下才会去安装 agent， 因为镜像中会有
 		err := kubernetes.CopyToPod(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, common.PathJoin("/usr/local/bin", "smartide-agent"), common.PathJoin("/", "smartide-agent"), runAsUserName)
 		if err != nil {
 			return err

@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-10-28 16:49:11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-01 22:38:48
+ * @LastEditTime: 2022-11-01 23:32:57
  * @FilePath: /cli/cmd/common/workspace.go
  */
 
@@ -140,6 +140,11 @@ func GetWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 		}
 	}
 
+	//1.3. 模板信息
+	if cmd.Use == "new" {
+		workspaceInfo.SelectedTemplate, _ = getSeletedTemplate(cmd, args) // 模板相关
+	}
+
 	//2. 获取基本的信息
 	//2.1. 存储在 server 的工作区
 	if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server {
@@ -162,7 +167,12 @@ func GetWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 			if workspaceInfo_ == nil {
 				return workspace.WorkspaceInfo{}, fmt.Errorf("get workspace (%v) is null", workspaceIdStr)
 			}
+
+			selectedTemplate := workspaceInfo.SelectedTemplate
 			workspaceInfo = *workspaceInfo_
+			if workspaceInfo.SelectedTemplate == nil && selectedTemplate != nil {
+				workspaceInfo.SelectedTemplate = selectedTemplate
+			}
 
 			// 在 server 上运行的时候，git 用户名密码会从cmd中传递过来
 			loadGitInfo4Workspace(&workspaceInfo, cmd, args)
@@ -221,9 +231,6 @@ func GetWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 
 			//1.2.0.2. git 相关
 			loadGitInfo4Workspace(&workspaceInfo, cmd, args)
-
-			// 模板相关
-			workspaceInfo.SelectedTemplate, _ = getSeletedTemplate(cmd, args) // selectedTemplateSettings
 
 			// 模式
 			if workspaceInfo.Mode == workspace.WorkingMode_Remote { //1.2.1. vm 模式
