@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:13:54
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-01 23:19:22
+ * @LastEditTime: 2022-11-02 10:38:38
  * @FilePath: /cli/pkg/k8s/k8sUtil.go
  */
 
@@ -185,8 +185,15 @@ func (k *KubernetesUtil) CopyLocalSSHConfigToPod(pod coreV1.Pod, containerName s
 		sshPath = filepath.Join(home, ".ssh\\")
 	}
 	err = k.CopyToPod(pod, containerName, sshPath, podCurrentUserHomeDir, runAsUser) //.ssh
-	if err != nil {
+	if err != nil {                                                                  //TODO 文件不存在，仅警告
 		return err
+	}
+
+	// .ssh 目录授权
+	if runAsUser != "" {
+		podCommand := fmt.Sprintf(`sudo chown -R %v:%v ~/.ssh
+sudo chmod -R 700 ~/.ssh`, runAsUser, runAsUser)
+		k.ExecuteCommandCombinedInPod(pod, containerName, podCommand, "")
 	}
 
 	// chmod
@@ -281,11 +288,11 @@ func (k *KubernetesUtil) CopyToPod(pod coreV1.Pod, containerName string, srcPath
 		return err
 	}
 
-	if runAsUser != "" {
-		podCommand := fmt.Sprintf(`sudo chown -R %v:%v ~/.ssh
-sudo chmod -R 700 ~/.ssh`, runAsUser, runAsUser)
-		k.ExecuteCommandCombinedInPod(pod, containerName, podCommand, "")
-	}
+	/* 	if runAsUser != "" {
+			podCommand := fmt.Sprintf(`sudo chown -R %v:%v ~/.ssh
+	sudo chmod -R 700 ~/.ssh`, runAsUser, runAsUser)
+			k.ExecuteCommandCombinedInPod(pod, containerName, podCommand, "")
+		} */
 
 	return nil
 }

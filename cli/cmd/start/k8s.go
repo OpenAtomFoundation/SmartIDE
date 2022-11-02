@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-02 08:37:00
+ * @LastEditTime: 2022-11-02 10:44:38
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -303,7 +303,11 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 		if err != nil {
 			return err
 		}
-		err = kubernetes.CopyLocalSSHConfigToPod(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName)
+		// 通过对 actual repo url的判断，如果不上http打头，都是ssh模式clone
+		if workspaceInfo.GitCloneRepoUrl != "" &&
+			strings.Index(workspaceInfo.GitCloneRepoUrl, "http") != 0 {
+			err = kubernetes.CopyLocalSSHConfigToPod(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName)
+		}
 		if err != nil {
 			return err
 		}
@@ -332,10 +336,15 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 	// 本地模式下才需要拷贝ssh 公私钥文件，如果是server模式下，会通过agent下载公私钥文件
 	if workspaceInfo.CliRunningEnv == workspace.CliRunningEnvEnum_Client {
 		if originK8sConfig.Workspace.DevContainer.Volumes.HasSshKey.Value() {
-			common.SmartIDELog.Info("ssh config")
-			err = kubernetes.CopyLocalSSHConfigToPod(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName)
-			if err != nil {
-				return err
+			// ssh
+			// 通过对 actual repo url的判断，如果不上http打头，都是ssh模式clone
+			if workspaceInfo.GitCloneRepoUrl != "" &&
+				strings.Index(workspaceInfo.GitCloneRepoUrl, "http") != 0 {
+				common.SmartIDELog.Info("ssh config")
+				err = kubernetes.CopyLocalSSHConfigToPod(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName)
+				if err != nil {
+					return err
+				}
 			}
 
 			//本地k8s 模式将公钥写入容器内knowhost
