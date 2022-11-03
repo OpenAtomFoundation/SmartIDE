@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-15 17:18:27
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-24 14:39:58
+ * @LastEditTime: 2022-11-03 14:46:20
  * @FilePath: /cli/internal/biz/workspace/workspace.go
  * @Description:
  *
@@ -18,11 +18,11 @@ import (
 
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/model"
+	apiResponse "github.com/leansoftX/smartide-cli/internal/model/response"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 )
 
 func GetServerWorkspaceList(auth model.Auth, cliRunningEnv CliRunningEvnEnum) (ws []WorkspaceInfo, err error) {
-	//ws = workspaces
 	url := fmt.Sprint(auth.LoginUrl, "/api/smartide/workspace/getList?page=1&pageSize=100")
 	headers := map[string]string{
 		"Content-Type": "application/json",
@@ -40,7 +40,7 @@ func GetServerWorkspaceList(auth model.Auth, cliRunningEnv CliRunningEvnEnum) (w
 		return nil, errors.New("服务器返回空！")
 	}
 
-	l := &model.WorkspaceListResponse{}
+	l := &apiResponse.WorkspaceListResponse{}
 	err = json.Unmarshal([]byte(response), l)
 	if err != nil {
 		return ws, err
@@ -97,7 +97,7 @@ func GetWorkspaceFromServer(auth model.Auth, no string, cliRunningEnv CliRunning
 		return nil, errors.New("服务器访问空数据！")
 	}
 
-	l := &model.WorkspaceResponse{}
+	l := &apiResponse.GetWorkspaceSingleResponse{}
 	err = json.Unmarshal([]byte(response), l)
 	if err != nil {
 		return nil, err

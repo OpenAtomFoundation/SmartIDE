@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-10-27 10:43:57
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-01 17:32:58
+ * @LastEditTime: 2022-11-03 14:44:38
  * @FilePath: /cli/internal/biz/template/model/model.go
  */
 

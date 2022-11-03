@@ -46,12 +46,10 @@ func (yamlFileConfig *SmartIdeConfig) GetLabelPortMap() map[string]int {
 	return result
 }
 
-//
 func (yamlFileConfig *SmartIdeConfig) GetPortMappings() []PortMapInfo {
 	return yamlFileConfig.Workspace.DevContainer.bindingPorts
 }
 
-//
 func (yamlFileConfig *SmartIdeConfig) setPort4Label(containerPort int, oldPort int, newPort int, serviceName string) {
 	if containerPort <= 0 {
 		common.SmartIDELog.Error("containerPort <= 0")

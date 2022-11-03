@@ -10,6 +10,7 @@ import (
 
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/model"
+	"github.com/leansoftX/smartide-cli/internal/model/response"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
 	"github.com/thedevsaddam/gojsonq"
@@ -137,7 +138,7 @@ func Feedback_Finish(feedbackCommand FeedbackCommandEnum, cmd *cobra.Command,
 }
 
 // 反馈server工作区的创建情况
-func Feedback_Pending(feedbackCommand FeedbackCommandEnum, workspaceStatus model.WorkspaceStatusEnum,
+func Feedback_Pending(feedbackCommand FeedbackCommandEnum, workspaceStatus response.WorkspaceStatusEnum,
 	cmd *cobra.Command,
 	workspaceInfo workspace.WorkspaceInfo, message string) error {
 	if workspaceInfo.CliRunningEnv != workspace.CliRunningEvnEnum_Server {
