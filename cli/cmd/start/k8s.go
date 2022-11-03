@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-02 10:44:38
+ * @LastEditTime: 2022-11-03 10:52:30
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -345,14 +345,15 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 				if err != nil {
 					return err
 				}
+
+				//本地k8s 模式将公钥写入容器内knowhost
+				command := `sudo echo -e | cat ~/.ssh/id_rsa.pub   >>  /home/smartide/.ssh/authorized_keys && sudo chmod 644 /home/smartide/.ssh/authorized_keys`
+				err = kubernetes.ExecuteCommandRealtimeInPod(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, command, runAsUserName)
+				if err != nil {
+					return err
+				}
 			}
 
-			//本地k8s 模式将公钥写入容器内knowhost
-			command := `sudo echo -e | cat ~/.ssh/id_rsa.pub   >>  /home/smartide/.ssh/authorized_keys && sudo chmod 644 /home/smartide/.ssh/authorized_keys`
-			err = kubernetes.ExecuteCommandRealtimeInPod(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, command, runAsUserName)
-			if err != nil {
-				return err
-			}
 		}
 	}
 
