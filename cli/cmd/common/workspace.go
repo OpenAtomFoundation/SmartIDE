@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-10-28 16:49:11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-01 23:32:57
+ * @LastEditTime: 2022-11-03 15:16:25
  * @FilePath: /cli/cmd/common/workspace.go
  */
 
@@ -20,6 +20,7 @@ import (
 	"github.com/jinzhu/copier"
 	"github.com/leansoftX/smartide-cli/cmd/new"
 	"github.com/leansoftX/smartide-cli/cmd/server"
+	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	templateModel "github.com/leansoftX/smartide-cli/internal/biz/template/model"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/dal"
@@ -140,11 +141,6 @@ func GetWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 		}
 	}
 
-	//1.3. 模板信息
-	if cmd.Use == "new" {
-		workspaceInfo.SelectedTemplate, _ = getSeletedTemplate(cmd, args) // 模板相关
-	}
-
 	//2. 获取基本的信息
 	//2.1. 存储在 server 的工作区
 	if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server {
@@ -164,10 +160,16 @@ func GetWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 			// 从 api 获取 workspace
 			var workspaceInfo_ *workspace.WorkspaceInfo
 			workspaceInfo_, err = workspace.GetWorkspaceFromServer(auth, workspaceIdStr, workspaceInfo.CliRunningEnv)
-			if workspaceInfo_ == nil {
+			if workspaceInfo_ == nil || workspaceInfo.ServerWorkSpace == nil {
 				return workspace.WorkspaceInfo{}, fmt.Errorf("get workspace (%v) is null", workspaceIdStr)
 			}
 
+			// 模板信息
+			if cmd.Use == "new" {
+				// 和服务器上的模板 actual repo url 保持一致
+				config.GlobalSmartIdeConfig.TemplateActualRepoUrl = workspaceInfo.ServerWorkSpace.TemplateGitUrl
+				workspaceInfo.SelectedTemplate, _ = getSeletedTemplate(cmd, args) // 模板相关
+			}
 			selectedTemplate := workspaceInfo.SelectedTemplate
 			workspaceInfo = *workspaceInfo_
 			if workspaceInfo.SelectedTemplate == nil && selectedTemplate != nil {
@@ -202,6 +204,11 @@ func GetWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 		}
 
 	} else { //2.2. 存储在本地的工作区
+		// 模板信息
+		if cmd.Use == "new" {
+			workspaceInfo.SelectedTemplate, _ = getSeletedTemplate(cmd, args) // 模板相关
+		}
+
 		workspaceId, _ := strconv.Atoi(workspaceIdStr)
 		common.CheckError(err)
 		//2.2.1. 指定了从workspaceid，从sqlite中读取

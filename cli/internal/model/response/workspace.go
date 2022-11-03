@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-15 19:32:44
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-03 14:38:16
+ * @LastEditTime: 2022-11-03 15:00:04
  * @FilePath: /cli/internal/model/response/workspace.go
  * @Description:
  *
@@ -112,10 +112,22 @@ type ServerWorkspaceResponse struct {
 	KubeIngressLoginUserName      string                            `json:"kubeIngressUserName" `
 	KubeIngressLoginPassword      string                            `json:"kubeIngressPassword" `
 
-	Cup            uint   `json:"cup" `
-	Memory         uint   `json:"memory" `
+	// 最大的cpu
+	K8sUsedCup uint `json:"cup" `
+	// 最大的内存
+	K8sUsedMemory uint `json:"memory" `
+	// 模板库的git clone url
 	TemplateGitUrl string `json:"templateGitUrl" `
-	Ports          string `json:"ports" ` //eg:[{lable:apps-ports-3001,value:3001}]
+	// 端口配置 eg:[{label:apps-ports-3001,value:3001}]
+	PortConfigs []PortConfig `json:"ports" `
+}
+
+// 端口配置
+type PortConfig struct {
+	// 描述
+	Label string `json:"label" `
+	// 端口号
+	Port uint `json:"value" `
 }
 
 // "ID": 1,
@@ -130,7 +142,6 @@ type ServerWorkspaceResponse struct {
 // "startAt": "2022-03-22T06:28:36.196Z",
 // "endAt": "2022-03-22T06:28:36.196Z",
 // "status": 0
-
 type ServerWorkspaceLogResponse struct {
 	GVA_MODEL
 	Title      string     `json:"title"`
