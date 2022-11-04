@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-28 17:29:51
+ * @LastEditTime: 2022-11-03 21:12:01
  */
 package cmd
 
@@ -155,6 +155,8 @@ var startCmd = &cobra.Command{
 
 			}
 
+			executeStartCmdFunc(workspaceInfo.ConfigYaml)
+
 		} else if workspaceInfo.Mode == workspace.WorkingMode_Remote { //1.3. 远程主机 模式
 
 			if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server { //1.3.1. cli 在服务端运行
@@ -180,6 +182,8 @@ var startCmd = &cobra.Command{
 				}
 
 			}
+
+			executeStartCmdFunc(workspaceInfo.ConfigYaml)
 
 		} else {
 			return errors.New("暂不支持当前模式")
