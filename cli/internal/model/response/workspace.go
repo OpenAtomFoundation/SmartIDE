@@ -113,9 +113,9 @@ type ServerWorkspaceResponse struct {
 	KubeIngressLoginPassword      string                            `json:"kubeIngressPassword" `
 
 	// 最大的cpu
-	K8sUsedCup uint `json:"cup" `
+	K8sUsedCup float32 `json:"cup" `
 	// 最大的内存
-	K8sUsedMemory uint `json:"memory" `
+	K8sUsedMemory float32 `json:"memory" `
 	// 模板库的git clone url
 	TemplateGitUrl string `json:"templateGitUrl" `
 	// 端口配置 eg:[{label:apps-ports-3001,value:3001}]

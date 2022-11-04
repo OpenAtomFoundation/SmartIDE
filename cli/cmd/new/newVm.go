@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-04-20 10:46:40
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-03 16:45:55
+ * @LastEditTime: 2022-11-04 15:17:12
  * @FilePath: /cli/cmd/new/newVm.go
  */
 
@@ -10,6 +10,7 @@ package new
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
@@ -18,42 +19,15 @@ import (
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
 
-	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
+	//smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
 	"github.com/leansoftX/smartide-cli/cmd/start"
 )
 
 func VmNew(cmd *cobra.Command, args []string, workspaceInfo workspace.WorkspaceInfo,
 	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) {
 
-	mode, _ := cmd.Flags().GetString("mode")
-	isModeServer := strings.ToLower(mode) == "server"
 	// 错误反馈
-	serverFeedback := func(err error) {
-		if !isModeServer {
-			return
-		}
-		if err != nil {
-			smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_New, cmd, false, nil, workspaceInfo, err.Error(), "")
-			common.CheckError(err)
-		}
-	}
-
-	if apiHost, _ := cmd.Flags().GetString(smartideServer.Flags_ServerHost); apiHost != "" {
-		wsURL := fmt.Sprint(strings.ReplaceAll(strings.ReplaceAll(apiHost, "https", "ws"), "http", "ws"), "/ws/smartide/ws")
-		common.WebsocketStart(wsURL)
-		token, _ := cmd.Flags().GetString(smartideServer.Flags_ServerToken)
-		if token != "" {
-			if workspaceIdStr, _ := cmd.Flags().GetString(smartideServer.Flags_ServerWorkspaceid); workspaceIdStr != "" {
-				if no, _ := workspace.GetWorkspaceNo(workspaceIdStr, token, apiHost); no != "" {
-					if pid, err := workspace.GetParentId(no, workspace.ActionEnum_Workspace_Start, token, apiHost); err == nil && pid > 0 {
-						common.SmartIDELog.Ws_id = no
-						common.SmartIDELog.ParentId = pid
-					}
-				}
-			}
-
-		}
-	}
+	serverFeedback := preRun(cmd, workspaceInfo, workspace.ActionEnum_Workspace_Start)
 
 	//1. 连接到远程主机
 	//1.1.
@@ -74,21 +48,35 @@ func VmNew(cmd *cobra.Command, args []string, workspaceInfo workspace.WorkspaceI
 	}
 	err = checkRemoteDir(sshRemote, workspaceInfo.WorkingDirectoryPath, cmd)
 	common.CheckErrorFunc(err, serverFeedback)
+	projectDir := common.FilePahtJoin4Linux("~", model.CONST_REMOTE_REPO_ROOT, workspaceDirName)
 
 	//2.2. git clone 项目文件夹
 	if workspaceInfo.GitCloneRepoUrl != "" {
 		err = start.GitCloneAndCheckoutBranch(sshRemote, workspaceInfo, cmd)
 		common.CheckErrorFunc(err, serverFeedback)
 	}
+	// 检查是否包含配置文件，如果有就报错
+	remoteHome, err := sshRemote.GetRemoteHome()
+	common.CheckErrorFunc(err, serverFeedback)
+	isExistConfigFile := sshRemote.IsFileExist(filepath.Join(remoteHome, projectDir, workspaceInfo.ConfigFileRelativePath))
+	if isExistConfigFile {
+		errMsg := fmt.Sprintf("模板中已经包含相同配置文件 %v", workspaceInfo.ConfigFileRelativePath)
+		feedbackErr := model.CreateFeedbackError(errMsg, false)
+		common.CheckErrorFunc(&feedbackErr, serverFeedback)
+	}
 
 	//2.3. 复制 template 到远程主机的文件夹中
-	projectDir := common.FilePahtJoin4Linux("~", model.CONST_REMOTE_REPO_ROOT, workspaceDirName)
 	err = gitCloneTemplateRepo4Remote(sshRemote, projectDir,
 		config.GlobalSmartIdeConfig.TemplateActualRepoUrl,
 		workspaceInfo.SelectedTemplate.TypeName, workspaceInfo.SelectedTemplate.SubType)
 	common.CheckErrorFunc(err, serverFeedback)
-
-	//TODO 如果是配置文件重复，流水线不用再重试
+	// 检查是否包含配置文件，如果没有就报错
+	isExistConfigFile = sshRemote.IsFileExist(filepath.Join(remoteHome, projectDir, workspaceInfo.ConfigFileRelativePath))
+	if !isExistConfigFile {
+		errMsg := fmt.Sprintf("模板中已经包含相同配置文件 %v", workspaceInfo.ConfigFileRelativePath)
+		feedbackErr := model.CreateFeedbackError(errMsg, false)
+		common.CheckErrorFunc(&feedbackErr, serverFeedback)
+	}
 
 	//9. 执行vm start命令
 	isUnforward, _ := cmd.Flags().GetBool("unforward")

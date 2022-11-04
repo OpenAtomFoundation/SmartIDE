@@ -3,7 +3,7 @@
  * @Description: config
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-19 08:29:30
+ * @LastEditTime: 2022-11-04 23:35:54
  */
 package config
 
@@ -111,7 +111,8 @@ func (yamlFileConfig *SmartIdeConfig) LoadDockerComposeFromTempFile(sshRemote co
 
 // 把自定义的配置转换为 docker compose
 func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SSHRemote, projectName string,
-	remoteWorkingDir string, isCheckUnuesedPorts bool, userName string) (composeYaml compose.DockerComposeYml, ideBindingPort int, sshBindingPort int) {
+	remoteWorkingDir string, isCheckUnuesedPorts bool, userName string,
+	portConfigs map[string]uint) (composeYaml compose.DockerComposeYml, ideBindingPort int, sshBindingPort int) {
 
 	ideBindingPort = model.CONST_Local_Default_BindingPort_WebIDE // webide
 	sshBindingPort = model.CONST_Local_Default_BindingPort_SSH    // ssh
@@ -250,6 +251,13 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 
 				//
 				service.AppendPort(strconv.Itoa(sshBindingPort) + ":" + strconv.Itoa(model.CONST_Container_SSHPort))
+			}
+
+			// 自定义的端口
+			for _, port := range portConfigs {
+				availablePort, _ := checkAndGetAvailableRemotePort(sshRemote, int(port), 100)
+				yamlFileConfig.setPort4Label(int(port), int(port), availablePort, serviceName)
+				service.AppendPort(fmt.Sprintf("%v:%v", availablePort, port))
 			}
 
 			dockerCompose.Services[serviceName] = service

@@ -1,70 +1,29 @@
 /*
- * @Date: 2022-04-20 11:03:53
+ * @Date: 2022-11-04 14:58:49
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-04 15:16:33
- * @FilePath: /cli/cmd/new/global.go
+ * @LastEditTime: 2022-11-04 15:03:18
+ * @FilePath: /cli/cmd/common/template.go
  */
 
-package new
+package common
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
+	"text/tabwriter"
 
-	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
+	"github.com/leansoftX/smartide-cli/internal/biz/config"
+	templateModel "github.com/leansoftX/smartide-cli/internal/biz/template/model"
+	golbalModel "github.com/leansoftX/smartide-cli/internal/model"
 
-	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
-	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
-	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
 )
 
-var i18nInstance = i18n.GetInstance()
-
-func preRun(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo, logAction workspace.ActionEnum) func(err error) {
-	mode, _ := cmd.Flags().GetString("mode")
-	isModeServer := strings.ToLower(mode) == "server"
-	// 错误反馈
-	serverFeedback := func(err error) {
-		if !isModeServer {
-			return
-		}
-		if err != nil {
-			errFeedback, ok := err.(*model.FeedbackError)
-			if !ok {
-				tmp := model.CreateFeedbackError(err.Error(), true)
-				errFeedback = &tmp
-			}
-			errMsgBits, _ := json.Marshal(errFeedback)
-			smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_New, cmd, false, nil, workspaceInfo, string(errMsgBits), "")
-			common.CheckError(err) // exit
-		}
-	}
-
-	// 日志
-	if apiHost, _ := cmd.Flags().GetString(smartideServer.Flags_ServerHost); apiHost != "" {
-		wsURL := fmt.Sprint(strings.ReplaceAll(strings.ReplaceAll(apiHost, "https", "ws"), "http", "ws"), "/ws/smartide/ws")
-		common.WebsocketStart(wsURL)
-		token, _ := cmd.Flags().GetString(smartideServer.Flags_ServerToken)
-		if token != "" {
-			if workspaceIdStr, _ := cmd.Flags().GetString(smartideServer.Flags_ServerWorkspaceid); workspaceIdStr != "" {
-				if no, _ := workspace.GetWorkspaceNo(workspaceIdStr, token, apiHost); no != "" {
-					if pid, err := workspace.GetParentId(no, logAction, token, apiHost); err == nil && pid > 0 {
-						common.SmartIDELog.Ws_id = no
-						common.SmartIDELog.ParentId = pid
-					}
-				}
-			}
-
-		}
-	}
-
-	return serverFeedback
-}
-
-/*
 // 从command的参数中获取模板设置信息（下载模板库文件到本地）
 func GetTemplateSetting(cmd *cobra.Command, args []string) (*templateModel.SelectedTemplateTypeBo, error) {
 	common.SmartIDELog.Info(i18nInstance.New.Info_loading_templates)
@@ -167,7 +126,7 @@ func templatesClone() error {
 	// 通过判断.git目录存在，执行git pull，保持最新
 	if templatesGitIsExist {
 		err := common.EXEC.Realtime(`
-git checkout -- *
+git checkout -- * 
 git pull
 		`, templatePath)
 		if err != nil {
@@ -209,4 +168,3 @@ func printTemplates(newType []templateModel.TemplateTypeInfo) {
 	w.Flush()
 	fmt.Println("")
 }
-*/

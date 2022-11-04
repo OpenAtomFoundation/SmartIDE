@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-10-28 16:49:11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-03 15:16:25
+ * @LastEditTime: 2022-11-04 15:04:16
  * @FilePath: /cli/cmd/common/workspace.go
  */
 
@@ -18,7 +18,6 @@ import (
 	"strings"
 
 	"github.com/jinzhu/copier"
-	"github.com/leansoftX/smartide-cli/cmd/new"
 	"github.com/leansoftX/smartide-cli/cmd/server"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	templateModel "github.com/leansoftX/smartide-cli/internal/biz/template/model"
@@ -408,7 +407,7 @@ func getSeletedTemplate(cmd *cobra.Command, args []string) (*templateModel.Selec
 	if cmd.Use != "new" {
 		return nil, nil
 	}
-	selectedTemplateSettings, err := new.GetTemplateSetting(cmd, args) // 包含了“clone 模板文件到本地”
+	selectedTemplateSettings, err := GetTemplateSetting(cmd, args) // 包含了“clone 模板文件到本地”
 	if err != nil {
 		return nil, err
 	}

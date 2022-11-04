@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-10-27 11:21:54
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-02 08:51:49
+ * @LastEditTime: 2022-11-04 15:17:08
  * @FilePath: /cli/cmd/new/newK8s_server.go
  */
 /*
@@ -36,7 +36,7 @@ func K8sNew_Server(cmd *cobra.Command, args []string,
 	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) {
 
 	//0. 错误反馈
-	serverFeedback := preRun(cmd, workspaceInfo)
+	serverFeedback := preRun(cmd, workspaceInfo, workspace.ActionEnum_Workspace_Start)
 
 	_, err := start.ExecuteK8s_ServerWS_ServerEnv(cmd, *k8sUtil, workspaceInfo, yamlExecuteFun)
 	serverFeedback(err)

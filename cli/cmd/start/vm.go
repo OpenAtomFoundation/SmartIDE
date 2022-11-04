@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-03 16:08:33
+ * @LastEditTime: 2022-11-04 23:36:54
  */
 package start
 
@@ -130,8 +130,13 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		}
 
 		// 获取compose配置
+		portConfigs := map[string]uint{}
+		for _, item := range workspaceInfo.ServerWorkSpace.PortConfigs {
+			portConfigs[item.Label] = item.Port
+		}
 		tempDockerCompose, ideBindingPort, _ = currentConfig.ConvertToDockerCompose(sshRemote,
-			workspaceInfo.Name, workspaceInfo.WorkingDirectoryPath, true, userName)
+			workspaceInfo.Name, workspaceInfo.WorkingDirectoryPath, true, userName,
+			portConfigs)
 		workspaceInfo.TempDockerCompose = tempDockerCompose
 
 		// 配置

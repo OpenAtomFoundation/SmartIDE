@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-30 23:10:52
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-28 12:12:24
+ * @LastEditTime: 2022-11-04 23:22:19
  * @FilePath: /cli/internal/biz/config/config_convert.go
  */
 
@@ -21,6 +21,7 @@ import (
 	"github.com/leansoftX/smartide-cli/pkg/k8s"
 	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	k8sYaml "sigs.k8s.io/yaml"
 
 	appsV1 "k8s.io/api/apps/v1"
@@ -67,7 +68,9 @@ func (originK8sConfig SmartIdeK8SConfig) GetSystemUserName() string {
 }
 
 // 转换为临时的yaml文件
-func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(workspaceName string, namespace string, systemUserName string, labels map[string]string) SmartIdeK8SConfig {
+func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(workspaceName string, namespace string, systemUserName string,
+	labels map[string]string,
+	portConfigs map[string]uint, usedCpu float32, usedMemory float32) SmartIdeK8SConfig {
 	//0.
 	k8sConfig := SmartIdeK8SConfig{}
 	copier.CopyWithOption(&k8sConfig, originK8sConfig, copier.Option{IgnoreEmpty: true, DeepCopy: true}) // 把一个对象赋值给另外一个对象
@@ -85,10 +88,59 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(workspaceName stri
 	for i := 0; i < len(k8sConfig.Workspace.Deployments); i++ {
 		k8sConfig.Workspace.Deployments[i].ObjectMeta.Namespace = namespace // namespace
 		k8sConfig.Workspace.Deployments[i] = k8s.AddLabels(k8sConfig.Workspace.Deployments[i], labels).(appsV1.Deployment)
+
+		// 附加的信息
+		deployment := k8sConfig.Workspace.Deployments[i]
+		for index, container := range deployment.Spec.Template.Spec.Containers {
+			// port
+			if container.Name == originK8sConfig.Workspace.DevContainer.ServiceName {
+				// container
+				for portLabel, port := range portConfigs {
+					container.Ports = append(container.Ports, coreV1.ContainerPort{Name: portLabel, ContainerPort: int32(port)})
+				}
+
+				// 关联的 service
+				for i := 0; i < len(k8sConfig.Workspace.Services); i++ {
+					currentService := k8sConfig.Workspace.Services[i]
+					for selectorKey, selectorValue := range currentService.Spec.Selector {
+						if _, ok := deployment.Spec.Template.Labels[selectorKey]; ok &&
+							deployment.Spec.Template.Labels[selectorKey] == selectorValue {
+							for portLabel, port := range portConfigs {
+								servicePort := coreV1.ServicePort{}
+								servicePort.Port = int32(port)
+								servicePort.TargetPort = intstr.FromInt(int(port))
+								servicePort.Name = portLabel
+								currentService.Spec.Ports = append(currentService.Spec.Ports, servicePort)
+								k8sConfig.Workspace.Services[i] = currentService
+							}
+
+						}
+					}
+
+				}
+			}
+
+			// 配额
+			if usedCpu > 0 {
+				container.Resources.Limits["cpu"] = resource.MustParse(fmt.Sprint(usedCpu))
+				container.Resources.Requests["cpu"] = resource.MustParse(fmt.Sprint(usedCpu))
+			}
+			if usedMemory > 0 {
+				container.Resources.Limits["memory"] = resource.MustParse(fmt.Sprint(usedMemory))
+				container.Resources.Requests["memory"] = resource.MustParse(fmt.Sprint(usedMemory))
+			}
+
+			deployment.Spec.Template.Spec.Containers[index] = container
+		}
+		k8sConfig.Workspace.Deployments[i] = deployment
+
 	}
 	for i := 0; i < len(k8sConfig.Workspace.Services); i++ {
-		k8sConfig.Workspace.Services[i].ObjectMeta.Namespace = namespace
-		k8sConfig.Workspace.Services[i] = k8s.AddLabels(k8sConfig.Workspace.Services[i], labels).(coreV1.Service)
+		currentService := k8sConfig.Workspace.Services[i]
+		currentService.ObjectMeta.Namespace = namespace                         // namespace
+		currentService = k8s.AddLabels(currentService, labels).(coreV1.Service) // labels
+
+		k8sConfig.Workspace.Services[i] = currentService
 	}
 	for i := 0; i < len(k8sConfig.Workspace.Networks); i++ {
 		k8sConfig.Workspace.Networks[i].ObjectMeta.Namespace = namespace
@@ -106,16 +158,64 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(workspaceName stri
 		if kindName != "Namespace" {
 			tmp := reflect.New(re.Type()).Elem()
 			tmp.FieldByName("ObjectMeta").FieldByName("Namespace").SetString(namespace)
-			//re.FieldByName("ObjectMeta").FieldByName("Namespace").SetString(namespace)
 			k8sConfig.Workspace.Others[i] = tmp.Interface()
+		} else if kindName == "Pod" { // pod 也需要加上端口映射 和 配额
+			pod := other.(coreV1.Pod)
+
+			for index, container := range pod.Spec.Containers {
+				if container.Name == originK8sConfig.Workspace.DevContainer.ServiceName {
+					// container
+					for portLabel, port := range portConfigs {
+						container.Ports = append(container.Ports, coreV1.ContainerPort{Name: portLabel, ContainerPort: int32(port)})
+					}
+
+					// 关联的 service
+					for i := 0; i < len(k8sConfig.Workspace.Services); i++ {
+						currentService := k8sConfig.Workspace.Services[i]
+						for selectorKey, selectorValue := range currentService.Spec.Selector {
+							if _, ok := pod.Labels[selectorKey]; ok &&
+								pod.Labels[selectorKey] == selectorValue {
+								for portLabel, port := range portConfigs {
+									servicePort := coreV1.ServicePort{}
+									servicePort.Port = int32(port)
+									servicePort.TargetPort = intstr.FromInt(int(port))
+									servicePort.Name = portLabel
+									currentService.Spec.Ports = append(currentService.Spec.Ports, servicePort)
+									k8sConfig.Workspace.Services[i] = currentService
+								}
+
+							}
+						}
+
+					}
+
+					// 配额
+					if usedCpu > 0 {
+						container.Resources.Limits["cpu"] = resource.MustParse(fmt.Sprint(usedCpu))
+						container.Resources.Requests["cpu"] = resource.MustParse(fmt.Sprint(usedCpu))
+					}
+					if usedMemory > 0 {
+						container.Resources.Limits["memory"] = resource.MustParse(fmt.Sprint(usedMemory))
+						container.Resources.Requests["memory"] = resource.MustParse(fmt.Sprint(usedMemory))
+					}
+
+					pod.Spec.Containers[index] = container
+				}
+
+			}
+
+			other = pod
 		}
+
+		// labels
 		k8sConfig.Workspace.Others[i] = k8s.AddLabels(other, labels)
+
 	}
 
 	return k8sConfig
 
 	//2. 创建 一个pvc
-	workspaceName = strings.TrimSpace(strings.ToLower(workspaceName))
+	/* workspaceName = strings.TrimSpace(strings.ToLower(workspaceName))
 	pvc := coreV1.PersistentVolumeClaim{}
 	pvcName := fmt.Sprintf("%v-pvc-claim", workspaceName)
 	storageClassName := "smartide-file-storageclass" //TODO: const
@@ -218,7 +318,7 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(workspaceName stri
 		boundPvcFunc(originK8sConfig.Workspace.DevContainer.ServiceName, "/home/project", subProjectPath)
 	}
 
-	return k8sConfig
+	return k8sConfig */
 }
 
 // 保存k8s 临时yaml文件

@@ -1,14 +1,13 @@
 /*
  * @Date: 2022-04-20 10:46:56
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-27 16:29:59
+ * @LastEditTime: 2022-11-04 15:04:36
  * @FilePath: /cli/cmd/new/newLocal.go
  */
 package new
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -16,13 +15,13 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"text/tabwriter"
 
+	cmdCommon "github.com/leansoftX/smartide-cli/cmd/common"
 	"github.com/leansoftX/smartide-cli/cmd/start"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
-	templateModel "github.com/leansoftX/smartide-cli/internal/biz/template/model"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	golbalModel "github.com/leansoftX/smartide-cli/internal/model"
+
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
 )
@@ -37,7 +36,7 @@ func LocalNew(cmd *cobra.Command, args []string, workspaceInfo workspace.Workspa
 	common.CheckError(err)
 
 	// 获取command中的配置
-	selectedTemplateType, err := GetTemplateSetting(cmd, args)
+	selectedTemplateType, err := cmdCommon.GetTemplateSetting(cmd, args)
 	common.CheckError(err)
 	if selectedTemplateType == nil { // 未指定模板类型的时候，提示用户后退出
 		return // 退出
@@ -90,25 +89,6 @@ func LocalNew(cmd *cobra.Command, args []string, workspaceInfo workspace.Workspa
 
 }
 
-// 打印 service 列表
-func printTemplates(newType []templateModel.TemplateTypeInfo) {
-	w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
-	fmt.Fprintln(w, i18nInstance.New.Info_templates_list_header)
-	for i := 0; i < len(newType); i++ {
-		line := fmt.Sprintf("%v\t%v", newType[i].TypeName, "_default")
-		fmt.Fprintln(w, line)
-		for j := 0; j < len(newType[i].SubTypes); j++ {
-			subTypeName := newType[i].SubTypes[j]
-			if subTypeName != (templateModel.SubType{}) && subTypeName.Name != "" {
-				line := fmt.Sprintf("%v\t%v", newType[i].TypeName, subTypeName.Name)
-				fmt.Fprintln(w, line)
-			}
-		}
-	}
-	w.Flush()
-	fmt.Println("")
-}
-
 // 复制templates
 func copyTemplateToCurrentDir(modelType, newProjectType string) {
 	if newProjectType == "" {
@@ -145,62 +125,6 @@ func folderEmpty(dirPth string) (bool, error) {
 
 	return isEmpty, nil
 }
-
-// clone模版repo
-func templatesClone() error {
-	templatePath := filepath.Join(config.SmartIdeHome, golbalModel.TMEPLATE_DIR_NAME)
-	templateGitPath := filepath.Join(templatePath, ".git")
-	templatesGitIsExist := common.IsExist(templateGitPath)
-
-	// 通过判断.git目录存在，执行git pull，保持最新
-	if templatesGitIsExist {
-		err := common.EXEC.Realtime(`
-git checkout -- * 
-git pull
-		`, templatePath)
-		if err != nil {
-			return err
-		}
-
-	} else {
-		err := os.RemoveAll(templatePath)
-		if err != nil {
-			return err
-		}
-
-		command := fmt.Sprintf("git clone %v %v", config.GlobalSmartIdeConfig.TemplateActualRepoUrl, templatePath)
-		err = common.EXEC.Realtime(command, "")
-		if err != nil {
-			return err
-		}
-
-	}
-
-	return nil
-}
-
-/* // 强制获取templates
-func forceTemplatesPull(gitFolder string) (errArry []string) {
-	gitCmd := *exec.Command("git", "fetch", "--all")
-	gitCmd.Dir = gitFolder
-	gitErr := gitCmd.Run()
-	if gitErr != nil {
-		errArry = append(errArry, "git fetch --all")
-	}
-	gitCmd = *exec.Command("git", "reset", "--hard", "origin/master")
-	gitCmd.Dir = gitFolder
-	gitErr = gitCmd.Run()
-	if gitErr != nil {
-		errArry = append(errArry, "git reset --hard origin/master")
-	}
-	gitCmd = *exec.Command("git", "pull")
-	gitCmd.Dir = gitFolder
-	gitErr = gitCmd.Run()
-	if gitErr != nil {
-		errArry = append(errArry, "git pull")
-	}
-	return errArry
-} */
 
 /**
  * 拷贝文件夹,同时拷贝文件夹中的文件
@@ -273,17 +197,4 @@ func copyFile(src, dest string) (w int64, err error) {
 	}
 	defer dstFile.Close()
 	return io.Copy(dstFile, srcFile)
-}
-
-// 加载templates索引json
-func loadTemplatesJson() (templateTypes []templateModel.TemplateTypeInfo, err error) {
-	// new type转换为结构体
-	templatesPath := common.PathJoin(config.SmartIdeHome, golbalModel.TMEPLATE_DIR_NAME, "templates.json")
-	templatesByte, err := os.ReadFile(templatesPath)
-	if err != nil {
-		return templateTypes, errors.New(i18nInstance.New.Err_read_templates + templatesPath + err.Error())
-	}
-
-	err = json.Unmarshal(templatesByte, &templateTypes)
-	return templateTypes, err
 }
