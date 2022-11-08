@@ -137,5 +137,23 @@ func (workspaceInfo *WorkspaceInfo) GetWorkspaceExtend() WorkspaceExtend {
 
 	}
 
+	//3. server port configs
+	if workspaceInfo.ServerWorkSpace != nil {
+		for _, portConfig := range workspaceInfo.ServerWorkSpace.PortConfigs {
+			hasContain := false
+			for _, item := range extend.Ports {
+				if item.OriginHostPort == int(portConfig.Port) {
+					hasContain = true
+					break
+				}
+			}
+
+			if !hasContain { // 不包含在接口列表中
+				portMap := config.NewPortMap(config.PortMapInfo_OnlyLabel, int(portConfig.Port), -1, portConfig.Label, -1, "")
+				extend.Ports = append(extend.Ports, *portMap)
+			}
+		}
+	}
+
 	return extend
 }

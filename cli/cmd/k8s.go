@@ -14,6 +14,7 @@ import (
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/model"
+	"github.com/leansoftX/smartide-cli/internal/model/response"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	k8sLib "github.com/leansoftX/smartide-cli/pkg/k8s"
 
@@ -50,6 +51,7 @@ var k8sCmd = &cobra.Command{
 		publicUrl, _ := fflags.GetString(k8s_flag_public_url)
 		serverHost, _ := fflags.GetString(k8s_flag_serverhost)
 		serverToken, _ := fflags.GetString(k8s_flag_servertoken)
+
 		currentAuth := model.Auth{
 			LoginUrl: serverHost,
 			Token:    serverToken,
@@ -132,7 +134,7 @@ var k8sCmd = &cobra.Command{
 			err = k8sUtil.ExecKubectlCommandRealtime(fmt.Sprintf("delete ingress %v -n %v", ingressName, namespace), "", false)
 			common.CheckError(err)
 
-			if authType == model.KubeAuthenticationTypeEnum_Basic {
+			if authType == response.KubeAuthenticationTypeEnum_Basic {
 				err = k8sUtil.ExecKubectlCommandRealtime(fmt.Sprintf("delete secret %v -n %v", "basic-auth", namespace), "", false)
 				common.CheckError(err)
 			}
@@ -244,7 +246,7 @@ var k8sCmd = &cobra.Command{
 			}
 
 			// Create Basic Secret
-			if authType == model.KubeAuthenticationTypeEnum_Basic {
+			if authType == response.KubeAuthenticationTypeEnum_Basic {
 				// 运行htpasswd命令
 				// e.g. htpasswd -b -c auth <USERNAME> <PASSWORD>
 				common.SmartIDELog.Info(i18nInstance.K8s.Info_log_create_basic_secret_start)
@@ -436,7 +438,7 @@ var k8sCmd = &cobra.Command{
 			}
 
 			// Create Basic Secret
-			if authType == model.KubeAuthenticationTypeEnum_Basic {
+			if authType == response.KubeAuthenticationTypeEnum_Basic {
 				// 运行htpasswd命令
 				// e.g. htpasswd -b -c auth <USERNAME> <PASSWORD>
 				common.SmartIDELog.Info(i18nInstance.K8s.Info_log_create_basic_secret_start)

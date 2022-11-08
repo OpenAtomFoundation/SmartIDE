@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-04-20 10:46:40
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-27 09:50:48
+ * @LastEditTime: 2022-11-08 10:51:20
  * @FilePath: /cli/cmd/new/newVm.go
  */
 
@@ -10,6 +10,7 @@ package new
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
@@ -18,86 +19,68 @@ import (
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
 
-	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
+	//smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
 	"github.com/leansoftX/smartide-cli/cmd/start"
 )
 
 func VmNew(cmd *cobra.Command, args []string, workspaceInfo workspace.WorkspaceInfo,
 	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) {
 
-	mode, _ := cmd.Flags().GetString("mode")
-	isModeServer := strings.ToLower(mode) == "server"
 	// 错误反馈
-	serverFeedback := func(err error) {
-		if !isModeServer {
-			return
-		}
-		if err != nil {
-			smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_New, cmd, false, nil, workspaceInfo, err.Error(), "")
-			common.CheckError(err)
-		}
-	}
+	serverFeedback := preRun(cmd, workspaceInfo, workspace.ActionEnum_Workspace_Start)
 
-	if apiHost, _ := cmd.Flags().GetString(smartideServer.Flags_ServerHost); apiHost != "" {
-		wsURL := fmt.Sprint(strings.ReplaceAll(strings.ReplaceAll(apiHost, "https", "ws"), "http", "ws"), "/ws/smartide/ws")
-		common.WebsocketStart(wsURL)
-		token, _ := cmd.Flags().GetString(smartideServer.Flags_ServerToken)
-		if token != "" {
-			if workspaceIdStr, _ := cmd.Flags().GetString(smartideServer.Flags_ServerWorkspaceid); workspaceIdStr != "" {
-				if no, _ := workspace.GetWorkspaceNo(workspaceIdStr, token, apiHost); no != "" {
-					if pid, err := workspace.GetParentId(no, workspace.ActionEnum_Workspace_Start, token, apiHost); err == nil && pid > 0 {
-						common.SmartIDELog.Ws_id = no
-						common.SmartIDELog.ParentId = pid
-					}
-				}
-			}
-
-		}
-	}
-
-	//0. 连接到远程主机
+	//1. 连接到远程主机
+	//1.1.
 	msg := fmt.Sprintf(" %v@%v:%v ...", workspaceInfo.Remote.UserName, workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort)
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_connect_remote + msg)
-
 	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password, workspaceInfo.Remote.SSHKey)
 	common.CheckErrorFunc(err, serverFeedback)
 
-	//1. 检查远程主机是否有docker、docker-compose、git
+	//1.2. 检查远程主机是否有docker、docker-compose、git
 	err = sshRemote.CheckRemoteEnv()
 	common.CheckErrorFunc(err, serverFeedback)
 
-	// 获取command中的配置
-	selectedTemplateSettings, err := GetTemplateSetting(cmd, args)
-	common.CheckError(err)
-	if selectedTemplateSettings == nil { // 未指定模板类型的时候，提示用户后退出
-		common.SmartIDELog.Error("模板配置为空！")
-		return // 退出
-	}
-
-	// 文件夹检查
-	workspaceDirName, _ := cmd.Flags().GetString("workspacename") // 指定的项目名称
-	if workspaceDirName == "" {
-		common.CheckErrorFunc(errors.New("参数 workspacename 不能为空！"), serverFeedback)
-	}
+	//2. 文件夹拷贝
+	//2.1. 项目文件夹检查
+	workspaceDirName := workspaceInfo.Name
 	err = checkRemoteDir(sshRemote, workspaceInfo.WorkingDirectoryPath, cmd)
 	common.CheckErrorFunc(err, serverFeedback)
+	projectRemoteAbsoluteDir := common.FilePahtJoin4Linux("~", model.CONST_REMOTE_REPO_ROOT, workspaceDirName)
 
-	// 复制 template 到远程主机的文件夹中
-	if selectedTemplateSettings.SubType == "" {
-		selectedTemplateSettings.SubType = "_default"
+	//2.2. git clone 项目文件夹
+	if workspaceInfo.GitCloneRepoUrl != "" {
+		err = start.GitCloneAndCheckoutBranch(sshRemote, workspaceInfo, cmd)
+		common.CheckErrorFunc(err, serverFeedback)
 	}
-	projectDir := common.FilePahtJoin4Linux("~", model.CONST_REMOTE_REPO_ROOT, workspaceDirName)
-	err = gitCloneTemplateRepo4Remote(sshRemote, projectDir, config.GlobalSmartIdeConfig.TemplateActualRepoUrl,
-		selectedTemplateSettings.TypeName, selectedTemplateSettings.SubType)
-	common.CheckErrorFunc(err, serverFeedback)
+	//2.2.1. 检查是否包含配置文件，如果有就报错
+	isExistConfigFile := sshRemote.IsFileExist(filepath.Join(projectRemoteAbsoluteDir, workspaceInfo.ConfigFileRelativePath))
+	if isExistConfigFile {
+		errMsg := fmt.Sprintf("模板中已经包含相同配置文件 %v", workspaceInfo.ConfigFileRelativePath)
+		feedbackErr := model.CreateFeedbackError(errMsg, false)
+		common.CheckErrorFunc(&feedbackErr, serverFeedback)
+	}
 
-	// 执行vm start命令
+	//2.3. 复制 template 到远程主机的文件夹中
+	err = gitCloneTemplateRepo4Remote(sshRemote, projectRemoteAbsoluteDir,
+		config.GlobalSmartIdeConfig.TemplateActualRepoUrl,
+		workspaceInfo.SelectedTemplate.TypeName, workspaceInfo.SelectedTemplate.SubType)
+	common.CheckErrorFunc(err, serverFeedback)
+	//2.3.1. 检查是否包含配置文件，如果没有就报错
+	isExistConfigFile = sshRemote.IsFileExist(filepath.Join(projectRemoteAbsoluteDir, workspaceInfo.ConfigFileRelativePath))
+	if !isExistConfigFile {
+		errMsg := fmt.Sprintf("模板库中没有找到配置文件 %v", workspaceInfo.ConfigFileRelativePath)
+		feedbackErr := model.CreateFeedbackError(errMsg, false)
+		common.CheckErrorFunc(&feedbackErr, serverFeedback)
+	}
+
+	//9. 执行vm start命令
 	isUnforward, _ := cmd.Flags().GetBool("unforward")
 	start.ExecuteVmStartCmd(workspaceInfo, isUnforward, yamlExecuteFun, cmd, args, true)
 }
 
 // 在服务器上使用git下载制定的template文件，完成后删除.git文件
-func gitCloneTemplateRepo4Remote(sshRemote common.SSHRemote, projectDir string, templateGitCloneUrl string, baseType string, subType string) error {
+func gitCloneTemplateRepo4Remote(sshRemote common.SSHRemote,
+	projectDir string, templateGitCloneUrl string, baseType string, subType string) error {
 
 	// git
 	tempDirPath := common.FilePahtJoin4Linux("~", ".ide", "template")

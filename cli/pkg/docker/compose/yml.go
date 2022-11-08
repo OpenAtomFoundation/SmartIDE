@@ -32,12 +32,10 @@ type DockerComposeYml struct {
 	//SmartIDE SmartIDE `yaml:"smartide,omitempty"` // 一些自定义的信息
 }
 
-//
 func (c *DockerComposeYml) IsNil() bool {
 	return c.Version == "" && len(c.Services) == 0 && len(c.Volumes) == 0 && len(c.Networks) == 0 && len(c.Secrets) == 0
 }
 
-//
 func (c *DockerComposeYml) IsNotNil() bool {
 	return !c.IsNil()
 }

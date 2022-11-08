@@ -1,8 +1,8 @@
 /*
  * @Author: kenan
  * @Date: 2022-03-14 09:54:06
- * @LastEditors: kenan
- * @LastEditTime: 2022-10-11 18:02:41
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-11-03 14:47:01
  * @FilePath: /cli/internal/biz/workspace/ws_log.go
  * @Description:
  *
@@ -15,7 +15,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/leansoftX/smartide-cli/internal/model"
+	apiResponse "github.com/leansoftX/smartide-cli/internal/model/response"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 )
 
@@ -89,7 +89,7 @@ func GetParentId(wid string, action ActionEnum, token string, apiHost string) (p
 		map[string]string{"title": title, "ws_id": wid, "parentID": "0"},
 		map[string]string{"Content-Type": "application/json", "x-token": token})
 	if response != "" {
-		l := &model.WorkspaceLogResponse{}
+		l := &apiResponse.WorkspaceLogResponse{}
 		if err = json.Unmarshal([]byte(response), l); err == nil {
 			if l.Code == 0 && l.Data.ResServerWorkspaceLog.ID > 0 {
 				l.Data.ResServerWorkspaceLog.TekEventId = common.SmartIDELog.TekEventId
@@ -111,7 +111,7 @@ func GetWorkspaceNo(wid string, token string, apiHost string) (no string, err er
 		map[string]string{"id": wid},
 		map[string]string{"Content-Type": "application/json", "x-token": token})
 	if response != "" {
-		l := &model.WorkspaceResponse{}
+		l := &apiResponse.GetWorkspaceSingleResponse{}
 		//err = json.Unmarshal([]byte(response), l)
 		if err = json.Unmarshal([]byte(response), l); err == nil {
 			if l.Code == 0 && l.Data.ResmartideWorkspace.NO != "" {
@@ -139,7 +139,7 @@ func CreateWsLog(wid string, token string, apiHost string, title string, content
 			"tekEventId": eid,
 		}, map[string]string{"Content-Type": "application/json", "x-token": token})
 	if response != "" {
-		l := &model.WorkspaceLogResponse{}
+		l := &apiResponse.WorkspaceLogResponse{}
 		//err = json.Unmarshal([]byte(response), l)
 		if err = json.Unmarshal([]byte(response), l); err == nil {
 			if l.Code == 0 {
@@ -150,7 +150,7 @@ func CreateWsLog(wid string, token string, apiHost string, title string, content
 	return -1, err
 }
 
-func UpdateWsLog(token string, apiHost string, wslog model.ServerWorkspaceLogResponse) (err error) {
+func UpdateWsLog(token string, apiHost string, wslog apiResponse.ServerWorkspaceLogResponse) (err error) {
 	var response = ""
 	var wslogMap map[string]interface{}
 	data, _ := json.Marshal(wslog)
@@ -159,7 +159,7 @@ func UpdateWsLog(token string, apiHost string, wslog model.ServerWorkspaceLogRes
 	httpClient := common.CreateHttpClientEnableRetry()
 	response, err = httpClient.Put(url, wslogMap, map[string]string{"Content-Type": "application/json", "x-token": token})
 	if response != "" {
-		l := &model.WorkspaceLogResponse{}
+		l := &apiResponse.WorkspaceLogResponse{}
 		//err = json.Unmarshal([]byte(response), l)
 		if err = json.Unmarshal([]byte(response), l); err == nil {
 			if l.Code == 0 {

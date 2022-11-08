@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2021-12-29 14:26:42
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-04 09:47:31
+ * @LastEditTime: 2022-11-04 10:49:55
  * @Description: file content
  */
 
@@ -93,6 +93,15 @@ func (fs *fileOperation) CreateOrOverWrite(filePath string, content string) erro
 // content: 写入的内容
 func (fs *fileOperation) AppendToFile(filePath string, content string) error {
 	return writeToFile(filePath, content, false)
+}
+
+// 指定路径是否存在
+func (fs *fileOperation) IsExist(filePath string) bool {
+	_, err := os.Stat(filePath)
+	if err != nil {
+		return false
+	}
+	return true
 }
 
 func writeToFile(filePath string, content string, isOverWrite bool) (err error) {

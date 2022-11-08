@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-21 10:09:03
+ * @LastEditTime: 2022-11-07 09:05:51
  */
 package start
 
@@ -16,11 +16,11 @@ import (
 	"strings"
 
 	"github.com/leansoftX/smartide-cli/internal/dal"
+	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/spf13/cobra"
 
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
-	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/docker/compose"
 	"github.com/leansoftX/smartide-cli/pkg/k8s"
@@ -87,7 +87,7 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 		// 获取compose配置
 		tempDockerCompose, ideBindingPort, sshBindingPort =
-			currentConfig.ConvertToDockerCompose(common.SSHRemote{}, workspaceInfo.GetProjectDirctoryName(), "", true, "") // 转换为docker compose格式
+			currentConfig.ConvertToDockerCompose(common.SSHRemote{}, workspaceInfo.GetProjectDirctoryName(), "", true, "", nil) // 转换为docker compose格式
 
 		// 更新端口绑定列表，只在改变的时候才需要赋值
 		workspaceInfo.Extend = workspace.WorkspaceExtend{Ports: currentConfig.GetPortMappings()}
