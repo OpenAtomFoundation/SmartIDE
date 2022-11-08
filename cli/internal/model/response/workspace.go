@@ -1,13 +1,3 @@
-/*
- * @Author: kenan
- * @Date: 2022-02-15 19:32:44
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-08 14:44:36
- * @FilePath: /cli/internal/model/response/workspace.go
- * @Description:
- *
- * Copyright (c) 2022 by kenanlu@leansoftx.com, All Rights Reserved.
- */
 package response
 
 import (
@@ -123,6 +113,8 @@ type ServerWorkspaceResponse struct {
 
 	// 端口配置 eg:[{label:apps-ports-3001,value:3001}]
 	PortConfigsStr string `json:"ports" `
+
+	SshCredentialId uint `json:"sshCredentialId" `
 }
 
 // 端口配置

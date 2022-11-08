@@ -1,10 +1,18 @@
+/*
+ * @Date: 2022-10-24 15:23:30
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-11-03 20:54:09
+ * @FilePath: /cli/internal/apk/appinsight/run.go
+ */
 package appinsight
 
 import (
 	_ "embed"
 	"flag"
 	"os"
+	"strings"
 
+	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/microsoft/ApplicationInsights-Go/appinsights"
 )
 
@@ -33,9 +41,10 @@ func SetTrack(cmd, version, args, workModel, imageName string) {
 	event.Tags.User().SetId(hostname)
 	event.Tags.Application().SetVer(version)
 	telemetryClient.Track(event)
+
 }
 
-//初始化
+// 初始化
 func init() {
 	flag.StringVar(&instrumentationKey, "instrumentationKey", "$(instrumentationKey)", "set instrumentation key from azure portal")
 	telemetryConfig := appinsights.NewTelemetryConfiguration(instrumentationKey)
@@ -43,7 +52,9 @@ func init() {
 	telemetryClient = appinsights.NewTelemetryClientFromConfig(telemetryConfig)
 
 	appinsights.NewDiagnosticsMessageListener(func(msg string) error {
-		//common.SmartIDELog.Debug(msg)
+		if strings.Contains(strings.ToLower(msg), "response: 200") {
+			common.SmartIDELog.Debug("application insight success!")
+		}
 		return nil
 	})
 }

@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-08 11:39:11
+ * @LastEditTime: 2022-11-08 16:20:10
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -252,26 +252,41 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 func execSSHPolicy(workspaceInfo workspace.WorkspaceInfo, host string, token string, ownerGuid string) {
 	if ws, err := common.GetWSPolicies("2", host, token, ownerGuid); err == nil {
 		if len(ws) > 0 {
-			detail := common.Detail{}
-			if ws[len(ws)-1].Detail != "" {
-				if err := json.Unmarshal([]byte(ws[len(ws)-1].Detail), &detail); err == nil {
-					idRsa := detail.IdRsa
-					idRsaPub := detail.IdRsaPub
-					if homeDir, err := os.UserHomeDir(); err == nil {
-						path := filepath.Join(homeDir, ".ssh")
-						if _, err := common.PathExists(path, 0700); err == nil {
-
-							commad := `echo -e 'Host *\n	StrictHostKeyChecking no' >>  ~/.ssh/config && sudo chmod 700 ~/.ssh/config`
-							common.RunCmd(commad, true)
-							commad = fmt.Sprintf(`echo -e '%v' >>  ~/.ssh/id_rsa && sudo chmod 600 ~/.ssh/id_rsa`, idRsa)
-							common.RunCmd(commad, true)
-							commad = fmt.Sprintf(`echo -e '%v' >>  ~/.ssh/id_rsa.pub && sudo chmod 644 ~/.ssh/id_rsa.pub`, idRsaPub)
-							common.RunCmd(commad, true)
-
-						}
+			i := 0
+			for index, wp := range ws {
+				if wp.ID == workspaceInfo.ServerWorkSpace.SshCredentialId {
+					i = index
+				}
+			}
+			if i == 0 {
+				for index, wp := range ws {
+					if wp.IsDefault {
+						i = index
 					}
 				}
+			}
+			detail := common.Detail{}
+			if i != 0 {
+				if ws[i].Detail != "" {
+					if err := json.Unmarshal([]byte(ws[i].Detail), &detail); err == nil {
+						idRsa := detail.IdRsa
+						idRsaPub := detail.IdRsaPub
+						if homeDir, err := os.UserHomeDir(); err == nil {
+							path := filepath.Join(homeDir, ".ssh")
+							if _, err := common.PathExists(path, 0700); err == nil {
 
+								commad := `echo -e 'Host *\n	StrictHostKeyChecking no' >>  ~/.ssh/config && sudo chmod 700 ~/.ssh/config`
+								common.RunCmd(commad, true)
+								commad = fmt.Sprintf(`echo -e '%v' >>  ~/.ssh/id_rsa && sudo chmod 600 ~/.ssh/id_rsa`, idRsa)
+								common.RunCmd(commad, true)
+								commad = fmt.Sprintf(`echo -e '%v' >>  ~/.ssh/id_rsa.pub && sudo chmod 644 ~/.ssh/id_rsa.pub`, idRsaPub)
+								common.RunCmd(commad, true)
+
+							}
+						}
+					}
+
+				}
 			}
 
 		}

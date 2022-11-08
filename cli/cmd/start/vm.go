@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-08 11:38:08
+ * @LastEditTime: 2022-11-08 16:20:20
  */
 package start
 
@@ -69,7 +69,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 			common.SmartIDELog.Info(i18nInstance.VmStart.Info_git_cloned)
 		} else {
 			// 执行ssh-key 策略
-			sshRemote.ExecSSHkeyPolicy(common.SmartIDELog.Ws_id, userName, common.ServerHost, common.ServerToken, common.ServerUserGuid)
+			sshRemote.ExecSSHkeyPolicy(common.SmartIDELog.Ws_id, userName, common.ServerHost, common.ServerToken, common.ServerUserGuid, workspaceInfo.ServerWorkSpace.SshCredentialId)
 			// Generate Authorizedkeys
 			err = GitCloneAndCheckoutBranch(sshRemote, workspaceInfo, cmd)
 			common.CheckErrorFunc(err, serverFeedback)

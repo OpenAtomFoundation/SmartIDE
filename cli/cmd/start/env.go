@@ -72,7 +72,7 @@ func GetRemoteContainersWithServices(sshRemote common.SSHRemote,
 		// home dir
 		if workingDir[0:1] == "~" {
 			homeDir, _ := sshRemote.GetRemoteHome()
-			workingDir = filepath.Join(homeDir, workingDir[1:])
+			workingDir = common.FilePahtJoin4Linux(homeDir, workingDir[1:])
 		}
 
 		dockerComposeContainers = convertOriginContainer(originContainers, workingDir, dockerComposeServices)
