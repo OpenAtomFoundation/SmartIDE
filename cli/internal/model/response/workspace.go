@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-15 19:32:44
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-07 23:42:24
+ * @LastEditTime: 2022-11-08 14:44:36
  * @FilePath: /cli/internal/model/response/workspace.go
  * @Description:
  *
@@ -113,7 +113,7 @@ type ServerWorkspaceResponse struct {
 	KubeIngressLoginPassword      string                            `json:"kubeIngressPassword" `
 
 	// 最大的cpu
-	K8sUsedCup float32 `json:"cup" `
+	K8sUsedCpu float32 `json:"cpu" `
 	// 最大的内存
 	K8sUsedMemory float32 `json:"memory" `
 	// 模板库的git clone url

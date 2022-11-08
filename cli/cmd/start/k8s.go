@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-04 15:44:33
+ * @LastEditTime: 2022-11-08 11:39:11
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -129,9 +129,12 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 		for _, item := range workspaceInfo.ServerWorkSpace.PortConfigs {
 			portConfigs[item.Label] = item.Port
 		}
-		tempK8sConfig = originK8sConfig.ConvertToTempK8SYaml(workspaceName, workspaceInfo.K8sInfo.Namespace, originK8sConfig.GetSystemUserName(),
+		tempK8sConfig, err = originK8sConfig.ConvertToTempK8SYaml(workspaceName, workspaceInfo.K8sInfo.Namespace, originK8sConfig.GetSystemUserName(),
 			labels,
-			portConfigs, workspaceInfo.ServerWorkSpace.K8sUsedCup, workspaceInfo.ServerWorkSpace.K8sUsedMemory)
+			portConfigs, workspaceInfo.ServerWorkSpace.K8sUsedCpu, workspaceInfo.ServerWorkSpace.K8sUsedMemory)
+		if err != nil {
+			return nil, err
+		}
 		tempK8sYamlFileRelativePath, err := tempK8sConfig.SaveK8STempYaml(applicationRootDirPath)
 		// ★★★★★ 保存到目录（临时k8s yaml文件的绝对路径）
 		tempK8sYamlAbsolutePath := filepath.Join(applicationRootDirPath, tempK8sYamlFileRelativePath)

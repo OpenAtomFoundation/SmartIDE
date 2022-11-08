@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-30 23:10:52
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-04 23:22:19
+ * @LastEditTime: 2022-11-08 14:32:57
  * @FilePath: /cli/internal/biz/config/config_convert.go
  */
 
@@ -70,11 +70,9 @@ func (originK8sConfig SmartIdeK8SConfig) GetSystemUserName() string {
 // 转换为临时的yaml文件
 func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(workspaceName string, namespace string, systemUserName string,
 	labels map[string]string,
-	portConfigs map[string]uint, usedCpu float32, usedMemory float32) SmartIdeK8SConfig {
+	portConfigs map[string]uint, usedCpu float32, usedMemory float32) (k8sConfig SmartIdeK8SConfig, err error) {
 	//0.
-	k8sConfig := SmartIdeK8SConfig{}
 	copier.CopyWithOption(&k8sConfig, originK8sConfig, copier.Option{IgnoreEmpty: true, DeepCopy: true}) // 把一个对象赋值给另外一个对象
-
 	//1. namespace
 	//1.1. 创建kind
 	namespaceKind := coreV1.Namespace{}
@@ -94,6 +92,13 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(workspaceName stri
 		for index, container := range deployment.Spec.Template.Spec.Containers {
 			// port
 			if container.Name == originK8sConfig.Workspace.DevContainer.ServiceName {
+				// 端口是否为预留
+				for _, port := range portConfigs {
+					if err = checkReservedPort(port); err != nil {
+						return
+					}
+				}
+
 				// container
 				for portLabel, port := range portConfigs {
 					container.Ports = append(container.Ports, coreV1.ContainerPort{Name: portLabel, ContainerPort: int32(port)})
@@ -110,6 +115,12 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(workspaceName stri
 								servicePort.Port = int32(port)
 								servicePort.TargetPort = intstr.FromInt(int(port))
 								servicePort.Name = portLabel
+								for _, kindPort := range currentService.Spec.Ports {
+									if kindPort.Port == int32(port) {
+										common.SmartIDELog.Importance(fmt.Sprintf("端口 %v 映射已存在，将被覆盖", port))
+										break
+									}
+								}
 								currentService.Spec.Ports = append(currentService.Spec.Ports, servicePort)
 								k8sConfig.Workspace.Services[i] = currentService
 							}
@@ -122,12 +133,12 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(workspaceName stri
 
 			// 配额
 			if usedCpu > 0 {
-				container.Resources.Limits["cpu"] = resource.MustParse(fmt.Sprint(usedCpu))
-				container.Resources.Requests["cpu"] = resource.MustParse(fmt.Sprint(usedCpu))
+				container.Resources.Limits["cpu"] = resource.MustParse(getK8sResourceCpu(usedCpu))
+				container.Resources.Requests["cpu"] = resource.MustParse(getK8sResourceCpu(usedCpu))
 			}
 			if usedMemory > 0 {
-				container.Resources.Limits["memory"] = resource.MustParse(fmt.Sprint(usedMemory))
-				container.Resources.Requests["memory"] = resource.MustParse(fmt.Sprint(usedMemory))
+				container.Resources.Limits["memory"] = resource.MustParse(getK8sResourceMemory(usedMemory))
+				container.Resources.Requests["memory"] = resource.MustParse(getK8sResourceMemory(usedMemory))
 			}
 
 			deployment.Spec.Template.Spec.Containers[index] = container
@@ -180,6 +191,12 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(workspaceName stri
 									servicePort.Port = int32(port)
 									servicePort.TargetPort = intstr.FromInt(int(port))
 									servicePort.Name = portLabel
+									for _, kindPort := range currentService.Spec.Ports {
+										if kindPort.Port == int32(port) {
+											common.SmartIDELog.Importance(fmt.Sprintf("端口 %v 映射已存在，将被覆盖", port))
+											break
+										}
+									}
 									currentService.Spec.Ports = append(currentService.Spec.Ports, servicePort)
 									k8sConfig.Workspace.Services[i] = currentService
 								}
@@ -191,12 +208,12 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(workspaceName stri
 
 					// 配额
 					if usedCpu > 0 {
-						container.Resources.Limits["cpu"] = resource.MustParse(fmt.Sprint(usedCpu))
-						container.Resources.Requests["cpu"] = resource.MustParse(fmt.Sprint(usedCpu))
+						container.Resources.Limits["cpu"] = resource.MustParse(getK8sResourceCpu(usedCpu))
+						container.Resources.Requests["cpu"] = resource.MustParse(getK8sResourceCpu(usedCpu))
 					}
 					if usedMemory > 0 {
-						container.Resources.Limits["memory"] = resource.MustParse(fmt.Sprint(usedMemory))
-						container.Resources.Requests["memory"] = resource.MustParse(fmt.Sprint(usedMemory))
+						container.Resources.Limits["memory"] = resource.MustParse(getK8sResourceMemory(usedMemory))
+						container.Resources.Requests["memory"] = resource.MustParse(getK8sResourceMemory(usedMemory))
 					}
 
 					pod.Spec.Containers[index] = container
@@ -212,7 +229,7 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(workspaceName stri
 
 	}
 
-	return k8sConfig
+	return
 
 	//2. 创建 一个pvc
 	/* workspaceName = strings.TrimSpace(strings.ToLower(workspaceName))
@@ -319,6 +336,14 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(workspaceName stri
 	}
 
 	return k8sConfig */
+}
+
+func getK8sResourceMemory(totalG float32) string {
+	return fmt.Sprintf("%vMi", uint(totalG*1024))
+}
+
+func getK8sResourceCpu(total float32) string {
+	return fmt.Sprintf("%vm", uint(total*1000))
 }
 
 // 保存k8s 临时yaml文件
