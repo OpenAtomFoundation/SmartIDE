@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-08 17:51:36
+ * @LastEditTime: 2022-11-08 17:53:38
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -262,13 +262,13 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 func execSSHPolicy(workspaceInfo workspace.WorkspaceInfo, host string, token string, ownerGuid string) {
 	if ws, err := common.GetWSPolicies("2", host, token, ownerGuid); err == nil {
 		if len(ws) > 0 {
-			i := 0
+			i := -1
 			for index, wp := range ws {
 				if wp.ID == workspaceInfo.ServerWorkSpace.SshCredentialId {
 					i = index
 				}
 			}
-			if i == 0 {
+			if i == -1 {
 				for index, wp := range ws {
 					if wp.IsDefault {
 						i = index
@@ -276,7 +276,7 @@ func execSSHPolicy(workspaceInfo workspace.WorkspaceInfo, host string, token str
 				}
 			}
 			detail := common.Detail{}
-			if i != 0 {
+			if i >= 0 {
 				if ws[i].Detail != "" {
 					if err := json.Unmarshal([]byte(ws[i].Detail), &detail); err == nil {
 						idRsa := detail.IdRsa
