@@ -3,7 +3,7 @@
  * @Description: config
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-04 23:35:54
+ * @LastEditTime: 2022-11-08 11:18:07
  */
 package config
 
@@ -253,14 +253,6 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 				service.AppendPort(strconv.Itoa(sshBindingPort) + ":" + strconv.Itoa(model.CONST_Container_SSHPort))
 			}
 
-			// 自定义的端口
-			for _, port := range portConfigs {
-				availablePort, _ := checkAndGetAvailableRemotePort(sshRemote, int(port), 100)
-				yamlFileConfig.setPort4Label(int(port), int(port), availablePort, serviceName)
-				service.AppendPort(fmt.Sprintf("%v:%v", availablePort, port))
-			}
-
-			dockerCompose.Services[serviceName] = service
 		}
 	}
 	//3.2. 遍历端口描述，添加遗漏的端口
@@ -279,6 +271,28 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 			yamlFileConfig.Workspace.DevContainer.bindingPorts = append(yamlFileConfig.Workspace.DevContainer.bindingPorts, *portMap)
 		}
 
+	}
+	//3.3. 自定义的端口 添加到devContainer中
+	for serviceName, service := range dockerCompose.Services {
+		if serviceName == yamlFileConfig.Workspace.DevContainer.ServiceName {
+			for _, port := range portConfigs {
+				// 预留端口不能可以使用
+				if err = checkReservedPort(port); err != nil {
+					return
+				}
+
+				// 注入端口映射信息
+				availablePort, _ := checkAndGetAvailableRemotePort(sshRemote, int(port), 100)
+				yamlFileConfig.setPort4Label(int(port), int(port), availablePort, serviceName)
+				if service.ContainContainerPort(int(port)) {
+					common.SmartIDELog.Importance(fmt.Sprintf("端口 %v 映射已存在，将被覆盖", port)) //TODO 注明原端口的label 和 映射信息，以及 新端口的label、映射信息
+				}
+				service.AppendPort(fmt.Sprintf("%v:%v", availablePort, port))
+
+			}
+
+			dockerCompose.Services[serviceName] = service
+		}
 	}
 
 	//4. ssh volume配置
@@ -396,6 +410,17 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 	}
 
 	return dockerCompose, ideBindingPort, sshBindingPort
+}
+
+func checkReservedPort(port uint) error {
+	if port == uint(model.CONST_Container_JetBrainsIDEPort) ||
+		port == uint(model.CONST_Container_OpensumiIDEPort) ||
+		port == uint(model.CONST_Container_SSHPort) ||
+		port == uint(model.CONST_Container_WebIDEPort) {
+		return fmt.Errorf("%v 不能绑定", port)
+	}
+
+	return nil
 }
 
 func checkAndGetAvailableRemotePort(sshRemote common.SSHRemote, bindingPortOld int, step int) (bindingPortNew int, err error) {

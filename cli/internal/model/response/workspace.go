@@ -2,7 +2,7 @@
  * @Author: kenan
  * @Date: 2022-02-15 19:32:44
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-03 15:00:04
+ * @LastEditTime: 2022-11-07 23:42:24
  * @FilePath: /cli/internal/model/response/workspace.go
  * @Description:
  *
@@ -119,7 +119,10 @@ type ServerWorkspaceResponse struct {
 	// 模板库的git clone url
 	TemplateGitUrl string `json:"templateGitUrl" `
 	// 端口配置 eg:[{label:apps-ports-3001,value:3001}]
-	PortConfigs []PortConfig `json:"ports" `
+	PortConfigs []PortConfig
+
+	// 端口配置 eg:[{label:apps-ports-3001,value:3001}]
+	PortConfigsStr string `json:"ports" `
 }
 
 // 端口配置

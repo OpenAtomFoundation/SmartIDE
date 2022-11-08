@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-10-28 16:49:11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-04 15:04:16
+ * @LastEditTime: 2022-11-08 10:48:41
  * @FilePath: /cli/cmd/common/workspace.go
  */
 
@@ -159,9 +159,13 @@ func GetWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 			// 从 api 获取 workspace
 			var workspaceInfo_ *workspace.WorkspaceInfo
 			workspaceInfo_, err = workspace.GetWorkspaceFromServer(auth, workspaceIdStr, workspaceInfo.CliRunningEnv)
-			if workspaceInfo_ == nil || workspaceInfo.ServerWorkSpace == nil {
-				return workspace.WorkspaceInfo{}, fmt.Errorf("get workspace (%v) is null", workspaceIdStr)
+			if workspaceInfo_ == nil || workspaceInfo_.ServerWorkSpace == nil {
+				if err == nil {
+					err = fmt.Errorf("get workspace (%v) is null", workspaceIdStr)
+				}
+				return workspace.WorkspaceInfo{}, err
 			}
+			workspaceInfo = *workspaceInfo_
 
 			// 模板信息
 			if cmd.Use == "new" {
@@ -170,7 +174,6 @@ func GetWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 				workspaceInfo.SelectedTemplate, _ = getSeletedTemplate(cmd, args) // 模板相关
 			}
 			selectedTemplate := workspaceInfo.SelectedTemplate
-			workspaceInfo = *workspaceInfo_
 			if workspaceInfo.SelectedTemplate == nil && selectedTemplate != nil {
 				workspaceInfo.SelectedTemplate = selectedTemplate
 			}
@@ -205,7 +208,17 @@ func GetWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 	} else { //2.2. 存储在本地的工作区
 		// 模板信息
 		if cmd.Use == "new" {
-			workspaceInfo.SelectedTemplate, _ = getSeletedTemplate(cmd, args) // 模板相关
+			// 模板相关
+			workspaceInfo.SelectedTemplate, _ = getSeletedTemplate(cmd, args)
+
+			// 指定的项目名称
+			workspaceName, _ := cmd.Flags().GetString("workspacename")
+			if workspaceName == "" {
+				err = errors.New("参数 workspacename 不能为空！")
+				return
+			} else {
+				workspaceInfo.Name = workspaceName
+			}
 		}
 
 		workspaceId, _ := strconv.Atoi(workspaceIdStr)

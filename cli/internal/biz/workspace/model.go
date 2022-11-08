@@ -270,6 +270,12 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace response.ServerWorkspaceRespo
 
 	workspaceInfo.ServerWorkSpace = &serverWorkSpace
 
+	if serverWorkSpace.PortConfigsStr != "" {
+		err := json.Unmarshal([]byte(serverWorkSpace.PortConfigsStr), &serverWorkSpace.PortConfigs)
+		if err != nil {
+			return WorkspaceInfo{}, err
+		}
+	}
 	if serverWorkSpace.Extend != "" {
 		err := json.Unmarshal([]byte(serverWorkSpace.Extend), &workspaceInfo.Extend)
 		if err != nil {
