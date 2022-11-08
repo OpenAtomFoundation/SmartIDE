@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2022-11-08 14:38:19
+ * @LastEditTime: 2022-11-08 16:37:23
  */
 package common
 
@@ -493,7 +493,7 @@ func (instance *SSHRemote) ExecSSHkeyPolicy(no string, userName string, host str
 	idRsa := ""
 	idRsaPub := ""
 	var ws []WorkspacePolicy
-	i := 0
+	i := -1
 	if no != "" {
 		ws, err = GetWSPolicies("2", host, token, ownerGuid)
 		CheckError(err)
@@ -502,7 +502,7 @@ func (instance *SSHRemote) ExecSSHkeyPolicy(no string, userName string, host str
 				i = index
 			}
 		}
-		if i == 0 {
+		if i == -1 {
 			for index, wp := range ws {
 				if wp.IsDefault {
 					i = index
@@ -511,7 +511,7 @@ func (instance *SSHRemote) ExecSSHkeyPolicy(no string, userName string, host str
 		}
 	}
 
-	if i > 0 {
+	if i >= 0 {
 		detail := Detail{}
 		if ws[i].Detail != "" {
 			err := json.Unmarshal([]byte(ws[i].Detail), &detail)
