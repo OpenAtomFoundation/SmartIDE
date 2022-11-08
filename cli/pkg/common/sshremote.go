@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-25 15:54:31
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-11-08 14:38:19
  */
 package common
 
@@ -474,7 +474,7 @@ func (instance *SSHRemote) GitClone(gitRepoUrl string, workSpaceDir string, no s
 	return err
 }
 
-func (instance *SSHRemote) ExecSSHkeyPolicy(no string, userName string, host string, token string, ownerGuid string) {
+func (instance *SSHRemote) ExecSSHkeyPolicy(no string, userName string, host string, token string, ownerGuid string, wspId uint) {
 
 	isOverwrite := "y"
 	isAllowCopyPrivateKey := ""
@@ -493,15 +493,28 @@ func (instance *SSHRemote) ExecSSHkeyPolicy(no string, userName string, host str
 	idRsa := ""
 	idRsaPub := ""
 	var ws []WorkspacePolicy
+	i := 0
 	if no != "" {
 		ws, err = GetWSPolicies("2", host, token, ownerGuid)
 		CheckError(err)
+		for index, wp := range ws {
+			if wp.ID == wspId {
+				i = index
+			}
+		}
+		if i == 0 {
+			for index, wp := range ws {
+				if wp.IsDefault {
+					i = index
+				}
+			}
+		}
 	}
 
-	if len(ws) > 0 {
+	if i > 0 {
 		detail := Detail{}
-		if ws[len(ws)-1].Detail != "" {
-			err := json.Unmarshal([]byte(ws[len(ws)-1].Detail), &detail)
+		if ws[i].Detail != "" {
+			err := json.Unmarshal([]byte(ws[i].Detail), &detail)
 			if err != nil {
 				return
 			}
@@ -1065,6 +1078,8 @@ type WorkspacePolicy struct {
 
 	OwnerGUID string `json:"ownerGuid" form:"ownerGuid" `
 	Detail    string `json:"detail" form:"detail"`
+
+	IsDefault bool `json:"isDefault" `
 }
 type Task struct {
 	GVA_MODEL
