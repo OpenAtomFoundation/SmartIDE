@@ -1,14 +1,4 @@
-/*
- * @Author: kenan
- * @Date: 2022-02-15 19:32:44
- * @LastEditors: kenan
- * @LastEditTime: 2022-11-08 14:06:13
- * @FilePath: /cli/internal/model/workspace.go
- * @Description:
- *
- * Copyright (c) 2022 by kenanlu@leansoftx.com, All Rights Reserved.
- */
-package model
+package response
 
 import (
 	"time"
@@ -33,12 +23,6 @@ type WorkspaceListResponse struct {
 	Msg  string `json:"msg"`
 }
 
-type DefaultResponse struct {
-	Code int         `json:"code"`
-	Data interface{} `json:"data"`
-	Msg  string      `json:"msg"`
-}
-
 type WorkspaceLogResponse struct {
 	Code int `json:"code"`
 	Data struct {
@@ -47,7 +31,7 @@ type WorkspaceLogResponse struct {
 	Msg string `json:"msg"`
 }
 
-type WorkspaceResponse struct {
+type GetWorkspaceSingleResponse struct {
 	Code int `json:"code"`
 	Data struct {
 		ResmartideWorkspace ServerWorkspaceResponse `json:"resmartideWorkspaces"`
@@ -91,12 +75,6 @@ type LogData struct {
 	PageSize int                          `json:"pageSize"`
 }
 
-type GVA_MODEL struct {
-	ID        uint      // 主键ID
-	CreatedAt time.Time // 创建时间
-	UpdatedAt time.Time // 更新时间
-}
-
 // 工作区
 type ServerWorkspaceResponse struct {
 	GVA_MODEL
@@ -123,7 +101,28 @@ type ServerWorkspaceResponse struct {
 	KubeIngressAuthenticationType KubeIngressAuthenticationTypeEnum `json:"kubeIngressAuthenticationType"`
 	KubeIngressLoginUserName      string                            `json:"kubeIngressUserName" `
 	KubeIngressLoginPassword      string                            `json:"kubeIngressPassword" `
-	SshCredentialId               uint                              `json:"sshCredentialId" `
+
+	// 最大的cpu
+	K8sUsedCpu float32 `json:"cpu" `
+	// 最大的内存
+	K8sUsedMemory float32 `json:"memory" `
+	// 模板库的git clone url
+	TemplateGitUrl string `json:"templateGitUrl" `
+	// 端口配置 eg:[{label:apps-ports-3001,value:3001}]
+	PortConfigs []PortConfig
+
+	// 端口配置 eg:[{label:apps-ports-3001,value:3001}]
+	PortConfigsStr string `json:"ports" `
+
+	SshCredentialId uint `json:"sshCredentialId" `
+}
+
+// 端口配置
+type PortConfig struct {
+	// 描述
+	Label string `json:"label" `
+	// 端口号
+	Port uint `json:"value" `
 }
 
 // "ID": 1,
@@ -138,7 +137,6 @@ type ServerWorkspaceResponse struct {
 // "startAt": "2022-03-22T06:28:36.196Z",
 // "endAt": "2022-03-22T06:28:36.196Z",
 // "status": 0
-
 type ServerWorkspaceLogResponse struct {
 	GVA_MODEL
 	Title      string     `json:"title"`
@@ -154,71 +152,6 @@ type ServerWorkspaceLogResponse struct {
 }
 
 // 资源
-type ServerResourceResponse struct {
-	GVA_MODEL
-	Type               ReourceTypeEnum        `json:"type"`
-	Name               string                 `json:"name"`
-	AuthenticationType AuthenticationTypeEnum `json:"authentication_type"`
-	IP                 string                 `json:"ip" `
-	Port               int                    `json:"port" `
-	Status             ResourceStatusEnum     `json:"status" `
-	// ssh 模式下的用户名 && k8s ingress 用户名
-	UserName string `json:"username" `
-	// ssh 模式 用户名密码验证方式的密码 && k8s ingress 密码
-	Password string `json:"password" `
-	SSHKey   string `json:"sshkey" `
-
-	KubeConfigContent string `json:"kube_config"`
-	KubeBaseDNS       string `json:"kube_ingress_base_dns" `
-	KubeContext       string `json:"kube_context" `
-
-	//KubeUserName           string                     `json:"kube_ingress_user_name"`
-	//KubePassword           string                     `json:"kube_ingress_password"`
-
-	OwnerGUID string `json:"ownerGuid" `
-	OwnerName string `json:"ownerName" `
-}
-
-// 资源类型
-type ReourceTypeEnum int
-
-const (
-	ReourceTypeEnum_Local  ReourceTypeEnum = 1
-	ReourceTypeEnum_Remote ReourceTypeEnum = 2
-	ReourceTypeEnum_K8S    ReourceTypeEnum = 3
-)
-
-// 认证方式
-type AuthenticationTypeEnum int
-
-const (
-	AuthenticationTypeEnum_SSH        AuthenticationTypeEnum = 1
-	AuthenticationTypeEnum_PAT        AuthenticationTypeEnum = 2
-	AuthenticationTypeEnum_Password   AuthenticationTypeEnum = 3
-	AuthenticationTypeEnum_KubeConfig AuthenticationTypeEnum = 4
-)
-
-// kube认证方式
-type KubeIngressAuthenticationTypeEnum int
-
-const (
-	KubeAuthenticationTypeEnum_None  KubeIngressAuthenticationTypeEnum = 1
-	KubeAuthenticationTypeEnum_Basic KubeIngressAuthenticationTypeEnum = 2
-	KubeAuthenticationTypeEnum_Oauth KubeIngressAuthenticationTypeEnum = 3
-)
-
-// 资源状态
-type ResourceStatusEnum int
-
-const (
-	// 初始化
-	ResourceStatusEnum_Init ResourceStatusEnum = 0
-	//
-	ResourceStatusEnum_Pending           ResourceStatusEnum = 101
-	ResourceStatusEnum_Start             ResourceStatusEnum = 109
-	ResourceStatusEnum_Stop              ResourceStatusEnum = 201
-	ResourceStatusEnum_Error_Unreachable ResourceStatusEnum = -100
-)
 
 // 工作区状态
 type WorkspaceStatusEnum int

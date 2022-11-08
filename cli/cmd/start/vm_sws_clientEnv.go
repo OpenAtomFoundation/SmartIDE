@@ -21,6 +21,7 @@ import (
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/model"
+	"github.com/leansoftX/smartide-cli/internal/model/response"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/tunnel"
 )
@@ -46,12 +47,12 @@ func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo,
 	//
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_starting)
 	// 检查工作区的状态
-	if workspaceInfo.ServerWorkSpace.Status != model.WorkspaceStatusEnum_Start {
-		if workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Pending ||
-			workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Init {
+	if workspaceInfo.ServerWorkSpace.Status != response.WorkspaceStatusEnum_Start {
+		if workspaceInfo.ServerWorkSpace.Status == response.WorkspaceStatusEnum_Pending ||
+			workspaceInfo.ServerWorkSpace.Status == response.WorkspaceStatusEnum_Init {
 			return workspaceInfo, errors.New("当前工作区正在启动中，请等待！")
 
-		} else if workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Stop {
+		} else if workspaceInfo.ServerWorkSpace.Status == response.WorkspaceStatusEnum_Stop {
 			return workspaceInfo, errors.New("当前工作区已停止！")
 
 		} else {

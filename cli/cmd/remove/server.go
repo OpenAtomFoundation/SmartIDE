@@ -13,7 +13,7 @@ import (
 
 	"github.com/leansoftX/smartide-cli/cmd/server"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
-	"github.com/leansoftX/smartide-cli/internal/model"
+	"github.com/leansoftX/smartide-cli/internal/model/response"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 )
 
@@ -42,10 +42,10 @@ func RemoveServerWorkSpaceInClient(workspaceIdStr string, workspaceInfo workspac
 		if err != nil {
 			return err
 		}
-		if serverWorkSpace.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Remove ||
-			serverWorkSpace.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Error_Remove ||
-			serverWorkSpace.ServerWorkSpace.Status == model.WorkspaceStatusEnum_ContainerRemoved ||
-			serverWorkSpace.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Error_ContainerRemoved {
+		if serverWorkSpace.ServerWorkSpace.Status == response.WorkspaceStatusEnum_Remove ||
+			serverWorkSpace.ServerWorkSpace.Status == response.WorkspaceStatusEnum_Error_Remove ||
+			serverWorkSpace.ServerWorkSpace.Status == response.WorkspaceStatusEnum_ContainerRemoved ||
+			serverWorkSpace.ServerWorkSpace.Status == response.WorkspaceStatusEnum_Error_ContainerRemoved {
 			isRemoved = true
 			desc := serverWorkSpace.ServerWorkSpace.Status.GetDesc()
 			common.SmartIDELog.Info(desc)

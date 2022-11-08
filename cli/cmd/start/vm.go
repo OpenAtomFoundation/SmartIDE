@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2022-11-08 14:36:24
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-11-08 16:20:20
  */
 package start
 
@@ -71,7 +71,7 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 			// 执行ssh-key 策略
 			sshRemote.ExecSSHkeyPolicy(common.SmartIDELog.Ws_id, userName, common.ServerHost, common.ServerToken, common.ServerUserGuid, workspaceInfo.ServerWorkSpace.SshCredentialId)
 			// Generate Authorizedkeys
-			err = gitAction(sshRemote, workspaceInfo, cmd)
+			err = GitCloneAndCheckoutBranch(sshRemote, workspaceInfo, cmd)
 			common.CheckErrorFunc(err, serverFeedback)
 		}
 	}
@@ -130,8 +130,13 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		}
 
 		// 获取compose配置
+		portConfigs := map[string]uint{}
+		for _, item := range workspaceInfo.ServerWorkSpace.PortConfigs {
+			portConfigs[item.Label] = item.Port
+		}
 		tempDockerCompose, ideBindingPort, _ = currentConfig.ConvertToDockerCompose(sshRemote,
-			workspaceInfo.Name, workspaceInfo.WorkingDirectoryPath, true, userName)
+			workspaceInfo.Name, workspaceInfo.WorkingDirectoryPath, true, userName,
+			portConfigs)
 		workspaceInfo.TempDockerCompose = tempDockerCompose
 
 		// 配置
@@ -450,7 +455,7 @@ func isRemoteDockerComposeRunning(sshRemote common.SSHRemote, workingDir string,
 }
 
 // git 相关操作
-func gitAction(sshRemote common.SSHRemote, workspaceInfo workspace.WorkspaceInfo, cmd *cobra.Command) error {
+func GitCloneAndCheckoutBranch(sshRemote common.SSHRemote, workspaceInfo workspace.WorkspaceInfo, cmd *cobra.Command) error {
 	// 执行 git clone
 	actualGitRepoUrl := workspaceInfo.GitCloneRepoUrl
 	if workspaceInfo.GitRepoAuthType == workspace.GitRepoAuthType_Basic {
@@ -469,7 +474,9 @@ func gitAction(sshRemote common.SSHRemote, workspaceInfo workspace.WorkspaceInfo
 	isSSHClone := strings.Index(workspaceInfo.GitCloneRepoUrl, "git@") == 0
 	fflags := cmd.Flags()
 	userName, _ := fflags.GetString("serverusername")
-	GIT_SSH_COMMAND := fmt.Sprintf(`GIT_SSH_COMMAND='ssh -i ~/.ssh/id_rsa_%s_%s -o IdentitiesOnly=yes'`, userName, common.SmartIDELog.Ws_id)
+	GIT_SSH_COMMAND := fmt.Sprintf(`GIT_SSH_COMMAND='ssh -i ~/.ssh/id_rsa_%s_%s -o IdentitiesOnly=yes'`,
+		userName, common.SmartIDELog.Ws_id)
+
 	// git checkout
 	if isSSHClone {
 		checkoutCommand = fmt.Sprintf("%s git fetch ", GIT_SSH_COMMAND)
@@ -509,11 +516,12 @@ func gitAction(sshRemote common.SSHRemote, workspaceInfo workspace.WorkspaceInfo
 
 	}
 
-	// git checkout & pull
+	// git checkout & pull  //TODO 和上面的是否重复！
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_git_checkout_and_pull)
 	gitPullCommand := ""
 	if isSSHClone {
-		gitPullCommand = fmt.Sprintf("cd %v && %v && %s git pull && cd ~", workspaceInfo.WorkingDirectoryPath, checkoutCommand, GIT_SSH_COMMAND)
+		gitPullCommand = fmt.Sprintf("cd %v && %v && %s git pull && cd ~",
+			workspaceInfo.WorkingDirectoryPath, checkoutCommand, GIT_SSH_COMMAND)
 
 	} else {
 		gitPullCommand = fmt.Sprintf("cd %v && %v && git pull && cd ~", workspaceInfo.WorkingDirectoryPath, checkoutCommand)

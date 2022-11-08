@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-06-30 22:17:22
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-22 09:32:35
+ * @LastEditTime: 2022-11-03 14:51:03
  * @FilePath: /cli/cmd/server/resource.go
  */
 package server
@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/leansoftX/smartide-cli/internal/model"
+	apiResponse "github.com/leansoftX/smartide-cli/internal/model/response"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"gorm.io/gorm"
 )
@@ -92,7 +93,7 @@ func UpdateResourceByID(auth model.Auth, serverResource *ServerResource) (err er
 	response, err := httpClient.Put(url,
 		serverResourceMap, map[string]string{"Content-Type": "application/json", "x-token": auth.Token.(string)})
 	if response != "" {
-		l := &model.WorkspaceLogResponse{}
+		l := &apiResponse.GetWorkspaceSingleResponse{}
 		if err = json.Unmarshal([]byte(response), l); err == nil {
 			if l.Code == 0 {
 				return nil

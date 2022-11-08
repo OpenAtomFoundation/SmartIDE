@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2022-11-08 14:38:19
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-11-08 16:21:36
  */
 package common
 
@@ -329,6 +329,8 @@ func (instance *SSHRemote) ConvertFilePath(filepath string) (newFilepath string)
 		pwd, err := instance.GetRemotePwd()
 		CheckError(err)
 		newFilepath = path.Join(pwd, strings.Replace(newFilepath, "~/", "", -1))
+	} else {
+		newFilepath = strings.ReplaceAll(newFilepath, "~/", "")
 	}
 
 	return newFilepath

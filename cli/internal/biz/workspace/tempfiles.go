@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
-
 	"github.com/leansoftX/smartide-cli/internal/model"
+
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"gopkg.in/yaml.v2"
 )

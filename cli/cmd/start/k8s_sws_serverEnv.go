@@ -16,8 +16,8 @@ import (
 	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
+	"github.com/leansoftX/smartide-cli/internal/model/response"
 
-	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/k8s"
 	"github.com/spf13/cobra"
@@ -75,7 +75,7 @@ func ExecuteK8s_ServerWS_ServerEnv(cmd *cobra.Command, k8sUtil k8s.KubernetesUti
 		workspaceInfo.K8sInfo.Namespace = k8sUtil.Namespace
 	}
 	// 设置为pending状态
-	smartideServer.Feedback_Pending(smartideServer.FeedbackCommandEnum_Start, model.WorkspaceStatusEnum_Pending_NsCreated, cmd, workspaceInfo, "")
+	smartideServer.Feedback_Pending(smartideServer.FeedbackCommandEnum_Start, response.WorkspaceStatusEnum_Pending_NsCreated, cmd, workspaceInfo, "")
 
 	// 工作区
 	workspaceInfo_, err := ExecuteK8sStartCmd(cmd, k8sUtil, workspaceInfo, yamlExecuteFun)

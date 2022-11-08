@@ -17,6 +17,7 @@ import (
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	templateModel "github.com/leansoftX/smartide-cli/internal/biz/template/model"
 	"github.com/leansoftX/smartide-cli/internal/model"
+	"github.com/leansoftX/smartide-cli/internal/model/response"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/docker/compose"
 	"gopkg.in/src-d/go-git.v4"
@@ -139,7 +140,7 @@ type WorkspaceInfo struct {
 	CreatedTime time.Time
 
 	// 关联的服务端workspace
-	ServerWorkSpace *model.ServerWorkspaceResponse
+	ServerWorkSpace *response.ServerWorkspaceResponse
 
 	ResourceID int
 }
@@ -204,7 +205,7 @@ func getWorkspaceStatusDescFromServer(workspaceStatus model.WorkspaceStatusEnum)
 	}
 */
 
-func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspaceResponse) (WorkspaceInfo, error) {
+func CreateWorkspaceInfoFromServer(serverWorkSpace response.ServerWorkspaceResponse) (WorkspaceInfo, error) {
 	projectName := serverWorkSpace.Name
 	if projectName == "" {
 		projectName = getRepoName(serverWorkSpace.GitRepoUrl)
@@ -226,7 +227,7 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspaceResponse
 
 	// 关联的资源信息
 	switch serverWorkSpace.Resource.Type {
-	case model.ReourceTypeEnum_Remote:
+	case response.ReourceTypeEnum_Remote:
 		workspaceInfo.Mode = WorkingMode_Remote
 		workspaceInfo.Remote = RemoteInfo{
 			ID:       int(serverWorkSpace.Resource.ID),
@@ -237,7 +238,7 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspaceResponse
 			SSHKey:   serverWorkSpace.Resource.SSHKey,
 		}
 		workspaceInfo.TempYamlFileAbsolutePath = workspaceInfo.GetTempDockerComposeFilePath()
-	case model.ReourceTypeEnum_K8S:
+	case response.ReourceTypeEnum_K8S:
 		workspaceInfo.Mode = WorkingMode_K8s
 		workspaceInfo.K8sInfo = K8sInfo{
 			KubeConfigContent: serverWorkSpace.Resource.KubeConfigContent,
@@ -254,9 +255,9 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspaceResponse
 	}
 
 	switch serverWorkSpace.Resource.AuthenticationType {
-	case model.AuthenticationTypeEnum_Password:
+	case response.AuthenticationTypeEnum_Password:
 		workspaceInfo.Remote.AuthType = RemoteAuthType_Password
-	case model.AuthenticationTypeEnum_SSH:
+	case response.AuthenticationTypeEnum_SSH:
 		workspaceInfo.Remote.AuthType = RemoteAuthType_SSH
 		/* 	case model.AuthenticationTypeEnum_KubeConfig:
 		workspaceInfo.Remote.AuthType = RemoteAuthType_Password */
@@ -269,6 +270,12 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspaceResponse
 
 	workspaceInfo.ServerWorkSpace = &serverWorkSpace
 
+	if serverWorkSpace.PortConfigsStr != "" {
+		err := json.Unmarshal([]byte(serverWorkSpace.PortConfigsStr), &serverWorkSpace.PortConfigs)
+		if err != nil {
+			return WorkspaceInfo{}, err
+		}
+	}
 	if serverWorkSpace.Extend != "" {
 		err := json.Unmarshal([]byte(serverWorkSpace.Extend), &workspaceInfo.Extend)
 		if err != nil {
@@ -620,7 +627,7 @@ type K8sInfo struct {
 	DeploymentName string
 	PVCName        string
 
-	IngressAuthType      model.KubeIngressAuthenticationTypeEnum
+	IngressAuthType      response.KubeIngressAuthenticationTypeEnum
 	IngressLoginUserName string
 	IngressLoginPassword string
 

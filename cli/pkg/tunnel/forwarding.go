@@ -19,7 +19,6 @@ type AutoTunnelMultipleOptions struct {
 	PortMappings []PortMapping
 }
 
-//
 type PortMapping struct {
 	LocalPortDesc    string
 	OriginLocalPort  int
@@ -28,7 +27,6 @@ type PortMapping struct {
 	PortMapType      PortMapTypeEnum
 }
 
-//
 func (instance *AutoTunnelMultipleOptions) AppendPortMapping(
 	mapType PortMapTypeEnum, orginLocalPort int, currentLocalPort int, localPortDesc string, containerPort int) {
 	portMapping := PortMapping{
@@ -41,10 +39,8 @@ func (instance *AutoTunnelMultipleOptions) AppendPortMapping(
 	instance.PortMappings = append(instance.PortMappings, portMapping)
 }
 
-//
 type PortMapTypeEnum string
 
-//
 const (
 	PortMapInfo_None        PortMapTypeEnum = ""
 	PortMapInfo_Full        PortMapTypeEnum = "full"

@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2022-02-25
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-28 09:52:08
+ * @LastEditTime: 2022-11-03 14:50:25
  */
 package cmd
 
@@ -21,6 +21,8 @@ import (
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/model"
+	"github.com/leansoftX/smartide-cli/internal/model/response"
+	apiResponse "github.com/leansoftX/smartide-cli/internal/model/response"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
 )
@@ -47,7 +49,7 @@ var connectCmd = &cobra.Command{
 		}
 
 		// 是否有工作区数据
-		tmpStartedServerWorkspaces, err := getServerWorkspaces(currentAuth, cliRunningEnv, []model.WorkspaceStatusEnum{model.WorkspaceStatusEnum_Start})
+		tmpStartedServerWorkspaces, err := getServerWorkspaces(currentAuth, cliRunningEnv, []apiResponse.WorkspaceStatusEnum{response.WorkspaceStatusEnum_Start})
 		common.CheckError(err)
 		if len(tmpStartedServerWorkspaces) == 0 {
 			common.SmartIDELog.Importance("请等待server工作区启动！")
@@ -56,7 +58,7 @@ var connectCmd = &cobra.Command{
 		// 轮询开始端口转发
 		isUnforward, _ := cmd.Flags().GetBool("unforward")
 		for {
-			startedServerWorkspaces, err := getServerWorkspaces(currentAuth, cliRunningEnv, []model.WorkspaceStatusEnum{})
+			startedServerWorkspaces, err := getServerWorkspaces(currentAuth, cliRunningEnv, []apiResponse.WorkspaceStatusEnum{})
 			if err == io.EOF { // 排除EOF的错误
 				common.SmartIDELog.Importance("getServerWorkspaces EOF")
 			} else {
@@ -139,7 +141,7 @@ func getServerMenu(auth model.Auth) error {
 		return errors.New("服务器返回空！")
 	}
 
-	l := &model.DefaultResponse{}
+	l := &apiResponse.DefaultResponse{}
 	err = json.Unmarshal([]byte(response), l)
 	if err != nil {
 		return err
@@ -155,7 +157,7 @@ var connectedWorkspaceIds []string = []string{}
 
 // 获取远程的工作区列表
 func getServerWorkspaces(currentAuth model.Auth,
-	cliRunningEnv workspace.CliRunningEvnEnum, allowStatuses []model.WorkspaceStatusEnum) (
+	cliRunningEnv workspace.CliRunningEvnEnum, allowStatuses []apiResponse.WorkspaceStatusEnum) (
 	[]workspace.WorkspaceInfo, error) {
 	var startedServerWorkspaces []workspace.WorkspaceInfo
 	serverWorkSpaces, err := workspace.GetServerWorkspaceList(currentAuth, cliRunningEnv)
@@ -240,7 +242,7 @@ func connect(startedServerWorkspaces []workspace.WorkspaceInfo, cmd *cobra.Comma
 
 	//2. 启动工作区
 	for _, workspaceInfo := range startedServerWorkspaces {
-		if workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Start {
+		if workspaceInfo.ServerWorkSpace.Status == apiResponse.WorkspaceStatusEnum_Start {
 			if !common.Contains(connectedWorkspaceIds, workspaceInfo.ServerWorkSpace.NO) {
 				// 加入到已连接数组
 				connectedWorkspaceIds = append(connectedWorkspaceIds, workspaceInfo.ServerWorkSpace.NO)

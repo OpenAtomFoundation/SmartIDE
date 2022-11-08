@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
- * @LastEditors: kenan
- * @LastEditTime: 2022-11-08 14:37:51
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-11-08 16:20:10
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -21,6 +21,7 @@ import (
 
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
+	"github.com/leansoftX/smartide-cli/internal/model"
 	globalModel "github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/k8s"
@@ -53,16 +54,25 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 	var applicationRootDirPath, configFileRelativePath string
 	var err error
 	//1.1. 获取配置文件所在根目录、以及配置文件相对路径
-	if workspaceInfo.SelectedTemplate != nil { //1.1.1. 模板形式，从现有文件夹中加载和解析配置文件
-		applicationRootDirPath = filepath.Join(workspaceInfo.SelectedTemplate.GetTemplateRootDirAbsolutePath(),
-			workspaceInfo.SelectedTemplate.GetTemplateDirRelativePath())
-		configFileRelativePath = globalModel.CONST_Default_ConfigRelativeFilePath //TODO 配置文件名是否有可能会变
-
-	} else { //1.1.2. clone 并解析
+	//1.1.1. clone 并解析
+	if workspaceInfo.GitCloneRepoUrl != "" {
 		// 解析 .k8s.ide.yaml 文件（是否需要注入到deploy.yaml文件中）
 		common.SmartIDELog.Info("下载配置文件 及 关联k8s yaml文件")
 		applicationRootDirPath, configFileRelativePath, _, err = downloadConfigAndLinkFiles(workspaceInfo)
-
+	}
+	if err != nil {
+		return nil, err
+	}
+	if configFileRelativePath != "" && workspaceInfo.SelectedTemplate != nil {
+		errMsg := fmt.Sprintf("模板中已经包含相同配置文件 %v", workspaceInfo.ConfigFileRelativePath)
+		feedbackErr := model.CreateFeedbackError(errMsg, false)
+		return nil, &feedbackErr
+	}
+	//1.1.2. 模板形式，从现有文件夹中加载和解析配置文件
+	if workspaceInfo.SelectedTemplate != nil {
+		applicationRootDirPath = filepath.Join(workspaceInfo.SelectedTemplate.GetTemplateRootDirAbsolutePath(),
+			workspaceInfo.SelectedTemplate.GetTemplateDirRelativePath())
+		configFileRelativePath = globalModel.CONST_Default_ConfigRelativeFilePath //TODO 配置文件名是否有可能会变
 	}
 	if err != nil {
 		return nil, err
@@ -115,7 +125,16 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 		}
 		// ★★★★★ 把所有k8s kind转换为一个临时的k8s yaml文件
 		labels := getK8sLabels(cmd, workspaceInfo) // 获取k8s模式下的label
-		tempK8sConfig = originK8sConfig.ConvertToTempK8SYaml(workspaceName, workspaceInfo.K8sInfo.Namespace, originK8sConfig.GetSystemUserName(), labels)
+		portConfigs := map[string]uint{}
+		for _, item := range workspaceInfo.ServerWorkSpace.PortConfigs {
+			portConfigs[item.Label] = item.Port
+		}
+		tempK8sConfig, err = originK8sConfig.ConvertToTempK8SYaml(workspaceName, workspaceInfo.K8sInfo.Namespace, originK8sConfig.GetSystemUserName(),
+			labels,
+			portConfigs, workspaceInfo.ServerWorkSpace.K8sUsedCpu, workspaceInfo.ServerWorkSpace.K8sUsedMemory)
+		if err != nil {
+			return nil, err
+		}
 		tempK8sYamlFileRelativePath, err := tempK8sConfig.SaveK8STempYaml(applicationRootDirPath)
 		// ★★★★★ 保存到目录（临时k8s yaml文件的绝对路径）
 		tempK8sYamlAbsolutePath := filepath.Join(applicationRootDirPath, tempK8sYamlFileRelativePath)
@@ -330,7 +349,7 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 		if err != nil {
 			return err
 		}
-		kubernetes.StartAgent(cmd, *devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName, workspaceInfo.ServerWorkSpace)
+		kubernetes.StartAgent(cmd, *devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName, workspaceInfo.ServerWorkSpace.ID)
 
 	}
 
@@ -383,25 +402,8 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 	//5.4. git clone
 	common.SmartIDELog.Info("Craeting project files ...")
 	containerGitCloneDir := originK8sConfig.GetProjectDirctory()
-	if workspaceInfo.SelectedTemplate != nil { //5.4.1. 模板文件拷贝
-		//5.4.1.1. clone 模板文件
-		common.SmartIDELog.Info("git clone to the template folder")
-		err = kubernetes.GitClone(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName,
-			workspaceInfo.SelectedTemplate.TemplateActualRepoUrl, globalModel.TMEPLATE_DIR_NAME, "")
-		if err != nil {
-			common.SmartIDELog.Warning(err.Error())
-		}
-
-		//5.4.1.2. 移动模板文件中的内容到项目文件夹
-		common.SmartIDELog.Info("move the template folder to the project folder")
-		originDirPath := filepath.Join(globalModel.TMEPLATE_DIR_NAME,
-			workspaceInfo.SelectedTemplate.GetTemplateDirRelativePath())
-		command := fmt.Sprintf("mkdir -p %v && yes | cp -rvp %v %v",
-			containerGitCloneDir,
-			originDirPath+string(filepath.Separator)+".", containerGitCloneDir)
-		err = kubernetes.ExecuteCommandInPod(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, command, runAsUserName)
-
-	} else { //5.4.2.
+	//5.4.1. git clone 代码库中的文件
+	if workspaceInfo.GitCloneRepoUrl != "" { //5.4.2.
 		common.SmartIDELog.Info("git clone to the project folder")
 		actualGitRepoUrl := workspaceInfo.GitCloneRepoUrl
 		if workspaceInfo.GitRepoAuthType == workspace.GitRepoAuthType_Basic {
@@ -416,6 +418,29 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 		}
 		err = kubernetes.GitClone(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName, actualGitRepoUrl, containerGitCloneDir, workspaceInfo.GitBranch)
 
+	}
+	if err != nil {
+		return err
+	}
+
+	//5.4.2. 模板文件拷贝
+	if workspaceInfo.SelectedTemplate != nil {
+		//5.4.2.1. clone 模板文件
+		common.SmartIDELog.Info("git clone to the template folder")
+		err = kubernetes.GitClone(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName,
+			workspaceInfo.SelectedTemplate.TemplateActualRepoUrl, globalModel.TMEPLATE_DIR_NAME, "")
+		if err != nil {
+			common.SmartIDELog.Warning(err.Error())
+		}
+
+		//5.4.2.2. 移动模板文件中的内容到项目文件夹
+		common.SmartIDELog.Info("move the template folder to the project folder")
+		originDirPath := filepath.Join(globalModel.TMEPLATE_DIR_NAME,
+			workspaceInfo.SelectedTemplate.GetTemplateDirRelativePath())
+		command := fmt.Sprintf("mkdir -p %v && yes | cp -rvp %v %v",
+			containerGitCloneDir,
+			originDirPath+string(filepath.Separator)+".", containerGitCloneDir)
+		err = kubernetes.ExecuteCommandInPod(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, command, runAsUserName)
 	}
 	if err != nil {
 		return err

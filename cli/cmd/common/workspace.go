@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-10-28 16:49:11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-07 17:00:29
+ * @LastEditTime: 2022-11-08 16:19:39
  * @FilePath: /cli/cmd/common/workspace.go
  */
 
@@ -18,8 +18,8 @@ import (
 	"strings"
 
 	"github.com/jinzhu/copier"
-	"github.com/leansoftX/smartide-cli/cmd/new"
 	"github.com/leansoftX/smartide-cli/cmd/server"
+	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	templateModel "github.com/leansoftX/smartide-cli/internal/biz/template/model"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/dal"
@@ -140,12 +140,6 @@ func GetWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 		}
 	}
 
-	//1.3. 模板信息
-	if cmd.Use == "new" {
-		workspaceInfo.SelectedTemplate, err = getSeletedTemplate(cmd, args) // 模板相关
-		common.CheckError(err)
-	}
-
 	//2. 获取基本的信息
 	//2.1. 存储在 server 的工作区
 	if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server {
@@ -165,12 +159,21 @@ func GetWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 			// 从 api 获取 workspace
 			var workspaceInfo_ *workspace.WorkspaceInfo
 			workspaceInfo_, err = workspace.GetWorkspaceFromServer(auth, workspaceIdStr, workspaceInfo.CliRunningEnv)
-			if workspaceInfo_ == nil {
-				return workspace.WorkspaceInfo{}, fmt.Errorf("get workspace (%v) is null", workspaceIdStr)
+			if workspaceInfo_ == nil || workspaceInfo_.ServerWorkSpace == nil {
+				if err == nil {
+					err = fmt.Errorf("get workspace (%v) is null", workspaceIdStr)
+				}
+				return workspace.WorkspaceInfo{}, err
 			}
-
-			selectedTemplate := workspaceInfo.SelectedTemplate
 			workspaceInfo = *workspaceInfo_
+
+			// 模板信息
+			if cmd.Use == "new" {
+				// 和服务器上的模板 actual repo url 保持一致
+				config.GlobalSmartIdeConfig.TemplateActualRepoUrl = workspaceInfo.ServerWorkSpace.TemplateGitUrl
+				workspaceInfo.SelectedTemplate, _ = getSeletedTemplate(cmd, args) // 模板相关
+			}
+			selectedTemplate := workspaceInfo.SelectedTemplate
 			if workspaceInfo.SelectedTemplate == nil && selectedTemplate != nil {
 				workspaceInfo.SelectedTemplate = selectedTemplate
 			}
@@ -203,6 +206,21 @@ func GetWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 		}
 
 	} else { //2.2. 存储在本地的工作区
+		// 模板信息
+		if cmd.Use == "new" {
+			// 模板相关
+			workspaceInfo.SelectedTemplate, _ = getSeletedTemplate(cmd, args)
+
+			// 指定的项目名称
+			workspaceName, _ := cmd.Flags().GetString("workspacename")
+			if workspaceName == "" {
+				err = errors.New("参数 workspacename 不能为空！")
+				return
+			} else {
+				workspaceInfo.Name = workspaceName
+			}
+		}
+
 		workspaceId, _ := strconv.Atoi(workspaceIdStr)
 		common.CheckError(err)
 		//2.2.1. 指定了从workspaceid，从sqlite中读取
@@ -402,7 +420,7 @@ func getSeletedTemplate(cmd *cobra.Command, args []string) (*templateModel.Selec
 	if cmd.Use != "new" {
 		return nil, nil
 	}
-	selectedTemplateSettings, err := new.GetTemplateSetting(cmd, args) // 包含了“clone 模板文件到本地”
+	selectedTemplateSettings, err := GetTemplateSetting(cmd, args) // 包含了“clone 模板文件到本地”
 	if err != nil {
 		return nil, err
 	}
