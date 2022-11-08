@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
- * @LastEditors: kenan
- * @LastEditTime: 2022-11-08 16:41:42
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-11-08 17:53:38
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -186,6 +186,16 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 						break
 					}
 				}
+				if workspaceInfo.ServerWorkSpace != nil {
+					for _, portConfig := range workspaceInfo.ServerWorkSpace.PortConfigs {
+						if portConfig.Port == uint(k8sContainerPortInfo.Port) {
+							portMapInfo.PortMapType = config.PortMapInfo_ServerConfig
+							portMapInfo.HostPortDesc = portConfig.Label
+							break
+						}
+					}
+				}
+
 				if strings.Contains(portMapInfo.HostPortDesc, "tools-webide") { // 如果是webide，就设置项目文件夹路径
 					portMapInfo.RefDirecotry = originK8sConfig.GetProjectDirctory()
 				}

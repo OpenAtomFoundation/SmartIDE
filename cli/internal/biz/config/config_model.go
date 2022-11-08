@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-27 16:14:44
+ * @LastEditTime: 2022-11-08 17:51:23
  */
 package config
 
@@ -232,10 +232,11 @@ func (p PortMapInfo) GetSSHPortAtLocalHost() int {
 type PortMapTypeEnum string
 
 const (
-	PortMapInfo_Full        PortMapTypeEnum = "full"
-	PortMapInfo_OnlyLabel   PortMapTypeEnum = "label"
-	PortMapInfo_OnlyCompose PortMapTypeEnum = "compose"
-	PortMapInfo_K8S_Service PortMapTypeEnum = "k8s_service"
+	PortMapInfo_Full         PortMapTypeEnum = "full"
+	PortMapInfo_OnlyLabel    PortMapTypeEnum = "label"
+	PortMapInfo_ServerConfig PortMapTypeEnum = "server_config"
+	PortMapInfo_OnlyCompose  PortMapTypeEnum = "compose"
+	PortMapInfo_K8S_Service  PortMapTypeEnum = "k8s_service"
 )
 
 func (customBool CustomBool) Value() bool {
