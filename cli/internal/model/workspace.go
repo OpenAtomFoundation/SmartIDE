@@ -1,8 +1,8 @@
 /*
  * @Author: kenan
  * @Date: 2022-02-15 19:32:44
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-27 14:56:38
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-11-08 14:06:13
  * @FilePath: /cli/internal/model/workspace.go
  * @Description:
  *
@@ -123,6 +123,7 @@ type ServerWorkspaceResponse struct {
 	KubeIngressAuthenticationType KubeIngressAuthenticationTypeEnum `json:"kubeIngressAuthenticationType"`
 	KubeIngressLoginUserName      string                            `json:"kubeIngressUserName" `
 	KubeIngressLoginPassword      string                            `json:"kubeIngressPassword" `
+	SshCredentialId               uint                              `json:"sshCredentialId" `
 }
 
 // "ID": 1,
