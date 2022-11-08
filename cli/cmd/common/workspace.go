@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-10-28 16:49:11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-01 23:32:57
+ * @LastEditTime: 2022-11-07 17:00:29
  * @FilePath: /cli/cmd/common/workspace.go
  */
 
@@ -142,7 +142,8 @@ func GetWorkspaceFromCmd(cmd *cobra.Command, args []string) (workspaceInfo works
 
 	//1.3. 模板信息
 	if cmd.Use == "new" {
-		workspaceInfo.SelectedTemplate, _ = getSeletedTemplate(cmd, args) // 模板相关
+		workspaceInfo.SelectedTemplate, err = getSeletedTemplate(cmd, args) // 模板相关
+		common.CheckError(err)
 	}
 
 	//2. 获取基本的信息

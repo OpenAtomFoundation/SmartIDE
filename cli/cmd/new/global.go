@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-04-20 11:03:53
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-01 17:01:39
+ * @LastEditTime: 2022-11-07 16:59:17
  * @FilePath: /cli/cmd/new/global.go
  */
 
