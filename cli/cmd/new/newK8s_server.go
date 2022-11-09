@@ -36,7 +36,7 @@ func K8sNew_Server(cmd *cobra.Command, args []string,
 	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) {
 
 	//0. 错误反馈
-	serverFeedback := preRun(cmd, workspaceInfo, workspace.ActionEnum_Workspace_Start)
+	serverFeedback := preRun(cmd, workspaceInfo, workspace.ActionEnum_Workspace_Start, k8sUtil)
 
 	_, err := start.ExecuteK8s_ServerWS_ServerEnv(cmd, *k8sUtil, workspaceInfo, yamlExecuteFun)
 	serverFeedback(err)

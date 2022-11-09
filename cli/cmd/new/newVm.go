@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-04-20 10:46:40
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-08 10:51:20
+ * @LastEditTime: 2022-11-09 15:21:27
  * @FilePath: /cli/cmd/new/newVm.go
  */
 
@@ -27,7 +27,7 @@ func VmNew(cmd *cobra.Command, args []string, workspaceInfo workspace.WorkspaceI
 	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) {
 
 	// 错误反馈
-	serverFeedback := preRun(cmd, workspaceInfo, workspace.ActionEnum_Workspace_Start)
+	serverFeedback := preRun(cmd, workspaceInfo, workspace.ActionEnum_Workspace_Start, nil)
 
 	//1. 连接到远程主机
 	//1.1.

@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-09 15:08:01
+ * @LastEditTime: 2022-11-09 15:13:13
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -603,7 +603,7 @@ func downloadConfigAndLinkFiles(workspaceInfo workspace.WorkspaceInfo) (
 		return
 	}
 	if len(fileRelativePaths) != 1 || !strings.Contains(fileRelativePaths[0], filepath.Join(workspaceInfo.ConfigFileRelativePath)) {
-		currentErr := fmt.Errorf("配置文件 %v 不存在！git url: %v branch: %v",
+		currentErr := fmt.Errorf("配置文件 %v 不存在！git url: %v , branch: %v",
 			workspaceInfo.ConfigFileRelativePath, workspaceInfo.GitCloneRepoUrl, workspaceInfo.GitBranch)
 		err = &fs.PathError{Op: "open", Path: workspaceInfo.ConfigFileRelativePath, Err: currentErr}
 		return
