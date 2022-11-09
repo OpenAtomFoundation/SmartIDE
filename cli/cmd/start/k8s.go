@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-09 15:13:13
+ * @LastEditTime: 2022-11-09 15:36:50
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -92,17 +92,24 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 
 	//1.2. 解析配置文件 + 关联的 k8s yaml
 	if !common.IsExist(filepath.Join(applicationRootDirPath, configFileRelativePath)) {
-		errMsg := fmt.Sprintf("配置文件 %v 不存在", configFileRelativePath)
-		feedbackErr := model.CreateFeedbackError(errMsg, false)
-		return nil, &feedbackErr
-	}
-	common.SmartIDELog.Info(fmt.Sprintf("解析配置文件 %v", workspaceInfo.ConfigFileRelativePath))
-	originK8sConfig, err = config.NewK8sConfig(applicationRootDirPath, configFileRelativePath)
-	if err != nil {
-		return nil, err
-	}
-	if originK8sConfig == nil {
-		return nil, errors.New("配置文件解析失败！") // 解决下面的warning问题，没有实际作用
+		if workspaceInfo.ConfigYaml.IsNotNil() {
+			originK8sConfig, _ = config.NewK8sConfigFromContent(workspaceInfo.ServerWorkSpace.ConfigFileContent,
+				workspaceInfo.ServerWorkSpace.LinkFileContent)
+		} else {
+			errMsg := fmt.Sprintf("配置文件 %v 不存在", configFileRelativePath)
+			feedbackErr := model.CreateFeedbackError(errMsg, false)
+			return nil, &feedbackErr
+		}
+
+	} else {
+		common.SmartIDELog.Info(fmt.Sprintf("解析配置文件 %v", workspaceInfo.ConfigFileRelativePath))
+		originK8sConfig, err = config.NewK8sConfig(applicationRootDirPath, configFileRelativePath)
+		if err != nil {
+			return nil, err
+		}
+		if originK8sConfig == nil {
+			return nil, errors.New("配置文件解析失败！") // 解决下面的warning问题，没有实际作用
+		}
 	}
 
 	//2. 是否 配置文件 & k8s yaml 有改变

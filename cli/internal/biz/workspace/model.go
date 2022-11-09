@@ -292,28 +292,28 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace response.ServerWorkspaceRespo
 
 	// 配置文件
 	if workspaceInfo.Mode == WorkingMode_Remote {
-		if serverWorkSpace.LinkDockerCompose != "" {
-			err := yaml.Unmarshal([]byte(serverWorkSpace.LinkDockerCompose), &workspaceInfo.ConfigYaml.Workspace.LinkCompose)
+		if serverWorkSpace.LinkFileContent != "" {
+			err := yaml.Unmarshal([]byte(serverWorkSpace.LinkFileContent), &workspaceInfo.ConfigYaml.Workspace.LinkCompose)
 			if err != nil {
 				return WorkspaceInfo{}, err
 			}
 		}
-		if serverWorkSpace.TempDockerComposeContent != "" {
-			err := yaml.Unmarshal([]byte(serverWorkSpace.TempDockerComposeContent), &workspaceInfo.TempDockerCompose)
+		if serverWorkSpace.TempDeploymentFileContent != "" {
+			err := yaml.Unmarshal([]byte(serverWorkSpace.TempDeploymentFileContent), &workspaceInfo.TempDockerCompose)
 			if err != nil {
 				return WorkspaceInfo{}, err
 			}
 		}
 	} else if workspaceInfo.Mode == WorkingMode_K8s {
-		if serverWorkSpace.LinkDockerCompose != "" {
-			originK8sYaml, err := config.NewK8sConfigFromContent(serverWorkSpace.ConfigFileContent, serverWorkSpace.LinkDockerCompose)
+		if serverWorkSpace.LinkFileContent != "" {
+			originK8sYaml, err := config.NewK8sConfigFromContent(serverWorkSpace.ConfigFileContent, serverWorkSpace.LinkFileContent)
 			if err != nil {
 				return WorkspaceInfo{}, err
 			}
 			workspaceInfo.K8sInfo.OriginK8sYaml = *originK8sYaml
 		}
-		if serverWorkSpace.TempDockerComposeContent != "" {
-			tempK8sYaml, err := config.NewK8sConfigFromContent(serverWorkSpace.ConfigFileContent, serverWorkSpace.TempDockerComposeContent)
+		if serverWorkSpace.TempDeploymentFileContent != "" {
+			tempK8sYaml, err := config.NewK8sConfigFromContent(serverWorkSpace.ConfigFileContent, serverWorkSpace.TempDeploymentFileContent)
 			if err != nil {
 				return WorkspaceInfo{}, err
 			}

@@ -81,13 +81,16 @@ type ServerWorkspaceResponse struct {
 	NO   string `json:"no" `
 	Name string `json:"name" `
 
-	GitRepoUrl               string `json:"gitRepoUrl" `
-	Branch                   string `json:"branch"`
-	ConfigFilePath           string `json:"configFilePath"`
-	ConfigFileContent        string `json:"configFileContent"`
-	TempDockerComposeContent string `json:"tempDockerComposeContent" `
-	LinkDockerCompose        string `json:"linkDockerCompose" `
-	Extend                   string `json:"extend" `
+	GitRepoUrl     string `json:"gitRepoUrl" `
+	Branch         string `json:"branch"`
+	ConfigFilePath string `json:"configFilePath"`
+	// 配置文件内容
+	ConfigFileContent string `json:"configFileContent"`
+	// 生成的的临时文件内容
+	TempDeploymentFileContent string `json:"tempDockerComposeContent" `
+	// 关联的 compose 或者 k8s yaml 文件内容
+	LinkFileContent string `json:"linkDockerCompose" `
+	Extend          string `json:"extend" `
 
 	Status WorkspaceStatusEnum `json:"status" `
 
