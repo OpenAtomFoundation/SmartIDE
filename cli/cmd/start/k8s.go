@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-09 15:36:50
+ * @LastEditTime: 2022-11-10 00:38:28
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -91,7 +91,8 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 	}
 
 	//1.2. 解析配置文件 + 关联的 k8s yaml
-	if !common.IsExist(filepath.Join(applicationRootDirPath, configFileRelativePath)) {
+	if filepath.Join(applicationRootDirPath, configFileRelativePath) == "" ||
+		!common.IsExist(filepath.Join(applicationRootDirPath, configFileRelativePath)) {
 		if workspaceInfo.ConfigYaml.IsNotNil() {
 			originK8sConfig, _ = config.NewK8sConfigFromContent(workspaceInfo.ServerWorkSpace.ConfigFileContent,
 				workspaceInfo.ServerWorkSpace.LinkFileContent)
