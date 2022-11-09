@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-29 14:16:33
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-07 14:40:10
+ * @LastEditTime: 2022-11-09 13:39:16
  * @FilePath: /cli/pkg/common/exec.go
  */
 
@@ -40,7 +40,12 @@ func (eo *execOperation) Realtime(command string, rootDir string) error {
 		execCommand.Dir = rootDir
 	}
 
-	SmartIDELog.Debug(fmt.Sprintf("local (%v) exec -> %v ", runtime.GOOS, command))
+	currentWorkingDir := ""
+	if execCommand.Dir != "" {
+		currentWorkingDir = fmt.Sprintf("> %v", execCommand.Dir)
+	}
+	SmartIDELog.Debug(fmt.Sprintf("local (%v) exec %v -> %v ",
+		runtime.GOOS, currentWorkingDir, command))
 
 	execCommand.Stdout = os.Stdout
 	execCommand.Stderr = os.Stderr

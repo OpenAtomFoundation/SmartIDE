@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-08 17:53:38
+ * @LastEditTime: 2022-11-09 15:08:01
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"os"
 	"path"
@@ -59,25 +60,42 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 		// 解析 .k8s.ide.yaml 文件（是否需要注入到deploy.yaml文件中）
 		common.SmartIDELog.Info("下载配置文件 及 关联k8s yaml文件")
 		applicationRootDirPath, configFileRelativePath, _, err = downloadConfigAndLinkFiles(workspaceInfo)
+
+		// 错误处理
+		if err != nil {
+			if workspaceInfo.SelectedTemplate == nil { // 非模板模式，所有的错误都抛出
+				return nil, model.CreateFeedbackError2(err.Error(), false)
+			} else { // 在没有模板的时候，配置文件不存在的错误不抛出
+				switch err.(type) {
+				case *fs.PathError:
+					common.SmartIDELog.Warning(err.Error())
+					err = nil
+				default:
+					return nil, model.CreateFeedbackError2(err.Error(), false)
+				}
+			}
+		}
+
+		// git库中配置文件 和 模板 不能同时存在
+		if configFileRelativePath != "" && workspaceInfo.SelectedTemplate != nil { //1.1.1.1.
+			errMsg := fmt.Sprintf("配置文件 %v 重复", workspaceInfo.ConfigFileRelativePath)
+			return nil, model.CreateFeedbackError2(errMsg, false)
+		}
 	}
-	if err != nil {
-		return nil, err
-	}
-	if configFileRelativePath != "" && workspaceInfo.SelectedTemplate != nil {
-		errMsg := fmt.Sprintf("模板中已经包含相同配置文件 %v", workspaceInfo.ConfigFileRelativePath)
-		feedbackErr := model.CreateFeedbackError(errMsg, false)
-		return nil, &feedbackErr
-	}
+
 	//1.1.2. 模板形式，从现有文件夹中加载和解析配置文件
 	if workspaceInfo.SelectedTemplate != nil {
 		applicationRootDirPath = filepath.Join(workspaceInfo.SelectedTemplate.GetTemplateRootDirAbsolutePath(),
 			workspaceInfo.SelectedTemplate.GetTemplateDirRelativePath())
 		configFileRelativePath = globalModel.CONST_Default_ConfigRelativeFilePath //TODO 配置文件名是否有可能会变
 	}
-	if err != nil {
-		return nil, err
+
+	//1.2. 解析配置文件 + 关联的 k8s yaml
+	if !common.IsExist(filepath.Join(applicationRootDirPath, configFileRelativePath)) {
+		errMsg := fmt.Sprintf("配置文件 %v 不存在", configFileRelativePath)
+		feedbackErr := model.CreateFeedbackError(errMsg, false)
+		return nil, &feedbackErr
 	}
-	//1.2. 解析配置文件 + 关联的k8s yaml
 	common.SmartIDELog.Info(fmt.Sprintf("解析配置文件 %v", workspaceInfo.ConfigFileRelativePath))
 	originK8sConfig, err = config.NewK8sConfig(applicationRootDirPath, configFileRelativePath)
 	if err != nil {
@@ -585,7 +603,9 @@ func downloadConfigAndLinkFiles(workspaceInfo workspace.WorkspaceInfo) (
 		return
 	}
 	if len(fileRelativePaths) != 1 || !strings.Contains(fileRelativePaths[0], filepath.Join(workspaceInfo.ConfigFileRelativePath)) {
-		err = fmt.Errorf("配置文件 %v 不存在！", workspaceInfo.ConfigFileRelativePath)
+		currentErr := fmt.Errorf("配置文件 %v 不存在！git url: %v branch: %v",
+			workspaceInfo.ConfigFileRelativePath, workspaceInfo.GitCloneRepoUrl, workspaceInfo.GitBranch)
+		err = &fs.PathError{Op: "open", Path: workspaceInfo.ConfigFileRelativePath, Err: currentErr}
 		return
 	}
 

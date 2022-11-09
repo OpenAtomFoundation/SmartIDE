@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-09-08 10:12:18
+ * @LastEditTime: 2022-11-09 13:40:42
  */
 package common
 
@@ -38,7 +38,7 @@ func (g gitOperation) CheckGitRemoteUrl(url string) bool {
 // 使用git下载指定的文件
 func (g gitOperation) SparseCheckout(rootDir string, gitCloneUrl string, fileExpression string, branch string) ([]string, error) {
 	if gitCloneUrl == "" {
-		return []string{}, errors.New("actual git repo url is null!")
+		return []string{}, errors.New("actual git repo url is null")
 	}
 	repoName := GetRepoName(gitCloneUrl)
 
@@ -81,7 +81,7 @@ Set-Content $checkoutFilePath -Value $content -Encoding Ascii`,
 	`, branch, remoteName, branch)
 	err = EXEC.Realtime(branchCommand, repoDirPath)
 	if err != nil {
-		return []string{}, err
+		SmartIDELog.Warning(err.Error())
 	}
 
 	//3. 获取下载的文件列表

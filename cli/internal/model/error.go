@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-11-04 13:54:42
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-04 14:15:40
+ * @LastEditTime: 2022-11-09 14:16:13
  * @FilePath: /cli/internal/model/error.go
  */
 
@@ -27,4 +27,12 @@ func CreateFeedbackError(err string, isRetry bool) FeedbackError {
 		IsRetry: isRetry,
 		Err:     errors.New(err),
 	}
+}
+
+func CreateFeedbackError2(err string, isRetry bool) error {
+	tmpErr := FeedbackError{
+		IsRetry: isRetry,
+		Err:     errors.New(err),
+	}
+	return &tmpErr
 }
