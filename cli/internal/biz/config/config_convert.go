@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-30 23:10:52
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-08 14:32:57
+ * @LastEditTime: 2022-11-09 11:33:17
  * @FilePath: /cli/internal/biz/config/config_convert.go
  */
 
@@ -132,6 +132,14 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(workspaceName stri
 			}
 
 			// 配额
+			if usedCpu > 0 || usedMemory > 0 {
+				if container.Resources.Limits == nil {
+					container.Resources.Limits = coreV1.ResourceList{}
+				}
+				if container.Resources.Requests == nil {
+					container.Resources.Requests = coreV1.ResourceList{}
+				}
+			}
 			if usedCpu > 0 {
 				container.Resources.Limits["cpu"] = resource.MustParse(getK8sResourceCpu(usedCpu))
 				container.Resources.Requests["cpu"] = resource.MustParse(getK8sResourceCpu(usedCpu))
@@ -207,6 +215,14 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(workspaceName stri
 					}
 
 					// 配额
+					if usedCpu > 0 || usedMemory > 0 {
+						if container.Resources.Limits == nil {
+							container.Resources.Limits = coreV1.ResourceList{}
+						}
+						if container.Resources.Requests == nil {
+							container.Resources.Requests = coreV1.ResourceList{}
+						}
+					}
 					if usedCpu > 0 {
 						container.Resources.Limits["cpu"] = resource.MustParse(getK8sResourceCpu(usedCpu))
 						container.Resources.Requests["cpu"] = resource.MustParse(getK8sResourceCpu(usedCpu))
