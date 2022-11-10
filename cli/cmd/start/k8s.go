@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-10 00:38:28
+ * @LastEditTime: 2022-11-10 15:31:54
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -93,7 +93,7 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 	//1.2. 解析配置文件 + 关联的 k8s yaml
 	if filepath.Join(applicationRootDirPath, configFileRelativePath) == "" ||
 		!common.IsExist(filepath.Join(applicationRootDirPath, configFileRelativePath)) {
-		if workspaceInfo.ConfigYaml.IsNotNil() {
+		if workspaceInfo.ConfigYaml.IsNotNil() && workspaceInfo.ServerWorkSpace != nil {
 			originK8sConfig, _ = config.NewK8sConfigFromContent(workspaceInfo.ServerWorkSpace.ConfigFileContent,
 				workspaceInfo.ServerWorkSpace.LinkFileContent)
 		} else {
@@ -152,12 +152,20 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 		// ★★★★★ 把所有k8s kind转换为一个临时的k8s yaml文件
 		labels := getK8sLabels(cmd, workspaceInfo) // 获取k8s模式下的label
 		portConfigs := map[string]uint{}
-		for _, item := range workspaceInfo.ServerWorkSpace.PortConfigs {
-			portConfigs[item.Label] = item.Port
+		var k8sUsedCpu, k8sUsedMemory float32
+		if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server &&
+			workspaceInfo.ServerWorkSpace != nil {
+			if workspaceInfo.ServerWorkSpace.PortConfigs != nil {
+				for _, item := range workspaceInfo.ServerWorkSpace.PortConfigs {
+					portConfigs[item.Label] = item.Port
+				}
+			}
+
+			k8sUsedCpu, k8sUsedMemory = workspaceInfo.ServerWorkSpace.K8sUsedCpu, workspaceInfo.ServerWorkSpace.K8sUsedMemory
 		}
 		tempK8sConfig, err = originK8sConfig.ConvertToTempK8SYaml(workspaceName, workspaceInfo.K8sInfo.Namespace, originK8sConfig.GetSystemUserName(),
 			labels,
-			portConfigs, workspaceInfo.ServerWorkSpace.K8sUsedCpu, workspaceInfo.ServerWorkSpace.K8sUsedMemory)
+			portConfigs, k8sUsedCpu, k8sUsedMemory)
 		if err != nil {
 			return nil, err
 		}
