@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-04-20 17:08:53
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-28 16:55:56
+ * @LastEditTime: 2022-11-09 13:11:51
  * @FilePath: /cli/cmd/new.go
  */
 package cmd
@@ -91,6 +91,8 @@ func init() {
 	newCmd.Flags().StringP("password", "", "", i18nInstance.Start.Info_help_flag_password)
 
 	newCmd.Flags().StringP("serverownerguid", "g", "", i18nInstance.Start.Info_help_flag_ownerguid)
+	newCmd.Flags().StringP("repourl", "r", "", i18nInstance.Start.Info_help_flag_repourl)
+	newCmd.Flags().StringP("branch", "b", "", i18nInstance.Start.Info_help_flag_branch)
 
 	newCmd.Flags().StringP("workspacename", "w", "", "工作区名称")
 

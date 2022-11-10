@@ -16,6 +16,10 @@ import (
 
 // 判断所给路径文件/文件夹是否存在
 func IsExist(path string) bool {
+	if strings.TrimSpace(path) == "" {
+		return false
+	}
+
 	// 替换当前用户目录
 	if path[0] == '~' {
 		home, _ := os.UserHomeDir()
