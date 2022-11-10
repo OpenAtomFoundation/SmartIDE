@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2022-11-10 12:29:19
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-11-10 16:10:41
  */
 package start
 
@@ -135,8 +135,10 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 		// 获取compose配置
 		portConfigs := map[string]uint{}
-		for _, item := range workspaceInfo.ServerWorkSpace.PortConfigs {
-			portConfigs[item.Label] = item.Port
+		if workspaceInfo.ServerWorkSpace != nil {
+			for _, item := range workspaceInfo.ServerWorkSpace.PortConfigs {
+				portConfigs[item.Label] = item.Port
+			}
 		}
 		tempDockerCompose, ideBindingPort, _ = currentConfig.ConvertToDockerCompose(sshRemote,
 			workspaceInfo.Name, workspaceInfo.WorkingDirectoryPath, true, userName,
