@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-08 16:20:20
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-11-10 12:29:19
  */
 package start
 
@@ -69,7 +69,11 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 			common.SmartIDELog.Info(i18nInstance.VmStart.Info_git_cloned)
 		} else {
 			// 执行ssh-key 策略
-			sshRemote.ExecSSHkeyPolicy(common.SmartIDELog.Ws_id, userName, common.ServerHost, common.ServerToken, common.ServerUserGuid, workspaceInfo.ServerWorkSpace.SshCredentialId)
+			var wspId uint = 0
+			if workspaceInfo.ServerWorkSpace != nil && workspaceInfo.ServerWorkSpace.SshCredentialId > 0 {
+				wspId = workspaceInfo.ServerWorkSpace.SshCredentialId
+			}
+			sshRemote.ExecSSHkeyPolicy(common.SmartIDELog.Ws_id, userName, common.ServerHost, common.ServerToken, common.ServerUserGuid, wspId)
 			// Generate Authorizedkeys
 			err = GitCloneAndCheckoutBranch(sshRemote, workspaceInfo, cmd)
 			common.CheckErrorFunc(err, serverFeedback)
