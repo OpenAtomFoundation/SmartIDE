@@ -25,6 +25,8 @@ const (
 	SVR_KEY_LOGIC    = "logic"    //逻辑服务
 )
 
+var ch = make(chan struct{}, 80)
+
 type conn struct {
 	c   *websocket.Conn
 	mtx *sync.Mutex
@@ -39,9 +41,9 @@ var (
 		curMaxCmd: 0,
 
 		receiverMtx:       new(sync.RWMutex),
-		maxReceiver:       100,
+		maxReceiver:       500,
 		receiver:          make(map[int]chan []byte),
-		receiveMsgTimeout: 15 * time.Second,
+		receiveMsgTimeout: 6 * time.Second,
 	}
 
 	clientArr = make(map[string]*websocket.Conn)
