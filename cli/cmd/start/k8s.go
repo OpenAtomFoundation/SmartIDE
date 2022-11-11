@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-10 15:31:54
+ * @LastEditTime: 2022-11-11 16:30:35
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -123,23 +123,13 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 	isReady := checkPodReady && err == nil
 	if hasChanged || !isReady {
 		//2.1. 尝试删除deployment、service
-		if workspaceInfo.ServerWorkSpace != nil { // id 为空的时候时，是 update；尝试先删除deployment、service
-			common.SmartIDELog.Info("删除 service && deployment ")
+		if workspaceInfo.ServerWorkSpace != nil { // 尝试先删除deployment、service、pod，防止无法update的情况
+			common.SmartIDELog.Info("删除 service && deployment && pod ")
 
-			for _, deployment := range workspaceInfo.K8sInfo.OriginK8sYaml.Workspace.Deployments {
-				command := fmt.Sprintf("delete deployment -l %v ", deployment.Name)
-				err = k8sUtil.ExecKubectlCommandRealtime(command, "", false)
-				if err != nil {
-					return nil, err
-				}
-			}
-
-			for _, service := range workspaceInfo.K8sInfo.OriginK8sYaml.Workspace.Services {
-				command := fmt.Sprintf("delete service -l %v ", service.Name)
-				err = k8sUtil.ExecKubectlCommandRealtime(command, "", false)
-				if err != nil {
-					return nil, err
-				}
+			command := "delete pods,deployments,services --all"
+			err = k8sUtil.ExecKubectlCommandRealtime(command, "", false)
+			if err != nil {
+				return nil, err
 			}
 		}
 
