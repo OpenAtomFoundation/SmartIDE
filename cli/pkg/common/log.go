@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-24 15:04:50
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-11-11 20:37:49
  */
 package common
 
@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"runtime/debug"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gookit/color"
@@ -39,6 +40,7 @@ var (
 )
 
 var SmartIDELog = &smartIDELogStruct{Ws_id: "", ParentId: 0}
+var WG sync.WaitGroup
 
 // 进入诊断模式
 var isDebugLevel bool = false
@@ -150,16 +152,22 @@ func (sLog *smartIDELogStruct) Error(err interface{}, headers ...string) (reErr 
 	fullContents := append(contents, stack)
 	fullContents = RemoveDuplicatesAndEmpty(fullContents)
 	if sLog.Ws_id != "" {
-		go SendAndReceive("business", "workspaceLog", "", "", model.WorkspaceLog{
-			Title:    "",
-			ParentId: sLog.ParentId,
-			Content:  strings.Join(fullContents, ";"),
-			Ws_id:    sLog.Ws_id,
-			Level:    4,
-			Type:     1,
-			StartAt:  time.Now(),
-			EndAt:    time.Now(),
-		})
+		ch <- struct{}{}
+		WG.Add(1)
+		go func() {
+			SendAndReceive("business", "workspaceLog", "", "", model.WorkspaceLog{
+				Title:    "",
+				ParentId: sLog.ParentId,
+				Content:  strings.Join(fullContents, ";"),
+				Ws_id:    sLog.Ws_id,
+				Level:    4,
+				Type:     1,
+				StartAt:  time.Now(),
+				EndAt:    time.Now(),
+			})
+			defer WG.Done()
+			<-ch
+		}()
 	}
 	fullContents = entryptionKeys(fullContents) // 加密密钥
 
@@ -217,16 +225,23 @@ func (sLog *smartIDELogStruct) Info(args ...string) {
 	prefix := getPrefix(zapcore.InfoLevel)
 	fmt.Println(prefix, msg)
 	if sLog.Ws_id != "" {
-		go SendAndReceive("business", "workspaceLog", "", "", model.WorkspaceLog{
-			Title:    "",
-			ParentId: sLog.ParentId,
-			Content:  msg,
-			Ws_id:    sLog.Ws_id,
-			Level:    1,
-			Type:     1,
-			StartAt:  time.Now(),
-			EndAt:    time.Now(),
-		})
+		ch <- struct{}{}
+		WG.Add(1)
+		go func() {
+			SendAndReceive("business", "workspaceLog", "", "", model.WorkspaceLog{
+				Title:    "",
+				ParentId: sLog.ParentId,
+				Content:  msg,
+				Ws_id:    sLog.Ws_id,
+				Level:    1,
+				Type:     1,
+				StartAt:  time.Now(),
+				EndAt:    time.Now(),
+			})
+
+			defer WG.Done()
+			<-ch
+		}()
 	}
 	sugarLogger.Info(msg)
 }
@@ -277,16 +292,23 @@ func (sLog *smartIDELogStruct) Debug(args ...string) {
 
 	}
 	if sLog.Ws_id != "" {
-		go SendAndReceive("business", "workspaceLog", "", "", model.WorkspaceLog{
-			Title:    "",
-			ParentId: sLog.ParentId,
-			Content:  msg,
-			Ws_id:    sLog.Ws_id,
-			Level:    3,
-			Type:     1,
-			StartAt:  time.Now(),
-			EndAt:    time.Now(),
-		})
+		ch <- struct{}{}
+		WG.Add(1)
+		go func() {
+			SendAndReceive("business", "workspaceLog", "", "", model.WorkspaceLog{
+				Title:    "",
+				ParentId: sLog.ParentId,
+				Content:  msg,
+				Ws_id:    sLog.Ws_id,
+				Level:    3,
+				Type:     1,
+				StartAt:  time.Now(),
+				EndAt:    time.Now(),
+			})
+
+			defer WG.Done()
+			<-ch
+		}()
 	}
 	sugarLogger.Debug(msg)
 }
@@ -380,16 +402,23 @@ func (sLog *smartIDELogStruct) Warning(warning ...string) {
 		fmt.Println(prefix, msg)
 	}
 	if sLog.Ws_id != "" {
-		go SendAndReceive("business", "workspaceLog", "", "", model.WorkspaceLog{
-			Title:    "",
-			ParentId: sLog.ParentId,
-			Content:  msg,
-			Ws_id:    sLog.Ws_id,
-			Level:    2,
-			Type:     1,
-			StartAt:  time.Now(),
-			EndAt:    time.Now(),
-		})
+		ch <- struct{}{}
+		WG.Add(1)
+		go func() {
+			SendAndReceive("business", "workspaceLog", "", "", model.WorkspaceLog{
+				Title:    "",
+				ParentId: sLog.ParentId,
+				Content:  msg,
+				Ws_id:    sLog.Ws_id,
+				Level:    2,
+				Type:     1,
+				StartAt:  time.Now(),
+				EndAt:    time.Now(),
+			})
+
+			defer WG.Done()
+			<-ch
+		}()
 	}
 	sugarLogger.Warn(msg)
 }
@@ -435,32 +464,32 @@ func getEncoder() zapcore.Encoder {
 	}
 
 	/*   zapConfig :=  zap.Config{
-	     Level:             zap.NewAtomicLevelAt(zap.DebugLevel),
-	     Development:       false,
-	     DisableCaller:     false,
-	     DisableStacktrace: false,
-	     Sampling:          nil,
-	     Encoding:          "json",
-	     EncoderConfig: zapcore.EncoderConfig{
-	         MessageKey:     "msg",
-	         LevelKey:       "level",
-	         TimeKey:        "time",
-	         NameKey:        "logger",
-	         CallerKey:      "file",
-	         StacktraceKey:  "stacktrace",
-	         LineEnding:     zapcore.DefaultLineEnding,
-	         EncodeLevel:    zapcore.LowercaseLevelEncoder,
-	         EncodeTime:     zapcore.ISO8601TimeEncoder,
-	         EncodeDuration: zapcore.SecondsDurationEncoder,
-	         EncodeCaller:   zapcore.ShortCallerEncoder,
-	         EncodeName:     zapcore.FullNameEncoder,
-	     },
-	     OutputPaths:      []string{"/tmp/zap.log"},
-	     ErrorOutputPaths: []string{"/tmp/zap.log"},
-	     InitialFields: map[string]interface{}{
-	         "app": "test",
-	     },
-	 } */
+			Level:             zap.NewAtomicLevelAt(zap.DebugLevel),
+			Development:       false,
+			DisableCaller:     false,
+			DisableStacktrace: false,
+			Sampling:          nil,
+			Encoding:          "json",
+			EncoderConfig: zapcore.EncoderConfig{
+					MessageKey:     "msg",
+					LevelKey:       "level",
+					TimeKey:        "time",
+					NameKey:        "logger",
+					CallerKey:      "file",
+					StacktraceKey:  "stacktrace",
+					LineEnding:     zapcore.DefaultLineEnding,
+					EncodeLevel:    zapcore.LowercaseLevelEncoder,
+					EncodeTime:     zapcore.ISO8601TimeEncoder,
+					EncodeDuration: zapcore.SecondsDurationEncoder,
+					EncodeCaller:   zapcore.ShortCallerEncoder,
+					EncodeName:     zapcore.FullNameEncoder,
+			},
+			OutputPaths:      []string{"/tmp/zap.log"},
+			ErrorOutputPaths: []string{"/tmp/zap.log"},
+			InitialFields: map[string]interface{}{
+					"app": "test",
+			},
+	} */
 
 	return zapcore.NewConsoleEncoder(encoderConfig)
 }

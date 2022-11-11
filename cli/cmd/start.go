@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-03 21:12:01
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-11-11 20:37:12
  */
 package cmd
 
@@ -47,16 +47,16 @@ var startCmd = &cobra.Command{
 	Long:    i18nInstance.Start.Info_help_long,
 	Aliases: []string{"up"},
 	Example: `  smartide start
-  smartide start --workspaceid {workspaceid}
-  smartide start <workspaceid>
-  smartide start <actual git repo url>
-  smartide start <actual git repo url> <templatetype> -T {typename}
-  smartide start --host <host> --username <username> --password <password> --repourl <actual git repo url> --branch <branch name> --filepath <config file path>
-  smartide start --host <host> --username <username> --password <password> --repourl <actual git repo url> --branch <branch name> --filepath <config file path> <templatetype> -T {typename}
-  smartide start --host <hostid> <actual git repo url> 
-  smartide start --host <hostid> <actual git repo url> <templatetype> -T {typename}
-  smartide start --k8s <context> --repoUrl <actual git repo url> --branch master
-  smartide start --k8s <context> <actual git repo url>`,
+	 smartide start --workspaceid {workspaceid}
+	 smartide start <workspaceid>
+	 smartide start <actual git repo url>
+	 smartide start <actual git repo url> <templatetype> -T {typename}
+	 smartide start --host <host> --username <username> --password <password> --repourl <actual git repo url> --branch <branch name> --filepath <config file path>
+	 smartide start --host <host> --username <username> --password <password> --repourl <actual git repo url> --branch <branch name> --filepath <config file path> <templatetype> -T {typename}
+	 smartide start --host <hostid> <actual git repo url> 
+	 smartide start --host <hostid> <actual git repo url> <templatetype> -T {typename}
+	 smartide start --k8s <context> --repoUrl <actual git repo url> --branch master
+	 smartide start --k8s <context> <actual git repo url>`,
 	PreRunE: preRun,
 	RunE: func(cmd *cobra.Command, args []string) error {
 
@@ -203,7 +203,7 @@ var startCmd = &cobra.Command{
 			}
 
 		}
-
+		common.WG.Wait()
 		return nil
 	},
 }
