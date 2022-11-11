@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-10 00:38:28
+ * @LastEditTime: 2022-11-11 16:30:35
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -93,7 +93,7 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 	//1.2. 解析配置文件 + 关联的 k8s yaml
 	if filepath.Join(applicationRootDirPath, configFileRelativePath) == "" ||
 		!common.IsExist(filepath.Join(applicationRootDirPath, configFileRelativePath)) {
-		if workspaceInfo.ConfigYaml.IsNotNil() {
+		if workspaceInfo.ConfigYaml.IsNotNil() && workspaceInfo.ServerWorkSpace != nil {
 			originK8sConfig, _ = config.NewK8sConfigFromContent(workspaceInfo.ServerWorkSpace.ConfigFileContent,
 				workspaceInfo.ServerWorkSpace.LinkFileContent)
 		} else {
@@ -123,23 +123,13 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 	isReady := checkPodReady && err == nil
 	if hasChanged || !isReady {
 		//2.1. 尝试删除deployment、service
-		if workspaceInfo.ServerWorkSpace != nil { // id 为空的时候时，是 update；尝试先删除deployment、service
-			common.SmartIDELog.Info("删除 service && deployment ")
+		if workspaceInfo.ServerWorkSpace != nil { // 尝试先删除deployment、service、pod，防止无法update的情况
+			common.SmartIDELog.Info("删除 service && deployment && pod ")
 
-			for _, deployment := range workspaceInfo.K8sInfo.OriginK8sYaml.Workspace.Deployments {
-				command := fmt.Sprintf("delete deployment -l %v ", deployment.Name)
-				err = k8sUtil.ExecKubectlCommandRealtime(command, "", false)
-				if err != nil {
-					return nil, err
-				}
-			}
-
-			for _, service := range workspaceInfo.K8sInfo.OriginK8sYaml.Workspace.Services {
-				command := fmt.Sprintf("delete service -l %v ", service.Name)
-				err = k8sUtil.ExecKubectlCommandRealtime(command, "", false)
-				if err != nil {
-					return nil, err
-				}
+			command := "delete pods,deployments,services --all"
+			err = k8sUtil.ExecKubectlCommandRealtime(command, "", false)
+			if err != nil {
+				return nil, err
 			}
 		}
 
@@ -152,12 +142,20 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 		// ★★★★★ 把所有k8s kind转换为一个临时的k8s yaml文件
 		labels := getK8sLabels(cmd, workspaceInfo) // 获取k8s模式下的label
 		portConfigs := map[string]uint{}
-		for _, item := range workspaceInfo.ServerWorkSpace.PortConfigs {
-			portConfigs[item.Label] = item.Port
+		var k8sUsedCpu, k8sUsedMemory float32
+		if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server &&
+			workspaceInfo.ServerWorkSpace != nil {
+			if workspaceInfo.ServerWorkSpace.PortConfigs != nil {
+				for _, item := range workspaceInfo.ServerWorkSpace.PortConfigs {
+					portConfigs[item.Label] = item.Port
+				}
+			}
+
+			k8sUsedCpu, k8sUsedMemory = workspaceInfo.ServerWorkSpace.K8sUsedCpu, workspaceInfo.ServerWorkSpace.K8sUsedMemory
 		}
 		tempK8sConfig, err = originK8sConfig.ConvertToTempK8SYaml(workspaceName, workspaceInfo.K8sInfo.Namespace, originK8sConfig.GetSystemUserName(),
 			labels,
-			portConfigs, workspaceInfo.ServerWorkSpace.K8sUsedCpu, workspaceInfo.ServerWorkSpace.K8sUsedMemory)
+			portConfigs, k8sUsedCpu, k8sUsedMemory)
 		if err != nil {
 			return nil, err
 		}

@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-30 23:10:52
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-09 11:33:17
+ * @LastEditTime: 2022-11-11 16:08:20
  * @FilePath: /cli/internal/biz/config/config_convert.go
  */
 
@@ -178,8 +178,9 @@ func (originK8sConfig SmartIdeK8SConfig) ConvertToTempK8SYaml(workspaceName stri
 			tmp := reflect.New(re.Type()).Elem()
 			tmp.FieldByName("ObjectMeta").FieldByName("Namespace").SetString(namespace)
 			k8sConfig.Workspace.Others[i] = tmp.Interface()
-		} else if kindName == "Pod" { // pod 也需要加上端口映射 和 配额
-			pod := other.(coreV1.Pod)
+		}
+		if kindName == "Pod" { // pod 也需要加上端口映射 和 配额
+			pod := other.(*coreV1.Pod)
 
 			for index, container := range pod.Spec.Containers {
 				if container.Name == originK8sConfig.Workspace.DevContainer.ServiceName {
