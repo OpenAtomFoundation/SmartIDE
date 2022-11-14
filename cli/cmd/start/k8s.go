@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-14 14:11:35
+ * @LastEditTime: 2022-11-14 14:45:12
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -478,7 +478,7 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 		*/
 
 		common.SmartIDELog.Info("git clone to the template folder")
-		kubernetes.CopyToPod(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName,
+		err = kubernetes.CopyToPod(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName,
 			workspaceInfo.SelectedTemplate.GetTemplateLocalDirAbsolutePath(), containerGitCloneDir, runAsUserName)
 	}
 	if err != nil {
