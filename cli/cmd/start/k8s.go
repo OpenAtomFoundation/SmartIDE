@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-14 17:33:45
+ * @LastEditTime: 2022-11-14 23:14:06
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -440,7 +440,7 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 	if workspaceInfo.GitCloneRepoUrl != "" { //5.4.2.
 		common.SmartIDELog.Info("git clone to the project folder")
 		actualGitRepoUrl := workspaceInfo.GitCloneRepoUrl
-		/* if workspaceInfo.GitRepoAuthType == workspace.GitRepoAuthType_Basic {
+		if workspaceInfo.GitRepoAuthType == workspace.GitRepoAuthType_Basic {
 			actualGitRepoUrl, err =
 				common.AddUsernamePassword4ActualGitRpoUrl(actualGitRepoUrl, workspaceInfo.GitUserName, workspaceInfo.GitPassword)
 			if err != nil {
@@ -449,7 +449,7 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 		}
 		if err != nil {
 			return err
-		} */
+		}
 		err = kubernetes.GitClone(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName, actualGitRepoUrl, containerGitCloneDir, workspaceInfo.GitBranch)
 
 	}
