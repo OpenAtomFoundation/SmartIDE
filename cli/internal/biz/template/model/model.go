@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-10-27 10:43:57
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-03 14:44:38
+ * @LastEditTime: 2022-11-14 14:10:00
  * @FilePath: /cli/internal/biz/template/model/model.go
  */
 
@@ -44,8 +44,13 @@ type SelectedTemplateTypeBo struct {
 }
 
 // 获取模板库本地根目录
-func (target SelectedTemplateTypeBo) GetTemplateRootDirAbsolutePath() string {
+func (target SelectedTemplateTypeBo) GetTemplateLocalRootDirAbsolutePath() string {
 	return filepath.Join(config.SmartIdeHome, golbalModel.TMEPLATE_DIR_NAME)
+}
+
+// 获取模板库本地绝对目录
+func (target SelectedTemplateTypeBo) GetTemplateLocalDirAbsolutePath() string {
+	return filepath.Join(target.GetTemplateLocalRootDirAbsolutePath(), target.GetTemplateDirRelativePath())
 }
 
 // 获取模板文件所在相对目录
