@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-11 16:30:35
+ * @LastEditTime: 2022-11-14 14:11:35
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -85,7 +85,7 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 
 	//1.1.2. 模板形式，从现有文件夹中加载和解析配置文件
 	if workspaceInfo.SelectedTemplate != nil {
-		applicationRootDirPath = filepath.Join(workspaceInfo.SelectedTemplate.GetTemplateRootDirAbsolutePath(),
+		applicationRootDirPath = filepath.Join(workspaceInfo.SelectedTemplate.GetTemplateLocalRootDirAbsolutePath(),
 			workspaceInfo.SelectedTemplate.GetTemplateDirRelativePath())
 		configFileRelativePath = globalModel.CONST_Default_ConfigRelativeFilePath //TODO 配置文件名是否有可能会变
 	}
@@ -459,7 +459,7 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 
 	//5.4.2. 模板文件拷贝
 	if workspaceInfo.SelectedTemplate != nil {
-		//5.4.2.1. clone 模板文件
+		/* //5.4.2.1. clone 模板文件
 		common.SmartIDELog.Info("git clone to the template folder")
 		err = kubernetes.GitClone(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName,
 			workspaceInfo.SelectedTemplate.TemplateActualRepoUrl, globalModel.TMEPLATE_DIR_NAME, "")
@@ -475,6 +475,11 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 			containerGitCloneDir,
 			originDirPath+string(filepath.Separator)+".", containerGitCloneDir)
 		err = kubernetes.ExecuteCommandInPod(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, command, runAsUserName)
+		*/
+
+		common.SmartIDELog.Info("git clone to the template folder")
+		kubernetes.CopyToPod(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName,
+			workspaceInfo.SelectedTemplate.GetTemplateLocalDirAbsolutePath(), containerGitCloneDir, runAsUserName)
 	}
 	if err != nil {
 		return err
