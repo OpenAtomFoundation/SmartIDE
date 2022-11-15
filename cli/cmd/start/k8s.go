@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-14 23:33:30
+ * @LastEditTime: 2022-11-15 10:47:58
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -365,27 +365,27 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 	}
 
 	//5.5. agent
-	common.SmartIDELog.Info("install agent")
-	if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server { // 只有是server的模式下才会去安装 agent， 因为镜像中会有
-		err := kubernetes.CopyToPod(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, common.PathJoin("/usr/local/bin", "smartide-agent"), common.PathJoin("/", "smartide-agent"), runAsUserName)
-		if err != nil {
-			return err
-		}
-		// 通过对 actual repo url的判断，如果不上http打头，都是ssh模式clone
-		if workspaceInfo.GitCloneRepoUrl != "" &&
-			strings.Index(workspaceInfo.GitCloneRepoUrl, "http") != 0 {
-			err = kubernetes.CopyLocalSSHConfigToPod(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName)
-		}
-		if err != nil {
-			return err
-		}
-		err = FeeadbackContainerId(cmd, workspaceInfo, devContainerPod.Name)
-		if err != nil {
-			return err
-		}
-		kubernetes.StartAgent(cmd, *devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName, workspaceInfo.ServerWorkSpace.ID)
+	/* 	common.SmartIDELog.Info("install agent")
+	   	if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server { // 只有是server的模式下才会去安装 agent， 因为镜像中会有
+	   		err := kubernetes.CopyToPod(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, common.PathJoin("/usr/local/bin", "smartide-agent"), common.PathJoin("/", "smartide-agent"), runAsUserName)
+	   		if err != nil {
+	   			return err
+	   		}
+	   		// 通过对 actual repo url的判断，如果不上http打头，都是ssh模式clone
+	   		if workspaceInfo.GitCloneRepoUrl != "" &&
+	   			strings.Index(workspaceInfo.GitCloneRepoUrl, "http") != 0 {
+	   			err = kubernetes.CopyLocalSSHConfigToPod(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName)
+	   		}
+	   		if err != nil {
+	   			return err
+	   		}
+	   		err = FeeadbackContainerId(cmd, workspaceInfo, devContainerPod.Name)
+	   		if err != nil {
+	   			return err
+	   		}
+	   		kubernetes.StartAgent(cmd, *devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName, workspaceInfo.ServerWorkSpace.ID)
 
-	}
+	   	} */
 
 	time.Sleep(time.Second * 10)
 	//5.1. git config
@@ -491,10 +491,44 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 		return err
 	}
 
-	//5.5. 复制config文件
+	//5.5. 配置持久化
+	configFileLocalAbsolutePath := common.FilePahtJoin4Linux(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath)
+	if workspaceInfo.SelectedTemplate != nil &&
+		workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server &&
+		len(workspaceInfo.ServerWorkSpace.PortConfigs) > 0 {
+		// 原始配置文件注入端口
+		originYaml := workspaceInfo.K8sInfo.OriginK8sYaml
+		if originYaml.Workspace.DevContainer.Ports == nil {
+			originYaml.Workspace.DevContainer.Ports = map[string]int{}
+		}
+		for _, portConfig := range workspaceInfo.ServerWorkSpace.PortConfigs {
+			originYaml.Workspace.DevContainer.Ports[portConfig.Label] = int(portConfig.Port)
+		}
+
+		// 覆盖配置文件
+		configYamlContent, err := originYaml.ConvertToConfigYaml() // 原始配置转换为字符串
+		if err != nil {
+			return err
+		}
+		originNewYamlFilePath := configFileLocalAbsolutePath + ".temp"
+		err = common.FS.CreateOrOverWrite(originNewYamlFilePath, configYamlContent) // 创建临时文件
+		if err != nil {
+			return err
+		}
+		configFileAbsolutePathInPod := common.FilePahtJoin4Linux(containerGitCloneDir, workspaceInfo.ConfigFileRelativePath)
+		err = kubernetes.CopyToPod(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName,
+			originNewYamlFilePath, configFileAbsolutePathInPod, runAsUserName) // copy file to pod
+		os.Remove(originNewYamlFilePath) // 删除临时文件
+		if err != nil {
+			return err
+		}
+	}
+
+	//5.6. 复制config文件
 	common.SmartIDELog.Info("copy config file")
-	configFileAbsolutePath := common.PathJoin(workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigFileRelativePath)
-	err = copyConfigToPod(*kubernetes, *devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, containerGitCloneDir, configFileAbsolutePath, runAsUserName)
+	err = copyConfigToPod(*kubernetes, *devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName,
+		containerGitCloneDir, configFileLocalAbsolutePath,
+		runAsUserName)
 	if err != nil {
 		return err
 	}
@@ -528,9 +562,9 @@ func hasChanged(workspaceInfo workspace.WorkspaceInfo, originK8sConfig config.Sm
 }
 
 // 复制config文件到pod
-func copyConfigToPod(k k8s.KubernetesUtil, pod coreV1.Pod, containerName string, podDestGitRepoPath string, configFilePath string, runAsUserName string) error {
+func copyConfigToPod(k k8s.KubernetesUtil, pod coreV1.Pod, containerName string, podDestGitRepoPath string, configFileLocalPath string, runAsUserName string) error {
 	// 目录
-	configFileDir := path.Dir(configFilePath)
+	configFileDir := path.Dir(configFileLocalPath)
 	tempDirPath := common.PathJoin(configFileDir, ".temp")
 	if !common.IsExist(tempDirPath) {
 		err := os.MkdirAll(tempDirPath, os.ModePerm)
@@ -540,7 +574,7 @@ func copyConfigToPod(k k8s.KubernetesUtil, pod coreV1.Pod, containerName string,
 	}
 
 	// 把文件写入到临时文件中
-	input, err := os.ReadFile(configFilePath)
+	input, err := os.ReadFile(configFileLocalPath)
 	if err != nil {
 		return err
 	}
