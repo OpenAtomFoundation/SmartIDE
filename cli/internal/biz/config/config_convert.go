@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-30 23:10:52
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-11 16:08:20
+ * @LastEditTime: 2022-11-15 15:11:44
  * @FilePath: /cli/internal/biz/config/config_convert.go
  */
 
@@ -17,6 +17,7 @@ import (
 	"strings"
 
 	"github.com/jinzhu/copier"
+	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/k8s"
 	"gopkg.in/yaml.v2"
@@ -371,7 +372,9 @@ func (k8sConfig *SmartIdeK8SConfig) SaveK8STempYaml(gitRepoRootDirPath string) (
 		return "", err
 	}
 
-	tempConfigFileRelativePath := common.PathJoin(gitRepoRootDirPath, fmt.Sprintf("k8s_deployment_%v_temp.yaml", filepath.Base(gitRepoRootDirPath)))
+	tempFileName := fmt.Sprintf("k8s_deployment_%v_apply_tmp.yaml", filepath.Base(gitRepoRootDirPath))
+	tempConfigFileRelativePath := common.PathJoin(gitRepoRootDirPath, model.CONST_GlobalTempDirPath, tempFileName)
+	common.FS.CreateOrOverWrite(tempConfigFileRelativePath, k8sYamlContent)
 	err = os.WriteFile(tempConfigFileRelativePath, []byte(k8sYamlContent), 0777)
 	if err != nil {
 		return "", err

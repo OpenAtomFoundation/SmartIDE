@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-15 10:47:58
+ * @LastEditTime: 2022-11-15 15:22:25
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io/fs"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -126,7 +127,7 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 		if workspaceInfo.ServerWorkSpace != nil { // 尝试先删除deployment、service、pod，防止无法update的情况
 			common.SmartIDELog.Info("删除 service && deployment && pod ")
 
-			command := "delete pods,deployments,services --all"
+			command := "delete deployments,services,pods --all"
 			err = k8sUtil.ExecKubectlCommandRealtime(command, "", false)
 			if err != nil {
 				return nil, err
@@ -365,27 +366,27 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 	}
 
 	//5.5. agent
-	/* 	common.SmartIDELog.Info("install agent")
-	   	if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server { // 只有是server的模式下才会去安装 agent， 因为镜像中会有
-	   		err := kubernetes.CopyToPod(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, common.PathJoin("/usr/local/bin", "smartide-agent"), common.PathJoin("/", "smartide-agent"), runAsUserName)
-	   		if err != nil {
-	   			return err
-	   		}
-	   		// 通过对 actual repo url的判断，如果不上http打头，都是ssh模式clone
-	   		if workspaceInfo.GitCloneRepoUrl != "" &&
-	   			strings.Index(workspaceInfo.GitCloneRepoUrl, "http") != 0 {
-	   			err = kubernetes.CopyLocalSSHConfigToPod(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName)
-	   		}
-	   		if err != nil {
-	   			return err
-	   		}
-	   		err = FeeadbackContainerId(cmd, workspaceInfo, devContainerPod.Name)
-	   		if err != nil {
-	   			return err
-	   		}
-	   		kubernetes.StartAgent(cmd, *devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName, workspaceInfo.ServerWorkSpace.ID)
+	common.SmartIDELog.Info("install agent")
+	if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server { // 只有是server的模式下才会去安装 agent， 因为镜像中会有
+		err := kubernetes.CopyToPod(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, common.PathJoin("/usr/local/bin", "smartide-agent"), common.PathJoin("/", "smartide-agent"), runAsUserName)
+		if err != nil {
+			return err
+		}
+		// 通过对 actual repo url的判断，如果不上http打头，都是ssh模式clone
+		if workspaceInfo.GitCloneRepoUrl != "" &&
+			strings.Index(workspaceInfo.GitCloneRepoUrl, "http") != 0 {
+			err = kubernetes.CopyLocalSSHConfigToPod(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName)
+		}
+		if err != nil {
+			return err
+		}
+		err = FeeadbackContainerId(cmd, workspaceInfo, devContainerPod.Name)
+		if err != nil {
+			return err
+		}
+		kubernetes.StartAgent(cmd, *devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName, workspaceInfo.ServerWorkSpace.ID)
 
-	   	} */
+	}
 
 	time.Sleep(time.Second * 10)
 	//5.1. git config
@@ -428,8 +429,9 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 	//5.3. 缓存git 用户名、密码
 	if workspaceInfo.GitRepoAuthType == workspace.GitRepoAuthType_Basic {
 		common.SmartIDELog.Info("container cache git username and password...")
-		command := fmt.Sprintf(` git config --global user.name '%v' && git config --global user.password '%v' && git config --global credential.helper store`,
-			workspaceInfo.GitUserName, workspaceInfo.GitPassword)
+		uri, _ := url.Parse(workspaceInfo.GitCloneRepoUrl)
+		command := fmt.Sprintf(`git config --global credential.helper store && echo "https://%v:%v@%v" >> ~/.git-credentials `,
+			workspaceInfo.GitUserName, workspaceInfo.GitPassword, uri.Host)
 		err = kubernetes.ExecuteCommandRealtimeInPod(*devContainerPod,
 			tempK8sConfig.Workspace.DevContainer.ServiceName, command, "")
 	}
@@ -444,16 +446,6 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 	if workspaceInfo.GitCloneRepoUrl != "" { //5.4.2.
 		common.SmartIDELog.Info("git clone to the project folder")
 		actualGitRepoUrl := workspaceInfo.GitCloneRepoUrl
-		if workspaceInfo.GitRepoAuthType == workspace.GitRepoAuthType_Basic {
-			actualGitRepoUrl, err =
-				common.AddUsernamePassword4ActualGitRpoUrl(actualGitRepoUrl, workspaceInfo.GitUserName, workspaceInfo.GitPassword)
-			if err != nil {
-				common.SmartIDELog.Warning(err.Error())
-			}
-		}
-		if err != nil {
-			return err
-		}
 		err = kubernetes.GitClone(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName, actualGitRepoUrl, containerGitCloneDir, workspaceInfo.GitBranch)
 
 	}
