@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-15 15:22:25
+ * @LastEditTime: 2022-11-16 22:30:00
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -44,7 +44,7 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 	if workspaceInfo.K8sInfo.Namespace == "" {
 		workspaceInfo.K8sInfo.Namespace = k8sUtil.Namespace
 	}
-	runAsUserName := "smartide"
+	runAsUserName := "smartide" //TODO: 可能是自定义的
 
 	if common.SmartIDELog.Ws_id != "" {
 		execSSHPolicy(workspaceInfo, common.ServerHost, common.ServerToken, common.ServerUserGuid)
@@ -387,8 +387,8 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 		kubernetes.StartAgent(cmd, *devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName, workspaceInfo.ServerWorkSpace.ID)
 
 	}
+	time.Sleep(time.Second * 10) // ？
 
-	time.Sleep(time.Second * 10)
 	//5.1. git config
 	// 会通过agent生成
 	if workspaceInfo.CliRunningEnv == workspace.CliRunningEnvEnum_Client {
