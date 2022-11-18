@@ -9,7 +9,6 @@ package appinsight
 import (
 	_ "embed"
 	"flag"
-	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -121,8 +120,7 @@ func init() {
 	telemetryClient = appinsights.NewTelemetryClientFromConfig(telemetryConfig)
 
 	appinsights.NewDiagnosticsMessageListener(func(msg string) error {
-		fmt.Printf("[%s] %s\n", time.Now().Format("2006-01-02 15:04:05.000"), msg)
-
+		//common.SmartIDELog.DebugF("[%s] %s\n", time.Now().Format("2006-01-02 15:04:05.000"), msg)
 		if strings.Contains(strings.ToLower(msg), "response: 200") {
 			common.SmartIDELog.Debug("application insight success!")
 		}
