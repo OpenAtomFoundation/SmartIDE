@@ -77,7 +77,6 @@ var rootCmd = &cobra.Command{
 			if server_isInsightEnabled != "" && cmd.Flags().Changed("isInsightEnabled") {
 				common.SmartIDELog.Importance("isInsightEnabled 参数仅在 mode = server|pipeline 下生效")
 			}
-
 			if config.GlobalSmartIdeConfig.IsInsightEnabled == config.IsInsightEnabledEnum_None {
 				var isInsightEnabled string
 				fmt.Print("SmartIDE会收集部分运行信息用于改进产品，您可以通过 https://smartide.cn/zh/docs/eula 了解我们的信息收集策略或者直接通过开源的源码查看更多细节。请确认是否允许发送（y/n）？")
