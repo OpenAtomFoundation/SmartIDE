@@ -27,7 +27,7 @@ import (
 // 在服务器上运行 k8s start
 func ExecuteK8s_ServerWS_ServerEnv(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 	workspaceInfo workspace.WorkspaceInfo,
-	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) (workspace.WorkspaceInfo, error) {
+	yamlExecuteFun func(yamlConfig config.SmartIdeK8SConfig,  workspaceInfo workspace.WorkspaceInfo, cmdtype, userguid, workspaceid string)) (workspace.WorkspaceInfo, error) {
 	// 错误反馈
 	serverFeedback := func(err error) {
 		if workspaceInfo.CliRunningEnv != workspace.CliRunningEvnEnum_Server {

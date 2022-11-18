@@ -27,7 +27,7 @@ import (
 )
 
 func LocalNew(cmd *cobra.Command, args []string, workspaceInfo workspace.WorkspaceInfo,
-	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) {
+	yamlExecuteFun func(yamlConfig config.SmartIdeConfig, workspaceInfo workspace.WorkspaceInfo, cmdtype, userguid, workspaceid string)) {
 
 	// 环境监测
 	err := common.CheckLocalGitEnv() //检测git环境

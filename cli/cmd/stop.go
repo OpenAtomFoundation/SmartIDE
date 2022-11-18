@@ -18,6 +18,7 @@ import (
 	cmdCommon "github.com/leansoftX/smartide-cli/cmd/common"
 
 	"github.com/leansoftX/smartide-cli/cmd/server"
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/model/response"
 	"github.com/leansoftX/smartide-cli/pkg/common"
@@ -64,6 +65,7 @@ var stopCmd = &cobra.Command{
 
 		if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server { // cli 在服务器上运行
 			// 远程主机上停止
+			appinsight.SetCliLocalTrack(appinsight.Cli_Host_Stop, args, workspaceInfo.ID, "")
 			err := stopRemote(workspaceInfo)
 			checkErrorFeedback(err, workspaceInfo)
 
@@ -110,9 +112,11 @@ var stopCmd = &cobra.Command{
 
 			// 执行对应的stop
 			if workspaceInfo.Mode == workspace.WorkingMode_Local {
+				appinsight.SetCliLocalTrack(appinsight.Cli_Local_Stop, args, workspaceInfo.ID, "")
 				stopLocal(workspaceInfo)
 
 			} else {
+				appinsight.SetCliLocalTrack(appinsight.Cli_Host_Stop, args, workspaceInfo.ID, "")
 				err := stopRemote(workspaceInfo)
 				common.CheckError(err)
 

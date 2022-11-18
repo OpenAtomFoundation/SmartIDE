@@ -41,7 +41,7 @@ var connectCmd = &cobra.Command{
 			return
 		}
 		common.SmartIDELog.Info("login for: " + currentAuth.LoginUrl)
-
+		//appinsight.SetCliLoginTrack(appinsight.Cli_Server_Connect,currentAuth.LoginUrl,currentAuth.UserName,args)
 		// cli 运行环境
 		cliRunningEnv := workspace.CliRunningEnvEnum_Client
 		if value, _ := cmd.Flags().GetString("mode"); strings.ToLower(value) == "server" {
@@ -63,7 +63,7 @@ var connectCmd = &cobra.Command{
 				common.SmartIDELog.Importance("getServerWorkspaces EOF")
 			} else {
 				common.SmartIDELog.ImportanceWithError(err)
-				connect(startedServerWorkspaces, cmd, args)
+				connect(startedServerWorkspaces, cmd, args, currentAuth.LoginUrl)
 
 				if isUnforward {
 					return
@@ -189,25 +189,18 @@ func getServerWorkspaces(currentAuth model.Auth,
 }
 
 // go routine 启动所有工作区
-func connect(startedServerWorkspaces []workspace.WorkspaceInfo, cmd *cobra.Command, args []string) {
-
-	//ai记录
-	var trackEvent string
-	for _, val := range args {
-		trackEvent = trackEvent + " " + val
-	}
-
+func connect(startedServerWorkspaces []workspace.WorkspaceInfo, cmd *cobra.Command, args []string, LoginUrl string) {
 	// appinsight
-	executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
-		if config.GlobalSmartIdeConfig.IsInsightEnabled != config.IsInsightEnabledEnum_Enabled {
-			common.SmartIDELog.Debug("Application Insights disabled")
-			return
-		}
-		var imageNames []string
-		for _, service := range yamlConfig.Workspace.Servcies {
-			imageNames = append(imageNames, service.Image)
-		}
-		appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(workspace.WorkingMode_Remote), strings.Join(imageNames, ","))
+	executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig, workspaceInfo workspace.WorkspaceInfo, cmdtype, userguid, workspaceid string) {
+		// if config.GlobalSmartIdeConfig.IsInsightEnabled != config.IsInsightEnabledEnum_Enabled {
+		// 	common.SmartIDELog.Debug("Application Insights disabled")
+		// 	return
+		// }
+		// var imageNames []string
+		// for _, service := range yamlConfig.Workspace.Servcies {
+		// 	imageNames = append(imageNames, service.Image)
+		// }
+		// appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(workspace.WorkingMode_Remote), strings.Join(imageNames, ","))
 	}
 
 	var mutex sync.Mutex
@@ -217,6 +210,12 @@ func connect(startedServerWorkspaces []workspace.WorkspaceInfo, cmd *cobra.Comma
 		common.SmartIDELog.Info(fmt.Sprintf("-- workspace (%v) -------------------------------", fixWorkspaceInfo.ServerWorkSpace.NO))
 		var err error
 		if fixWorkspaceInfo.Mode == workspace.WorkingMode_Remote {
+
+			var imageNames []string
+			for _, service := range fixWorkspaceInfo.ConfigYaml.Workspace.LinkCompose.Services {
+				imageNames = append(imageNames, service.Image)
+			}
+			appinsight.SetAllTrack(appinsight.Cli_Server_Connect, args, LoginUrl, fixWorkspaceInfo.ServerWorkSpace.OwnerGUID, fixWorkspaceInfo.ID, "", "", strings.Join(imageNames, ","))
 			_, err = start.ExecuteServerVmStartByClientEnvCmd(fixWorkspaceInfo, executeStartCmdFunc)
 		} /* else if fixWorkspaceInfo.Mode == workspace.WorkingMode_K8s {
 			err = start.ExecuteServerK8sStartByClientEnvCmd(fixWorkspaceInfo, executeStartCmdFunc)

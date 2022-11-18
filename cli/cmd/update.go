@@ -19,6 +19,7 @@ import (
 
 	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
 	"github.com/leansoftX/smartide-cli/pkg/common"
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/spf13/cobra"
 )
 
@@ -31,7 +32,7 @@ var udpateCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		common.SmartIDELog.Info("update ...")
-
+		appinsight.SetCliTrack(appinsight.Cli_Update,args)
 		var command string = ""
 		var execCommand *exec.Cmd
 

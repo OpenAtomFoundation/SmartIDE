@@ -60,22 +60,22 @@ var rootCmd = &cobra.Command{
 		// appInsight 是否开启收集smartide
 		mode, _ := cmd.Flags().GetString("mode")
 		if common.Contains([]string{"pipeline", "server"}, strings.ToLower(mode)) {
-			isInsightDisabled, _ := cmd.Flags().GetString("isInsightDisabled")
-			if isInsightDisabled == "" {
-				common.SmartIDELog.Error("--isInsightDisabled [true|false] 在 --mode server|pipeline 时必须设置")
+			server_isInsightEnabled, _ := cmd.Flags().GetString("isInsightEnabled")
+			if server_isInsightEnabled == "" {
+				common.SmartIDELog.Error("--isInsightEnabled [true|false] 在 --mode server|pipeline 时必须设置")
 			} else {
-				isInsightDisabled = strings.ToLower(isInsightDisabled)
-				if isInsightDisabled == "false" || isInsightDisabled == "no" || isInsightDisabled == "n" || isInsightDisabled == "0" {
-					config.GlobalSmartIdeConfig.IsInsightEnabled = config.IsInsightEnabledEnum_Enabled
-				} else {
+				server_isInsightEnabled = strings.ToLower(server_isInsightEnabled)
+				if server_isInsightEnabled == "false" || server_isInsightEnabled == "no" || server_isInsightEnabled == "n" || server_isInsightEnabled == "0" {
 					config.GlobalSmartIdeConfig.IsInsightEnabled = config.IsInsightEnabledEnum_Disabled
+				} else {
+					config.GlobalSmartIdeConfig.IsInsightEnabled = config.IsInsightEnabledEnum_Enabled
 				}
 				config.GlobalSmartIdeConfig.SaveConfigYaml()
 			}
 		} else {
-			isInsightDisabled, _ := cmd.Flags().GetString("isInsightDisabled")
-			if isInsightDisabled != "" && cmd.Flags().Changed("isInsightDisabled") {
-				common.SmartIDELog.Importance("isInsightDisabled 参数仅在 mode = server|pipeline 下生效")
+			server_isInsightEnabled, _ := cmd.Flags().GetString("isInsightEnabled")
+			if server_isInsightEnabled != "" && cmd.Flags().Changed("isInsightEnabled") {
+				common.SmartIDELog.Importance("isInsightEnabled 参数仅在 mode = server|pipeline 下生效")
 			}
 
 			if config.GlobalSmartIdeConfig.IsInsightEnabled == config.IsInsightEnabledEnum_None {
@@ -93,21 +93,26 @@ var rootCmd = &cobra.Command{
 		}
 
 		// appInsight
-		if cmd.Use == "start" || cmd.Use == "new" {
-		} else {
-			if config.GlobalSmartIdeConfig.IsInsightEnabled == config.IsInsightEnabledEnum_Enabled {
-				//ai记录
-				var trackEvent string
-				for _, val := range args {
-					trackEvent = trackEvent + " " + val
-				}
-				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, "no", "no")
-			} else {
-				common.SmartIDELog.Debug("Application Insights disabled")
-			}
-
-		}
-
+		// if cmd.Use == "start" || cmd.Use == "new" {
+		// } else {
+		// 	if config.GlobalSmartIdeConfig.IsInsightEnabled == config.IsInsightEnabledEnum_Enabled {
+		// 		//ai记录
+		// 		var trackEvent string
+		// 		for _, val := range args {
+		// 			trackEvent = trackEvent + " " + val
+		// 		}
+		// 		appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, "no", "no")
+		// 	} else {
+		// 		common.SmartIDELog.Debug("Application Insights disabled")
+		// 	}
+		// }
+		appinsight.Global.Mode, _ = fflags.GetString(serverMode)
+		appinsight.Global.Version = Version.TagName
+		appinsight.Global.Serverhost, _ = fflags.GetString(serverHost)
+		appinsight.Global.Cloud_RoleName = "cli-" + appinsight.Global.Mode
+		appinsight.Global.ServerUserName, _ = fflags.GetString(serverUserName)
+		appinsight.Global.ServerUserGuid, _ = fflags.GetString(serverUserGuid)
+		appinsight.Global.ServerWorkSpaceId, _ = fflags.GetString("serverworkspaceid")
 		// 初始化 log
 		logLevel := ""
 		if isDebug {
@@ -157,7 +162,7 @@ func init() {
 	rootCmd.Flags().BoolP("help", "h", false, i18n.GetInstance().Help.Info_help_short)
 	rootCmd.PersistentFlags().BoolVarP(&isDebug, "debug", "d", false, i18n.GetInstance().Main.Info_help_flag_debug)
 	rootCmd.PersistentFlags().StringP("mode", "m", string(model.RuntimeModeEnum_Client), i18n.GetInstance().Main.Info_help_flag_mode)
-	rootCmd.PersistentFlags().StringP("isInsightDisabled", "", "true", "在mode = server|pipeline 模式下是否禁用“收集部分运行信息用于改进产品”")
+	rootCmd.PersistentFlags().StringP("isInsightEnabled", "", "true", "在mode = server|pipeline 模式下是否启用“收集部分运行信息用于改进产品”")
 
 	rootCmd.PersistentFlags().StringP("serverworkspaceid", "", "", i18n.GetInstance().Main.Info_help_flag_server_workspace_id)
 	rootCmd.PersistentFlags().StringP("servertoken", "", "", i18n.GetInstance().Main.Info_help_flag_server_token)

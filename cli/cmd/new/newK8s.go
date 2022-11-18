@@ -28,7 +28,7 @@ func K8sNew_Local(cmd *cobra.Command, args []string,
 	k8sUtil *k8s.KubernetesUtil,
 	workspaceInfo workspace.WorkspaceInfo,
 	//selectedTemplate templateModel.SelectedTemplateTypeBo,
-	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) {
+	yamlExecuteFun func(yamlConfig config.SmartIdeK8SConfig, workspaceInfo workspace.WorkspaceInfo, cmdtype, userguid, workspaceid string)) {
 
 	_, err := start.ExecuteK8s_LocalWS_LocalEnv(cmd, *k8sUtil, workspaceInfo, yamlExecuteFun)
 	common.CheckError(err)

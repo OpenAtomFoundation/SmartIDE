@@ -33,7 +33,7 @@ func K8sNew_Server(cmd *cobra.Command, args []string,
 	k8sUtil *k8s.KubernetesUtil,
 	workspaceInfo workspace.WorkspaceInfo,
 	//selectedTemplate templateModel.SelectedTemplateTypeBo,
-	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) {
+	yamlExecuteFun func(yamlConfig config.SmartIdeK8SConfig,workspaceInfo workspace.WorkspaceInfo, cmdtype, userguid, workspaceid string)) {
 
 	//0. 错误反馈
 	serverFeedback := preRun(cmd, workspaceInfo, workspace.ActionEnum_Workspace_Start, k8sUtil)

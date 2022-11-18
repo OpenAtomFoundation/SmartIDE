@@ -11,7 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
@@ -22,7 +22,7 @@ import (
 
 // 在本地start 远程服务器上的k8s工作区
 func ExecuteK8s_ServerWS_LocalEnv(workspaceInfo workspace.WorkspaceInfo,
-	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) (workspace.WorkspaceInfo, error) {
+	yamlExecuteFun func(yamlConfig config.SmartIdeK8SConfig,  workspaceInfo workspace.WorkspaceInfo, cmdtype, userguid, workspaceid string)) (workspace.WorkspaceInfo, error) {
 
 	//0. 验证
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_starting)
@@ -39,7 +39,7 @@ func ExecuteK8s_ServerWS_LocalEnv(workspaceInfo workspace.WorkspaceInfo,
 
 		}
 	}
-
+	yamlExecuteFun(workspaceInfo.K8sInfo.OriginK8sYaml, workspaceInfo, appinsight.Cli_K8s_Start, "", workspaceInfo.ID)
 	//1. 创建k8sUtil 对象
 	k8sUtil, err := k8s.NewK8sUtil(workspaceInfo.K8sInfo.KubeConfigFilePath,
 		workspaceInfo.K8sInfo.Context,

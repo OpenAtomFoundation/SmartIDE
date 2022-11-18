@@ -5,7 +5,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
-
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/cmd/server"
 	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
@@ -135,6 +135,11 @@ var ApplySSHCmd = &cobra.Command{
 			}
 
 		}
+		var workID []string
+		for _, service := range applySshArray {
+			workID = append(workID, service.WorkspaceNo)
+		}
+		appinsight.SetAllTrack(appinsight.Cli_K8s_Ssh_Apply, args, "", "", strings.Join(workID, ","), "", "", "")
 
 		//1. Get K8s Resource
 		auth := model.Auth{}

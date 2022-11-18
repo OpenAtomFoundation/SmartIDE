@@ -19,14 +19,14 @@ import (
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/spf13/cobra"
 
+	initExtended "github.com/leansoftX/smartide-cli/cmd/init"
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/docker/compose"
 	"github.com/leansoftX/smartide-cli/pkg/k8s"
 	"github.com/leansoftX/smartide-cli/pkg/tunnel"
-
-	initExtended "github.com/leansoftX/smartide-cli/cmd/init"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -41,7 +41,7 @@ func saveDataAndReloadWorkSpaceId(workspace *workspace.WorkspaceInfo) {
 // 本地执行 start
 func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	endPostExecuteFun func(dockerContainerName string, docker common.Docker),
-	yamlExecuteFun func(yamlConfig config.SmartIdeConfig), args []string, cmd *cobra.Command) (
+	yamlExecuteFun func(yamlConfig config.SmartIdeConfig, workspaceInfo workspace.WorkspaceInfo, cmdtype, userguid, workspaceid string), args []string, cmd *cobra.Command) (
 	workspace.WorkspaceInfo, error) {
 
 	//0. 检查本地环境
@@ -170,6 +170,13 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	}
 	//5.2.
 	saveDataAndReloadWorkSpaceId(&workspaceInfo)
+
+	if appinsight.Global.CmdType == "new" {
+		yamlExecuteFun(*currentConfig, workspaceInfo, appinsight.Cli_Local_New, "", workspaceInfo.ID)
+	} else {
+		yamlExecuteFun(*currentConfig, workspaceInfo, appinsight.Cli_Local_Start, "", workspaceInfo.ID)
+	}
+
 	//5.3.
 	if hasChanged {
 		common.SmartIDELog.InfoF(i18nInstance.Start.Info_workspace_saved, workspaceInfo.ID)
@@ -187,7 +194,6 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	}
 
 	//6. 执行函数内容
-	yamlExecuteFun(*currentConfig)
 	endPostExecuteFun(dockerContainerName, docker)
 
 	//7. 使用浏览器打开web ide

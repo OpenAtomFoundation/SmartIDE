@@ -14,8 +14,10 @@ package cmd
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/howeyc/gopass"
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/model"
@@ -45,7 +47,6 @@ var loginCmd = &cobra.Command{
 			fmt.Scanln(&loginUrl)
 		} */
 		common.SmartIDELog.Info("login : " + loginUrl)
-
 		fflags := cmd.Flags()
 		userName, _ := fflags.GetString(flag_username)
 		for userName == "" {
@@ -67,6 +68,8 @@ var loginCmd = &cobra.Command{
 		}
 		//TODO: 如果密码错误，可以重新录入再试
 
+		appinsight.SetCliLoginTrack(appinsight.Cli_Server_Login, loginUrl, userName, args)
+		time.Sleep(time.Duration(1) * time.Second) //延迟1s确保发送成功
 		//2. 登录
 		common.SmartIDELog.AddEntryptionKey(userPassword) // 密码加密
 		cliRunningEnv := workspace.CliRunningEnvEnum_Client

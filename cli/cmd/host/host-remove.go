@@ -9,7 +9,9 @@ package host
 
 import (
 	"fmt"
+	"time"
 
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/dal"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
@@ -25,13 +27,14 @@ var HostRemoveCmd = &cobra.Command{
 	smartide host remove <hostid>`,
 	Run: func(cmd *cobra.Command, args []string) {
 		common.SmartIDELog.Info(i18nInstance.Host.Remove_start)
+		appinsight.SetCliTrack(appinsight.Cli_Remove_Host, args)
+		time.Sleep(time.Duration(1) * time.Second) //延迟1s确保发送成功
 		hostId := getHostIdFromFlagsAndArgs(cmd, args)
 		if hostId <= 0 {
 			common.SmartIDELog.WarningF(i18nInstance.Common.Warn_param_is_null, flag_hostid)
 			cmd.Help()
 			return
 		}
-
 		err := dal.RemoveRemote(hostId, "", "")
 		common.CheckError(err)
 

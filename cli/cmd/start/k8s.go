@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/model"
@@ -29,16 +30,15 @@ import (
 	"github.com/leansoftX/smartide-cli/pkg/k8s"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
-	k8sScheme "k8s.io/client-go/kubernetes/scheme"
-
 	appV1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
+	k8sScheme "k8s.io/client-go/kubernetes/scheme"
 )
 
 // 执行k8s start
 func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 	workspaceInfo workspace.WorkspaceInfo,
-	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) (*workspace.WorkspaceInfo, error) {
+	yamlExecuteFun func(yamlConfig config.SmartIdeK8SConfig, workspaceInfo workspace.WorkspaceInfo, cmdtype, userguid, workspaceid string)) (*workspace.WorkspaceInfo, error) {
 	common.SmartIDELog.Info(i18nInstance.Start.Info_k8s_init)
 
 	if workspaceInfo.K8sInfo.Namespace == "" {
@@ -112,6 +112,11 @@ func ExecuteK8sStartCmd(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 		if originK8sConfig == nil {
 			return nil, errors.New("配置文件解析失败！") // 解决下面的warning问题，没有实际作用
 		}
+	}
+	if appinsight.Global.CmdType == "new" {
+		yamlExecuteFun(*originK8sConfig, workspaceInfo, appinsight.Cli_K8s_New, "", workspaceInfo.ID)
+	} else {
+		yamlExecuteFun(*originK8sConfig, workspaceInfo, appinsight.Cli_K8s_Start, "", workspaceInfo.ID)
 	}
 
 	//2. 是否 配置文件 & k8s yaml 有改变

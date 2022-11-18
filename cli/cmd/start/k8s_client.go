@@ -26,7 +26,7 @@ import (
 // 在本地启动k8s工作区
 func ExecuteK8s_LocalWS_LocalEnv(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 	workspaceInfo workspace.WorkspaceInfo,
-	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) (workspace.WorkspaceInfo, error) {
+	yamlExecuteFun func(yamlConfig config.SmartIdeK8SConfig,  workspaceInfo workspace.WorkspaceInfo, cmdtype, userguid, workspaceid string)) (workspace.WorkspaceInfo, error) {
 
 	needStore := false
 	if workspaceInfo.ID == "" {

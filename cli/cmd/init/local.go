@@ -11,10 +11,14 @@ import (
 
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/pkg/common"
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/spf13/cobra"
 )
 
 func InitLocalConfig(cmd *cobra.Command, args []string) {
+
+	appinsight.SetCliTrack(appinsight.Cli_Local_Init,args)
+	
 	// 检测当前文件夹是否有.ide.yaml，有了返回
 	hasIdeConfigYaml := common.IsExist(".ide/.ide.yaml")
 	if hasIdeConfigYaml {

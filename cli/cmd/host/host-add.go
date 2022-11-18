@@ -15,6 +15,7 @@ import (
 	"github.com/leansoftX/smartide-cli/internal/dal"
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -27,6 +28,7 @@ var HostAddCmd = &cobra.Command{
 	Example: `  smartide host add <host> --username <username> --password <password> --port <port>`,
 	Run: func(cmd *cobra.Command, args []string) {
 		common.SmartIDELog.Info(i18nInstance.Host.Add_start)
+		appinsight.SetCliTrack(appinsight.Cli_Add_Host,args)
 		fflags := cmd.Flags()
 		remoteInfo := workspace.RemoteInfo{}
 		host := ""

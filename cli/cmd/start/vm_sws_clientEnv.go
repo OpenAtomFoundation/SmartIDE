@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/model"
@@ -28,7 +29,7 @@ import (
 
 // 远程服务器执行 start 命令
 func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo,
-	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) (
+	yamlExecuteFun func(yamlConfig config.SmartIdeConfig, workspaceInfo workspace.WorkspaceInfo, cmdtype, userguid, workspaceid string)) (
 	workspace.WorkspaceInfo, error) {
 	currentAuth, err := workspace.GetCurrentUser()
 	if err != nil {
@@ -43,7 +44,7 @@ func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo,
 			common.SmartIDELog.ParentId = pid
 		}
 	}
-
+	yamlExecuteFun(workspaceInfo.ConfigYaml, workspaceInfo, appinsight.Cli_Host_Start, "", workspaceInfo.ID)
 	//
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_starting)
 	// 检查工作区的状态
