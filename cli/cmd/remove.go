@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-28 17:15:08
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-11-28 17:55:44
  */
 package cmd
 
@@ -214,6 +214,7 @@ var removeCmd = &cobra.Command{
 
 		// log
 		common.SmartIDELog.Info(i18nInstance.Remove.Info_end)
+		common.WG.Wait()
 	},
 }
 

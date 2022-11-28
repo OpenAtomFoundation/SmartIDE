@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2022-02-25
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-03 14:50:25
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-11-28 17:54:33
  */
 package cmd
 
@@ -72,6 +72,7 @@ var connectCmd = &cobra.Command{
 
 			time.Sleep(time.Second * 10)
 		}
+
 	},
 }
 

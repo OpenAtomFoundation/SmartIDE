@@ -5,8 +5,9 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
+
 	"github.com/leansoftX/smartide-cli/cmd/server"
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
@@ -231,7 +232,7 @@ var ApplySSHCmd = &cobra.Command{
 
 			}
 		}
-
+		common.WG.Wait()
 	},
 }
 

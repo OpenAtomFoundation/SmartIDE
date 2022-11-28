@@ -11,13 +11,13 @@ import (
 	cmdCommon "github.com/leansoftX/smartide-cli/cmd/common"
 	"github.com/leansoftX/smartide-cli/cmd/k8s"
 	"github.com/leansoftX/smartide-cli/cmd/server"
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/internal/model/response"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	k8sLib "github.com/leansoftX/smartide-cli/pkg/k8s"
-	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v2"
@@ -574,6 +574,7 @@ var k8sCmd = &cobra.Command{
 		//9. feedback
 		err = server.Feedback_Finish(server.FeedbackCommandEnum_Ingress, cmd, true, nil, workspaceInfo, "", "")
 		common.CheckError(err)
+		common.WG.Wait()
 	},
 }
 
