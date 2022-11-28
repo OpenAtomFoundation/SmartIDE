@@ -144,6 +144,8 @@ var K8sInitCmd = &cobra.Command{
 		err = server.UpdateResourceByID(currentAuth, resourceInfo)
 		common.SmartIDELog.Info(i18nInstance.K8sInit.Info_log_feedback_success)
 		common.SmartIDELog.Info(i18nInstance.K8sInit.Info_log_init_success)
+		common.WG.Wait()
+
 	},
 }
 

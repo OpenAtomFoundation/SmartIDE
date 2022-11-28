@@ -25,7 +25,7 @@ const (
 	SVR_KEY_LOGIC    = "logic"    //逻辑服务
 )
 
-var ch = make(chan struct{}, 80)
+var ch = make(chan struct{}, 100)
 
 type conn struct {
 	c   *websocket.Conn

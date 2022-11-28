@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-03 14:39:05
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-11-28 17:56:25
  */
 package cmd
 
@@ -125,7 +125,7 @@ var stopCmd = &cobra.Command{
 		}
 
 		common.SmartIDELog.Info(i18nInstance.Stop.Info_end)
-
+		common.WG.Wait()
 	},
 }
 
