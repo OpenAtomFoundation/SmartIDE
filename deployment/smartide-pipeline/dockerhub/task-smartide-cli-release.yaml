@@ -11,19 +11,19 @@ spec:
     - name: COMMAND
       description: smartide command
       type: string
-      default: 
+      default:
     - name: ARGS
       description: command args
       type: string
-      default: 
+      default:
     - name: HOST
       description: SSH host
       type: string
-      default: 
+      default:
     - name: SSH_USER_NAME
       description: ssh login user name
       type: string
-      default: 
+      default:
     - name: SSH_USER_PASSWORD
       description: password
       type: string
@@ -31,35 +31,40 @@ spec:
     - name: GIT_CLONE_URL
       description: git clone url
       type: string
-      default: 
+      default:
 
     - name: SERVER_WORK_SPACE_ID
       description: 服务端工作区ID
       type: string
-      default:   
+      default:
     - name: SERVER_WORK_SPACE_NO
       description: 服务端工作区NO
       type: string
-      default:   
+      default:
     - name: SERVER_USER_NAME
       description: 服务端用户名
       type: string
-      default:   
+      default:
     - name: SERVER_USER_GUID
       description: 服务端用户GUID
       type: string
-      default:   
+      default:
     - name: SERVER_HOST
       description: server 登录地址
       type: string
-      default: 
+      default:
     - name: SERVER_TOKEN
       description: 服务端TOKEN
       type: string
-      default: 
+      default:
+    - name: CLI_VERSION
+      description: cli版本号
+      type: string
+      default:
 
   steps:
-      image: smartide/smartide-cli:7172
+    - name: smartide-cli
+      image: smartide/smartide-cli:$(params.CLI_VERSION)
       script: |
         #!/bin/bash
 
