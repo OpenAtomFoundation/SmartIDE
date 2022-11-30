@@ -4,30 +4,32 @@ metadata:
   name: pipeline-binding-smartide-cli
 spec:
   params:
-  - name: contenttype
-    value: $(header.Content-Type)
-  - name: COMMAND
-    value: $(body.COMMAND)
-  - name: ARGS
-    value: $(body.ARGS)
-  - name: HOST
-    value: $(body.HOST)
-  - name: SSH_USER_NAME
-    value: $(body.SSH_USER_NAME)
-  - name: SSH_USER_PASSWORD
-    value: $(body.SSH_USER_PASSWORD)
-  - name: GIT_CLONE_URL
-    value: $(body.GIT_CLONE_URL)
+    - name: contenttype
+      value: $(header.Content-Type)
+    - name: COMMAND
+      value: $(body.COMMAND)
+    - name: ARGS
+      value: $(body.ARGS)
+    - name: HOST
+      value: $(body.HOST)
+    - name: SSH_USER_NAME
+      value: $(body.SSH_USER_NAME)
+    - name: SSH_USER_PASSWORD
+      value: $(body.SSH_USER_PASSWORD)
+    - name: GIT_CLONE_URL
+      value: $(body.GIT_CLONE_URL)
 
-  - name: SERVER_WORK_SPACE_ID
-    value: $(body.SERVER_WORK_SPACE_ID)
-  - name: SERVER_WORK_SPACE_NO
-    value: $(body.SERVER_WORK_SPACE_NO)
-  - name: SERVER_USER_NAME
-    value: $(body.SERVER_USER_NAME)
-  - name: SERVER_USER_GUID
-    value: $(body.SERVER_USER_GUID)
-  - name: SERVER_HOST
-    value: $(body.SERVER_HOST)
-  - name: SERVER_TOKEN
-    value: $(body.SERVER_TOKEN)
+    - name: SERVER_WORK_SPACE_ID
+      value: $(body.SERVER_WORK_SPACE_ID)
+    - name: SERVER_WORK_SPACE_NO
+      value: $(body.SERVER_WORK_SPACE_NO)
+    - name: SERVER_USER_NAME
+      value: $(body.SERVER_USER_NAME)
+    - name: SERVER_USER_GUID
+      value: $(body.SERVER_USER_GUID)
+    - name: SERVER_HOST
+      value: $(body.SERVER_HOST)
+    - name: SERVER_TOKEN
+      value: $(body.SERVER_TOKEN)
+    - name: CLI_VERSION
+      value: $(body.CLI_VERSION)
