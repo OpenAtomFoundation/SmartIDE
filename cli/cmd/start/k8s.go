@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:15:38
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-16 22:30:00
+ * @LastEditTime: 2022-12-05 09:39:58
  * @FilePath: /cli/cmd/start/k8s.go
  */
 
@@ -435,8 +435,8 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 	if workspaceInfo.GitRepoAuthType == workspace.GitRepoAuthType_Basic {
 		common.SmartIDELog.Info("container cache git username and password...")
 		uri, _ := url.Parse(workspaceInfo.GitCloneRepoUrl)
-		command := fmt.Sprintf(`git config --global credential.helper store && echo "https://%v:%v@%v" >> ~/.git-credentials `,
-			workspaceInfo.GitUserName, workspaceInfo.GitPassword, uri.Host)
+		command := fmt.Sprintf(`git config --global credential.helper store && echo "%v://%v:%v@%v" >> ~/.git-credentials `,
+			workspaceInfo.GitUserName, workspaceInfo.GitPassword, uri.Scheme, uri.Host)
 		err = kubernetes.ExecuteCommandRealtimeInPod(*devContainerPod,
 			tempK8sConfig.Workspace.DevContainer.ServiceName, command, "")
 	}
