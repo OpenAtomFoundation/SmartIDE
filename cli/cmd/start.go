@@ -2,17 +2,14 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2022-11-11 20:37:12
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-12-12 11:36:27
  */
 package cmd
 
 import (
 	"errors"
 	"fmt"
-	"os"
-	"os/exec"
-	"runtime"
 	"strings"
 	"time"
 
@@ -326,30 +323,4 @@ func getFlagValue(fflags *pflag.FlagSet, flag string) string {
 
 	}
 	return value
-}
-
-// 直接调用git命令进行git clone
-func cloneRepo4LocalWithCommand(rootDir string, actualGitRepoUrl string) (string, error) {
-	repoName := common.GetRepoName(actualGitRepoUrl)
-	repoPath := common.PathJoin(rootDir, repoName)
-
-	var execCommand *exec.Cmd
-	command := "git clone " + actualGitRepoUrl
-	switch runtime.GOOS {
-	case "windows":
-		execCommand = exec.Command("powershell", "/c", command)
-	case "darwin":
-		execCommand = exec.Command("bash", "-c", command)
-	case "linux":
-		execCommand = exec.Command("bash", "-c", command)
-	default:
-		common.SmartIDELog.Error("can not support current os")
-	}
-
-	// run
-	execCommand.Stdout = os.Stdout
-	execCommand.Stderr = os.Stderr
-	err := execCommand.Run()
-
-	return repoPath, err
 }

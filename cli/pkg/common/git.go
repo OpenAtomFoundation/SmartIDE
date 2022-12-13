@@ -3,13 +3,14 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-09 13:40:42
+ * @LastEditTime: 2022-12-13 10:03:18
  */
 package common
 
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -27,12 +28,86 @@ func init() {
 
 }
 
+// 检查git 地址是否正确
 func (g gitOperation) CheckGitRemoteUrl(url string) bool {
 	pattern := `((git|ssh|http(s)?)|(git@[\w\.]+))(:(//)?)([\w\.@\:/\-~]+)(\.git)(/)?`
 
 	match, _ := regexp.MatchString(pattern, url)
 	return match
 
+}
+
+// 获取 repo url
+func (g gitOperation) GetRepositoryUrl(actualGitRepoUrl string) string {
+	uri, _ := url.Parse(actualGitRepoUrl)
+	if uri.Scheme == "https" || uri.Scheme == "http" {
+		if actualGitRepoUrl[len(actualGitRepoUrl)-4:] == ".git" {
+			return actualGitRepoUrl[:len(actualGitRepoUrl)-4]
+		} else {
+			return actualGitRepoUrl
+		}
+	}
+	return ""
+}
+
+// 获取检查 git repo 是否存在的command
+func (g gitOperation) GetCommand4RepositoryUrl(actualGitRepoUrl string) string {
+	return fmt.Sprintf(`curl -s -o /dev/null -I -w "%%{http_code}" %v`, actualGitRepoUrl)
+}
+
+// git repository 的可访问状态
+type GitRepoAccessStatusEnum string
+
+const (
+	GitRepoStatusEnum_NotExists         GitRepoAccessStatusEnum = "not exists"
+	GitRepoStatusEnum_PrivateRepository GitRepoAccessStatusEnum = "private repository"
+	GitRepoStatusEnum_Other             GitRepoAccessStatusEnum = "not exists or private repository"
+)
+
+type GitRepoAccessError struct {
+	GitRepoAccessStatus GitRepoAccessStatusEnum
+	Err                 error
+}
+
+// NameEmtpyError实现了 Error() 方法的对象都可以
+func (e *GitRepoAccessError) Error() string {
+	if e != nil {
+		if e.GitRepoAccessStatus == GitRepoStatusEnum_NotExists {
+			return "当前 git 仓库不存在"
+		} else if e.GitRepoAccessStatus == GitRepoStatusEnum_PrivateRepository {
+			return "当前 git 仓库为私有库"
+		} else if e.GitRepoAccessStatus == GitRepoStatusEnum_Other {
+			return "当前 git 仓库不存在或者为私有库"
+		}
+	}
+	return ""
+}
+
+// 检查错误
+func (g gitOperation) CheckError4RepositoryUrl(actualGitRepoUrl string, httpCode int) (err *GitRepoAccessError) {
+	if httpCode == 200 {
+		return
+	}
+
+	uri, _ := url.Parse(actualGitRepoUrl)
+	hostName := strings.ToLower(uri.Hostname())
+	if strings.Contains(hostName, "github.com") { // 如果是github，不存在或者私有都会返回是404
+		if httpCode == 404 {
+			err = &GitRepoAccessError{GitRepoAccessStatus: GitRepoStatusEnum_Other}
+		} else {
+			err = &GitRepoAccessError{GitRepoAccessStatus: GitRepoStatusEnum_PrivateRepository}
+		}
+	} else if strings.Contains(hostName, "gitee.com") {
+		if httpCode == 404 {
+			err = &GitRepoAccessError{GitRepoAccessStatus: GitRepoStatusEnum_NotExists}
+		} else {
+			err = &GitRepoAccessError{GitRepoAccessStatus: GitRepoStatusEnum_PrivateRepository}
+		}
+	} else {
+		err = &GitRepoAccessError{GitRepoAccessStatus: GitRepoStatusEnum_Other}
+	}
+
+	return
 }
 
 // 使用git下载指定的文件

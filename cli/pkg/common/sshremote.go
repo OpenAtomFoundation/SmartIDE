@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2022-11-08 16:41:52
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-12-13 10:29:51
  */
 package common
 
@@ -408,7 +408,7 @@ func (instance *SSHRemote) CheckRemoteEnv() error {
 }
 
 // git clone
-func (instance *SSHRemote) GitClone(gitRepoUrl string, workSpaceDir string, no string, cmd *cobra.Command) error {
+func (instance *SSHRemote) GitClone(gitCloneUrl string, workSpaceDir string, no string, cmd *cobra.Command) error {
 
 	fflags := cmd.Flags()
 	userName, _ := fflags.GetString(Flags_ServerUserName)
@@ -417,11 +417,30 @@ func (instance *SSHRemote) GitClone(gitRepoUrl string, workSpaceDir string, no s
 		return nil
 	}
 
-	if strings.TrimSpace(gitRepoUrl) == "" {
+	if strings.TrimSpace(gitCloneUrl) == "" {
 		SmartIDELog.Error(i18n.GetInstance().Common.Err_sshremote_param_repourl_none)
 	}
 	if workSpaceDir == "" {
-		workSpaceDir = GetRepoName(gitRepoUrl)
+		workSpaceDir = GetRepoName(gitCloneUrl)
+	}
+
+	// git repo check
+	repoUrl := GIT.GetRepositoryUrl(gitCloneUrl)
+	if repoUrl != "" {
+		command := GIT.GetCommand4RepositoryUrl(repoUrl)
+		result, err := instance.ExeSSHCommand(command)
+		if err != nil {
+			return err
+		}
+		httpCode, _ := strconv.Atoi(result)
+		customErr := GIT.CheckError4RepositoryUrl(gitCloneUrl, httpCode)
+		if customErr != nil {
+			if customErr.GitRepoAccessStatus == GitRepoStatusEnum_NotExists {
+				return customErr
+			} else {
+				SmartIDELog.Warning(customErr.Error())
+			}
+		}
 	}
 
 	// 执行clone
@@ -429,34 +448,9 @@ func (instance *SSHRemote) GitClone(gitRepoUrl string, workSpaceDir string, no s
 	GIT_SSH_COMMAND := fmt.Sprintf(`GIT_SSH_COMMAND='ssh -i ~/.ssh/id_rsa_%s_%s -o IdentitiesOnly=yes'`, userName, no)
 
 	cloneCommand := fmt.Sprintf(`%s git clone %v %v`,
-		GIT_SSH_COMMAND, gitRepoUrl, workSpaceDir) // .git 文件如果不存在，在需要git clone
+		GIT_SSH_COMMAND, gitCloneUrl, workSpaceDir) // .git 文件如果不存在，在需要git clone
 	err := instance.ExecSSHCommandRealTimeFunc(cloneCommand, func(output string) error {
 		if strings.Contains(output, "error") || strings.Contains(output, "fatal") {
-
-			//newGitRepoUrl := strings.ToLower(gitRepoUrl)
-
-			/* // 需要录入密码的情况
-			if strings.Contains(output, "could not read Password for") { // 常规录入密码
-				SmartIDELog.Console(i18n.GetInstance().Common.Info_please_enter_password)
-				passwordBytes, _ := gopass.GetPasswdMasked()
-				password := string(passwordBytes)
-
-				// 添加密码到 https/http 链接中
-				index := strings.LastIndex(newGitRepoUrl, "@")
-				if index < 0 {
-					newGitRepoUrl = strings.Replace(newGitRepoUrl, "https://", "https://"+password+"@", -1)
-					newGitRepoUrl = strings.Replace(newGitRepoUrl, "http://", "http://"+password+"@", -1)
-				} else {
-					header := newGitRepoUrl[:strings.Index(newGitRepoUrl, "//")+2]
-					newGitRepoUrl = header + password + newGitRepoUrl[index:]
-				}
-				SmartIDELog.Debug(newGitRepoUrl)
-
-				// 再次运行 git clone
-				instance.ExecSSHCommandRealTimeFunc(cloneCommand, nil)
-
-			}else */
-			// git credential-store" store: 1: git credential-store" store: Syntax error: Unterminated quoted string
 			if strings.Contains(output, "git credential-store") && strings.Contains(output, "Syntax error: Unterminated quoted string") {
 
 			} else {
