@@ -44,7 +44,7 @@ func (eo *execOperation) Realtime(command string, rootDir string) error {
 	if execCommand.Dir != "" {
 		currentWorkingDir = fmt.Sprintf("> %v", execCommand.Dir)
 	}
-	SmartIDELog.Debug(fmt.Sprintf("local (%v) exec %v -> %v ",
+	SmartIDELog.Debug(fmt.Sprintf("local realtime (%v) exec %v -> %v ",
 		runtime.GOOS, currentWorkingDir, command))
 
 	execCommand.Stdout = os.Stdout
@@ -81,7 +81,7 @@ func (eo *execOperation) CombinedOutput(command string, rootDir string) (string,
 	bytes, err := execCommand.CombinedOutput()
 
 	output := strings.TrimSpace(string(bytes))
-	SmartIDELog.Debug(fmt.Sprintf("local (%v) exec -> %v >>\n%v", runtime.GOOS, command, output))
+	SmartIDELog.Debug(fmt.Sprintf("local combine (%v) exec -> %v >>\n%v", runtime.GOOS, command, output))
 
 	return output, err
 }

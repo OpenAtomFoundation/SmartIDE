@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: kenan
- * @LastEditTime: 2022-11-11 20:37:12
+ * @LastEditors: Jason Chen
+ * @LastEditTime: 2022-12-13 15:57:27
  */
 package cmd
 
@@ -11,14 +11,11 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"reflect"
-	"runtime"
 	"strings"
 	"time"
 
 	cmdCommon "github.com/leansoftX/smartide-cli/cmd/common"
-	"github.com/leansoftX/smartide-cli/cmd/server"
 	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
 	"github.com/leansoftX/smartide-cli/cmd/start"
 
@@ -30,7 +27,6 @@ import (
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/k8s"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	coreV1 "k8s.io/api/core/v1"
 )
 
@@ -61,10 +57,10 @@ var startCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		appinsight.Global.CmdType = "start"
-		if apiHost, _ := cmd.Flags().GetString(server.Flags_ServerHost); apiHost != "" {
+		if apiHost, _ := cmd.Flags().GetString(smartideServer.Flags_ServerHost); apiHost != "" {
 			wsURL := fmt.Sprint(strings.ReplaceAll(strings.ReplaceAll(apiHost, "https", "ws"), "http", "ws"), "/ws/smartide/ws")
 			common.WebsocketStart(wsURL)
-			token, _ := cmd.Flags().GetString(server.Flags_ServerToken)
+			token, _ := cmd.Flags().GetString(smartideServer.Flags_ServerToken)
 			if token != "" {
 				if workspaceIdStr := cmdCommon.GetWorkspaceIdFromFlagsOrArgs(cmd, args); strings.Contains(workspaceIdStr, "SWS") {
 					if pid, err := workspace.GetParentId(workspaceIdStr, workspace.ActionEnum_Workspace_Start, token, apiHost); err == nil && pid > 0 {
@@ -72,7 +68,7 @@ var startCmd = &cobra.Command{
 						common.SmartIDELog.ParentId = pid
 					}
 				} else {
-					if workspaceIdStr, _ := cmd.Flags().GetString(server.Flags_ServerWorkspaceid); workspaceIdStr != "" {
+					if workspaceIdStr, _ := cmd.Flags().GetString(smartideServer.Flags_ServerWorkspaceid); workspaceIdStr != "" {
 						if no, _ := workspace.GetWorkspaceNo(workspaceIdStr, token, apiHost); no != "" {
 							if pid, err := workspace.GetParentId(no, workspace.ActionEnum_Workspace_Start, token, apiHost); err == nil && pid > 0 {
 								common.SmartIDELog.Ws_id = no
@@ -100,7 +96,7 @@ var startCmd = &cobra.Command{
 			}
 			if err != nil {
 				common.SmartIDELog.Importance(err.Error())
-				smartideServer.Feedback_Finish(server.FeedbackCommandEnum_Start, cmd, false, nil, workspaceInfo, err.Error(), "")
+				smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_Start, cmd, false, nil, workspaceInfo, err.Error(), "")
 			}
 		})
 
@@ -342,63 +338,4 @@ func init() {
 	startCmd.Flags().StringP("serverownerguid", "g", "", i18nInstance.Start.Info_help_flag_ownerguid)
 	startCmd.Flags().StringP("addon", "", "", "addon webterminal")
 	startCmd.Flags().StringP("type", "T", "", i18nInstance.New.Info_help_flag_type)
-}
-
-// 获取参数gitUrl
-func getGitUrlFromArgs(cmd *cobra.Command, args []string) string {
-	// 从args中获取值
-	var gitUrl string = ""
-	if len(args) > 0 { // 从args中加载
-		str := args[0]
-		if strings.Index(str, "git@") == 0 || strings.Index(str, "http://") == 0 || strings.Index(str, "https://") == 0 {
-			gitUrl = str
-		}
-	}
-
-	//
-	if gitUrl == "" {
-		gitUrl = getFlagValue(cmd.Flags(), flag_repourl)
-	}
-
-	return gitUrl
-}
-
-// 获取命令行参数的值
-func getFlagValue(fflags *pflag.FlagSet, flag string) string {
-	value, err := fflags.GetString(flag)
-	if err != nil {
-		if strings.Contains(err.Error(), "flag accessed but not defined:") { // 错误判断，不需要双语
-			common.SmartIDELog.Debug(err.Error())
-		} else {
-			common.SmartIDELog.Error(err)
-		}
-
-	}
-	return value
-}
-
-// 直接调用git命令进行git clone
-func cloneRepo4LocalWithCommand(rootDir string, actualGitRepoUrl string) (string, error) {
-	repoName := common.GetRepoName(actualGitRepoUrl)
-	repoPath := common.PathJoin(rootDir, repoName)
-
-	var execCommand *exec.Cmd
-	command := "git clone " + actualGitRepoUrl
-	switch runtime.GOOS {
-	case "windows":
-		execCommand = exec.Command("powershell", "/c", command)
-	case "darwin":
-		execCommand = exec.Command("bash", "-c", command)
-	case "linux":
-		execCommand = exec.Command("bash", "-c", command)
-	default:
-		common.SmartIDELog.Error("can not support current os")
-	}
-
-	// run
-	execCommand.Stdout = os.Stdout
-	execCommand.Stderr = os.Stderr
-	err := execCommand.Run()
-
-	return repoPath, err
 }

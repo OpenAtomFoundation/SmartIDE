@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:13:54
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-16 22:28:32
+ * @LastEditTime: 2022-12-13 10:30:16
  * @FilePath: /cli/pkg/k8s/k8sUtil.go
  */
 
@@ -248,6 +248,25 @@ func (k *KubernetesUtil) GitClone(pod coreV1.Pod,
 	// 设置目录为空时，使用默认的
 	if containerCloneDir == "" {
 		return errors.New("容器内克隆目录为空！")
+	}
+
+	// git repo check
+	repoUrl := common.GIT.GetRepositoryUrl(gitCloneUrl)
+	if repoUrl != "" {
+		command := common.GIT.GetCommand4RepositoryUrl(repoUrl)
+		result, err := k.ExecKubectlCommandCombined(command, "")
+		if err != nil {
+			return err
+		}
+		httpCode, _ := strconv.Atoi(result)
+		customErr := common.GIT.CheckError4RepositoryUrl(gitCloneUrl, httpCode)
+		if customErr != nil {
+			if customErr.GitRepoAccessStatus == common.GitRepoStatusEnum_NotExists {
+				return customErr
+			} else {
+				common.SmartIDELog.Warning(customErr.Error())
+			}
+		}
 	}
 
 	// 直接 git clone

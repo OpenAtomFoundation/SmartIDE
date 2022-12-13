@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-10-28 16:49:11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-08 16:19:39
+ * @LastEditTime: 2022-12-13 10:31:52
  * @FilePath: /cli/cmd/common/workspace.go
  */
 
@@ -11,9 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 
@@ -647,26 +645,30 @@ func getGitUrlFromArgs(cmd *cobra.Command, args []string) string {
 
 // 直接调用git命令进行git clone
 func cloneRepo4LocalWithCommand(rootDir string, actualGitRepoUrl string) (string, error) {
-	repoName := common.GetRepoName(actualGitRepoUrl)
-	repoPath := common.PathJoin(rootDir, repoName)
-
-	var execCommand *exec.Cmd
-	command := "git clone " + actualGitRepoUrl
-	switch runtime.GOOS {
-	case "windows":
-		execCommand = exec.Command("powershell", "/c", command)
-	case "darwin":
-		execCommand = exec.Command("bash", "-c", command)
-	case "linux":
-		execCommand = exec.Command("bash", "-c", command)
-	default:
-		common.SmartIDELog.Error("can not support current os")
+	// git repo check
+	repoUrl := common.GIT.GetRepositoryUrl(actualGitRepoUrl)
+	if repoUrl != "" {
+		checkCommand := common.GIT.GetCommand4RepositoryUrl(repoUrl)
+		result, err := common.EXEC.CombinedOutput(checkCommand, "")
+		if err != nil {
+			return "", err
+		}
+		httpCode, _ := strconv.Atoi(result)
+		customErr := common.GIT.CheckError4RepositoryUrl(repoUrl, httpCode)
+		if customErr != nil {
+			if customErr.GitRepoAccessStatus == common.GitRepoStatusEnum_NotExists {
+				return "", customErr
+			} else {
+				common.SmartIDELog.Warning(customErr.Error())
+			}
+		}
 	}
 
-	// run
-	execCommand.Stdout = os.Stdout
-	execCommand.Stderr = os.Stderr
-	err := execCommand.Run()
+	// git clone for local
+	repoName := common.GetRepoName(actualGitRepoUrl)
+	repoPath := common.PathJoin(rootDir, repoName)
+	command := "git clone " + actualGitRepoUrl
+	err := common.EXEC.Realtime(command, "")
 
 	return repoPath, err
 }
