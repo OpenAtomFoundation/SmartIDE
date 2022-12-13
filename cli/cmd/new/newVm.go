@@ -24,7 +24,7 @@ import (
 )
 
 func VmNew(cmd *cobra.Command, args []string, workspaceInfo workspace.WorkspaceInfo,
-	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) {
+	yamlExecuteFun func(yamlConfig config.SmartIdeConfig, workspaceInfo workspace.WorkspaceInfo, cmdtype, userguid, workspaceid string)) {
 
 	// 错误反馈
 	serverFeedback := preRun(cmd, workspaceInfo, workspace.ActionEnum_Workspace_Start, nil)

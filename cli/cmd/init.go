@@ -22,11 +22,8 @@ var initCmd = &cobra.Command{
 	Example: ` smartide init
 	 smartide init <templatetype> -T {typename}`,
 	Run: func(cmd *cobra.Command, args []string) {
-		//ai记录
-		var trackEvent string
-		for _, val := range args {
-			trackEvent = trackEvent + " " + val
-		}
+
+
 		// 环境监测
 		err := common.CheckLocalGitEnv() //检测git环境
 		common.CheckError(err)

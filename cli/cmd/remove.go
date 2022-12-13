@@ -2,8 +2,8 @@
  * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
  * @Description:
  * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-28 17:15:08
+ * @LastEditors: kenan
+ * @LastEditTime: 2022-11-28 17:55:44
  */
 package cmd
 
@@ -14,7 +14,7 @@ import (
 	"strings"
 
 	cmdCommon "github.com/leansoftX/smartide-cli/cmd/common"
-
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/dal"
 	"github.com/leansoftX/smartide-cli/pkg/common"
@@ -149,16 +149,20 @@ var removeCmd = &cobra.Command{
 
 			} else { //4.1.2. 删除本地的工作区
 				//
+
 				if removeMode == RemoteMode_None || removeMode == RemoteMode_OnlyRemoveContainer {
 					if workspaceInfo.Mode == workspace.WorkingMode_Local {
+						appinsight.SetCliLocalTrack(appinsight.Cli_Local_Remove, args, workspaceInfo.ID, "")
 						err := remove.RemoveLocal(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsForce)
 						common.CheckError(err)
 
 					} else if workspaceInfo.Mode == workspace.WorkingMode_Remote {
+						appinsight.SetCliLocalTrack(appinsight.Cli_Host_Remove, args, workspaceInfo.ID, "")
 						err := remove.RemoveRemote(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsRemoveRemoteDirectory, removeCmdFlag.IsForce, cmd)
 						common.CheckError(err)
 
 					} else if workspaceInfo.Mode == workspace.WorkingMode_K8s {
+						appinsight.SetCliLocalTrack(appinsight.Cli_K8s_Remove, args, workspaceInfo.ID, "")
 						k8sUtil, err := k8s.NewK8sUtil(workspaceInfo.K8sInfo.KubeConfigFilePath,
 							workspaceInfo.K8sInfo.Context,
 							workspaceInfo.K8sInfo.Namespace)
@@ -210,6 +214,7 @@ var removeCmd = &cobra.Command{
 
 		// log
 		common.SmartIDELog.Info(i18nInstance.Remove.Info_end)
+		common.WG.Wait()
 	},
 }
 

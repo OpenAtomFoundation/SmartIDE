@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/model"
@@ -25,6 +26,8 @@ import (
 
 func VmInit(cmd *cobra.Command, args []string, workspaceInfo workspace.WorkspaceInfo,
 	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) {
+
+	appinsight.SetCliTrack(appinsight.Cli_Host_Init, args)
 
 	mode, _ := cmd.Flags().GetString("mode")
 	isModeServer := strings.ToLower(mode) == "server"

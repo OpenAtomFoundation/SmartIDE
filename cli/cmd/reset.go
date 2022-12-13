@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: kenan
- * @LastEditTime: 2022-10-20 10:17:39
+ * @LastEditTime: 2022-11-28 17:55:54
  */
 package cmd
 
@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/leansoftX/smartide-cli/cmd/remove"
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/dal"
 	"github.com/leansoftX/smartide-cli/pkg/common"
@@ -44,7 +45,7 @@ var resetCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// 打印日志
 		common.SmartIDELog.Info(i18nInstance.Reset.Info_start)
-
+		appinsight.SetCliTrack(appinsight.Cli_Reset, args)
 		// 提示 是否确认
 		if !resetCmdFalgs.IsContinue { // 如果设置了参数yes，那么默认就是确认删除
 			isEnableRemove := ""
@@ -163,6 +164,7 @@ var resetCmd = &cobra.Command{
 
 		// end
 		common.SmartIDELog.Info(i18nInstance.Reset.Info_end)
+		common.WG.Wait()
 	},
 }
 

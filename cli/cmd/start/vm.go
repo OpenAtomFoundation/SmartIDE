@@ -18,6 +18,7 @@ import (
 
 	initExtended "github.com/leansoftX/smartide-cli/cmd/init"
 	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/pkg/common"
@@ -29,7 +30,7 @@ import (
 
 // 远程服务器执行 start 命令
 func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
-	yamlExecuteFun func(yamlConfig config.SmartIdeConfig), cmd *cobra.Command, args []string, disableClone bool) (
+	yamlExecuteFun func(yamlConfig config.SmartIdeConfig, workspaceInfo workspace.WorkspaceInfo, cmdtype, userguid, workspaceid string), cmd *cobra.Command, args []string, disableClone bool) (
 	workspace.WorkspaceInfo, error) {
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_starting)
 
@@ -169,8 +170,6 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	//3.2. 扩展信息
 	workspaceInfo.Extend = workspaceInfo.GetWorkspaceExtend()
 
-	//4. ai 统计yaml
-	yamlExecuteFun(*currentConfig)
 	//4.1 agent cp to remote
 	workspace.InstallSmartideAgent(sshRemote)
 
@@ -279,6 +278,12 @@ func ExecuteVmStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 			common.SmartIDELog.Importance(fmt.Sprintf("当前运行环境为 %v，工作区不需要缓存到本地！", workspaceInfo.CliRunningEnv))
 		}
 
+	}
+	//ai 统计yaml
+	if appinsight.Global.CmdType == "new" {
+		yamlExecuteFun(*currentConfig, workspaceInfo, appinsight.Cli_Host_New, "", workspaceInfo.ID)
+	} else {
+		yamlExecuteFun(*currentConfig, workspaceInfo, appinsight.Cli_Host_Start, "", workspaceInfo.ID)
 	}
 
 	//calback external api

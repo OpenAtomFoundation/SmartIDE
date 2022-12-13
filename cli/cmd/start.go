@@ -3,32 +3,31 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-12-12 11:36:27
+ * @LastEditTime: 2022-12-13 15:57:27
  */
 package cmd
 
 import (
 	"errors"
 	"fmt"
+	"os"
+	"reflect"
 	"strings"
 	"time"
 
 	cmdCommon "github.com/leansoftX/smartide-cli/cmd/common"
-	"github.com/leansoftX/smartide-cli/cmd/server"
 	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
 	"github.com/leansoftX/smartide-cli/cmd/start"
 
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/model"
-
-	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/k8s"
-
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
+	coreV1 "k8s.io/api/core/v1"
 )
 
 // var i18nInstance.Start = i18n.GetInstance().Start
@@ -57,10 +56,11 @@ var startCmd = &cobra.Command{
 	PreRunE: preRun,
 	RunE: func(cmd *cobra.Command, args []string) error {
 
-		if apiHost, _ := cmd.Flags().GetString(server.Flags_ServerHost); apiHost != "" {
+		appinsight.Global.CmdType = "start"
+		if apiHost, _ := cmd.Flags().GetString(smartideServer.Flags_ServerHost); apiHost != "" {
 			wsURL := fmt.Sprint(strings.ReplaceAll(strings.ReplaceAll(apiHost, "https", "ws"), "http", "ws"), "/ws/smartide/ws")
 			common.WebsocketStart(wsURL)
-			token, _ := cmd.Flags().GetString(server.Flags_ServerToken)
+			token, _ := cmd.Flags().GetString(smartideServer.Flags_ServerToken)
 			if token != "" {
 				if workspaceIdStr := cmdCommon.GetWorkspaceIdFromFlagsOrArgs(cmd, args); strings.Contains(workspaceIdStr, "SWS") {
 					if pid, err := workspace.GetParentId(workspaceIdStr, workspace.ActionEnum_Workspace_Start, token, apiHost); err == nil && pid > 0 {
@@ -68,7 +68,7 @@ var startCmd = &cobra.Command{
 						common.SmartIDELog.ParentId = pid
 					}
 				} else {
-					if workspaceIdStr, _ := cmd.Flags().GetString(server.Flags_ServerWorkspaceid); workspaceIdStr != "" {
+					if workspaceIdStr, _ := cmd.Flags().GetString(smartideServer.Flags_ServerWorkspaceid); workspaceIdStr != "" {
 						if no, _ := workspace.GetWorkspaceNo(workspaceIdStr, token, apiHost); no != "" {
 							if pid, err := workspace.GetParentId(no, workspace.ActionEnum_Workspace_Start, token, apiHost); err == nil && pid > 0 {
 								common.SmartIDELog.Ws_id = no
@@ -96,30 +96,78 @@ var startCmd = &cobra.Command{
 			}
 			if err != nil {
 				common.SmartIDELog.Importance(err.Error())
-				smartideServer.Feedback_Finish(server.FeedbackCommandEnum_Start, cmd, false, nil, workspaceInfo, err.Error(), "")
+				smartideServer.Feedback_Finish(smartideServer.FeedbackCommandEnum_Start, cmd, false, nil, workspaceInfo, err.Error(), "")
 			}
 		})
 
-		// ai记录
-		var trackEvent string
-		for _, val := range args {
-			trackEvent = trackEvent + " " + val
-		}
-
 		isUnforward, _ := cmd.Flags().GetBool("unforward")
 
-		executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
-			if config.GlobalSmartIdeConfig.IsInsightEnabled != config.IsInsightEnabledEnum_Enabled {
-				common.SmartIDELog.Debug("Application Insights disabled")
-				return
-			}
+		executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig, workspaceInfo workspace.WorkspaceInfo, cmdtype, userguid, workspaceid string) {
 			var imageNames []string
-			for _, service := range yamlConfig.Workspace.Servcies {
+			for _, service := range yamlConfig.Workspace.LinkCompose.Services {
 				imageNames = append(imageNames, service.Image)
 			}
-			appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(workspaceInfo.Mode), strings.Join(imageNames, ","))
-		}
+			if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server {
+				serveruserguid := ""
+				if workspaceInfo.ServerWorkSpace != nil {
+					serveruserguid = workspaceInfo.ServerWorkSpace.OwnerGUID
+				}
+				appinsight.SetWorkSpaceTrack(cmdtype, args, string(workspaceInfo.Mode), serveruserguid, workspaceInfo.ID, "", "", strings.Join(imageNames, ","))
 
+			} else {
+				clientmachinename, _ := os.Hostname()
+				appinsight.SetWorkSpaceTrack(cmdtype, args, string(workspaceInfo.Mode), "", "", workspaceid, clientmachinename, strings.Join(imageNames, ","))
+			}
+
+		}
+		appinsight_k8sFunc := func(yamlConfig config.SmartIdeK8SConfig, workspaceInfo workspace.WorkspaceInfo, cmdtype, userguid, workspaceid string) {
+			var imageNames []string
+			if len(yamlConfig.Workspace.Deployments) == 0 {
+				//pod
+				for i := 0; i < len(yamlConfig.Workspace.Others); i++ {
+					other := yamlConfig.Workspace.Others[i]
+
+					re := reflect.ValueOf(other)
+					kindName := ""
+					if re.Kind() == reflect.Ptr {
+						re = re.Elem()
+					}
+					kindName = fmt.Sprint(re.FieldByName("Kind"))
+					if kindName == "Pod" {
+						var tmpPod *coreV1.Pod
+						switch other.(type) {
+						case coreV1.Pod:
+							tmp := other.(coreV1.Pod)
+							tmpPod = &tmp
+						default:
+							tmpPod = other.(*coreV1.Pod)
+						}
+						for _, container := range tmpPod.Spec.Containers {
+							imageNames = append(imageNames, container.Image)
+						}
+					}
+				}
+			} else {
+				//Deployment
+				for _, deployment := range yamlConfig.Workspace.Deployments {
+					for _, container := range deployment.Spec.Template.Spec.Containers {
+						imageNames = append(imageNames, container.Image)
+					}
+				}
+			}
+
+			if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server {
+				serveruserguid := ""
+				if workspaceInfo.ServerWorkSpace != nil {
+					serveruserguid = workspaceInfo.ServerWorkSpace.OwnerGUID
+				}
+				appinsight.SetWorkSpaceTrack(cmdtype, args, string(workspaceInfo.Mode), serveruserguid, workspaceInfo.ID, "", "", strings.Join(imageNames, ","))
+
+			} else {
+				clientmachinename, _ := os.Hostname()
+				appinsight.SetWorkSpaceTrack(cmdtype, args, string(workspaceInfo.Mode), "", "", workspaceid, clientmachinename, strings.Join(imageNames, ","))
+			}
+		}
 		//1. 执行命令
 		if workspaceInfo.Mode == workspace.WorkingMode_Local { //1.1. 本地模式
 			workspaceInfo, err = start.ExecuteStartCmd(workspaceInfo, isUnforward, func(v string, d common.Docker) {}, executeStartCmdFunc, args, cmd)
@@ -132,7 +180,7 @@ var startCmd = &cobra.Command{
 					workspaceInfo.K8sInfo.Namespace)
 				common.CheckError(err)
 
-				workspaceInfo, err = start.ExecuteK8s_ServerWS_ServerEnv(cmd, *k8sUtil, workspaceInfo, executeStartCmdFunc)
+				workspaceInfo, err = start.ExecuteK8s_ServerWS_ServerEnv(cmd, *k8sUtil, workspaceInfo, appinsight_k8sFunc)
 				common.CheckError(err)
 
 			} else { //1.2.2. cli 在客户端运行
@@ -142,17 +190,17 @@ var startCmd = &cobra.Command{
 				common.CheckError(err)
 
 				if workspaceInfo.CacheEnv == workspace.CacheEnvEnum_Server { //1.2.2.1. 远程工作区 本地加载
-					workspaceInfo, err = start.ExecuteK8s_ServerWS_LocalEnv(workspaceInfo, executeStartCmdFunc)
+					workspaceInfo, err = start.ExecuteK8s_ServerWS_LocalEnv(workspaceInfo, appinsight_k8sFunc)
 					common.CheckError(err)
 
 				} else { //1.2.2.2. 本地工作区，本地启动
-					workspaceInfo, err = start.ExecuteK8s_LocalWS_LocalEnv(cmd, *k8sUtil, workspaceInfo, executeStartCmdFunc)
+					workspaceInfo, err = start.ExecuteK8s_LocalWS_LocalEnv(cmd, *k8sUtil, workspaceInfo, appinsight_k8sFunc)
 					common.CheckError(err)
 				}
 
 			}
 
-			executeStartCmdFunc(workspaceInfo.ConfigYaml)
+			//executeStartCmdFunc(workspaceInfo.ConfigYaml)
 
 		} else if workspaceInfo.Mode == workspace.WorkingMode_Remote { //1.3. 远程主机 模式
 
@@ -180,7 +228,7 @@ var startCmd = &cobra.Command{
 
 			}
 
-			executeStartCmdFunc(workspaceInfo.ConfigYaml)
+			//executeStartCmdFunc(workspaceInfo.ConfigYaml)
 
 		} else {
 			return errors.New("暂不支持当前模式")
@@ -290,37 +338,4 @@ func init() {
 	startCmd.Flags().StringP("serverownerguid", "g", "", i18nInstance.Start.Info_help_flag_ownerguid)
 	startCmd.Flags().StringP("addon", "", "", "addon webterminal")
 	startCmd.Flags().StringP("type", "T", "", i18nInstance.New.Info_help_flag_type)
-}
-
-// 获取参数gitUrl
-func getGitUrlFromArgs(cmd *cobra.Command, args []string) string {
-	// 从args中获取值
-	var gitUrl string = ""
-	if len(args) > 0 { // 从args中加载
-		str := args[0]
-		if strings.Index(str, "git@") == 0 || strings.Index(str, "http://") == 0 || strings.Index(str, "https://") == 0 {
-			gitUrl = str
-		}
-	}
-
-	//
-	if gitUrl == "" {
-		gitUrl = getFlagValue(cmd.Flags(), flag_repourl)
-	}
-
-	return gitUrl
-}
-
-// 获取命令行参数的值
-func getFlagValue(fflags *pflag.FlagSet, flag string) string {
-	value, err := fflags.GetString(flag)
-	if err != nil {
-		if strings.Contains(err.Error(), "flag accessed but not defined:") { // 错误判断，不需要双语
-			common.SmartIDELog.Debug(err.Error())
-		} else {
-			common.SmartIDELog.Error(err)
-		}
-
-	}
-	return value
 }

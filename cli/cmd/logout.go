@@ -12,6 +12,9 @@
 package cmd
 
 import (
+	"time"
+
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
@@ -25,6 +28,8 @@ var logoutCmd = &cobra.Command{
 	Example: `  smartide logout`,
 	Run: func(cmd *cobra.Command, args []string) {
 
+		appinsight.SetCliTrack(appinsight.Cli_Server_Logout, args)
+		time.Sleep(time.Duration(1) * time.Second) //延迟1s确保发送成功
 		clearAuths()
 		common.SmartIDELog.Info("登录信息已清空！")
 

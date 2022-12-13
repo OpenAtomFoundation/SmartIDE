@@ -7,9 +7,11 @@
 package cmd
 
 import (
+	"os"
 	"strings"
 	"time"
-
+	"reflect"
+	"fmt"
 	cmdCommon "github.com/leansoftX/smartide-cli/cmd/common"
 	newExtend "github.com/leansoftX/smartide-cli/cmd/new"
 	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
@@ -17,7 +19,7 @@ import (
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/k8s"
-
+	coreV1 "k8s.io/api/core/v1"
 	"github.com/spf13/cobra"
 )
 
@@ -29,26 +31,77 @@ var newCmd = &cobra.Command{
 smartide new <template_type> -T {type_name} --host {vm_host_address|vm_host_id} --username {vm_username} --password {vm_password}
 smartide new <template_type> -T {type_name} --k8s {kubernetes_context} --kubeconfig {kube_config_file_path}`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// ai记录
-		var trackEvent string
-		for _, val := range args {
-			trackEvent = trackEvent + " " + val
-		}
 
+		appinsight.Global.CmdType = "new"
 		workspaceInfo, err := cmdCommon.GetWorkspaceFromCmd(cmd, args) // 加载工作区信息
 		entryptionKey4Workspace(workspaceInfo)                         // 申明需要加密的文本
 		common.CheckError(err)
-		executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
-			if config.GlobalSmartIdeConfig.IsInsightEnabled != config.IsInsightEnabledEnum_Enabled {
-				common.SmartIDELog.Debug("Application Insights disabled")
-				return
-			}
+		executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig, workspaceInfo workspace.WorkspaceInfo, cmdtype, userguid, workspaceid string) {
 			var imageNames []string
-			for _, service := range yamlConfig.Workspace.Servcies {
+			for _, service := range yamlConfig.Workspace.LinkCompose.Services {
 				imageNames = append(imageNames, service.Image)
 			}
-			appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(workspaceInfo.Mode), strings.Join(imageNames, ","))
+			if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server {
+				serveruserguid := ""
+				if workspaceInfo.ServerWorkSpace != nil {
+					serveruserguid = workspaceInfo.ServerWorkSpace.OwnerGUID
+				}
+				appinsight.SetWorkSpaceTrack(cmdtype, args, string(workspaceInfo.Mode), serveruserguid, workspaceInfo.ID, "", "", strings.Join(imageNames, ","))
+
+			} else {
+				clientmachinename, _ := os.Hostname()
+				appinsight.SetWorkSpaceTrack(cmdtype, args, string(workspaceInfo.Mode), "", "", workspaceid, clientmachinename, strings.Join(imageNames, ","))
+			}
 		}
+		appinsight_k8sFunc := func(yamlConfig config.SmartIdeK8SConfig, workspaceInfo workspace.WorkspaceInfo, cmdtype, userguid, workspaceid string) {
+			var imageNames []string
+			if len(yamlConfig.Workspace.Deployments) == 0 {
+				//pod
+				for i := 0; i < len(yamlConfig.Workspace.Others); i++ {
+					other := yamlConfig.Workspace.Others[i]
+
+					re := reflect.ValueOf(other)
+					kindName := ""
+					if re.Kind() == reflect.Ptr {
+						re = re.Elem()
+					}
+					kindName = fmt.Sprint(re.FieldByName("Kind"))
+					if kindName == "Pod" {
+						var tmpPod *coreV1.Pod
+						switch other.(type) {
+						case coreV1.Pod:
+							tmp := other.(coreV1.Pod)
+							tmpPod = &tmp
+						default:
+							tmpPod = other.(*coreV1.Pod)
+						}
+						for _, container := range tmpPod.Spec.Containers {
+							imageNames = append(imageNames, container.Image)
+						}
+					}
+				}
+			} else {
+				//Deployment
+				for _, deployment := range yamlConfig.Workspace.Deployments {
+					for _, container := range deployment.Spec.Template.Spec.Containers {
+						imageNames = append(imageNames, container.Image)
+					}
+				}
+			}
+
+			if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server {
+				serveruserguid := ""
+				if workspaceInfo.ServerWorkSpace != nil {
+					serveruserguid = workspaceInfo.ServerWorkSpace.OwnerGUID
+				}
+				appinsight.SetWorkSpaceTrack(cmdtype, args, string(workspaceInfo.Mode), serveruserguid, workspaceInfo.ID, "", "", strings.Join(imageNames, ","))
+
+			} else {
+				clientmachinename, _ := os.Hostname()
+				appinsight.SetWorkSpaceTrack(cmdtype, args, string(workspaceInfo.Mode), "", "", workspaceid, clientmachinename, strings.Join(imageNames, ","))
+			}
+		}
+
 		if workspaceInfo.Mode == workspace.WorkingMode_Local { // 本地模式
 			newExtend.LocalNew(cmd, args, workspaceInfo, executeStartCmdFunc)
 
@@ -62,9 +115,9 @@ smartide new <template_type> -T {type_name} --k8s {kubernetes_context} --kubecon
 			common.CheckError(err)
 
 			if workspaceInfo.CliRunningEnv == workspace.CliRunningEnvEnum_Client {
-				newExtend.K8sNew_Local(cmd, args, k8sUtil, workspaceInfo, executeStartCmdFunc)
+				newExtend.K8sNew_Local(cmd, args, k8sUtil, workspaceInfo, appinsight_k8sFunc)
 			} else {
-				newExtend.K8sNew_Server(cmd, args, k8sUtil, workspaceInfo, executeStartCmdFunc)
+				newExtend.K8sNew_Server(cmd, args, k8sUtil, workspaceInfo, appinsight_k8sFunc)
 			}
 
 		}
