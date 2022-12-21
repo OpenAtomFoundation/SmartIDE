@@ -1,0 +1,133 @@
+#################################################
+# SmartIDE Developer Container Image
+# Licensed under GPL v3.0
+# Copyright (C) leansoftX.com
+#################################################
+
+FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-python-v2-vmlc:latest
+
+USER root
+
+RUN mkdir -p /usr/share/man/man1
+
+# Node , Python
+# Java , C/C++, Go, DotNet, PHP,
+# ARG BUILD_GOLANG_VERSION
+
+LABEL "Node"="v14.17.6"
+LABEL "Python"="3.10"
+LABEL "Java"="openjdk-17"
+LABEL "C/C++"="gcc 9.4.0"
+LABEL "DotNet"="6.0"
+LABEL "Go"="1.19.1"
+LABEL "PHP"="7.4"
+
+LABEL "maven"="3.8.6"
+LABEL "npm"="6.14.15"
+LABEL "pip"="22.2.2"
+
+# Java-----------------------------------
+RUN apt-get update && \
+    apt-get -y install --no-install-recommends openjdk-8-jdk openjdk-11-jdk openjdk-17-jdk maven && \
+    apt-get clean && \
+    apt-get autoremove -y && \
+    rm -rf /tmp/* /var/lib/apt/lists/* /var/tmp/*
+
+RUN wget https://dlcdn.apache.org/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.tar.gz \
+    && tar -xvzf apache-maven-3.8.6-bin.tar.gz \
+    && cp -r apache-maven-3.8.6 /opt/maven \
+    && rm -rf apache-maven-3.8.6-bin.tar.gz apache-maven-3.8.6 
+
+RUN echo 'JAVA_HOME=/usr/lib/jvm/java-1.17.0-openjdk-amd64' >> /root/.bashrc && \
+    echo 'M2_HOME=/opt/maven' >> /root/.bashrc && \
+    echo 'MAVEN_HOME=/opt/maven' >> /root/.bashrc && \
+    echo 'PATH=${M2_HOME}/bin:${PATH}' >> /root/.bashrc
+
+RUN echo 'JAVA_HOME=/usr/lib/jvm/java-1.17.0-openjdk-amd64' >> .bashrc && \
+    echo 'M2_HOME=/opt/maven' >> .bashrc && \
+    echo 'MAVEN_HOME=/opt/maven' >> .bashrc && \
+    echo 'PATH=${M2_HOME}/bin:${PATH}' >> .bashrc
+
+# Java-----------------------------------
+
+# C/C++-----------------------------------
+RUN apt-get update && \
+    apt-get -y install --no-install-recommends gcc cmake clang build-essential libssl-dev \
+    cppcheck valgrind lldb llvm gdb ninja-build g++ libc6-dev make \
+    libjansson-dev libsnappy-dev liblzma-dev libz-dev pkg-config && \
+    apt-get clean && \
+    apt-get autoremove -y && \
+    rm -rf /tmp/* /var/lib/apt/lists/* /var/tmp/*
+# C/C++-----------------------------------
+
+
+# Go-----------------------------------
+
+ARG BUILD_GOLANG_VERSION
+ENV GOLANG_VERSION=$BUILD_GOLANG_VERSION
+ENV GOPATH=/home/smartide/go
+ENV GOROOT=/usr/local/go
+# go get -v  安装包需要，路径不能使用变量配置
+ENV PATH=/usr/local/go/bin:$PATH
+ENV PATH=/home/smartide/go/bin:$PATH
+
+RUN mkdir -p /home/smartide && mkdir -p /home/smartide/go && mkdir -p /home/smartide/tmp && chmod -R 777 /home/smartide/tmp && \
+    mkdir -p "$GOPATH/src" "$GOPATH/bin" "$GOPATH/pkg/mod" && chmod -R 777 "$GOPATH" && \
+    echo "export GOROOT=/usr/local/go" >> /etc/profile && echo "export GOPATH=/home/smartide/go" >> /etc/profile && \
+    echo "export PATH=/usr/local/go/bin:/home/smartide/go/bin:$PATH" >> /etc/profile
+
+
+RUN wget -O go.tgz https://go.dev/dl/go$GOLANG_VERSION.linux-amd64.tar.gz --progress=dot:giga \
+    && tar -C /usr/local -xzf go.tgz \
+    && rm -rf go.tgz
+
+USER smartide
+#指定go临时目录
+RUN go env -w GOTMPDIR="/home/smartide/tmp"
+USER root
+# hugo install $HUGO_PKG_URL
+RUN wget https://github.com/gohugoio/hugo/releases/download/v0.103.1/hugo_extended_0.103.1_linux-amd64.deb -O hugo-Linux-64bit.deb \
+    && sudo dpkg -i hugo-Linux-64bit.deb \
+    && rm -rf hugo-Linux-64bit.deb
+# Go-----------------------------------
+
+
+# DotNet-----------------------------------
+# install dotnet sdk
+RUN wget https://packages.microsoft.com/config/ubuntu/16.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+RUN dpkg -i packages-microsoft-prod.deb
+
+RUN apt-get update && \ 
+    apt-get install -y --no-install-recommends apt-transport-https && \
+    apt-get install -y --no-install-recommends dotnet-sdk-6.0 && \
+    apt-get install -y --no-install-recommends aspnetcore-runtime-6.0 && \
+    apt-get autoremove -y && \
+    rm -rf /tmp/* /var/lib/apt/lists/* /var/tmp/*
+
+ENV DOTNET_ROOT=$HOME/dotnet
+ENV PATH=$HOME/dotnet:$PATH
+ENV PATH=$HOME/.dotnet/tools:$PATH
+ENV DOTNET_CLI_TELEMETRY_OPTOUT=false
+# DotNet-----------------------------------
+
+# PHP-----------------------------------
+# Install Apache2 PHP
+RUN apt-get update \
+    && apt-get install -y software-properties-common ca-certificates \
+    && add-apt-repository -y ppa:ondrej/php \
+    && apt-get install -y \
+        apache2 \
+        php7.4 php7.4-xml php7.4-mysql php7.4-json php7.4-mbstring php7.4-ldap php7.4-soap php7.4-zip php7.4-gd php7.4-curl php7.4-xdebug php-apcu \
+        graphviz unzip\
+    && apt-get clean \
+    && rm -rf /tmp/* /var/lib/apt/lists/* /var/tmp/* \
+    && update-alternatives --set php /usr/bin/php7.4
+
+# Copy Apache services, configs and scripts
+COPY artifacts/apache2.conf /etc/apache2/apache2.conf
+COPY artifacts/apache2.fqdn.conf /etc/apache2/conf-available/fqdn.conf
+COPY artifacts/apache2.sites-available.conf /etc/apache2/sites-available/000-default.conf
+COPY artifacts/scripts /
+RUN chmod +x /*.sh && a2enconf fqdn
+
+# PHP-----------------------------------

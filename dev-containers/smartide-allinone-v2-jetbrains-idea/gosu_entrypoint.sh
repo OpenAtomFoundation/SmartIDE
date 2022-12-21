@@ -3,8 +3,8 @@
  # @Author: kenan
  # @Date: 2022-05-24 14:37:27
  # @LastEditors: kenan
- # @LastEditTime: 2022-05-24 15:14:11
- # @FilePath: /smartide/dev-containers/smartide-node-v2-jetbrains-webstorm/gosu_entrypoint_node.sh
+ # @LastEditTime: 2022-05-24 15:13:29
+ # @FilePath: /smartide/dev-containers/smartide-java-v2-jetbrains-idea/gosu_entrypoint.sh
  # @Description: 
  # 
  # Copyright (c) 2022 by kenanlu@leansoftx.com, All Rights Reserved. 
@@ -41,7 +41,8 @@ if [ $USER_UID == '0' ]; then
     /usr/sbin/sshd
 
     echo "-----------Starting ide"
-    exec run.sh "$@"
+    # exec run.sh "$@"
+    cd /home/smartide && exec ./run.sh
 
 else
 
@@ -84,7 +85,7 @@ else
     /usr/sbin/sshd
     
     echo "-----smartide-----Starting gosu ide"
-    echo "-Dide.browser.jcef.enabled=false" >> /projector/ide/bin/webstorm64.vmoptions
     cd /home/smartide && exec gosu smartide ./run.sh
+    # exec gosu smartide /home/smartide/run.sh "$@"
 
 fi
