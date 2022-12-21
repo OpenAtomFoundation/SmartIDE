@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-12-13 10:03:18
+ * @LastEditTime: 2022-12-21 15:35:44
  */
 package common
 
@@ -39,7 +39,14 @@ func (g gitOperation) CheckGitRemoteUrl(url string) bool {
 
 // 获取 repo url
 func (g gitOperation) GetRepositoryUrl(actualGitRepoUrl string) string {
-	uri, _ := url.Parse(actualGitRepoUrl)
+	uri, err := url.Parse(actualGitRepoUrl)
+	if err != nil {
+		SmartIDELog.Warning(err.Error())
+		return ""
+	}
+	if uri == nil {
+		return ""
+	}
 	if uri.Scheme == "https" || uri.Scheme == "http" {
 		if actualGitRepoUrl[len(actualGitRepoUrl)-4:] == ".git" {
 			return actualGitRepoUrl[:len(actualGitRepoUrl)-4]
