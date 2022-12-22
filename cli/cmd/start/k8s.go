@@ -433,7 +433,7 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 
 	//5.3. 缓存git 用户名、密码
 	if workspaceInfo.GitRepoAuthType == workspace.GitRepoAuthType_Basic {
-		common.SmartIDELog.Info("container cache git username and password...")
+		common.SmartIDELog.Info("Cache git username and password in workspace ...")
 		uri, _ := url.Parse(workspaceInfo.GitCloneRepoUrl)
 		command := fmt.Sprintf(`git config --global credential.helper store && echo "%v://%v:%v@%v" >> ~/.git-credentials `,
 			uri.Scheme, workspaceInfo.GitUserName, workspaceInfo.GitPassword, uri.Host)
@@ -445,11 +445,11 @@ func execPod(cmd *cobra.Command, workspaceInfo workspace.WorkspaceInfo,
 	}
 
 	//5.4. git clone
-	common.SmartIDELog.Info("Craeting project files ...")
+	common.SmartIDELog.Info("Creating project files ...")
 	containerGitCloneDir := originK8sConfig.GetProjectDirctory()
 	//5.4.1. git clone 代码库中的文件
 	if workspaceInfo.GitCloneRepoUrl != "" { //5.4.2.
-		common.SmartIDELog.Info("git clone to the project folder")
+		common.SmartIDELog.Info("Running git clone in project folder ...")
 		actualGitRepoUrl := workspaceInfo.GitCloneRepoUrl
 		err = kubernetes.GitClone(*devContainerPod, tempK8sConfig.Workspace.DevContainer.ServiceName, runAsUserName, actualGitRepoUrl, containerGitCloneDir, workspaceInfo.GitBranch)
 
