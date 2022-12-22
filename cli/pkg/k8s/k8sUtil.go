@@ -1,7 +1,7 @@
 /*
  * @Date: 2022-03-23 16:13:54
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-12-13 10:30:16
+ * @LastEditTime: 2022-12-22 10:21:16
  * @FilePath: /cli/pkg/k8s/k8sUtil.go
  */
 
@@ -254,7 +254,7 @@ func (k *KubernetesUtil) GitClone(pod coreV1.Pod,
 	repoUrl := common.GIT.GetRepositoryUrl(gitCloneUrl)
 	if repoUrl != "" {
 		command := common.GIT.GetCommand4RepositoryUrl(repoUrl)
-		result, err := k.ExecKubectlCommandCombined(command, "")
+		result, err := k.ExecuteCommandCombinedInPod(pod, containerName, command, "")
 		if err != nil {
 			return err
 		}
