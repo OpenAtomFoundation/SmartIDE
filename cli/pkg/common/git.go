@@ -3,7 +3,7 @@
  * @Description:
  * @Date: 2021-11
  * @LastEditors: Jason Chen
- * @LastEditTime: 2022-12-21 15:35:44
+ * @LastEditTime: 2022-12-28 08:18:47
  */
 package common
 
@@ -39,6 +39,9 @@ func (g gitOperation) CheckGitRemoteUrl(url string) bool {
 
 // 获取 repo url
 func (g gitOperation) GetRepositoryUrl(actualGitRepoUrl string) string {
+	if runtime.GOOS == "windows" {
+		return ""
+	}
 	uri, err := url.Parse(actualGitRepoUrl)
 	if err != nil {
 		SmartIDELog.Warning(err.Error())
