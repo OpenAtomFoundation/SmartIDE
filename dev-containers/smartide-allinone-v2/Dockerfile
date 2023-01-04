@@ -43,7 +43,7 @@ RUN apt-get update && \
     apt-get autoremove -y && \
     rm -rf /tmp/* /var/lib/apt/lists/* /var/tmp/*
 
-RUN wget https://dlcdn.apache.org/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.tar.gz \
+RUN wget https://archive.apache.org/dist/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.tar.gz \
     && tar -xvzf apache-maven-3.8.6-bin.tar.gz \
     && cp -r apache-maven-3.8.6 /opt/maven \
     && rm -rf apache-maven-3.8.6-bin.tar.gz apache-maven-3.8.6 
