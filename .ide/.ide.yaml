@@ -15,6 +15,7 @@ workspace:
       git-config: true
       ssh-key: true
     command:      
+      - cd /home/project
       - go env -w GOPROXY=https://goproxy.cn,direct
       - cd cli      
       - go111MODULE=on go install github.com/uudashr/gopkgs/v2/cmd/gopkgs@latest
