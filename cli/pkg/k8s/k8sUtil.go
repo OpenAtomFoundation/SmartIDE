@@ -632,11 +632,12 @@ func (k *KubernetesUtil) GetPodInstanceByName(podName string) (*coreV1.Pod, erro
 func (k *KubernetesUtil) ExecuteCommandRealtimeInPod(pod coreV1.Pod, containerName string, command string, runAsUser string) error {
 	//command = "su smartide -c " + command
 	if runAsUser != "" && runAsUser != "root" {
-		if runtime.GOOS == "windows" {
+		/* if runtime.GOOS == "windows" {
 			command = strings.ReplaceAll(command, "'", "`")
 		} else {
 			command = strings.ReplaceAll(command, "'", "\"\"")
-		}
+		} */
+		command = strings.ReplaceAll(command, "'", "''")
 		command = fmt.Sprintf(`su %v -c '%v'`, runAsUser, command)
 	}
 	kubeCommand := fmt.Sprintf(` -it exec %v -- /bin/bash -c "%v"`, pod.Name, command)
