@@ -1,9 +1,20 @@
 /*
- * @Date: 2022-09-05 11:27:09
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-27 15:27:22
- * @FilePath: /cli/cmd/start/k8s_client.go
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 package start
 
@@ -26,7 +37,7 @@ import (
 // 在本地启动k8s工作区
 func ExecuteK8s_LocalWS_LocalEnv(cmd *cobra.Command, k8sUtil k8s.KubernetesUtil,
 	workspaceInfo workspace.WorkspaceInfo,
-	yamlExecuteFun func(yamlConfig config.SmartIdeK8SConfig,  workspaceInfo workspace.WorkspaceInfo, cmdtype, userguid, workspaceid string)) (workspace.WorkspaceInfo, error) {
+	yamlExecuteFun func(yamlConfig config.SmartIdeK8SConfig, workspaceInfo workspace.WorkspaceInfo, cmdtype, userguid, workspaceid string)) (workspace.WorkspaceInfo, error) {
 
 	needStore := false
 	if workspaceInfo.ID == "" {
