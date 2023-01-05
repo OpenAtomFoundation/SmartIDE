@@ -52,7 +52,7 @@ OpenSumi的定位非常符合SmartIDE对IDE定制化解决方案的需求，因�
 
 ```shell
 ## 使用OpenSumi WebIDE开启Node开发环境
-smartide new node -t opensumi
+smartide new node -T opensumi
 ```
 
 以下是处于单步调试状态的 OpenSumi WebIDE

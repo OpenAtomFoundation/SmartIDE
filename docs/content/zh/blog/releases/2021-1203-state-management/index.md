@@ -72,10 +72,10 @@ php          _default
 选项：
   -d, --debug         是否开启Debug模式，在该模式下将显示更多的日志信息
   -h, --help          help for new
-  -t, --type string   类型
+  -T, --type string   类型
 
 # 示例，一键创建 node express 项目
-smartide new node -t express
+smartide new node -T express
 ```
 
 SmartIDE所使用的项目模板全部采用开源方式公布在GitHub上，同时为了方便开发者使用，我们还提供了gitee的镜像。

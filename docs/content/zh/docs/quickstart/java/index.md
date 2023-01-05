@@ -31,7 +31,7 @@ SmartIDE内置了Java开发环境模板，你可以通过一个简单的指令�
 # 执行以下命令
 mkdir sample-java-vscode 
 cd sample-java-vscode
-smartide new java -t vscode
+smartide new java -T vscode
 ```
 
 运行后的效果如下，你可以通过命令窗口中的日志详细了解 SmartIDE 的启动过程，当 SmartIDE 启动完毕之后，会自动打开浏览器窗口并导航到 WebIDE 界面。
@@ -265,7 +265,7 @@ smartide start https://gitee.com/smartide/sample-java-vscode
 ```
 mkdir sample-java-idea
 cd sample-java-idea
-smartide new java -t idea
+smartide new java -T idea
 ```
 
 运行后的效果如下，你可以通过命令窗口中的日志详细了解 SmartIDE 的启动过程，当 SmartIDE 启动完毕之后，会自动打开浏览器窗口并导航到 WebIDE 界面。
@@ -440,6 +440,16 @@ smartide start https://gitee.com/smartide/sample-java-idea
 ```
 
 是不是很爽！
+
+###  5. 快速创建Spring Boot项目
+SmartIDE模板中提供了创建Spring Boot的示例模板，可以更快速地创建一个Spring Web项目。
+
+命令如下：
+```shell
+smartide new java -T springboot-idea
+```
+
+详情请参考：https://gitee.com/smartide/smartide-springboot-template
 
 基于Spring Boot并包含前端、数据库等的Java项目，可参考示例应用-**[若依项目](../../examples/ruoyi/)**。
 

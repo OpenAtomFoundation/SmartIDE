@@ -69,12 +69,12 @@ smartide start https://github.com/SmartIDE/sample-dapr-traffic-control
 
 ```shell
 ## 启动使用 Jupyter Notebook 的数据科学处理开发者容器
-smartide new anaconda -t jupyter 
+smartide new anaconda -T jupyter 
 ## 在远程主机上启动
 ### 首先将自己的主机添加到 SmartIDE工具中，并获取hostId
 smartide host add <Ip-Address> --username <user> --password <pwd>
 ### 使用 --host 参数再次启动
-smartide new --host <hostId> anaconda -t jupyter 
+smartide new --host <hostId> anaconda -T jupyter 
 ```
 
 使用以上方式启动的 `Jupyter Notebook` 环境还会内置一个 VSCode WebIDE，这样可以利用内置的Git管理工具将制作好的 Notebook 提交到Git代码仓库中进行版本管理。 其他开发者就可以使用 `smartide start <代码库地址>` 指令一键将同样的环境漫游到自己的本地开发机，主机或者k8s上。

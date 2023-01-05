@@ -114,6 +114,11 @@ smartide:
     start: true
   tekton-trigger-host: http://minikube
   template-git-url: https://gitee.com/smartide/smartide-templates.git
+  hybrid-download-url: https://smartidedl.blob.core.chinacloudapi.cn
+  webconf:
+    assets-url: https://smartidedl.blob.core.chinacloudapi.cn/assets
+    oemEnable: false
+    title: SmartIDE
 system:
   env: public
   addr: 8888

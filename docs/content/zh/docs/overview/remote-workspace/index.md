@@ -1,8 +1,7 @@
 ---
 title: "远程工作区"
-linkTitle: "远程工作区"
+linkTitle: "工作区"
 weight: 50
-draft: false
 description: >
   远程工作区(Remote Workspace)是SmartIDE中的最重要的概念，SmartIDE的所有功能都是围绕远程工作区展开的。SmartIDE支持3种远程工作区运行模式，本地模式、远程模式和k8s模式。
 ---
@@ -89,7 +88,10 @@ smartide start --k8s <实例名称> --namespace <命令空间名称> <代码库U
 
 ### Server远程工作区
 
-SmartIDE Server为用户管理远程工作区提供可视化的网页操作，但是Server远程工作区本质上仍然是运行在远程linux主机上的远程主机远程工作区或者运行在k8s集群中的k8s远程工作区。SmartIDE Server允许用户讲自己的linux主机或者k8s集群注册到资源列表，并通过 远程工作区管理 页面创建server远程工作区。
+SmartIDE Server为用户管理远程工作区提供可视化的网页操作，但是Server远程工作区本质上仍然是运行在远程linux主机上的工作区或者运行在k8s集群中的工作区。SmartIDE Server允许用户讲自己的linux主机或者k8s集群注册到资源列表，并通过 远程工作区管理 页面创建server远程工作区。
 
 在用户使用Server远程工作区的过程中，需要使用SmartIDE CLI执行 `smartide connect` 指令允许cli监听正在运行的Server远程工作区列表并建立 **SSH隧道** 以便用户可以继续使用 `localhost:port` 的方式访问远程工作区资源。
+
+对于运行在k8s中的工作区，SmartIDE Sever会自动创建Ingress 3级域名映射，为每个工作区（及其资源）提供访问通道，同时可以提供基于SSH协议的远程终端访问能力。
+
 
