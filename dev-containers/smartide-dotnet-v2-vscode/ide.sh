@@ -27,7 +27,7 @@ sudo chmod -R 777 vsix/extensions
 
 
 # 解压目录
-sudo tar -zxf #{OpenVScodeServerFileName}#.tar.gz --strip-components 1 -C openvscode-images
+sudo tar -zxf #{OpenVScodeServerVmlcFileName}#.tar.gz --strip-components 1 -C openvscode-images
 sudo tar -zxf #{OpenVScodeServerVmlcFileName}#.tar.gz --strip-components 1 -C openvscode-images-vmlc
 
 # 删除node   

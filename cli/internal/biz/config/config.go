@@ -1,10 +1,21 @@
 /*
- * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
- * @Description: config
- * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-25 10:19:51
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package config
 
 import (
@@ -14,13 +25,11 @@ import (
 	"strconv"
 	"strings"
 
-	"io/ioutil"
-
 	"github.com/leansoftX/smartide-cli/internal/apk/user"
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/docker/compose"
-	"github.com/leansoftX/smartide-cli/pkg/kubectl"
+	"github.com/leansoftX/smartide-cli/pkg/k8s"
 	"gopkg.in/yaml.v2"
 )
 
@@ -64,7 +73,7 @@ func (yamlFileConfig *SmartIdeConfig) LoadDockerComposeFromTempFile(sshRemote co
 		common.SmartIDELog.InfoF(i18nInstance.Config.Info_read_docker_compose, tempDockerComposeFilePath)
 
 		// read and parse
-		yamlFileBytes, err = ioutil.ReadFile(tempDockerComposeFilePath)
+		yamlFileBytes, err = os.ReadFile(tempDockerComposeFilePath)
 		common.CheckError(err)
 
 	}
@@ -113,7 +122,8 @@ func (yamlFileConfig *SmartIdeConfig) LoadDockerComposeFromTempFile(sshRemote co
 
 // 把自定义的配置转换为 docker compose
 func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SSHRemote, projectName string,
-	remoteWorkingDir string, isCheckUnuesedPorts bool, userName string) (composeYaml compose.DockerComposeYml, ideBindingPort int, sshBindingPort int) {
+	remoteWorkingDir string, isCheckUnuesedPorts bool, userName string,
+	portConfigs map[string]uint) (composeYaml compose.DockerComposeYml, ideBindingPort int, sshBindingPort int) {
 
 	ideBindingPort = model.CONST_Local_Default_BindingPort_WebIDE // webide
 	sshBindingPort = model.CONST_Local_Default_BindingPort_SSH    // ssh
@@ -163,6 +173,12 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 	//3. 转换为docker compose - 端口绑定
 	//3.1. 端口映射
 	for serviceName, service := range dockerCompose.Services {
+
+		// 如果设置了container name，就在container name前面加 project name（文件夹名称）
+		if service.ContainerName != "" {
+			service.ContainerName = projectName + "_" + service.ContainerName
+			dockerCompose.Services[serviceName] = service
+		}
 
 		// 绑定端口被占用的问题
 		if isCheckUnuesedPorts {
@@ -248,7 +264,6 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 				service.AppendPort(strconv.Itoa(sshBindingPort) + ":" + strconv.Itoa(model.CONST_Container_SSHPort))
 			}
 
-			dockerCompose.Services[serviceName] = service
 		}
 	}
 	//3.2. 遍历端口描述，添加遗漏的端口
@@ -268,18 +283,39 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 		}
 
 	}
+	//3.3. 自定义的端口 添加到devContainer中
+	for serviceName, service := range dockerCompose.Services {
+		if serviceName == yamlFileConfig.Workspace.DevContainer.ServiceName {
+			for _, port := range portConfigs {
+				// 预留端口不能可以使用
+				if err = checkReservedPort(port); err != nil {
+					return
+				}
+
+				// 注入端口映射信息
+				availablePort, _ := checkAndGetAvailableRemotePort(sshRemote, int(port), 100)
+				yamlFileConfig.setPort4Label(int(port), int(port), availablePort, serviceName)
+				if service.ContainContainerPort(int(port)) {
+					common.SmartIDELog.Importance(fmt.Sprintf("端口 %v 映射已存在，将被覆盖", port)) //TODO 注明原端口的label 和 映射信息，以及 新端口的label、映射信息
+				}
+				service.AppendPort(fmt.Sprintf("%v:%v", availablePort, port))
+
+			}
+
+			dockerCompose.Services[serviceName] = service
+		}
+	}
 
 	//4. ssh volume配置
 	for serviceName, service := range dockerCompose.Services {
 		if serviceName == yamlFileConfig.Workspace.DevContainer.ServiceName {
 
 			if yamlFileConfig.Workspace.DevContainer.Volumes.HasSshKey.Value() {
-
 				SSHVolumesConfig(isRemoteMode, &service, sshRemote, userName)
 			}
 
 			if yamlFileConfig.Workspace.DevContainer.Volumes.HasGitConfig.Value() {
-				GitConfig(isRemoteMode, "", nil, &service, sshRemote, kubectl.ExecInPodRequest{})
+				GitConfig(isRemoteMode, "", nil, &service, sshRemote, k8s.ExecInPodRequest{})
 			}
 
 			dockerCompose.Services[serviceName] = service
@@ -365,7 +401,6 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 		}
 		// 只有IDE容器需要动态赋值uid,gid
 		if serviceName == yamlFileConfig.Workspace.DevContainer.ServiceName {
-
 			if isRemoteMode {
 				uid, gid := sshRemote.GetRemoteUserInfo()
 				service.Environment[model.CONST_LOCAL_USER_UID] = uid
@@ -386,6 +421,17 @@ func (yamlFileConfig *SmartIdeConfig) ConvertToDockerCompose(sshRemote common.SS
 	}
 
 	return dockerCompose, ideBindingPort, sshBindingPort
+}
+
+func checkReservedPort(port uint) error {
+	if port == uint(model.CONST_Container_JetBrainsIDEPort) ||
+		port == uint(model.CONST_Container_OpensumiIDEPort) ||
+		port == uint(model.CONST_Container_SSHPort) ||
+		port == uint(model.CONST_Container_WebIDEPort) {
+		return fmt.Errorf("%v 不能绑定", port)
+	}
+
+	return nil
 }
 
 func checkAndGetAvailableRemotePort(sshRemote common.SSHRemote, bindingPortOld int, step int) (bindingPortNew int, err error) {
@@ -413,7 +459,7 @@ func (yamlFileConfig SmartIdeConfig) getDockerCompose(sshRemote common.SSHRemote
 
 		if isRemoteMode {
 			// 获取docker-compose文件在远程主机上的路径
-			remoteDockerComposeFilePath := common.FilePathJoin(common.OS_Linux, remoteWorkingDir, ".ide", yamlFileConfig.Workspace.DockerComposeFile)
+			remoteDockerComposeFilePath := common.FilePahtJoin4Linux(remoteWorkingDir, ".ide", yamlFileConfig.Workspace.DockerComposeFile)
 			common.SmartIDELog.InfoF(i18nInstance.Config.Info_read_docker_compose, remoteDockerComposeFilePath)
 
 			// 在远程主机上加载docker-compose文件
@@ -428,7 +474,7 @@ func (yamlFileConfig SmartIdeConfig) getDockerCompose(sshRemote common.SSHRemote
 			// read and parse
 			common.SmartIDELog.InfoF(i18nInstance.Config.Info_read_docker_compose, yamlFileConfig.Workspace.DockerComposeFile)
 			linkDockerComposeFilePath, _ := yamlFileConfig.GetLocalLinkDockerComposeFile()
-			dockerComposeFileBytes, err = ioutil.ReadFile(linkDockerComposeFilePath)
+			dockerComposeFileBytes, err = os.ReadFile(linkDockerComposeFilePath)
 			if err != nil {
 				return dockerCompose, err
 			}

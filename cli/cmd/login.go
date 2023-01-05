@@ -1,21 +1,30 @@
 /*
- * @Author: kenan
- * @Date: 2022-02-10 16:51:36
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-05 17:37:23
- * @FilePath: /smartide-cli/cmd/login.go
- * @Description:
- *
- * Copyright (c) 2022 by kenanlu@leansoftx.com, All Rights Reserved.
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 package cmd
 
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/howeyc/gopass"
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/model"
@@ -45,7 +54,6 @@ var loginCmd = &cobra.Command{
 			fmt.Scanln(&loginUrl)
 		} */
 		common.SmartIDELog.Info("login : " + loginUrl)
-
 		fflags := cmd.Flags()
 		userName, _ := fflags.GetString(flag_username)
 		for userName == "" {
@@ -67,7 +75,10 @@ var loginCmd = &cobra.Command{
 		}
 		//TODO: 如果密码错误，可以重新录入再试
 
+		appinsight.SetCliLoginTrack(appinsight.Cli_Server_Login, loginUrl, userName, args)
+		time.Sleep(time.Duration(1) * time.Second) //延迟1s确保发送成功
 		//2. 登录
+		common.SmartIDELog.AddEntryptionKey(userPassword) // 密码加密
 		cliRunningEnv := workspace.CliRunningEnvEnum_Client
 		if value, _ := fflags.GetString("mode"); strings.ToLower(value) == "server" {
 			cliRunningEnv = workspace.CliRunningEvnEnum_Server
@@ -102,7 +113,12 @@ func loginWithTokenAndSaveToken(loginUrl, userName, token string, cliRunningEnv 
 // 登录
 func loginAndSaveToken(loginUrl, userName, userPassword string) error {
 	url := fmt.Sprint(loginUrl, "/api/smartide/base/cliLogin")
-	response, err := common.PostJson(url, map[string]interface{}{"username": userName, "password": userPassword}, map[string]string{"Content-Type": "application/json"})
+	params := map[string]interface{}{"username": userName, "password": userPassword}
+	headers := map[string]string{"Content-Type": "application/json"}
+	var response string
+
+	httpClient := common.CreateHttpClientEnableRetry()
+	response, err := httpClient.PostJson(url, params, headers)
 	if err != nil {
 		return err
 	}
@@ -112,6 +128,7 @@ func loginAndSaveToken(loginUrl, userName, userPassword string) error {
 		return fmt.Errorf("login fail %q", msg)
 	} else {
 		token := gojsonq.New().JSONString(response).Find("data.token")
+		common.SmartIDELog.AddEntryptionKeyWithReservePart(fmt.Sprint(token)) // token 加密输出
 		saveToken(loginUrl, userName, token)
 	}
 

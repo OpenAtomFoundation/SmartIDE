@@ -1,27 +1,36 @@
 /*
- * @Author: kenan
- * @Date: 2022-02-15 17:18:27
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-13 14:09:54
- * @FilePath: /smartide-cli/internal/biz/workspace/workspace.go
- * @Description:
- *
- * Copyright (c) 2022 by kenanlu@leansoftx.com, All Rights Reserved.
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package workspace
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/model"
+	apiResponse "github.com/leansoftX/smartide-cli/internal/model/response"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 )
 
 func GetServerWorkspaceList(auth model.Auth, cliRunningEnv CliRunningEvnEnum) (ws []WorkspaceInfo, err error) {
-	//ws = workspaces
 	url := fmt.Sprint(auth.LoginUrl, "/api/smartide/workspace/getList?page=1&pageSize=100")
 	headers := map[string]string{
 		"Content-Type": "application/json",
@@ -30,9 +39,8 @@ func GetServerWorkspaceList(auth model.Auth, cliRunningEnv CliRunningEvnEnum) (w
 	if auth.Token != nil {
 		headers["x-token"] = auth.Token.(string)
 	}
-	response, err := common.Get(url, map[string]string{}, headers)
-
-	// respose valid
+	httpClient := common.CreateHttpClientEnableRetry()
+	response, err := httpClient.Get(url, map[string]string{}, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +48,7 @@ func GetServerWorkspaceList(auth model.Auth, cliRunningEnv CliRunningEvnEnum) (w
 		return nil, errors.New("服务器返回空！")
 	}
 
-	l := &model.WorkspaceListResponse{}
+	l := &apiResponse.WorkspaceListResponse{}
 	err = json.Unmarshal([]byte(response), l)
 	if err != nil {
 		return ws, err
@@ -71,6 +79,10 @@ func GetWorkspaceFromServer(auth model.Auth, no string, cliRunningEnv CliRunning
 		return
 	}
 
+	no = strings.TrimSpace(no)
+	if no == "" {
+		return nil, errors.New("workspace id is nil")
+	}
 	url := fmt.Sprint(auth.LoginUrl, "/api/smartide/workspace/find")
 	queryparams := map[string]string{}
 	if common.IsNumber(no) {
@@ -78,7 +90,8 @@ func GetWorkspaceFromServer(auth model.Auth, no string, cliRunningEnv CliRunning
 	} else {
 		queryparams["no"] = no
 	}
-	response, err := common.Get(url,
+	httpClient := common.CreateHttpClientEnableRetry()
+	response, err := httpClient.Get(url,
 		queryparams,
 		map[string]string{
 			"Content-Type": "application/json",
@@ -92,7 +105,7 @@ func GetWorkspaceFromServer(auth model.Auth, no string, cliRunningEnv CliRunning
 		return nil, errors.New("服务器访问空数据！")
 	}
 
-	l := &model.WorkspaceResponse{}
+	l := &apiResponse.GetWorkspaceSingleResponse{}
 	err = json.Unmarshal([]byte(response), l)
 	if err != nil {
 		return nil, err
@@ -116,5 +129,10 @@ func GetCurrentUser() (auth model.Auth, err error) {
 			break
 		}
 	}
+
+	if auth.Token != "" {
+		common.SmartIDELog.AddEntryptionKeyWithReservePart(fmt.Sprint(auth.Token))
+	}
+
 	return auth, err
 }

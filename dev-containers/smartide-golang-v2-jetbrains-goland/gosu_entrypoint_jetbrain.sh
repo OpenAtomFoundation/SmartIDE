@@ -40,8 +40,9 @@ if [ $USER_UID == '0' ]; then
     echo "-----------Starting sshd"
     /usr/sbin/sshd
 
-    echo "-----------Starting ide"
-    exec run.sh "$@"
+    echo "-----------Starting jetbrains-goland"
+    # exec run.sh "$@"
+    cd /home/smartide && exec ./run.sh
 
 else
 
@@ -83,7 +84,7 @@ else
     #exec /usr/sbin/sshd -D -e "$@"
     /usr/sbin/sshd
     
-    echo "-----smartide-----Starting gosu ide"
-    exec gosu smartide /home/smartide/run.sh "$@"
+    echo "-----smartide-----Starting gosu jetbrains-goland"
+    cd /home/smartide && exec gosu smartide ./run.sh
 
 fi

@@ -1,10 +1,21 @@
 /*
- * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
- * @Description:
- * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-01 20:59:11
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package common
 
 import (
@@ -16,6 +27,10 @@ import (
 
 // 判断所给路径文件/文件夹是否存在
 func IsExist(path string) bool {
+	if strings.TrimSpace(path) == "" {
+		return false
+	}
+
 	// 替换当前用户目录
 	if path[0] == '~' {
 		home, _ := os.UserHomeDir()
@@ -59,7 +74,7 @@ func PathJoin(paths ...string) string {
 }
 
 // 路径组合，参数 os 可以是windows
-func FilePathJoin(osType OSType, paths ...string) string {
+func filePathJoin(osType OSType, paths ...string) string {
 	result := filepath.Join(paths...)
 	switch osType {
 	case OS_Windows:
@@ -72,5 +87,5 @@ func FilePathJoin(osType OSType, paths ...string) string {
 
 // 路径组合 for linux
 func FilePahtJoin4Linux(paths ...string) string {
-	return FilePathJoin(OS_Linux, paths...)
+	return filePathJoin(OS_Linux, paths...)
 }

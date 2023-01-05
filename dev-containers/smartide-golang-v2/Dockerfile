@@ -1,8 +1,22 @@
-#################################################
-# SmartIDE Developer Container Image
-# Licensed under GPL v3.0
-# Copyright (C) leansoftX.com
-#################################################
+###########################################################################
+# SmartIDE - Dev Containers
+# Copyright (C) 2023 leansoftX.com
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+###########################################################################
+
+ARG HUGO_PKG_URL=https://github.com/gohugoio/hugo/releases/download/v0.103.1/hugo_extended_0.103.1_linux-amd64.deb
 
 FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-v2:latest
 
@@ -24,10 +38,21 @@ ENV GOROOT=/usr/local/go
 ENV PATH=/usr/local/go/bin:$PATH
 ENV PATH=/home/smartide/go/bin:$PATH
 
-RUN mkdir -p /home/smartide && mkdir -p /home/smartide/go && \
+RUN mkdir -p /home/smartide && mkdir -p /home/smartide/go && mkdir -p /home/smartide/tmp && chmod -R 777 /home/smartide/tmp && \
     mkdir -p "$GOPATH/src" "$GOPATH/bin" "$GOPATH/pkg/mod" && chmod -R 777 "$GOPATH" && \
+    echo "export GOROOT=/usr/local/go" >> /etc/profile && echo "export GOPATH=/home/smartide/go" >> /etc/profile && \
     echo "export PATH=/usr/local/go/bin:/home/smartide/go/bin:$PATH" >> /etc/profile
+
 
 RUN wget -O go.tgz https://go.dev/dl/go$GOLANG_VERSION.linux-amd64.tar.gz --progress=dot:giga \
     && tar -C /usr/local -xzf go.tgz \
     && rm -rf go.tgz
+
+USER smartide
+#指定go临时目录
+RUN go env -w GOTMPDIR="/home/smartide/tmp"
+USER root
+# hugo install $HUGO_PKG_URL
+RUN wget https://github.com/gohugoio/hugo/releases/download/v0.103.1/hugo_extended_0.103.1_linux-amd64.deb -O hugo-Linux-64bit.deb \
+    && sudo dpkg -i hugo-Linux-64bit.deb \
+    && rm -rf hugo-Linux-64bit.deb

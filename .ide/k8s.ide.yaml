@@ -4,7 +4,7 @@ orchestrator:
   version: 3
 workspace:
   dev-container:
-    service-name: smartide-docs-dev
+    service-name: smartide-vmlc-vscode-go-dev
     webide-port: 6800
     
     ports: # 申明端口
@@ -20,6 +20,6 @@ workspace:
       - git submodule update --init --recursive
       - cd docs
       - npm install
-      - hugo server --bind 0.0.0.0 --disableFastRender --forceSyncStatic --buildDrafts --buildFuture 
+      - hugo server --bind 0.0.0.0 --disableFastRender --forceSyncStatic --buildDrafts --buildFuture
 
   kube-deploy-files: "*-deployment.yaml"  

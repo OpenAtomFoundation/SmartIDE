@@ -1,9 +1,20 @@
 /*
- * @Date: 2022-04-22 10:22:50
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-04-22 10:26:14
- * @FilePath: /smartide-cli/cmd/common/remote.go
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 package common
 
@@ -25,19 +36,15 @@ var (
 	flag_port     = "port"
 	flag_username = "username"
 	flag_password = "password"
-	//flag_project  = "project"
-	//flag_branch   = "branch"
-	//flag_k8s         = "k8s"
-	//flag_namespace   = "namespace"
 )
 
 var i18nInstance = i18n.GetInstance()
 
 // 根据参数，从数据库或者其他参数中加载远程服务器的信息
-func GetRemoteAndValid(fflags *pflag.FlagSet) (remoteInfo workspace.RemoteInfo, err error) {
+func GetRemoteAndValid(fflags *pflag.FlagSet) (remoteInfo *workspace.RemoteInfo, err error) {
 
 	host, _ := fflags.GetString(flag_host)
-	remoteInfo = workspace.RemoteInfo{}
+	userName, _ := fflags.GetString(flag_username)
 
 	// 指定了host信息，尝试从数据库中加载
 	if common.IsNumber(host) {
@@ -46,21 +53,20 @@ func GetRemoteAndValid(fflags *pflag.FlagSet) (remoteInfo workspace.RemoteInfo, 
 		remoteInfo, err = dal.GetRemoteById(remoteId)
 		common.CheckError(err)
 
-		if (workspace.RemoteInfo{} == remoteInfo) {
+		if remoteInfo == nil {
 			common.SmartIDELog.Warning(i18nInstance.Host.Err_host_data_not_exit)
 		}
 	} else {
-		remoteInfo, err = dal.GetRemoteByHost(host)
+		remoteInfo, err = dal.GetRemoteByHost(host, userName)
 
 		// 如果在sqlite中有缓存数据，就不需要用户名、密码
-		if (workspace.RemoteInfo{} != remoteInfo) {
-			CheckFlagUnnecessary(fflags, flag_username, flag_host)
-			CheckFlagUnnecessary(fflags, flag_password, flag_host)
+		if remoteInfo != nil && flag_password != remoteInfo.Password {
+			common.SmartIDELog.Importance(fmt.Sprintf("可以使用 start --host %v 引用该服务器资源", remoteInfo.ID))
 		}
 	}
 
 	// 从参数中加载
-	if (workspace.RemoteInfo{} == remoteInfo) {
+	if remoteInfo == nil {
 		//  必填字段验证
 		err = CheckFlagRequired(fflags, flag_host)
 		if err != nil {
@@ -91,7 +97,6 @@ func GetRemoteAndValid(fflags *pflag.FlagSet) (remoteInfo workspace.RemoteInfo, 
 	return remoteInfo, err
 }
 
-//
 func GetFlagValue(fflags *pflag.FlagSet, flag string) string {
 	value, err := fflags.GetString(flag)
 	if err != nil {
@@ -125,7 +130,6 @@ type FriendlyError struct {
 	Err error
 }
 
-//
 func (e *FriendlyError) Error() string {
 	return e.Err.Error()
 }

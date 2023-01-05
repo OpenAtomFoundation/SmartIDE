@@ -1,13 +1,25 @@
 /*
- * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
- * @Description:
- * @Date: 2022-02-25
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-19 15:06:31
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 package cmd
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -19,11 +31,12 @@ import (
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/model"
+	"github.com/leansoftX/smartide-cli/internal/model/response"
+	apiResponse "github.com/leansoftX/smartide-cli/internal/model/response"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
 )
 
-//
 var connectCmd = &cobra.Command{
 	Use:     "connect",
 	Short:   i18nInstance.Connect.Info_help_short,
@@ -38,7 +51,7 @@ var connectCmd = &cobra.Command{
 			return
 		}
 		common.SmartIDELog.Info("login for: " + currentAuth.LoginUrl)
-
+		//appinsight.SetCliLoginTrack(appinsight.Cli_Server_Connect,currentAuth.LoginUrl,currentAuth.UserName,args)
 		// cli 运行环境
 		cliRunningEnv := workspace.CliRunningEnvEnum_Client
 		if value, _ := cmd.Flags().GetString("mode"); strings.ToLower(value) == "server" {
@@ -46,7 +59,7 @@ var connectCmd = &cobra.Command{
 		}
 
 		// 是否有工作区数据
-		tmpStartedServerWorkspaces, err := getServerWorkspaces(currentAuth, cliRunningEnv, []model.WorkspaceStatusEnum{model.WorkspaceStatusEnum_Start})
+		tmpStartedServerWorkspaces, err := getServerWorkspaces(currentAuth, cliRunningEnv, []apiResponse.WorkspaceStatusEnum{response.WorkspaceStatusEnum_Start})
 		common.CheckError(err)
 		if len(tmpStartedServerWorkspaces) == 0 {
 			common.SmartIDELog.Importance("请等待server工作区启动！")
@@ -55,12 +68,12 @@ var connectCmd = &cobra.Command{
 		// 轮询开始端口转发
 		isUnforward, _ := cmd.Flags().GetBool("unforward")
 		for {
-			startedServerWorkspaces, err := getServerWorkspaces(currentAuth, cliRunningEnv, []model.WorkspaceStatusEnum{})
+			startedServerWorkspaces, err := getServerWorkspaces(currentAuth, cliRunningEnv, []apiResponse.WorkspaceStatusEnum{})
 			if err == io.EOF { // 排除EOF的错误
 				common.SmartIDELog.Importance("getServerWorkspaces EOF")
 			} else {
-				common.CheckError(err)
-				connect(startedServerWorkspaces, cmd, args)
+				common.SmartIDELog.ImportanceWithError(err)
+				connect(startedServerWorkspaces, cmd, args, currentAuth.LoginUrl)
 
 				if isUnforward {
 					return
@@ -69,15 +82,16 @@ var connectCmd = &cobra.Command{
 
 			time.Sleep(time.Second * 10)
 		}
+
 	},
 }
 
 // 检查并获取当前登录用户的信息
 func checkLogin(cmd *cobra.Command) (currentAuth model.Auth, err error) {
-	cliRunningEnv := workspace.CliRunningEnvEnum_Client
-	if value, _ := cmd.Flags().GetString("mode"); strings.ToLower(value) == "server" {
+	//cliRunningEnv := workspace.CliRunningEnvEnum_Client
+	/* if value, _ := cmd.Flags().GetString("mode"); strings.ToLower(value) == "server" {
 		cliRunningEnv = workspace.CliRunningEvnEnum_Server
-	}
+	} */
 
 	// 确保登录
 	isLogged := false
@@ -88,12 +102,17 @@ func checkLogin(cmd *cobra.Command) (currentAuth model.Auth, err error) {
 
 		if currentAuth != (model.Auth{}) && currentAuth.Token != "" && currentAuth.Token != nil {
 			// 从api 获取workspace
-			_, err = workspace.GetServerWorkspaceList(currentAuth, cliRunningEnv)
+			err = getServerMenu(currentAuth)
 			if err != nil {
-				common.SmartIDELog.ImportanceWithError(err)
-				common.SmartIDELog.Importance("token 已失效，请重新登录！")
+				if !strings.Contains(err.Error(), "Client.Timeout exceeded while awaiting headers") {
+					common.SmartIDELog.ImportanceWithError(err)
+					common.SmartIDELog.Importance("token 已失效，请重新登录！")
 
-				loginCmd.Run(cmd, []string{currentAuth.LoginUrl})
+					loginCmd.Run(cmd, []string{currentAuth.LoginUrl})
+				} else {
+					return currentAuth, err
+				}
+
 			} else {
 				isLogged = true
 			}
@@ -115,11 +134,42 @@ func checkLogin(cmd *cobra.Command) (currentAuth model.Auth, err error) {
 	return
 }
 
+func getServerMenu(auth model.Auth) error {
+	url := fmt.Sprint(auth.LoginUrl, "/api/menu/getMenu")
+	headers := map[string]string{
+		"Content-Type": "application/json",
+	}
+	if auth.Token != nil {
+		headers["x-token"] = auth.Token.(string)
+	}
+	headers["x-user-id"] = "1"
+	httpClient := common.CreateHttpClientEnableRetry()
+	response, err := httpClient.PostJson(url, make(map[string]interface{}), headers)
+	if err != nil {
+		return err
+	}
+	if response == "" {
+		return errors.New("服务器返回空！")
+	}
+
+	l := &apiResponse.DefaultResponse{}
+	err = json.Unmarshal([]byte(response), l)
+	if err != nil {
+		return err
+	}
+	if l.Code != 0 {
+		return errors.New(l.Msg)
+	}
+	return nil
+}
+
 // 已经连接的工作区id 列表
 var connectedWorkspaceIds []string = []string{}
 
 // 获取远程的工作区列表
-func getServerWorkspaces(currentAuth model.Auth, cliRunningEnv workspace.CliRunningEvnEnum, allowStatuses []model.WorkspaceStatusEnum) ([]workspace.WorkspaceInfo, error) {
+func getServerWorkspaces(currentAuth model.Auth,
+	cliRunningEnv workspace.CliRunningEvnEnum, allowStatuses []apiResponse.WorkspaceStatusEnum) (
+	[]workspace.WorkspaceInfo, error) {
 	var startedServerWorkspaces []workspace.WorkspaceInfo
 	serverWorkSpaces, err := workspace.GetServerWorkspaceList(currentAuth, cliRunningEnv)
 	for _, item := range serverWorkSpaces {
@@ -150,25 +200,18 @@ func getServerWorkspaces(currentAuth model.Auth, cliRunningEnv workspace.CliRunn
 }
 
 // go routine 启动所有工作区
-func connect(startedServerWorkspaces []workspace.WorkspaceInfo, cmd *cobra.Command, args []string) {
-
-	//ai记录
-	var trackEvent string
-	for _, val := range args {
-		trackEvent = trackEvent + " " + val
-	}
-
+func connect(startedServerWorkspaces []workspace.WorkspaceInfo, cmd *cobra.Command, args []string, LoginUrl string) {
 	// appinsight
-	executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig) {
-		if config.GlobalSmartIdeConfig.IsInsightEnabled != config.IsInsightEnabledEnum_Enabled {
-			common.SmartIDELog.Debug("Application Insights disabled")
-			return
-		}
-		var imageNames []string
-		for _, service := range yamlConfig.Workspace.Servcies {
-			imageNames = append(imageNames, service.Image)
-		}
-		appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(workspace.WorkingMode_Remote), strings.Join(imageNames, ","))
+	executeStartCmdFunc := func(yamlConfig config.SmartIdeConfig, workspaceInfo workspace.WorkspaceInfo, cmdtype, userguid, workspaceid string) {
+		// if config.GlobalSmartIdeConfig.IsInsightEnabled != config.IsInsightEnabledEnum_Enabled {
+		// 	common.SmartIDELog.Debug("Application Insights disabled")
+		// 	return
+		// }
+		// var imageNames []string
+		// for _, service := range yamlConfig.Workspace.Servcies {
+		// 	imageNames = append(imageNames, service.Image)
+		// }
+		// appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, string(workspace.WorkingMode_Remote), strings.Join(imageNames, ","))
 	}
 
 	var mutex sync.Mutex
@@ -178,7 +221,13 @@ func connect(startedServerWorkspaces []workspace.WorkspaceInfo, cmd *cobra.Comma
 		common.SmartIDELog.Info(fmt.Sprintf("-- workspace (%v) -------------------------------", fixWorkspaceInfo.ServerWorkSpace.NO))
 		var err error
 		if fixWorkspaceInfo.Mode == workspace.WorkingMode_Remote {
-			err = start.ExecuteServerVmStartByClientEnvCmd(fixWorkspaceInfo, executeStartCmdFunc)
+
+			var imageNames []string
+			for _, service := range fixWorkspaceInfo.ConfigYaml.Workspace.LinkCompose.Services {
+				imageNames = append(imageNames, service.Image)
+			}
+			appinsight.SetAllTrack(appinsight.Cli_Server_Connect, args, LoginUrl, fixWorkspaceInfo.ServerWorkSpace.OwnerGUID, fixWorkspaceInfo.ID, "", "", strings.Join(imageNames, ","))
+			_, err = start.ExecuteServerVmStartByClientEnvCmd(fixWorkspaceInfo, executeStartCmdFunc)
 		} /* else if fixWorkspaceInfo.Mode == workspace.WorkingMode_K8s {
 			err = start.ExecuteServerK8sStartByClientEnvCmd(fixWorkspaceInfo, executeStartCmdFunc)
 		} */
@@ -188,7 +237,7 @@ func connect(startedServerWorkspaces []workspace.WorkspaceInfo, cmd *cobra.Comma
 			connectedWorkspaceIds = common.RemoveItem(connectedWorkspaceIds, fixWorkspaceInfo.ServerWorkSpace.NO)
 		}
 		time.Sleep(time.Second * 26)
-		mutex.Unlock()
+		defer mutex.Unlock()
 
 		for {
 			if !common.Contains(connectedWorkspaceIds, fixWorkspaceInfo.ServerWorkSpace.NO) {
@@ -203,7 +252,7 @@ func connect(startedServerWorkspaces []workspace.WorkspaceInfo, cmd *cobra.Comma
 
 	//2. 启动工作区
 	for _, workspaceInfo := range startedServerWorkspaces {
-		if workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Start {
+		if workspaceInfo.ServerWorkSpace.Status == apiResponse.WorkspaceStatusEnum_Start {
 			if !common.Contains(connectedWorkspaceIds, workspaceInfo.ServerWorkSpace.NO) {
 				// 加入到已连接数组
 				connectedWorkspaceIds = append(connectedWorkspaceIds, workspaceInfo.ServerWorkSpace.NO)

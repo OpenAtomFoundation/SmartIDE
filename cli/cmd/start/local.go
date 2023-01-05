@@ -1,10 +1,21 @@
 /*
- * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
- * @Description:
- * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-18 11:07:25
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package start
 
 import (
@@ -14,26 +25,25 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/leansoftX/smartide-cli/internal/dal"
+	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/spf13/cobra"
 
+	initExtended "github.com/leansoftX/smartide-cli/cmd/init"
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
-	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/docker/compose"
-	"github.com/leansoftX/smartide-cli/pkg/kubectl"
+	"github.com/leansoftX/smartide-cli/pkg/k8s"
 	"github.com/leansoftX/smartide-cli/pkg/tunnel"
-
-	initExtended "github.com/leansoftX/smartide-cli/cmd/init"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 )
 
-func reloadWorkSpaceId(workspace *workspace.WorkspaceInfo) {
+func saveDataAndReloadWorkSpaceId(workspace *workspace.WorkspaceInfo) {
 	workspaceId, err := dal.InsertOrUpdateWorkspace(*workspace)
 	workspace.ID = strconv.Itoa(int(workspaceId))
 	common.CheckError(err)
@@ -42,7 +52,8 @@ func reloadWorkSpaceId(workspace *workspace.WorkspaceInfo) {
 // 本地执行 start
 func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	endPostExecuteFun func(dockerContainerName string, docker common.Docker),
-	yamlExecuteFun func(yamlConfig config.SmartIdeConfig), args []string, cmd *cobra.Command) {
+	yamlExecuteFun func(yamlConfig config.SmartIdeConfig, workspaceInfo workspace.WorkspaceInfo, cmdtype, userguid, workspaceid string), args []string, cmd *cobra.Command) (
+	workspace.WorkspaceInfo, error) {
 
 	//0. 检查本地环境
 	err := common.CheckLocalEnv()
@@ -76,8 +87,8 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	common.CheckError(err)
 	linkComposeFileContent, err := currentConfig.Workspace.LinkCompose.ToYaml()
 	common.CheckError(err)
-	hasChanged := workspaceInfo.ChangeConfig(configYamlStr, linkComposeFileContent) // 是否改变
-	if hasChanged {                                                                 // 改变包括了初始化
+	hasChanged := workspaceInfo.IsChangeConfig(configYamlStr, linkComposeFileContent) // 是否改变
+	if hasChanged {                                                                   // 改变包括了初始化
 		// log
 		if workspaceInfo.ID != "" {
 			common.SmartIDELog.Info(i18nInstance.Start.Info_workspace_changed)
@@ -87,7 +98,7 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 		// 获取compose配置
 		tempDockerCompose, ideBindingPort, sshBindingPort =
-			currentConfig.ConvertToDockerCompose(common.SSHRemote{}, workspaceInfo.GetProjectDirctoryName(), "", true, "") // 转换为docker compose格式
+			currentConfig.ConvertToDockerCompose(common.SSHRemote{}, workspaceInfo.GetProjectDirctoryName(), "", true, "", nil) // 转换为docker compose格式
 
 		// 更新端口绑定列表，只在改变的时候才需要赋值
 		workspaceInfo.Extend = workspace.WorkspaceExtend{Ports: currentConfig.GetPortMappings()}
@@ -110,7 +121,7 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 	//3. 容器
 	//3.1. 校验 docker-compose 文件对应的环境是否已经启动
-	isDockerComposeRunning := isDockerComposeRunning(ctx, cli, currentConfig.GetServiceNames())
+	isDockerComposeRunning := isDockerComposeRunning(ctx, cli, workspaceInfo.WorkingDirectoryPath, currentConfig.GetServiceNames())
 
 	//3.2. 运行容器
 	if !isDockerComposeRunning || hasChanged { // 容器没有运行 或者 有改变，重新创建容器
@@ -145,32 +156,42 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 	serviceNames := currentConfig.GetServiceNames()
 	//4. 获取启动的容器列表
-	dockerComposeContainers := GetLocalContainersWithServices(ctx, cli, serviceNames)
+	dockerComposeContainers := GetLocalContainersWithServices(ctx, cli, workspaceInfo.WorkingDirectoryPath, serviceNames)
 	devContainerName := getDevContainerName(dockerComposeContainers, currentConfig.Workspace.DevContainer.ServiceName)
 	if devContainerName == "" {
 		common.SmartIDELog.Error(fmt.Errorf("从services %v 中获取 开发容器名称失败", serviceNames))
 	}
 	if currentConfig.Workspace.DevContainer.Volumes.HasGitConfig.Value() {
-		config.GitConfig(false, devContainerName, cli, &compose.Service{}, common.SSHRemote{}, kubectl.ExecInPodRequest{})
+		config.GitConfig(false, devContainerName, cli, &compose.Service{}, common.SSHRemote{}, k8s.ExecInPodRequest{})
 	}
 	docker := *common.NewDocker(cli)
 	dockerContainerName := strings.ReplaceAll(devContainerName, "/", "")
-	config.LocalContainerGitSet(docker, dockerContainerName)
+	config.LocalContainerGitSet(docker, dockerContainerName)                  //git 设置
+	localContainerCredentialCache(docker, dockerContainerName, workspaceInfo) // 缓存git 用户名、密码
 
 	//5. 保存 workspace
+	//5.1.
 	if hasChanged {
 		common.SmartIDELog.Info(i18nInstance.Start.Info_workspace_saving)
-		//5.1.
+
 		if workspaceInfo.Name == "" {
 			workspaceInfo.Name = devContainerName
 		}
 		workspaceInfo.TempDockerCompose = tempDockerCompose
+	}
+	//5.2.
+	saveDataAndReloadWorkSpaceId(&workspaceInfo)
 
-		common.SmartIDELog.InfoF(i18nInstance.Start.Info_workspace_saved, workspaceInfo.ID)
+	if appinsight.Global.CmdType == "new" {
+		yamlExecuteFun(*currentConfig, workspaceInfo, appinsight.Cli_Local_New, "", workspaceInfo.ID)
+	} else {
+		yamlExecuteFun(*currentConfig, workspaceInfo, appinsight.Cli_Local_Start, "", workspaceInfo.ID)
 	}
 
-	//5.2.
-	reloadWorkSpaceId(&workspaceInfo)
+	//5.3.
+	if hasChanged {
+		common.SmartIDELog.InfoF(i18nInstance.Start.Info_workspace_saved, workspaceInfo.ID)
+	}
 
 	// update .ssh/config file for vscode remote
 	workspaceInfo.UpdateSSHConfig()
@@ -180,11 +201,10 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 
 	// 如果是不进行端口转发，后续就不需要运行
 	if isUnforward {
-		return
+		return workspaceInfo, nil
 	}
 
 	//6. 执行函数内容
-	yamlExecuteFun(*currentConfig)
 	endPostExecuteFun(dockerContainerName, docker)
 
 	//7. 使用浏览器打开web ide
@@ -222,12 +242,9 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 		}
 	}
 
-	//99. 结束
-	common.SmartIDELog.Info(i18nInstance.Start.Info_end)
-
-	// tunnel
+	//9. tunnel
 	sshPassword := workspaceInfo.TempDockerCompose.GetSSHPassword(currentConfig.Workspace.DevContainer.ServiceName)
-	sshRemote, err := common.NewSSHRemote("localhost", sshBindingPort, model.CONST_DEV_CONTAINER_CUSTOM_USER, sshPassword)
+	sshRemote, err := common.NewSSHRemote("localhost", sshBindingPort, model.CONST_DEV_CONTAINER_CUSTOM_USER, sshPassword, "")
 	common.CheckError(err)
 	options := tunnel.AutoTunnelMultipleOptions{}
 	for _, portMap := range workspaceInfo.Extend.Ports {
@@ -236,17 +253,32 @@ func ExecuteStartCmd(workspaceInfo workspace.WorkspaceInfo, isUnforward bool,
 	}
 	tunnel.AutoTunnel(sshRemote.Connection, options)
 
-	// 死循环，不结束
-	for {
-		time.Sleep(time.Second * 10)
+	return workspaceInfo, nil
+}
+
+func localContainerCredentialCache(docker common.Docker, dockerContainerName string, workspaceInfo workspace.WorkspaceInfo) {
+
+	if workspaceInfo.GitRepoAuthType != workspace.GitRepoAuthType_Basic {
+		return
 	}
+
+	common.SmartIDELog.Info("容器缓存git 用户名、密码")
+	command := fmt.Sprintf(`git config --global user.name "%v" && git config --global user.password "%v" && git config --global credential.helper store`,
+		workspaceInfo.GitUserName, workspaceInfo.GitPassword)
+
+	out, err := docker.Exec(context.Background(), dockerContainerName, "/usr/bin -c", strings.Split(command, " "), []string{})
+	common.CheckError(err)
+	common.SmartIDELog.Debug(out)
+
+	common.SmartIDELog.Debug(out)
+
 }
 
 // docker-compose 对应的容器是否运行
-func isDockerComposeRunning(ctx context.Context, cli *client.Client, serviceNames []string) bool {
+func isDockerComposeRunning(ctx context.Context, cli *client.Client, workingDir string, serviceNames []string) bool {
 	isDockerComposeRunning := false
 
-	dockerComposeContainers := GetLocalContainersWithServices(ctx, cli, serviceNames)
+	dockerComposeContainers := GetLocalContainersWithServices(ctx, cli, workingDir, serviceNames)
 	if len(dockerComposeContainers) > 0 {
 		common.SmartIDELog.Info(i18nInstance.Start.Warn_docker_container_started)
 		isDockerComposeRunning = true

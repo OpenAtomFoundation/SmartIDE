@@ -90,7 +90,7 @@
         "info_help_flag_filepath": "Specify a YAML file as the configuration.",
         "info_running_container": "[Docker] Creating dev containers ...",
         "info_running_openbrower": "[WebIDE] Opening brower ....",
-        "info_end": "[WebIDE] SmartIDE started successfully.",
+        "info_end": "SmartIDE started successfully.",
         "info_docker_compose_filepath": "[Docker-Compose] Using docker-compose file from : %v",
         "info_ssh_tunnel": "[SSH] Port forwarding : %v",
         "info_create_network": "[Docker] Creating network %v",
@@ -111,7 +111,7 @@
         "info_start": "Loading workspaces ...",
         "info_end": "Workspaces loaded.",
         "info_dal_none": "Workspace data not found. ",
-        "info_workspace_list_header": "Id\tName\tMode\tWorking Dir\tConfig File\tHost\tCreate Time"
+        "info_workspace_list_header": "Id\tName\tMode\tactual git repo url\tGit Branch\tConfig File\tHost\tCreate Time"
     },
     "get": {
         "info_help_short": "Load workspace details",
@@ -316,8 +316,8 @@
         "info_start": "Workspace service SSH ports setting start",
         "info_help_short": "Workspace service SSH ports setting",
         "info_help_long": "Workspace service SSH ports setting",
-        "Info_help_flag_resourceid": "K8s resource id",
-        "Info_help_flag_ports": "SSH ports",
+        "info_help_flag_resourceid": "K8s resource id",
+        "info_help_flag_ports": "SSH ports",
         "info_help_flag_mode": "Execution mode",
         "info_help_flag_serverhost": "SmartIDE server host",
         "info_help_flag_servertoken": "SmartIDE server token",
@@ -325,5 +325,26 @@
         "info_log_enable_ssh_success" : "[Success] SSH ports setting",
         "info_log_service_enable_ssh_success" : "[Success] Workspace %v service %v enable SSH ports. Using external port %v !",
         "info_log_service_disable_ssh_success" : "[Success] Workspace %v service %v remove SSH ports. Release external port %v!"
+    },
+    "k8sinit": {
+        "info_start": "K8s initialize start",
+        "info_help_short": "K8s initialization",
+        "info_help_long": "K8s initialization",
+        "info_help_flag_resourceid": "K8s resource id",
+        "info_help_flag_mode": "Execution mode",
+        "info_help_flag_serverhost": "SmartIDE server host",
+        "info_help_flag_servertoken": "SmartIDE server token",
+        "info_log_init_start" : "[Start] K8s initialization!",
+        "info_log_init_success" : "[Success] K8s initialization!",
+        "info_log_apply_ingress_controller_start" : "[Start] Apply ingress controller!",
+        "info_log_apply_ingress_controller_success" : "[Success] Apply ingress controller！",
+        "info_log_create_certificate_secret_start" : "[Start] Create certificate secret!",
+        "info_log_create_certificate_secret_success" : "[Success] Create certificate secret!",
+        "info_log_apply_certificate_manager_start" : "[Start] Apply certificate manager!",
+        "info_log_apply_certificate_manager_success" : "[Success] Apply certificate manager！",
+        "info_log_apply_storage_class_start" : "[Start] Apply storage class！",
+        "info_log_apply_storage_class_success" : "[Success] Apply storage class！",
+        "info_log_feedback_start" : "[Start] Get external IP and feedback!",
+        "info_log_feedback_success" : "[Success] Get external IP and feedback!"
     }
 }

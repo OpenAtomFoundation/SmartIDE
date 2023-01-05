@@ -1,9 +1,20 @@
 /*
- * @Date: 2022-03-29 14:16:33
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-27 16:44:19
- * @FilePath: /smartide-cli/pkg/common/exec.go
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 package common
 
@@ -40,7 +51,12 @@ func (eo *execOperation) Realtime(command string, rootDir string) error {
 		execCommand.Dir = rootDir
 	}
 
-	SmartIDELog.Debug(fmt.Sprintf("local (%v) exec -> %v ", runtime.GOOS, command))
+	currentWorkingDir := ""
+	if execCommand.Dir != "" {
+		currentWorkingDir = fmt.Sprintf("> %v", execCommand.Dir)
+	}
+	SmartIDELog.Debug(fmt.Sprintf("local realtime (%v) exec %v -> %v ",
+		runtime.GOOS, currentWorkingDir, command))
 
 	execCommand.Stdout = os.Stdout
 	execCommand.Stderr = os.Stderr
@@ -66,12 +82,17 @@ func (eo *execOperation) CombinedOutput(command string, rootDir string) (string,
 	}
 	if rootDir != "" {
 		execCommand.Dir = rootDir
+	} else {
+		homeDir, _ := os.UserHomeDir()
+		if homeDir != "" {
+			execCommand.Dir = homeDir
+		}
 	}
 
 	bytes, err := execCommand.CombinedOutput()
 
 	output := strings.TrimSpace(string(bytes))
-	SmartIDELog.Debug(fmt.Sprintf("local (%v) exec -> %v >>\n%v", runtime.GOOS, command, output))
+	SmartIDELog.Debug(fmt.Sprintf("local combine (%v) exec -> %v >>\n%v", runtime.GOOS, command, output))
 
 	return output, err
 }

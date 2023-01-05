@@ -1,10 +1,21 @@
 /*
- * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
- * @Description:
- * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-29 14:58:42
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package common
 
 import (
@@ -19,7 +30,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -36,7 +46,6 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-//
 type SSHRemote struct {
 	SSHHost        string
 	SSHPort        int
@@ -51,7 +60,7 @@ type SSHRemote struct {
 var i18nInstance = i18n.GetInstance()
 
 // 实例
-func NewSSHRemote(host string, port int, userName, password string) (instance SSHRemote, err error) {
+func NewSSHRemote(host string, port int, userName, password string, idRsa string) (instance SSHRemote, err error) {
 
 	instance = SSHRemote{}
 
@@ -61,7 +70,7 @@ func NewSSHRemote(host string, port int, userName, password string) (instance SS
 		instance.SSHUserName = userName
 		instance.SSHPassword = password
 
-		connection, err := connectionDial(host, port, userName, password)
+		connection, err := connectionDial(host, port, userName, password, idRsa)
 		if err != nil {
 			return instance, err
 		}
@@ -72,33 +81,12 @@ func NewSSHRemote(host string, port int, userName, password string) (instance SS
 	return instance, nil
 }
 
-/*
- // 实例
- func (instance *SSHRemote) Instance(host string, port int, userName, password string) error {
-
-	 if (instance.Connection == &ssh.Client{}) || instance.Connection == nil {
-		 instance.SSHHost = host
-		 instance.SSHPort = port
-		 instance.SSHUserName = userName
-		 instance.SSHPassword = password
-
-		 connection, err := connectionDial(host, port, userName, password)
-		 if err != nil {
-			 return err
-		 }
-
-		 instance.Connection = connection
-	 }
-
-	 return nil
- } */
-
 // 验证
-func (instance *SSHRemote) CheckDail(host string, port int, userName, password string) error {
+func (instance *SSHRemote) CheckDail(host string, port int, userName, password string, idRsa string) error {
 
 	if (instance.Connection == &ssh.Client{}) || instance.Connection == nil {
 
-		connection, err := connectionDial(host, port, userName, password)
+		connection, err := connectionDial(host, port, userName, password, idRsa)
 
 		if err != nil {
 			return err
@@ -155,7 +143,7 @@ func (sshRemote *SSHRemote) GetRemoteHome() (currentDir string, err error) {
 	return currentDir, err
 }
 
-//获取远程uid,gid
+// 获取远程uid,gid
 func (sshRemote *SSHRemote) GetRemoteUserInfo() (Uid string, Gid string) {
 	remuid, err := sshRemote.ExeSSHCommand("id -u $USER")
 	remgid, remgiderr := sshRemote.ExeSSHCommand("id -g $USER")
@@ -278,7 +266,7 @@ func (instance *SSHRemote) CopyDirectory(srcDirPath string, remoteDestDirPath st
 			if instance.IsFileExist(remoteFilePath) {
 				return fmt.Errorf("%v 文件已经存在！", remoteFilePath)
 			}
-			//	content, _ := ioutil.ReadFile(localFilePath)
+			//	content, _ := os.ReadFile(localFilePath)
 			/* command := fmt.Sprintf(`echo '%v' >> %v`, content, remoteFilePath)
 			_, err := instance.ExeSSHCommand(command) */
 
@@ -352,6 +340,8 @@ func (instance *SSHRemote) ConvertFilePath(filepath string) (newFilepath string)
 		pwd, err := instance.GetRemotePwd()
 		CheckError(err)
 		newFilepath = path.Join(pwd, strings.Replace(newFilepath, "~/", "", -1))
+	} else {
+		newFilepath = strings.ReplaceAll(newFilepath, "~/", "")
 	}
 
 	return newFilepath
@@ -429,7 +419,7 @@ func (instance *SSHRemote) CheckRemoteEnv() error {
 }
 
 // git clone
-func (instance *SSHRemote) GitClone(gitRepoUrl string, workSpaceDir string, no string, cmd *cobra.Command) error {
+func (instance *SSHRemote) GitClone(gitCloneUrl string, workSpaceDir string, no string, cmd *cobra.Command) error {
 
 	fflags := cmd.Flags()
 	userName, _ := fflags.GetString(Flags_ServerUserName)
@@ -438,74 +428,47 @@ func (instance *SSHRemote) GitClone(gitRepoUrl string, workSpaceDir string, no s
 		return nil
 	}
 
-	if strings.TrimSpace(gitRepoUrl) == "" {
+	if strings.TrimSpace(gitCloneUrl) == "" {
 		SmartIDELog.Error(i18n.GetInstance().Common.Err_sshremote_param_repourl_none)
 	}
 	if workSpaceDir == "" {
-		workSpaceDir = GetRepoName(gitRepoUrl)
+		workSpaceDir = GetRepoName(gitCloneUrl)
 	}
 
-	// 检测是否为ssh模式
-	// 是否覆盖服务器上的私钥文件
-	// 文件存在时提示是否覆盖
-	// 获取工作区策略中的 ssh-key
-	// workspace.GetWSPolicies(no, "2")
-	// 读取本地的ssh配置文件
-	// 读取本地的 id_rsa 文件
-	// , string(localRsaPub)
-	// 公钥 文件不同时才会提示覆盖
-	// fmt.Scanln(&isOverwrite)
-	// 提示私钥文件是否覆盖（不覆盖就无法执行git clone）
-	// fmt.Scanln(&isAllowCopyPrivateKey)
-	// 读取本地的 id_rsa 文件
-	// 读取本地的 id_rsa.pub 文件
-	// 执行私钥文件复制
-	// log
-	// 执行私钥密码的取消 —— 把私钥密码设置为空
-	// https://docs.github.com/cn/authentication/connecting-to-github-with-ssh/working-with-ssh-key-passphrases
-	// instance.ExecSSHkeyPolicy(gitRepoUrl, no, cmd)
+	// git repo check
+	repoUrl := GIT.GetRepositoryUrl(gitCloneUrl)
+	if repoUrl != "" {
+		command := GIT.GetCommand4RepositoryUrl(repoUrl)
+		result, err := instance.ExeSSHCommand(command)
+		if err != nil {
+			return err
+		}
+		httpCode, _ := strconv.Atoi(result)
+		customErr := GIT.CheckError4RepositoryUrl(gitCloneUrl, httpCode)
+		if customErr != nil {
+			if customErr.GitRepoAccessStatus == GitRepoStatusEnum_NotExists {
+				return customErr
+			} else {
+				SmartIDELog.Warning(customErr.Error())
+			}
+		}
+	}
 
 	// 执行clone
 	//gitDirPath := strings.Replace(FilePahtJoin4Linux(workSpaceDir, ".git"), "~/", "", -1) // 把路径变成 “a/b/c” 的形式，不支持 “./a/b/c”、“～/a/b/c”、“./a/b/c”
 	GIT_SSH_COMMAND := fmt.Sprintf(`GIT_SSH_COMMAND='ssh -i ~/.ssh/id_rsa_%s_%s -o IdentitiesOnly=yes'`, userName, no)
 
 	cloneCommand := fmt.Sprintf(`%s git clone %v %v`,
-		GIT_SSH_COMMAND, gitRepoUrl, workSpaceDir) // .git 文件如果不存在，在需要git clone
+		GIT_SSH_COMMAND, gitCloneUrl, workSpaceDir) // .git 文件如果不存在，在需要git clone
 	err := instance.ExecSSHCommandRealTimeFunc(cloneCommand, func(output string) error {
 		if strings.Contains(output, "error") || strings.Contains(output, "fatal") {
-
-			newGitRepoUrl := strings.ToLower(gitRepoUrl)
-
-			// 需要录入密码的情况
-			if strings.Contains(output, "could not read Password for") { // 常规录入密码
-				SmartIDELog.Console(i18n.GetInstance().Common.Info_please_enter_password)
-				passwordBytes, _ := gopass.GetPasswdMasked()
-				password := string(passwordBytes)
-
-				// 添加密码到 https/http 链接中
-				index := strings.LastIndex(newGitRepoUrl, "@")
-				if index < 0 {
-					newGitRepoUrl = strings.Replace(newGitRepoUrl, "https://", "https://"+password+"@", -1)
-					newGitRepoUrl = strings.Replace(newGitRepoUrl, "http://", "http://"+password+"@", -1)
-				} else {
-					header := newGitRepoUrl[:strings.Index(newGitRepoUrl, "//")+2]
-					newGitRepoUrl = header + password + newGitRepoUrl[index:]
-				}
-				SmartIDELog.Debug(newGitRepoUrl)
-
-				// 再次运行 git clone
-				instance.ExecSSHCommandRealTimeFunc(cloneCommand, nil)
+			if strings.Contains(output, "git credential-store") && strings.Contains(output, "Syntax error: Unterminated quoted string") {
 
 			} else {
 				return errors.New(output)
 			}
 
-		} /* else {
-			SmartIDELog.ConsoleInLine(output)
-			if strings.Contains(output, "done.") {
-				fmt.Println()
-			}
-		} */
+		}
 
 		return nil
 	})
@@ -518,33 +481,54 @@ func (instance *SSHRemote) GitClone(gitRepoUrl string, workSpaceDir string, no s
 	return err
 }
 
-func (instance *SSHRemote) ExecSSHkeyPolicy(no string, cmd *cobra.Command) {
+func (instance *SSHRemote) ExecSSHkeyPolicy(no string, userName string, host string, token string, ownerGuid string, wspId uint) {
 
 	isOverwrite := "y"
 	isAllowCopyPrivateKey := ""
-	fflags := cmd.Flags()
-	userName, _ := fflags.GetString(Flags_ServerUserName)
+	// fflags := cmd.Flags()
+	// userName, _ := fflags.GetString(Flags_ServerUserName)
 	commandRsa := fmt.Sprintf(`[[ -f ".ssh/id_rsa_%s_%s" ]] && cat ~/.ssh/id_rsa_%s_%s || echo ""`, userName, no, userName, no)
-	remoteRsaPri, err := instance.ExeSSHCommandConsole(commandRsa, false)
+	remoteRsaPri, err := instance.ExeSSHCommandConsoleAndEncryptedOutput(commandRsa)
 	CheckError(err)
-	SmartIDELog.DebugF("%v >> `%v`", commandRsa, "****")
+	//SmartIDELog.DebugF("%v >> `%v`", commandRsa, "****")
 
 	commandRsaPub := fmt.Sprintf(`[[ -f ".ssh/id_rsa.pub_%s_%s" ]] && cat ~/.ssh/id_rsa.pub_%s_%s || echo ""`, userName, no, userName, no)
-	remoteRsaPub, err := instance.ExeSSHCommandConsole(commandRsaPub, false)
+	remoteRsaPub, err := instance.ExeSSHCommandConsoleAndEncryptedOutput(commandRsaPub)
 	CheckError(err)
-	SmartIDELog.DebugF("%v >> `%v`", commandRsaPub, "****")
+	//SmartIDELog.DebugF("%v >> `%v`", commandRsaPub, "****")
 
 	idRsa := ""
 	idRsaPub := ""
 	var ws []WorkspacePolicy
+	i := -1
 	if no != "" {
-		ws, err = GetWSPolicies(no, "2", cmd)
+		ws, err = GetWSPolicies("2", host, token, ownerGuid)
 		CheckError(err)
+		for index, wp := range ws {
+			if wp.ID == wspId {
+				i = index
+			}
+		}
+		if i == -1 {
+			for index, wp := range ws {
+				if wp.IsDefault {
+					i = index
+				}
+			}
+		}
 	}
 
-	if len(ws) > 0 {
-		idRsa = ws[len(ws)-1].IdRsA
-		idRsaPub = ws[len(ws)-1].IdRsAPub
+	if i >= 0 {
+		detail := Detail{}
+		if ws[i].Detail != "" {
+			err := json.Unmarshal([]byte(ws[i].Detail), &detail)
+			if err != nil {
+				return
+			}
+			idRsa = detail.IdRsa
+			idRsaPub = detail.IdRsaPub
+		}
+
 	}
 	// 远程公私钥都不为空
 	if strings.ReplaceAll(remoteRsaPri, "\n", "") != "" && strings.ReplaceAll(remoteRsaPub, "\n", "") != "" {
@@ -557,7 +541,7 @@ func (instance *SSHRemote) ExecSSHkeyPolicy(no string, cmd *cobra.Command) {
 		} else {
 			homeDir, err := os.UserHomeDir()
 			CheckError(err)
-			rsaPub, err := ioutil.ReadFile(filepath.Join(homeDir, "/.ssh/id_rsa.pub"))
+			rsaPub, err := os.ReadFile(filepath.Join(homeDir, "/.ssh/id_rsa.pub"))
 			localRsaPub = string(rsaPub)
 			CheckError(err)
 
@@ -590,11 +574,13 @@ func (instance *SSHRemote) ExecSSHkeyPolicy(no string, cmd *cobra.Command) {
 
 			if no == "" {
 				if homeDir, err := os.UserHomeDir(); err == nil {
-					if rsa, err := ioutil.ReadFile(filepath.Join(homeDir, "/.ssh/id_rsa")); err == nil {
+					if rsa, err := os.ReadFile(filepath.Join(homeDir, "/.ssh/id_rsa")); err == nil {
 						idRsa = string(rsa)
+						SmartIDELog.AddEntryptionKeyWithReservePart(idRsa)
 					}
-					if rsaPub, err := ioutil.ReadFile(filepath.Join(homeDir, "/.ssh/id_rsa.pub")); err == nil {
+					if rsaPub, err := os.ReadFile(filepath.Join(homeDir, "/.ssh/id_rsa.pub")); err == nil {
 						idRsaPub = string(rsaPub)
+						SmartIDELog.AddEntryptionKeyWithReservePart(idRsaPub)
 					}
 				}
 
@@ -611,7 +597,7 @@ func (instance *SSHRemote) ExecSSHkeyPolicy(no string, cmd *cobra.Command) {
 									chmod 600 ~/.ssh/id_rsa.pub_%s_%s
 
 `, userName, no, string(idRsa), userName, no, userName, no, userName, no, string(idRsaPub), userName, no, userName, no)
-				output, err := instance.ExeSSHCommandConsole(command, false)
+				output, err := instance.ExeSSHCommandConsole(command)
 				CheckError(err, output)
 
 				consoleCommand := strings.ReplaceAll(command, string(idRsa), "***")
@@ -627,19 +613,45 @@ func (instance *SSHRemote) ExecSSHkeyPolicy(no string, cmd *cobra.Command) {
 	}
 }
 
-//ExecSSHSetPasswordPolicy
-func GetBasicPassword(no string, cmd *cobra.Command) (password string, err error) {
-	password = ""
+func GetSSHkeyPolicyIdRsa(host string, token string, ownerGuid string) (err error, idRsa string) {
 	var ws []WorkspacePolicy
-	if no != "" {
-		ws, err = GetWSPolicies(no, "3", cmd)
-	}
+	ws, err = GetWSPolicies("2", host, token, ownerGuid)
+	CheckError(err)
 
 	if len(ws) > 0 {
-		password = ws[len(ws)-1].Password
+		detail := Detail{}
+		if ws[len(ws)-1].Detail != "" {
+			err = json.Unmarshal([]byte(ws[len(ws)-1].Detail), &detail)
+			if err == nil {
+				idRsa = detail.IdRsa
+			}
+			//
+		}
+
 	}
-	return password, err
+	return err, idRsa
+	// 远程公私钥都不为空
 }
+
+// ExecSSHSetPasswordPolicy
+// func GetBasicPassword(host string, token string, ownerGuid string) (password string, err error) {
+// 	password = ""
+// 	var ws []WorkspacePolicy
+
+// 	ws, err = GetWSPolicies("3", host, token, ownerGuid)
+
+// 	if len(ws) > 0 {
+
+// 		detail := Detail{}
+// 		if ws[len(ws)-1].Detail != "" {
+// 			err = json.Unmarshal([]byte(ws[len(ws)-1].Detail), &detail)
+// 			password = detail.Password
+
+// 		}
+
+// 	}
+// 	return password, err
+// }
 
 // 保存一个空密码，保证后续的git clone不需要输入私钥的密码
 func (instance *SSHRemote) sshSaveEmptyPassphrase() {
@@ -713,7 +725,7 @@ func GetRepoName(repoUrl string) string {
 // 执行ssh command，在session模式下，standard output 只能在执行结束的时候获取到
 func (instance *SSHRemote) ExeSSHCommand(sshCommand string) (outContent string, err error) {
 
-	return instance.ExeSSHCommandConsole(sshCommand, true)
+	return instance.ExeSSHCommandConsole(sshCommand)
 }
 
 // 复制文件
@@ -763,7 +775,15 @@ func (instance *SSHRemote) CopyFile(localFilePath string, remoteFilepath string)
 }
 
 // 执行ssh command，在session模式下，standard output 只能在执行结束的时候获取到
-func (instance *SSHRemote) ExeSSHCommandConsole(sshCommand string, isConsoleAndLog bool) (outContent string, err error) {
+func (instance *SSHRemote) ExeSSHCommandConsole(sshCommand string) (outContent string, err error) {
+	return instance.exeSSHCommandConsole(sshCommand, false)
+}
+
+func (instance *SSHRemote) ExeSSHCommandConsoleAndEncryptedOutput(sshCommand string) (outContent string, err error) {
+	return instance.exeSSHCommandConsole(sshCommand, true)
+}
+
+func (instance *SSHRemote) exeSSHCommandConsole(sshCommand string, isEncryptedOutput bool) (outContent string, err error) {
 	if len(sshCommand) <= 0 {
 		return "", nil
 	}
@@ -785,10 +805,12 @@ func (instance *SSHRemote) ExeSSHCommandConsole(sshCommand string, isConsoleAndL
 	}
 
 	// 记录日志，有些情况下不想输出信息，比如cat id_rsa时
-	if isConsoleAndLog {
-		outContent = strings.Trim(outContent, "\n")
-		SmartIDELog.Debug(fmt.Sprintf("SSH Console %v:%v -> %v >> `%v`", instance.SSHHost, instance.SSHPort, sshCommand, outContent))
+	outContent = strings.Trim(outContent, "\n")
+	if isEncryptedOutput {
+		SmartIDELog.AddEntryptionKeyWithReservePart(outContent)
 	}
+	SmartIDELog.Debug(fmt.Sprintf("SSH Console %v:%v -> %v >> `%v`",
+		instance.SSHHost, instance.SSHPort, sshCommand, outContent))
 
 	return outContent, err
 }
@@ -826,7 +848,10 @@ func (instance *SSHRemote) ExecSSHCommandRealTimeFunc(sshCommand string, customE
 	originExecuteFun := func(output string) error {
 		output = strings.ToLower(output)
 		if strings.Contains(output, "error") || strings.Contains(output, "fatal") {
+			//if !strings.Contains(output, `git credential-store" store: syntax error: unterminated quoted string`) {
 			return fmt.Errorf(output)
+			//}
+
 		} else {
 			fmt.Print(output) // 进度信息不需要记录到日志
 			if strings.Contains(output, "done.") {
@@ -867,35 +892,13 @@ func (instance *SSHRemote) ExecSSHCommandRealTimeFunc(sshCommand string, customE
 			}
 
 			err = originExecuteFun(originMsg)
+			if customExecuteFun != nil {
+				err = customExecuteFun(originMsg)
+			}
+
 			if err != nil {
 				return err
 			}
-
-			if customExecuteFun != nil {
-				err = customExecuteFun(originMsg)
-				if err != nil {
-					return err
-				}
-			}
-
-			/* array := strings.Split(originMsg, "\r\n")
-			for _, sub := range array {
-				if len(sub) == 0 || sub == "\r\n" { //|| sub == "\r"
-					continue
-				}
-
-				err = originExecuteFun(sub)
-				if err != nil {
-					return err
-				}
-
-				if customExecuteFun != nil {
-					err = customExecuteFun(sub)
-					if err != nil {
-						return err
-					}
-				}
-			} */
 
 		}
 		return nil
@@ -917,16 +920,6 @@ func (instance *SSHRemote) ExecSSHCommandRealTimeFunc(sshCommand string, customE
 
 	return err
 }
-
-/* func isChanClosed(ch chan bool) bool {
-	if len(ch) == 0 {
-		select {
-		case _, ok := <-ch:
-			return !ok
-		}
-	}
-	return false
-} */
 
 func (instance *SSHRemote) RemoteUpload(filesMaps map[string]string) (err error) {
 	// initialize SSH connection
@@ -957,7 +950,10 @@ func (instance *SSHRemote) RemoteUpload(filesMaps map[string]string) (err error)
 			CheckError(err)
 		}
 		filePath := filepath.Join(homePath, "/.ssh/id_rsa")
-		key, err := ioutil.ReadFile(filePath)
+		if SmartIDELog.Ws_id != "" && ServerUserName != "" {
+			filePath = fmt.Sprintf("%s_%s_%s", filePath, ServerUserName, SmartIDELog.Ws_id)
+		}
+		key, err := os.ReadFile(filePath)
 		CheckError(err, "unable to read private key:")
 
 		// Create the Signer for this private key.
@@ -1011,7 +1007,7 @@ func (instance *SSHRemote) RemoteUpload(filesMaps map[string]string) (err error)
 }
 
 // 连接到远程主机
-func connectionDial(sshHost string, sshPort int, sshUserName, sshPassword string) (clientConn *ssh.Client, err error) {
+func connectionDial(sshHost string, sshPort int, sshUserName, sshPassword string, idRsa string) (clientConn *ssh.Client, err error) {
 	// initialize SSH connection
 	var clientConfig *ssh.ClientConfig
 	if sshPort <= 0 {
@@ -1037,12 +1033,17 @@ func connectionDial(sshHost string, sshPort int, sshUserName, sshPassword string
 		}
 
 	} else { // 如果用户不输入用户名和密码，则尝试使用ssh key pair的方式链接远程服务器
+		var key []byte
 		//var hostKey ssh.PublicKey
-		homePath, err := os.UserHomeDir()
-		CheckError(err)
-		filePath := filepath.Join(homePath, "/.ssh/id_rsa")
-		key, err := ioutil.ReadFile(filePath)
-		CheckError(err, "unable to read private key:")
+		if idRsa == "" {
+			homePath, err := os.UserHomeDir()
+			CheckError(err)
+			filePath := filepath.Join(homePath, "/.ssh/id_rsa")
+			key, err = os.ReadFile(filePath)
+			CheckError(err, "unable to read ssh private key:")
+		} else {
+			key = []byte(idRsa)
+		}
 
 		// Create the Signer for this private key.
 		signer, err := ssh.ParsePrivateKey(key)
@@ -1071,24 +1072,37 @@ type GVA_MODEL struct {
 	CreatedAt time.Time // 创建时间
 	UpdatedAt time.Time // 更新时间
 }
+
 type WorkspacePolicy struct {
 	GVA_MODEL
-	Wid                string `json:"wid" form:"wid" `
-	Name               string `json:"name" form:"name"`
-	Status             *bool  `json:"status" form:"status" ` // 状态
-	JustOne            *bool  `json:"justone" form:"justone" `
-	Schdule            int    `json:"schdule" form:"schdule" `
-	Type               int    `json:"type" form:"type" `
-	Tasks              string `json:"tasks" form:"tasks" `
-	OwnerGUID          string `json:"ownerGuid" form:"ownerGuid"`
-	GitConifgContent   string `json:"gitConfigContent" form:"gitConfigContent" `
-	IdRsA              string `json:"id_rsa" form:"id_rsa"`
-	IdRsAPub           string `json:"id_rsa_pub" form:"id_rsa_pub" `
-	BlockCommit        *bool  `json:"blockCommit"`
-	TeamID             int    `json:"teamId"`
-	ScanerServerConfig string `json:"scanerServerConfig"`
-	UserName           string `json:"username"`
-	Password           string `json:"password"`
+	Wid     string `json:"wid" form:"wid" `
+	Name    string `json:"name" form:"name"`
+	Status  *bool  `json:"status" form:"status" ` // 状态
+	JustOne *bool  `json:"justone" form:"justone" `
+	Schdule int    `json:"schdule"`
+	Type    int    `json:"type" form:"type" `
+	Tasks   []Task `json:"tasks" form:"tasks" `
+
+	OwnerGUID string `json:"ownerGuid" form:"ownerGuid" `
+	Detail    string `json:"detail" form:"detail"`
+
+	IsDefault bool `json:"isDefault" `
+}
+type Task struct {
+	GVA_MODEL
+	Sort              int    `json:"sort" form:"sort" `
+	Content           string `json:"content" form:"content" `
+	Status            int    `json:"status" form:"status"`
+	Label             string `json:"lable" form:"lable"`
+	WorkspacePolicyId uint
+}
+
+type Detail struct {
+	GitConfigContent string `json:"gitConfigContent"`
+	IdRsa            string `json:"id_rsa"`
+	IdRsaPub         string `json:"id_rsa_pub"`
+	Username         string `json:"username"`
+	Password         string `json:"password"`
 }
 
 type WSPolicyResponse struct {
@@ -1106,16 +1120,16 @@ const (
 	Flags_ServerUserName  = "serverusername"
 )
 
-func GetWSPolicies(no string, t string, cmd *cobra.Command) (ws []WorkspacePolicy, err error) {
-	fflags := cmd.Flags()
-	host, _ := fflags.GetString(Flags_ServerHost)
-	token, _ := fflags.GetString(Flags_ServerToken)
-	ownerGuid, _ := fflags.GetString(Flags_ServerOwnerGuid)
+func GetWSPolicies(t string, host string, token string, ownerGuid string) (ws []WorkspacePolicy, err error) {
 	var response = ""
 	url := fmt.Sprint(host, "/api/smartide/workspacepolicy/getList")
-	if response, err = Get(url, map[string]string{"ownerGuid": ownerGuid, "type": t}, map[string]string{"Content-Type": "application/json", "x-token": token}); response != "" {
+
+	httpClient := CreateHttpClientEnableRetry()
+	response, err = httpClient.Get(url, map[string]string{"ownerGuid": ownerGuid, "type": t}, map[string]string{"Content-Type": "application/json", "x-token": token})
+	// response, err = Get(url, map[string]string{"ownerGuid": ownerGuid, "type": t}, map[string]string{"Content-Type": "application/json", "x-token": token});
+	if response != "" {
 		l := &WSPolicyResponse{}
-		err = json.Unmarshal([]byte(response), l)
+		//err = json.Unmarshal([]byte(response), l)
 		if err = json.Unmarshal([]byte(response), l); err == nil {
 			if l.Code == 0 && (len(l.Data.Workspacepolicies) != 0) {
 				return l.Data.Workspacepolicies, err

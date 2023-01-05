@@ -1,12 +1,26 @@
+/*
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package server
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
@@ -14,54 +28,27 @@ import (
 
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/model"
+	"github.com/leansoftX/smartide-cli/internal/model/response"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
 	"github.com/thedevsaddam/gojsonq"
 )
 
 func FeeadbackExtend(auth model.Auth, workspaceInfo workspace.WorkspaceInfo) error {
-	var _feedbackRequest struct {
-		ID     uint
-		Extend string
+	host := auth.LoginUrl
+	token := auth.Token.(string)
+	url := fmt.Sprint(host, "/api/smartide/workspace/update")
+	params := make(map[string]interface{})
+	params["ID"] = workspaceInfo.ServerWorkSpace.ID
+	params["Extend"] = workspaceInfo.Extend.ToJson()
+	headers := map[string]string{
+		"x-token": token,
 	}
-	_feedbackRequest.ID = workspaceInfo.ServerWorkSpace.ID
-	_feedbackRequest.Extend = workspaceInfo.Extend.ToJson()
 
-	// 请求体
-	jsonBytes, err := json.Marshal(_feedbackRequest)
-	if err != nil {
-		return err
-	}
-	url := fmt.Sprint(auth.LoginUrl, "/api/smartide/workspace/update")
-	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(jsonBytes))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-token", auth.Token.(string))
+	httpClient := common.CreateHttpClientEnableRetry()
+	_, err := httpClient.Put(url, params, headers)
 
-	//
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-	}
-	resp, err := client.Do(req)
-
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	// request
-	reqBody, _ := ioutil.ReadAll(req.Body)
-	printReqStr := fmt.Sprintf("request head: %v, body: %s", req.Header, reqBody)
-	common.SmartIDELog.Debug(printReqStr)
-
-	// response
-	respBody, _ := ioutil.ReadAll(resp.Body)
-	printRespStr := fmt.Sprintf("response status code: %v, head: %v, body: %s", resp.StatusCode, resp.Header, string(respBody))
-	common.SmartIDELog.Debug(printRespStr)
-
-	return nil
+	return err
 }
 
 // 触发 remove
@@ -82,8 +69,8 @@ func Trigger_Action(action string, serverWorkspaceNo string, auth model.Auth, da
 		return err
 	}
 
-	httpClient := common.CreateHttpClient(6, 30*time.Second, common.ResponseBodyTypeEnum_JSON)
-	response, err := httpClient.Put(url.String(), datas, headers) // post 请求
+	httpClient := common.CreateHttpClient(6, 30*time.Second, 3*time.Second, common.ResponseBodyTypeEnum_JSON)
+	response, err := httpClient.Put(url.String(), datas, headers) //
 	if err != nil {
 		return err
 	}
@@ -113,9 +100,6 @@ func Feedback_Finish(feedbackCommand FeedbackCommandEnum, cmd *cobra.Command,
 	if err != nil {
 		return err
 	}
-	/* 	if serverModeInfo.ServerUsername == "" {
-		return errors.New("ServerUserName is nil")
-	} */
 	if serverModeInfo.ServerHost == "" {
 		return errors.New("ServerHost is nil")
 	}
@@ -162,13 +146,67 @@ func Feedback_Finish(feedbackCommand FeedbackCommandEnum, cmd *cobra.Command,
 	}
 	headers := map[string]string{"Content-Type": "application/json", "x-token": serverModeInfo.ServerToken}
 
-	httpClient := common.CreateHttpClient(6, 30*time.Second, common.ResponseBodyTypeEnum_JSON)
+	httpClient := common.CreateHttpClient(6, 30*time.Second, 3*time.Second, common.ResponseBodyTypeEnum_JSON)
+	_, err = httpClient.PostJson(serverFeedbackUrl.String(), datas, headers) // post 请求
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// 反馈server工作区的创建情况
+func Feedback_Pending(feedbackCommand FeedbackCommandEnum, workspaceStatus response.WorkspaceStatusEnum,
+	cmd *cobra.Command,
+	workspaceInfo workspace.WorkspaceInfo, message string) error {
+	if workspaceInfo.CliRunningEnv != workspace.CliRunningEvnEnum_Server {
+		return errors.New("当前仅支持在 mode=server 的模式下运行！")
+	}
+
+	//1. 从参数中获取相应值
+	serverModeInfo, err := GetServerModeInfo(cmd)
+	//1.1. validate
+	if err != nil {
+		return err
+	}
+	if serverModeInfo.ServerHost == "" {
+		return errors.New("ServerHost is nil")
+	}
+	//1.2.
+	serverFeedbackUrl, _ := common.UrlJoin(serverModeInfo.ServerHost, "/api/smartide/workspace/pending")
+
+	//1.3. workspace id
+	worksspaceId := strconv.Itoa(int(workspaceInfo.ServerWorkSpace.ID))
+	if worksspaceId == "" {
+		worksspaceId = serverModeInfo.ServerWorkspaceid
+	}
+	if worksspaceId == "" {
+		return errors.New("workspace id is nil")
+	} else if strings.Contains(strings.ToLower(worksspaceId), "WS") {
+		flysnowRegexp := regexp.MustCompile(`[1-9]{1}[0-9].*`)
+		params := flysnowRegexp.FindStringSubmatch(worksspaceId)
+		worksspaceId = params[0]
+	}
+
+	//2.
+	datas := map[string]interface{}{
+		"command":           string(feedbackCommand),
+		"serverWorkspaceid": worksspaceId,
+		"serverUserName":    serverModeInfo.ServerUsername,
+		"message":           message,
+	}
+	if feedbackCommand == FeedbackCommandEnum_Start && workspaceInfo.Mode == workspace.WorkingMode_K8s { // 只有start的时候，才需要传递文件内容
+		datas["kubeNamespace"] = workspaceInfo.K8sInfo.Namespace
+		datas["status"] = workspaceStatus
+	}
+	headers := map[string]string{"Content-Type": "application/json", "x-token": serverModeInfo.ServerToken}
+
+	httpClient := common.CreateHttpClient(6, 30*time.Second, 3*time.Second, common.ResponseBodyTypeEnum_JSON)
 	_, err = httpClient.PostJson(serverFeedbackUrl.String(), datas, headers) // post 请求
 
 	if err != nil {
 		return err
 	}
-	//common.SmartIDELog.Info(response)
 
 	return nil
 }
@@ -203,7 +241,7 @@ func Send_WorkspaceInfo(callbackAPI string, feedbackCommand FeedbackCommandEnum,
 	}
 	headers := map[string]string{"Content-Type": "application/json"}
 
-	httpClient := common.CreateHttpClient(6, 30*time.Second, common.ResponseBodyTypeEnum_JSON)
+	httpClient := common.CreateHttpClient(6, 30*time.Second, 3*time.Second, common.ResponseBodyTypeEnum_JSON)
 	_, err := httpClient.PostJson(serverFeedbackUrl, datas, headers) // post 请求
 
 	if err != nil {

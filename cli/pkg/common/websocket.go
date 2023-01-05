@@ -1,3 +1,21 @@
+/*
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package common
 
 import (
@@ -14,7 +32,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-//定义函数Map类型，便于后续快捷使用
+// 定义函数Map类型，便于后续快捷使用
 type ControllerMapsType map[string]reflect.Value
 
 type ClientMethod struct {
@@ -24,6 +42,8 @@ const (
 	SVR_KEY_BUSINESS = "business" //业务服务
 	SVR_KEY_LOGIC    = "logic"    //逻辑服务
 )
+
+var ch = make(chan struct{}, 100)
 
 type conn struct {
 	c   *websocket.Conn
@@ -39,9 +59,9 @@ var (
 		curMaxCmd: 0,
 
 		receiverMtx:       new(sync.RWMutex),
-		maxReceiver:       100,
+		maxReceiver:       500,
 		receiver:          make(map[int]chan []byte),
-		receiveMsgTimeout: 15 * time.Second,
+		receiveMsgTimeout: 6 * time.Second,
 	}
 
 	clientArr = make(map[string]*websocket.Conn)
@@ -114,7 +134,7 @@ func (w *receiver) pushMap(k int, c chan []byte) int {
 		return 51003
 	}
 	w.receiver[k] = c
-	w.receiverMtx.Unlock()
+	defer w.receiverMtx.Unlock()
 
 	return 200
 }
@@ -128,14 +148,14 @@ func (w *receiver) deleteMap(k int) {
 		close(w.receiver[k])
 		delete(w.receiver, k)
 	}
-	w.receiverMtx.Unlock()
+	defer w.receiverMtx.Unlock()
 }
 
 func (w *receiver) getCmd() (v int) {
 	w.cmdMtx.Lock()
 	w.curMaxCmd += 1
 	v = w.curMaxCmd
-	w.cmdMtx.Unlock()
+	defer w.cmdMtx.Unlock()
 	return
 }
 
@@ -143,14 +163,14 @@ func (w *receiver) recoverCmd(v int) {
 	if len(w.receiver) == 0 {
 		w.cmdMtx.Lock()
 		w.curMaxCmd = 0
-		w.cmdMtx.Unlock()
+		defer w.cmdMtx.Unlock()
 		return
 	}
 
 	if v == w.curMaxCmd {
 		w.cmdMtx.Lock()
 		w.curMaxCmd -= 1
-		w.cmdMtx.Unlock()
+		defer w.cmdMtx.Unlock()
 	}
 }
 
@@ -186,7 +206,7 @@ func connServer(key, Addr string) {
 		}
 
 		clientArr[key] = nil
-		wsclient.mtx.Unlock()
+		defer wsclient.mtx.Unlock()
 		WSLog(Addr + " 自动重连")
 		//自动重连机制
 		time.Sleep(3 * time.Second)
@@ -218,7 +238,7 @@ func connServer(key, Addr string) {
 	}
 }
 
-//发送给固定客户端
+// 发送给固定客户端
 func (w *receiver) receiveMsg(cmd int, msg []byte) {
 	w.receiverMtx.RLock()
 	defer w.receiverMtx.RUnlock()
@@ -273,7 +293,7 @@ func SendAndReceive(key, Actioncode, ModID, Token string, Data interface{}) (dat
 	wsclient.mtx.Lock()
 	if clientArr[key] != nil {
 		sErr := clientArr[key].WriteMessage(websocket.BinaryMessage, msgByte)
-		wsclient.mtx.Unlock()
+		defer wsclient.mtx.Unlock()
 		if sErr != nil {
 			return data, 51004
 		}
@@ -295,7 +315,7 @@ func SendAndReceive(key, Actioncode, ModID, Token string, Data interface{}) (dat
 		}
 	}
 
-	wsclient.mtx.Unlock()
+	defer wsclient.mtx.Unlock()
 	return data, 51006
 }
 

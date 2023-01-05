@@ -1,10 +1,21 @@
 /*
- * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
- * @Description:
- * @Date: 2021-11
- * @LastEditors:
- * @LastEditTime:
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package host
 
 import (
@@ -12,6 +23,7 @@ import (
 	"strconv"
 
 	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
+	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/dal"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
@@ -37,16 +49,25 @@ var HostGetCmd = &cobra.Command{
 			return
 		}
 
-		remote, err := dal.GetRemoteById(hostId)
+		remoteInfo, err := dal.GetRemoteById(hostId)
+		entryptionKey4Host(*remoteInfo)
 		common.CheckError(err)
-		createTime := remote.CreatedTime.Format("2006-01-02 15:04:05")
+		createTime := remoteInfo.CreatedTime.Format("2006-01-02 15:04:05")
 
 		print := fmt.Sprintf(i18nInstance.Host.Info_host_detail_template,
-			remote.ID, remote.Addr, remote.AuthType, remote.UserName, createTime)
+			remoteInfo.ID, remoteInfo.Addr, remoteInfo.AuthType, remoteInfo.UserName, createTime)
 		common.SmartIDELog.Console(print)
 
-		dal.GetRemoteById(hostId)
 	},
+}
+
+func entryptionKey4Host(remoteInfo workspace.RemoteInfo) {
+	if remoteInfo.Password != "" {
+		common.SmartIDELog.AddEntryptionKey(remoteInfo.Password)
+	}
+	if remoteInfo.SSHKey != "" {
+		common.SmartIDELog.AddEntryptionKeyWithReservePart(remoteInfo.SSHKey)
+	}
 }
 
 // 获取工作区id

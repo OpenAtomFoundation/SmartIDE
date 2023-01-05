@@ -1,18 +1,37 @@
+/*
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package k8s
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 
 	"github.com/leansoftX/smartide-cli/cmd/server"
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/model"
 	"github.com/leansoftX/smartide-cli/pkg/common"
-	"github.com/leansoftX/smartide-cli/pkg/kubectl"
+	"github.com/leansoftX/smartide-cli/pkg/k8s"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v2"
@@ -65,7 +84,7 @@ var ApplySSHCmd = &cobra.Command{
 		ports, _ := fflags.GetString(k8s_applyssh_flag_ports)
 		serverHost, _ := fflags.GetString(k8s_applyssh_flag_serverhost)
 		serverToken, _ := fflags.GetString(k8s_applyssh_flag_servertoken)
-		configMapNamespace := "ingress-nginx"
+		configMapNamespace := "smartide-ingress-nginx"
 
 		currentAuth := model.Auth{
 			LoginUrl: serverHost,
@@ -83,7 +102,7 @@ var ApplySSHCmd = &cobra.Command{
 		}
 
 		//3. parse ports && Construct Config Map
-		configMap := &kubectl.ConfigMap{
+		configMap := &k8s.ConfigMap{
 			APIVersion: "v1",
 			Kind:       "ConfigMap",
 			Metadata: struct {
@@ -91,7 +110,7 @@ var ApplySSHCmd = &cobra.Command{
 				Namespace string "yaml:\"namespace\""
 			}{
 				Name:      "ingress-nginx-tcp",
-				Namespace: "ingress-nginx",
+				Namespace: "smartide-ingress-nginx",
 			},
 			Data: map[string]string{},
 		}
@@ -135,6 +154,11 @@ var ApplySSHCmd = &cobra.Command{
 			}
 
 		}
+		var workID []string
+		for _, service := range applySshArray {
+			workID = append(workID, service.WorkspaceNo)
+		}
+		appinsight.SetAllTrack(appinsight.Cli_K8s_Ssh_Apply, args, "", "", strings.Join(workID, ","), "", "", "")
 
 		//1. Get K8s Resource
 		auth := model.Auth{}
@@ -149,9 +173,9 @@ var ApplySSHCmd = &cobra.Command{
 
 		//2. Save temp k8s config file
 		tempK8sConfigFileAbsolutePath := common.PathJoin(config.SmartIdeHome, "tempconfig")
-		err = ioutil.WriteFile(tempK8sConfigFileAbsolutePath, []byte(resourceInfo.KubeConfig), 0777)
+		err = os.WriteFile(tempK8sConfigFileAbsolutePath, []byte(resourceInfo.KubeConfig), 0777)
 		feedbackError(err)
-		k8sUtil, err := kubectl.NewK8sUtilWithFile(tempK8sConfigFileAbsolutePath,
+		k8sUtil, err := k8s.NewK8sUtilWithFile(tempK8sConfigFileAbsolutePath,
 			resourceInfo.KubeContext,
 			configMapNamespace)
 		feedbackError(err)
@@ -160,7 +184,7 @@ var ApplySSHCmd = &cobra.Command{
 		configMapYamlData, err := yaml.Marshal(&configMap)
 		feedbackError(err)
 		tempK8sConfigMapYamlFilePath := common.PathJoin(config.SmartIdeHome, "k8s_configmap_temp.yaml")
-		err = ioutil.WriteFile(tempK8sConfigMapYamlFilePath, []byte(configMapYamlData), 0777)
+		err = os.WriteFile(tempK8sConfigMapYamlFilePath, []byte(configMapYamlData), 0777)
 		feedbackError(err)
 
 		//5. Kubectl Apply
@@ -174,30 +198,25 @@ var ApplySSHCmd = &cobra.Command{
 		common.WebsocketStart(wsURL)
 		for _, applySsh := range applySshArray {
 			if applySsh.Action != "" {
-				sshAction := workspace.ActionEnum_SSH_Disable
-				if applySsh.Action == "add" {
-					sshAction = workspace.ActionEnum_SSH_Enable
-				}
+				/* 				sshAction := workspace.ActionEnum_SSH_Disable
+				   				if applySsh.Action == "add" {
+				   					sshAction = workspace.ActionEnum_SSH_Enable
+				   				} */
 				workspaceInfo, err := workspace.GetWorkspaceFromServer(currentAuth, applySsh.WorkspaceNo, workspace.CliRunningEvnEnum_Server)
 				common.CheckError(err)
 
-				// ws
-				if pid, err := workspace.GetParentId(workspaceInfo.ServerWorkSpace.NO, sshAction, currentAuth.Token.(string), currentAuth.LoginUrl); err == nil && pid > 0 {
+				title := "??"
+				if applySsh.Action == "add" {
+					title = "创建SSH通道"
+				} else if applySsh.Action == "remove" {
+					title = "删除SSH通道"
+				}
+				pid, err := workspace.CreateWsLog(workspaceInfo.ServerWorkSpace.NO, currentAuth.Token.(string), currentAuth.LoginUrl, title, "", common.SmartIDELog.TekEventId)
+				if err == nil {
+					//if pid, err := workspace.GetParentId(workspaceInfo.ServerWorkSpace.NO, sshAction, currentAuth.Token.(string), currentAuth.LoginUrl); err == nil && pid > 0 {
 					common.SmartIDELog.Ws_id = workspaceInfo.ServerWorkSpace.NO
 					common.SmartIDELog.ParentId = pid
-				} else {
-					title := "??"
-					if applySsh.Action == "add" {
-						title = "创建SSH通道"
-					} else if applySsh.Action == "remove" {
-						title = "删除SSH通道"
-					}
-					if err := workspace.CreateWsLog(workspaceInfo.ServerWorkSpace.NO, currentAuth.Token.(string), currentAuth.LoginUrl, title, ""); err == nil {
-						if pid, err := workspace.GetParentId(workspaceInfo.ServerWorkSpace.NO, sshAction, currentAuth.Token.(string), currentAuth.LoginUrl); err == nil && pid > 0 {
-							common.SmartIDELog.Ws_id = workspaceInfo.ServerWorkSpace.NO
-							common.SmartIDELog.ParentId = pid
-						}
-					}
+					//}
 				}
 
 				// log
@@ -231,7 +250,7 @@ var ApplySSHCmd = &cobra.Command{
 
 			}
 		}
-
+		common.WG.Wait()
 	},
 }
 

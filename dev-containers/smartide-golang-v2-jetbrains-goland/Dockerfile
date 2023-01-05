@@ -1,8 +1,20 @@
-#################################################
-# SmartIDE Developer Container Image
-# Licensed under GPL v3.0
-# Copyright (C) leansoftX.com
-#################################################
+###########################################################################
+# SmartIDE - Dev Containers
+# Copyright (C) 2023 leansoftX.com
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+###########################################################################
 
 FROM ubuntu:20.04 AS ideDownloader
 # -------------下载IDE文件
@@ -12,12 +24,12 @@ RUN apt-get update && apt-get -y install --no-install-recommends wget ca-certifi
 WORKDIR /download
 
 # https://download.jetbrains.com/idea/ideaIC-2021.2.3.tar.gz
-ARG downloadUrl=https://download.jetbrains.com/go/goland-2020.3.5.tar.gz
+ARG downloadUrl
 RUN wget -q $downloadUrl -O - | tar -xz
 RUN find . -maxdepth 1 -type d -name * -execdir mv {} /ide \;
 
 # -------------构建projector-server库，运行依赖
-FROM smartide/projector-server:2021.2.2-1673 as projectorGradleBuilder
+FROM smartide/projector-server:latest as projectorGradleBuilder
 
 
 # -------------处理IDE运行程序，和构建好的rojector-server库

@@ -8,9 +8,11 @@ description: >
 ---
 
 ## 所需资源
-配置一个K8S类型的工作区资源，那么就需要具备2个基本条件：
-- 1.一个K8S集群，作为开发资源。这里可以是私有的K8S集群，也可以是云平台的K8S集群服务。
-- 2.一个域名，将域名指向K8S集群对外暴露的访问地址，这样就可以通过不同的域名地址访问到集群不同的工作区命名空间。这里可以是私有部署的DNS域名解析服务，或者共有云的域名解析。
+配置一个K8S类型的工作区资源，那么就需要具备2-3个基本条件：
+- 1. 一个K8S集群，作为开发资源。这里可以是私有的K8S集群，也可以是云平台的K8S集群服务。
+- 2. 一个域名，将域名指向K8S集群对外暴露的访问地址，这样就可以通过不同的域名地址访问到集群不同的工作区命名空间。这里可以是私有部署的DNS域名解析服务，或者共有云的域名解析。
+- 3. 一对证书公私钥（可选），若要启用 https 访问工作区环境并使用静态证书保护访问请求，请预先准备一对证书的公私钥文件，如：ssl.crt 和 ssl.key。
+如需创建自签名证书，请参考如下链接的 Part 1 内容：[申请OpenSSL自签名证书](https://smartide.cn/zh/docs/manual/marketplace/self-signed-certificate/)
 
 ## 启用VMLC
 如果需要在k8s集群中使用VMLC环境，需要首先运行以下脚本对集群进行初始化。
@@ -60,46 +62,48 @@ az aks nodepool update \
 - name : 节点池名称
 
 ## 资源初始化
-准备好所需资源后，就可以通过一键配置脚本，进行资源的初始化操作。在配置好K8S上下文的命令行中执行以下步骤：
+准备好所需资源后，就可以使用 SmartIDE Server 添加K8S资源功能自动初始化集群：
 
-***第一步，K8S集群初始化配置。***
+***第一步，SmartIDE Server 添加 K8S 集群资源***
 
-通过一键初始化指令，部署集群Ingress、证书以及StorageClass。
+在SmartIDE Server资源管理中，选择【新建K8S】创建资源：
+![新建K8S](./images/04-k8s-createk8s.jpg)
 
-- Linux/MacOS一键初始化指令：
-  ```shell
-  curl -o- https://gitee.com/smartide/SmartIDE/raw/main/deployment/k8s/smartide-k8s-init.sh | bash
-  ```
+填写对应K8S集群信息：
+![新建K8S](./images/05-k8s-createdetail.jpg)
+- 域名：预分配给当前集群的访问域名，如 ws-cn-east.smartide.cn
+- 团队：当前资源所属的团队，团队成员可共享使用
+- Kube Config：K8S配置信息，内容默认文件路径:~/.kube/config
+- 集群应用设置支持三种证书策略：
+  1. 仅http，不开启https：
+  用户选择不开启https验证，则集群的所有应用统一使用http的方式启动，如果用户不关心是否使用https访问IDE/应用地址，则可以选择使用此种方式。
+  ![证书策略http](./images/06-cert-policy-http.jpg)
+  1. 静态 https：
+  用户可以使用自维护的静态证书来配置集群工作区的IDE/应用访问链接，这种策略要求用户提前准备一对证书的公私钥，并在创建集群时复制公私钥的内容粘贴到资源的信息中。
+  用户使用此证书策略配置集群之后，后续所有工作区的访问链接将默认使用用户提供的证书来加密。此策略适合在内网环境下开启https访问的场景。
+  ![证书策略静态https](./images/07-cert-policy-static-https.jpg)
+  1. 动态 https：
+  SmartIDE Server 同时也提供了系统自申请https证书的功能，用户可以在外网环境下选择使用动态 https证书策略，系统将会为每个工作区的每个应用地址自动化申请https证书。
+  此场景需要Server能够连通外网环境的支撑。
+  ![证书策略动态https](./images/08-cert-policy-dynamic-https.jpg)
 
-- Windows一键初始化指令
-  ```shell
-  Invoke-WebRequest -Uri https://gitee.com/smartide/SmartIDE/raw/main/deployment/k8s/smartide-k8s-init.ps1  -OutFile "smartide-k8s-init.ps1";powershell -File "smartide-k8s-init.ps1"
-  ```
-  *注意：服务部署中，若出现以下错误提示，重复执行脚本即可：*
-  ```shell
-  Error from server (InternalError): error when creating "https://gitee.com/smartide/SmartIDE/raw/main/deployment/k8s/cert-manager/cluster-issuer.yaml": Internal error occurred: failed calling webhook "webhook.cert-manager.io": failed to call webhook: Post "https://cert-manager-webhook.cert-manager.svc:443/mutate?timeout=10s": EOF
-  ```
+点击保存后，资源创建完毕，系统开始自动初始化集群：
+- 创建 Ingress Controller 服务
+- 根据证书策略，创建静态证书秘钥或安装动态证书所需的Cert-Manager服务
+- 安装 Storage Class
+
+初始化集群过程会持续几分钟，初始化完毕后，系统将会自动获取到 Ingress Controller 服务的 External IP 显示到资源详情界面上：
+![external ip](./images/09-k8s-get-external-ip.jpg)
+此IP是集群对外统一提供服务的地址，接下来需要将此IP地址和集群的预分配域名进行DNS绑定。
+
 ***第二步，域名、泛域名配置。***
 
-通过域名配置，将域名指向K8S集群的访问IP地址，这样我们就可以通过域名访问到不同的工作区服务了。
+通过DNS域名配置，将域名指向K8S集群的Ingress Controller Nginx服务，这样我们就可以通过域名访问到不同的工作区服务了。
 
-- 首先，通过命令获取集群ingress-controller的外部IP地址：
-  ```shell
-  kubectl get service ingress-nginx-controller -n ingress-nginx
-  ```
-  ![集群外部IP访问地址](./images/01-k8s-ingress-ip.png)
-
-- 其次，在域名解析服务器上设置K8S对外服务域名解析，添加两条指向集群外部IP访问地址的A记录。这里，可以参考如下的阿里云域名设置，这里添加了ws、*.ws两条解析记录：
+在域名解析服务器上设置K8S对外服务域名解析，添加两条指向 External IP 的A记录。这里，可以参考如下的阿里云域名设置，这里添加了 ws-cn-east、*.ws-cn-east 两条解析记录：
   ![DNS设置](./images/02-k8s-dns.png)
 
-## 资源使用配置
-完成资源初始化配置后，就可以在SmartIDE Server中使用这个资源了。
-
-在SmartIDE Server资源管理中，选择【新建K8S】创建资源。
-- 域名：如ws.smartide.cn。
-- Kube Config：K8S配置信息，内容默认文件路径:~/.kube/config
-
-  ![资源配置](./images/03-k8s-resource.png)
+域名配置完成后，就可以在SmartIDE Server中使用这个资源了！
 
 SmartIDE Server使用方法，详见：[SmartIDE Server 快速开始](../../quickstart/server/)
 

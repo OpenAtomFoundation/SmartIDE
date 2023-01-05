@@ -1,8 +1,20 @@
-#################################################
-# SmartIDE Developer Container Image
-# Licensed under GPL v3.0
-# Copyright (C) leansoftX.com
-#################################################
+###########################################################################
+# SmartIDE - Dev Containers
+# Copyright (C) 2023 leansoftX.com
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+###########################################################################
 
 FROM ubuntu:20.04 AS ideDownloader
 # -------------下载IDE文件
@@ -17,7 +29,7 @@ RUN wget -q $downloadUrl -O - | tar -xz
 RUN find . -maxdepth 1 -type d -name * -execdir mv {} /ide \;
 
 # -------------构建projector-server库，运行依赖
-FROM smartide/projector-server:2021.2.2-1673 as projectorGradleBuilder
+FROM smartide/projector-server:latest as projectorGradleBuilder
 
 
 # -------------处理IDE运行程序，和构建好的rojector-server库
@@ -45,7 +57,6 @@ RUN chmod 644 $PROJECTOR_DIR/ide/projector-server/lib/*
 
 
 # -------------配置运行环境
-
 FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-cpp-v2:latest
 
 RUN true \
@@ -63,26 +74,26 @@ RUN true \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /var/cache/apt
 
-# "https://download.jetbrains.com/idea/ideaIC-2021.2.3.tar.gz"
-ARG downloadUrl
+# # "https://download.jetbrains.com/idea/ideaIC-2021.2.3.tar.gz"
+# ARG downloadUrl
 
-RUN true \
-# 返回非零退出代码的任何命令都将导致此shell脚本立即退出：
-    && set -e \
-# 激活调试以显示执行详细信息：在执行之前将打印所有命令
-    && set -x \
-# 为IDE安装特定包：
-    && apt-get update \
-    && if [ "${downloadUrl#*CLion}" != "$downloadUrl" ]; then apt-get install build-essential clang -y; else echo "-------------------------Not CLion"; fi \
-    && if [ "${downloadUrl#*pycharm}" != "$downloadUrl" ]; then apt-get install python2 python3 python3-distutils python3-pip python3-setuptools -y; else echo "-------------------------Not pycharm"; fi \
-    && if [ "${downloadUrl#*rider}" != "$downloadUrl" ]; then apt install apt-transport-https dirmngr gnupg ca-certificates -y \
-    && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF && echo "deb https://download.mono-project.com/repo/ubuntu stable-focal main" | tee /etc/apt/sources.list.d/mono-official-stable.list \
-    && apt-get update && apt install mono-devel -y --no-install-recommends \
-    && wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && dpkg -i packages-microsoft-prod.deb && rm packages-microsoft-prod.deb \
-    && apt-get update && apt-get install -y --no-install-recommends apt-transport-https dotnet-sdk-6.0 dotnet-runtime-6.0; else echo "-------------------------Not rider"; fi \
-# clean apt to reduce image size:
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /var/cache/apt
+# RUN true \
+# # 返回非零退出代码的任何命令都将导致此shell脚本立即退出：
+#     && set -e \
+# # 激活调试以显示执行详细信息：在执行之前将打印所有命令
+#     && set -x \
+# # 为IDE安装特定包：
+#     && apt-get update \
+#     && if [ "${downloadUrl#*CLion}" != "$downloadUrl" ]; then apt-get install build-essential clang -y; else echo "-------------------------Not CLion"; fi \
+#     && if [ "${downloadUrl#*pycharm}" != "$downloadUrl" ]; then apt-get install python2 python3 python3-distutils python3-pip python3-setuptools -y; else echo "-------------------------Not pycharm"; fi \
+#     && if [ "${downloadUrl#*rider}" != "$downloadUrl" ]; then apt install apt-transport-https dirmngr gnupg ca-certificates -y \
+#     && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF && echo "deb https://download.mono-project.com/repo/ubuntu stable-focal main" | tee /etc/apt/sources.list.d/mono-official-stable.list \
+#     && apt-get update && apt install mono-devel -y --no-install-recommends; else echo "-------------------------Not rider"; fi \
+#     # && wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && dpkg -i packages-microsoft-prod.deb && rm packages-microsoft-prod.deb \
+#     # && apt-get update && apt-get install -y --no-install-recommends apt-transport-https dotnet-sdk-6.0 dotnet-runtime-6.0; else echo "-------------------------Not rider"; fi \
+# # clean apt to reduce image size:
+#     && rm -rf /var/lib/apt/lists/* \
+#     && rm -rf /var/cache/apt
 
 # copy the Projector dir:
 ENV PROJECTOR_DIR /projector
@@ -118,14 +129,7 @@ RUN sudo echo "Running 'sudo' for smartide: success" && \
 
 
 EXPOSE 8887
-
-#CMD ["bash", "-c", "/run.sh"]
-
 USER root
-
-EXPOSE 8887
-
-##CMD ["bash", "-c", "/run.sh"]
 
 COPY gosu_entrypoint.sh /idesh/gosu_entrypoint.sh
 RUN chmod +x /idesh/gosu_entrypoint.sh

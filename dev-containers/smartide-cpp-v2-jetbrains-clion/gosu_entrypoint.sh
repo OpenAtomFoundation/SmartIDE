@@ -1,11 +1,28 @@
 #!/bin/bash
+###########################################################################
+# SmartIDE - Dev Containers
+# Copyright (C) 2023 leansoftX.com
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+###########################################################################
 
 USER_UID=${LOCAL_USER_UID:-1000}
 USER_GID=${LOCAL_USER_GID:-1000}
 USER_PASS=${LOCAL_USER_PASSWORD:-"smartide123.@IDE"}
 USERNAME=smartide
 
-echo "gosu_entrypoint_node.sh"
+echo "gosu_entrypoint.sh"
 echo "Starting with USER_UID : $USER_UID"
 echo "Starting with USER_GID : $USER_GID"
 echo "Starting with USER_PASS : $USER_PASS"
@@ -30,8 +47,9 @@ if [ $USER_UID == '0' ]; then
     echo "-----------Starting sshd"
     /usr/sbin/sshd
 
-    echo "-----------Starting ide"
-    exec  run.sh "$@"
+    echo "-----------Starting ide CLion"
+    # exec run.sh "$@"
+    cd /home/smartide && exec ./run.sh
 
 else
 
@@ -73,7 +91,7 @@ else
     #exec /usr/sbin/sshd -D -e "$@"
     /usr/sbin/sshd
     
-    echo "-----smartide-----Starting gosu ide"
-    exec gosu smartide /home/smartide/run.sh "$@"
+    echo "-----smartide-----Starting gosu CLion"
+    cd /home/smartide && exec gosu smartide ./run.sh
 
 fi

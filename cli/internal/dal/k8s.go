@@ -1,3 +1,21 @@
+/*
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package dal
 
 import (
@@ -21,12 +39,12 @@ type K8sDO struct {
 	k_is_del     bool
 }
 
-//
 func GetK8sInfoList() (k8sInfoList []workspace.K8sInfo, err error) {
 	db := getDb()
 	defer db.Close()
 
-	rows, err := db.Query(`select k_id, k_kubeconfg, k_context, k_namespace, k_deployment,k_pvc,k_created from k8s
+	rows, err := db.Query(`select k_id, k_kubeconfg, k_context, k_namespace, k_deployment,k_pvc,k_created 
+							from k8s
 							where k_is_del = 0`)
 	for rows.Next() {
 		do := K8sDO{}
@@ -56,14 +74,12 @@ func GetK8sInfoList() (k8sInfoList []workspace.K8sInfo, err error) {
 	return k8sInfoList, err
 }
 
-//
 func GetK8sInfoById(id int) (K8sInfo *workspace.K8sInfo, err error) {
 	return GetK8sInfo(id, "")
 }
 
 //
 
-//
 func RemoveK8s(id int, context string) error {
 	db := getDb()
 	defer db.Close()
@@ -178,7 +194,6 @@ func InsertOrUpdateK8sInfo(K8sInfo workspace.K8sInfo) (id int, err error) {
 	return id, err
 }
 
-//
 func GetK8sInfo(id int, context string) (K8sInfo *workspace.K8sInfo, err error) {
 
 	db := getDb()

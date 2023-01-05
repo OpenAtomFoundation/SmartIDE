@@ -84,6 +84,7 @@ else
     /usr/sbin/sshd
     
     echo "-----smartide-----Starting gosu ide"
-    exec gosu smartide /home/smartide/run.sh "$@"
+    echo "-Dide.browser.jcef.enabled=false" >> /projector/ide/bin/webstorm64.vmoptions
+    cd /home/smartide && exec gosu smartide ./run.sh
 
 fi

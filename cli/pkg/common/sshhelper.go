@@ -1,18 +1,21 @@
 /*
- * @Author: kenan
- * @Date: 2021-11-12 09:48:39
- * @LastEditors: kenan
- * @LastEditTime: 2021-11-14 23:45:45
- * @Description: file content
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
 
-/*
- * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
- * @Description:
- * @Date: 2021-11
- * @LastEditors:
- * @LastEditTime:
- */
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package common
 
 import (

@@ -1,10 +1,20 @@
 /*
- * @Author: Bo Dai (daibo@leansoftx.com)
- * @Description:
- * @Date: 2022-07
- * @LastEditors: Bo Dai
- * @LastEditTime: 2022年8月10日 10点34分
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 package cmd
 
@@ -22,11 +32,7 @@ var initCmd = &cobra.Command{
 	Example: ` smartide init
 	 smartide init <templatetype> -T {typename}`,
 	Run: func(cmd *cobra.Command, args []string) {
-		//ai记录
-		var trackEvent string
-		for _, val := range args {
-			trackEvent = trackEvent + " " + val
-		}
+
 		// 环境监测
 		err := common.CheckLocalGitEnv() //检测git环境
 		common.CheckError(err)

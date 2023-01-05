@@ -1,0 +1,25 @@
+version: smartide/v0.3
+orchestrator:
+  type: allinone
+  version: 3
+workspace:
+  dev-container:
+    service-name: smartide-vmlc-vscode-go-dev
+
+    ports:
+      tools-webide-vscode: 6800
+      tools-ssh: 6822
+      apps-application: 1313
+    ide-type: vscode
+
+    volumes: 
+      git-config: true
+      ssh-key: true
+    command:
+      - git submodule update --init --recursive
+      - cd docs
+      - npm install
+      - hugo server --bind 0.0.0.0 --disableFastRender --forceSyncStatic --buildDrafts --buildFuture 
+
+  kube-deploy-files: "vscode-vmlc-k8s-deployment.yaml" 
+  docker-compose-file: "vscode-vmlc-docker-compose.yaml"

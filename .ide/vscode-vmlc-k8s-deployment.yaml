@@ -1,0 +1,70 @@
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: smartide-vmlc-vscode-go-dev
+  annotations:
+    io.kubernetes.cri-o.userns-mode: "auto:size=65536"
+  labels:
+    smartide-go.service: smartide-go
+spec:
+  runtimeClassName: sysbox-runc
+  containers:
+    - env:
+        - name: LOCAL_USER_PASSWORD
+          value: root123     
+      name: smartide-vmlc-vscode-go-dev
+      image: registry.cn-hangzhou.aliyuncs.com/smartide/smartide-golang-v2-vscode-vmlc:latest
+      command: ["/sbin/init"]
+      imagePullPolicy: Always
+      ports:
+        - containerPort: 3000
+        - containerPort: 22
+        - containerPort: 1313
+      resources:
+        requests:
+          memory: "2Gi"
+          cpu: "2000m"
+        limits:
+          memory: "4Gi"
+          cpu: "3000m"
+
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartide-vmlc-vscode-go-dev
+spec:
+  ports:   
+    - name: "6800"
+      port: 6800
+      targetPort: 3000 
+    - name: "6822"
+      port: 6822
+      targetPort: 22
+    - name: "1313"
+      port: 1313
+      targetPort: 1313
+  selector:
+    smartide-go.service: smartide-go
+status:
+  loadBalancer: {}
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: smartide-go-network
+spec:
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              smartide-go/smartide-network: "true"
+  podSelector:
+    matchLabels:
+      smartide-go/smartide-network: "true"

@@ -1,10 +1,21 @@
 /*
- * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
- * @Description:
- * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-17 15:33:22
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package cmd
 
 import (
@@ -15,9 +26,12 @@ import (
 	"strings"
 	"time"
 
+	cmdCommon "github.com/leansoftX/smartide-cli/cmd/common"
+
 	"github.com/leansoftX/smartide-cli/cmd/server"
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
-	"github.com/leansoftX/smartide-cli/internal/model"
+	"github.com/leansoftX/smartide-cli/internal/model/response"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
 ) // stopCmd represents the stop command
@@ -30,7 +44,7 @@ var stopCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		mode, _ := cmd.Flags().GetString("mode")
-		workspaceIdStr := getWorkspaceIdFromFlagsOrArgs(cmd, args)
+		workspaceIdStr := cmdCommon.GetWorkspaceIdFromFlagsOrArgs(cmd, args)
 		if strings.ToLower(mode) == "server" || strings.Contains(workspaceIdStr, "SWS") {
 			serverModeInfo, _ := server.GetServerModeInfo(cmd)
 			if serverModeInfo.ServerHost != "" {
@@ -56,11 +70,13 @@ var stopCmd = &cobra.Command{
 
 		// 获取 workspace 信息
 		common.SmartIDELog.Info(i18nInstance.Main.Info_workspace_loading)
-		workspaceInfo, err := getWorkspaceFromCmd(cmd, args)
+		workspaceInfo, err := cmdCommon.GetWorkspaceFromCmd(cmd, args)
+		entryptionKey4Workspace(workspaceInfo) // 申明需要加密的文本
 		common.CheckError(err)
 
 		if workspaceInfo.CliRunningEnv == workspace.CliRunningEvnEnum_Server { // cli 在服务器上运行
 			// 远程主机上停止
+			appinsight.SetCliLocalTrack(appinsight.Cli_Host_Stop, args, workspaceInfo.ID, "")
 			err := stopRemote(workspaceInfo)
 			checkErrorFeedback(err, workspaceInfo)
 
@@ -91,8 +107,8 @@ var stopCmd = &cobra.Command{
 				if err != nil {
 					common.SmartIDELog.ImportanceWithError(err)
 				}
-				if serverWorkSpace.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Stop ||
-					serverWorkSpace.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Error_Stop {
+				if serverWorkSpace.ServerWorkSpace.Status == response.WorkspaceStatusEnum_Stop ||
+					serverWorkSpace.ServerWorkSpace.Status == response.WorkspaceStatusEnum_Error_Stop {
 					isStop = true
 				}
 
@@ -107,9 +123,11 @@ var stopCmd = &cobra.Command{
 
 			// 执行对应的stop
 			if workspaceInfo.Mode == workspace.WorkingMode_Local {
+				appinsight.SetCliLocalTrack(appinsight.Cli_Local_Stop, args, workspaceInfo.ID, "")
 				stopLocal(workspaceInfo)
 
 			} else {
+				appinsight.SetCliLocalTrack(appinsight.Cli_Host_Stop, args, workspaceInfo.ID, "")
 				err := stopRemote(workspaceInfo)
 				common.CheckError(err)
 
@@ -118,7 +136,7 @@ var stopCmd = &cobra.Command{
 		}
 
 		common.SmartIDELog.Info(i18nInstance.Stop.Info_end)
-
+		common.WG.Wait()
 	},
 }
 
@@ -142,7 +160,8 @@ func stopLocal(workspace workspace.WorkspaceInfo) {
 func stopRemote(workspaceInfo workspace.WorkspaceInfo) error {
 	// ssh 连接
 	common.SmartIDELog.Info(i18nInstance.Stop.Info_sshremote_connection_creating)
-	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password)
+
+	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password, workspaceInfo.Remote.SSHKey)
 	if err != nil {
 		return err
 	}

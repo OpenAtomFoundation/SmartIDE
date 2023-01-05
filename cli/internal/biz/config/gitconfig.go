@@ -1,10 +1,20 @@
 /*
- * @Author: kenan
- * @Date: 2021-10-13 15:31:52
- * @LastEditors: kenan
- * @LastEditTime: 2022-08-19 10:52:22
- * @Description: file content
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 package config
 
@@ -23,7 +33,7 @@ import (
 	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/docker/compose"
-	"github.com/leansoftX/smartide-cli/pkg/kubectl"
+	"github.com/leansoftX/smartide-cli/pkg/k8s"
 )
 
 var PassPhrase string
@@ -82,6 +92,8 @@ func SSHVolumesConfig(isVmCommand bool, service *compose.Service, sshRemote comm
 		if isVmCommand {
 			if common.SmartIDELog.Ws_id == "" {
 				configPaths = []string{fmt.Sprintf("$HOME/.ssh/id_rsa_%s_%s:/home/smartide/.ssh/id_rsa", userName, common.SmartIDELog.Ws_id), fmt.Sprintf("$HOME/.ssh/id_rsa.pub_%s_%s:/home/smartide/.ssh/id_rsa.pub", userName, common.SmartIDELog.Ws_id), fmt.Sprintf("$HOME/.ssh/authorized_keys_%s_%s:/home/smartide/.ssh/authorized_keys", userName, common.SmartIDELog.Ws_id)}
+			} else {
+				configPaths = []string{"$HOME/smartide-agent:/home/smartide/smartide-agent"}
 			}
 
 		} else {
@@ -102,9 +114,8 @@ func SSHVolumesConfig(isVmCommand bool, service *compose.Service, sshRemote comm
 	// return
 }
 
-//
 func GitConfig(isVmCommand bool, containerName string, cli *client.Client,
-	service *compose.Service, sshRemote common.SSHRemote, execRquest kubectl.ExecInPodRequest) {
+	service *compose.Service, sshRemote common.SSHRemote, execRquest k8s.ExecInPodRequest) {
 
 	// 获取本机git config 内容
 	// git config --list --show-origin
@@ -126,8 +137,8 @@ func GitConfig(isVmCommand bool, containerName string, cli *client.Client,
 		return
 	}
 	// git config 默认设置
-
-	gitconfigs := strings.ReplaceAll(configStr, "file:", "")
+	gitconfigs := "core.autocrlf=true\n"
+	gitconfigs = fmt.Sprintf("%s%s", gitconfigs, strings.ReplaceAll(configStr, "file:", ""))
 	s := bufio.NewScanner(strings.NewReader(gitconfigs))
 
 	for s.Scan() {
@@ -152,7 +163,7 @@ func GitConfig(isVmCommand bool, containerName string, cli *client.Client,
 
 				gitConfigCmd := fmt.Sprint("git config --global --replace-all ", key, " ", "\"", value, "\"")
 				execRquest.Command = gitConfigCmd
-				//kubectl.ExecInPod(execRquest)
+				//k8s.ExecInPod(execRquest)
 
 			}
 		}

@@ -1,3 +1,21 @@
+/*
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package workspace
 
 import (
@@ -135,6 +153,24 @@ func (workspaceInfo *WorkspaceInfo) GetWorkspaceExtend() WorkspaceExtend {
 			extend.Ports = append(extend.Ports, *portMap)
 		}
 
+	}
+
+	//3. server port configs
+	if workspaceInfo.ServerWorkSpace != nil {
+		for _, portConfig := range workspaceInfo.ServerWorkSpace.PortConfigs {
+			hasContain := false
+			for _, item := range extend.Ports {
+				if item.OriginHostPort == int(portConfig.Port) {
+					hasContain = true
+					break
+				}
+			}
+
+			if !hasContain { // 不包含在接口列表中
+				portMap := config.NewPortMap(config.PortMapInfo_OnlyLabel, int(portConfig.Port), -1, portConfig.Label, -1, "")
+				extend.Ports = append(extend.Ports, *portMap)
+			}
+		}
 	}
 
 	return extend

@@ -1,10 +1,21 @@
 /*
- * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
- * @Description:
- * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-21 10:48:36
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package cmd
 
 import (
@@ -15,6 +26,7 @@ import (
 	"time"
 
 	"github.com/leansoftX/smartide-cli/cmd/remove"
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/dal"
 	"github.com/leansoftX/smartide-cli/pkg/common"
@@ -44,7 +56,7 @@ var resetCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// 打印日志
 		common.SmartIDELog.Info(i18nInstance.Reset.Info_start)
-
+		appinsight.SetCliTrack(appinsight.Cli_Reset, args)
 		// 提示 是否确认
 		if !resetCmdFalgs.IsContinue { // 如果设置了参数yes，那么默认就是确认删除
 			isEnableRemove := ""
@@ -74,8 +86,9 @@ var resetCmd = &cobra.Command{
 			// ssh remote 链接检查
 			if workspaceInfo.Mode == workspace.WorkingMode_Remote {
 				ssmRemote := common.SSHRemote{}
+
 				common.SmartIDELog.InfoF(i18nInstance.Main.Info_ssh_connect_check, workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort)
-				err = ssmRemote.CheckDail(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password)
+				err = ssmRemote.CheckDail(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password, workspaceInfo.Remote.SSHKey)
 				if err != nil {
 					if resetCmdFalgs.IsAll { // 删除所有的时候，不顾及太多
 						common.SmartIDELog.ImportanceWithError(err)
@@ -140,6 +153,9 @@ var resetCmd = &cobra.Command{
 			common.CheckError(err)
 			common.SmartIDELog.InfoF(i18nInstance.Reset.Info_db_remove, sqliteFilePath)
 
+			// 删除ssh config
+			workspace.CleanupSshConfig4Smartide()
+
 			// 删除模板文件
 			configFilePath := common.PathJoin(dirname, ".ide/.ide.config")
 			err = os.Remove(configFilePath)
@@ -159,6 +175,7 @@ var resetCmd = &cobra.Command{
 
 		// end
 		common.SmartIDELog.Info(i18nInstance.Reset.Info_end)
+		common.WG.Wait()
 	},
 }
 

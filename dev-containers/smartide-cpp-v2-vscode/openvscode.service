@@ -1,0 +1,12 @@
+[Unit]
+Description=OpenVscode Service
+After=docker.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+ExecStart=/idesh/startup-openvscode.sh
+ExecReload=/idesh/startup-openvscode.sh
+
+[Install]
+WantedBy=multi-user.target

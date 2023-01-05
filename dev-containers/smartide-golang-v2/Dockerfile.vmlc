@@ -1,0 +1,64 @@
+###########################################################################
+# SmartIDE - Dev Containers
+# Copyright (C) 2023 leansoftX.com
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+###########################################################################
+
+ARG HUGO_PKG_URL=https://github.com/gohugoio/hugo/releases/download/v0.103.1/hugo_extended_0.103.1_linux-amd64.deb
+
+FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-node-v2-vmlc:latest
+
+USER root
+
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+    g++ gcc libc6-dev make pkg-config; \
+    apt-get clean && \
+    apt-get autoremove -y && \
+    rm -rf /tmp/* /var/lib/apt/lists/* /var/tmp/*
+
+ARG BUILD_GOLANG_VERSION
+ENV GOLANG_VERSION=$BUILD_GOLANG_VERSION
+ENV GOPATH=/home/smartide/go
+ENV GOROOT=/usr/local/go
+# go get -v  安装包需要，路径不能使用变量配置
+ENV PATH=/usr/local/go/bin:$PATH
+ENV PATH=/home/smartide/go/bin:$PATH
+
+RUN mkdir -p /home/smartide && mkdir -p /home/smartide/go && \
+    mkdir -p /home/smartide/tmp && chmod -R 777 /home/smartide/tmp && \
+    mkdir -p "$GOPATH/src" "$GOPATH/bin" "$GOPATH/pkg/mod" && chmod -R 777 "$GOPATH" && \
+    echo "export GOROOT=/usr/local/go" >> /etc/profile && echo "export GOPATH=/home/smartide/go" >> /etc/profile && \
+    echo "export PATH=/usr/local/go/bin:/home/smartide/go/bin:$PATH" >> /etc/profile
+
+RUN wget -O go.tgz https://go.dev/dl/go$GOLANG_VERSION.linux-amd64.tar.gz --progress=dot:giga \
+    && tar -C /usr/local -xzf go.tgz \
+    && rm -rf go.tgz
+
+#move to base vlmc
+# RUN curl -SL https://github.com/docker/compose/releases/download/v2.7.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+# RUN chmod +x /usr/local/bin/docker-compose
+
+
+USER smartide
+#指定go临时目录
+RUN go env -w GOTMPDIR="/home/smartide/tmp"
+USER root
+
+# hugo install $HUGO_PKG_URL
+RUN wget https://github.com/gohugoio/hugo/releases/download/v0.103.1/hugo_extended_0.103.1_linux-amd64.deb -O hugo-Linux-64bit.deb \
+    && sudo dpkg -i hugo-Linux-64bit.deb \
+    && rm -rf hugo-Linux-64bit.deb

@@ -1,14 +1,25 @@
 /*
- * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
- * @Description:
- * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-19 16:21:19
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package config
 
 import (
-	"io/ioutil"
+	"fmt"
 	"os"
 
 	"github.com/leansoftX/smartide-cli/internal/model"
@@ -29,13 +40,13 @@ const (
 	IsInsightEnabledEnum_Disabled IsInsightEnabledEnum = "false"
 )
 
-//userhome下的config
+// userhome下的config
 type GlobalConfig struct {
-	TemplateRepo     string               `yaml:"template-repo"`
-	ImagesRegistry   string               `yaml:"images-registry"`
-	DefaultLoginUrl  string               `yaml:"default-login-url"`
-	Auths            []model.Auth         `yaml:"auths"`
-	IsInsightEnabled IsInsightEnabledEnum `yaml:"isInsightEnabled"`
+	TemplateActualRepoUrl string               `yaml:"template-repo" json:"template-repo"`
+	ImagesRegistry        string               `yaml:"images-registry" json:"images-registry"`
+	DefaultLoginUrl       string               `yaml:"default-login-url" json:"default-login-url"`
+	Auths                 []model.Auth         `yaml:"auths" json:"auths"`
+	IsInsightEnabled      IsInsightEnabledEnum `yaml:"isInsight" json:"isInsight"`
 }
 
 func GetCurrentAuth(auths []model.Auth) model.Auth {
@@ -47,7 +58,7 @@ func GetCurrentAuth(auths []model.Auth) model.Auth {
 	return model.Auth{}
 }
 
-//加载config配置文件
+// 加载config配置文件
 func (c *GlobalConfig) LoadConfigYaml() *GlobalConfig {
 	ideConfigPath := common.PathJoin(SmartIdeHome, configFileName)
 	isIdeConfigExist := common.IsExist(ideConfigPath)
@@ -57,7 +68,7 @@ func (c *GlobalConfig) LoadConfigYaml() *GlobalConfig {
 		err = yaml.Unmarshal(yamlByte, &c)
 		common.SmartIDELog.Error(err, i18nInstance.Config.Err_read_config, ideConfigPath)
 	} else { // 如果配置文件不存在
-		c.TemplateRepo = "https://gitee.com/smartide/smartide-templates.git"
+		c.TemplateActualRepoUrl = "https://gitee.com/smartide/smartide-templates.git"
 		c.DefaultLoginUrl = model.CONST_LOGIN_URL
 		c.ImagesRegistry = "registry.cn-hangzhou.aliyuncs.com"
 
@@ -70,15 +81,28 @@ func (c *GlobalConfig) LoadConfigYaml() *GlobalConfig {
 		c.SaveConfigYaml()
 	}
 
+	// 默认开启
+	if c.IsInsightEnabled == "" {
+		c.IsInsightEnabled = IsInsightEnabledEnum_Enabled
+	}
+
+	// 加密
+	for _, auth := range c.Auths {
+
+		if auth.Token != "" {
+			common.SmartIDELog.AddEntryptionKeyWithReservePart(fmt.Sprint(auth.Token))
+		}
+	}
+
 	return c
 }
 
-//保存config
+// 保存config
 func (c *GlobalConfig) SaveConfigYaml() {
 	ideConfigPath := common.PathJoin(SmartIdeHome, configFileName)
 	templatesByte, err := yaml.Marshal(&c)
 	common.SmartIDELog.Error(err)
-	err = ioutil.WriteFile(ideConfigPath, templatesByte, 0777)
+	err = os.WriteFile(ideConfigPath, templatesByte, 0777)
 	common.SmartIDELog.Error(err)
 }
 

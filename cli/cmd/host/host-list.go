@@ -1,10 +1,21 @@
 /*
- * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
- * @Description:
- * @Date: 2021-11
- * @LastEditors:
- * @LastEditTime:
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package host
 
 import (
@@ -41,10 +52,11 @@ func printRemotes(remotes []workspace.RemoteInfo) {
 	}
 	w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
 	fmt.Fprintln(w, i18nInstance.Host.Info_host_table_header)
-	for _, worksapce := range remotes {
+	for _, remoteInfo := range remotes {
+		entryptionKey4Host(remoteInfo)
 
-		createTime := worksapce.CreatedTime.Format("2006-01-02 15:04:05")
-		line := fmt.Sprintf("%v\t%v\t%v\t%v", worksapce.ID, worksapce.Addr, worksapce.SSHPort, createTime)
+		createTime := remoteInfo.CreatedTime.Format("2006-01-02 15:04:05")
+		line := fmt.Sprintf("%v\t%v\t%v\t%v", remoteInfo.ID, remoteInfo.Addr, remoteInfo.SSHPort, createTime)
 		fmt.Fprintln(w, line)
 	}
 	w.Flush()

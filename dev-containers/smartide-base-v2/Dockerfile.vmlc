@@ -1,3 +1,21 @@
+###########################################################################
+# SmartIDE - Dev Containers
+# Copyright (C) 2023 leansoftX.com
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+###########################################################################
+
 FROM --platform=$TARGETPLATFORM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -5,12 +23,12 @@ ENV TZ Asia/Shanghai
 #git中文乱码问题
 ENV LESSCHARSET=utf-8
 ENV USERNAME=smartide
-ENV USER_PASS=smartide123.@IDE
+ENV USER_PASS=root123
 #
 # Systemd installation
 #
 RUN apt-get update &&                            \
-    apt-get install -y --no-install-recommends   \
+    apt-get install -y --no-install-recommends supervisor  \
             systemd                              \
             systemd-sysv                         \
             libsystemd0                          \
@@ -23,7 +41,7 @@ RUN apt-get update &&                            \
             sudo                                 \
             git                                  \
             wget                                 \
-            udev &&                              \
+            udev libsecret-1-dev zip apt-utils vim iputils-ping telnet jq moreutils lsof strace &&                              \
                                                  \
     # Prevents journald from reading kernel messages from /dev/kmsg
     echo "ReadKMsg=no" >> /etc/systemd/journald.conf &&               \
@@ -34,9 +52,14 @@ RUN apt-get update &&                            \
     && chmod g+rw /home \
     && mkdir -p /home/project \
     && mkdir -p /home/opvscode \
-    && mkdir -p /idesh
+    && mkdir -p /idesh \
+    && chown -R $USERNAME:$USERNAME /home/project \
+    && chown -R $USERNAME:$USERNAME /home/opvscode
+    
 
-
+RUN chmod 777 /var/run && \
+    chmod 777 /etc/supervisor 
+    
 # Sshd install
 RUN apt-get update && apt-get install --no-install-recommends -y      \
             openssh-server &&                                         \
@@ -94,6 +117,9 @@ RUN mkdir k9s && cd k9s \
     && tar -xf k9s.tgz \
     && install k9s /usr/local/bin/
 
+RUN curl -SL https://github.com/docker/compose/releases/download/v2.7.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+RUN chmod +x /usr/local/bin/docker-compose
+
 # Housekeeping
 RUN apt-get clean -y &&                                            \
     rm -rf                                                         \
@@ -105,6 +131,8 @@ RUN apt-get clean -y &&                                            \
     /usr/share/doc/*                                               \
     /usr/share/man/*                                               \
     /usr/share/local/*   
+
+RUN mkdir -p /var/log/supervisor
 
 EXPOSE 22 3000 8887
 

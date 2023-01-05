@@ -1,10 +1,20 @@
 /*
- * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
- * @Description:
- * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-04-29 16:41:28
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 package cmd
 
 import (
@@ -12,12 +22,12 @@ import (
 	"os"
 	"text/tabwriter"
 
+	cmdCommon "github.com/leansoftX/smartide-cli/cmd/common"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
 )
 
-//
 var getCmd = &cobra.Command{
 	Use:   "get",
 	Short: i18nInstance.Get.Info_help_short,
@@ -35,10 +45,11 @@ var getCmd = &cobra.Command{
 			} */
 
 		// 从数据库中查询
-		workspaceInfo, err := getWorkspaceFromCmd(cmd, args)
+		workspaceInfo, err := cmdCommon.GetWorkspaceFromCmd(cmd, args)
+		entryptionKey4Workspace(workspaceInfo) // 申明需要加密的文本
 		common.CheckError(err)
 		if workspaceInfo.IsNil() {
-			workspaceIdStr := getWorkspaceIdFromFlagsOrArgs(cmd, args)
+			workspaceIdStr := cmdCommon.GetWorkspaceIdFromFlagsOrArgs(cmd, args)
 			common.SmartIDELog.Error(fmt.Sprintf("根据ID（%v）未找到数据！", workspaceIdStr))
 		}
 

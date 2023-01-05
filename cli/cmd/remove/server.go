@@ -1,9 +1,20 @@
 /*
- * @Date: 2022-06-07 15:38:21
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-09 11:31:13
- * @FilePath: /smartide-cli/cmd/remove/server.go
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 package remove
 
@@ -13,7 +24,7 @@ import (
 
 	"github.com/leansoftX/smartide-cli/cmd/server"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
-	"github.com/leansoftX/smartide-cli/internal/model"
+	"github.com/leansoftX/smartide-cli/internal/model/response"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 )
 
@@ -40,13 +51,12 @@ func RemoveServerWorkSpaceInClient(workspaceIdStr string, workspaceInfo workspac
 			return errors.New("工作区数据查询为空！")
 		}
 		if err != nil {
-			//common.SmartIDELog.ImportanceWithError(err)
 			return err
 		}
-		if serverWorkSpace.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Remove ||
-			serverWorkSpace.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Error_Remove ||
-			serverWorkSpace.ServerWorkSpace.Status == model.WorkspaceStatusEnum_ContainerRemoved ||
-			serverWorkSpace.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Error_ContainerRemoved {
+		if serverWorkSpace.ServerWorkSpace.Status == response.WorkspaceStatusEnum_Remove ||
+			serverWorkSpace.ServerWorkSpace.Status == response.WorkspaceStatusEnum_Error_Remove ||
+			serverWorkSpace.ServerWorkSpace.Status == response.WorkspaceStatusEnum_ContainerRemoved ||
+			serverWorkSpace.ServerWorkSpace.Status == response.WorkspaceStatusEnum_Error_ContainerRemoved {
 			isRemoved = true
 			desc := serverWorkSpace.ServerWorkSpace.Status.GetDesc()
 			common.SmartIDELog.Info(desc)

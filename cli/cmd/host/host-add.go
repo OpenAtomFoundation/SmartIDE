@@ -1,16 +1,28 @@
 /*
- * @Author: vincent wei (vincentwei@leansoftx.com, https://github.com/zlweicoder)
- * @Description:
- * @Date: 2021-12-31
- * @LastEditors:
- * @LastEditTime:
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package host
 
 import (
 	"fmt"
 	"strings"
 
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/dal"
 	"github.com/leansoftX/smartide-cli/internal/model"
@@ -27,6 +39,7 @@ var HostAddCmd = &cobra.Command{
 	Example: `  smartide host add <host> --username <username> --password <password> --port <port>`,
 	Run: func(cmd *cobra.Command, args []string) {
 		common.SmartIDELog.Info(i18nInstance.Host.Add_start)
+		appinsight.SetCliTrack(appinsight.Cli_Add_Host, args)
 		fflags := cmd.Flags()
 		remoteInfo := workspace.RemoteInfo{}
 		host := ""
@@ -62,13 +75,20 @@ var HostAddCmd = &cobra.Command{
 		// 在远程模式下，首先验证远程服务器是否可以登录
 		ssmRemote := common.SSHRemote{}
 		common.SmartIDELog.InfoF(i18nInstance.Main.Info_ssh_connect_check, remoteInfo.Addr, remoteInfo.SSHPort)
-		err = ssmRemote.CheckDail(remoteInfo.Addr, remoteInfo.SSHPort, remoteInfo.UserName, remoteInfo.Password)
+
+		err = ssmRemote.CheckDail(remoteInfo.Addr, remoteInfo.SSHPort, remoteInfo.UserName, remoteInfo.Password, "")
 		if err != nil {
 			common.CheckError(err)
 		}
 		hostId, err := dal.InsertOrUpdateRemote(remoteInfo)
 		common.CheckError(err)
 		common.SmartIDELog.Info(fmt.Sprintf(i18nInstance.Host.Info_host_add_success, host, hostId))
+	},
+	PreRun: func(cmd *cobra.Command, args []string) {
+		password := getFlagValue(cmd.Flags(), flag_password)
+		if password != "" {
+			common.SmartIDELog.AddEntryptionKey(password)
+		}
 	},
 }
 

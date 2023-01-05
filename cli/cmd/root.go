@@ -1,25 +1,21 @@
 /*
-Copyright © 2021 NAME HERE <EMAIL ADDRESS>
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
 
-    http://www.apache.org/licenses/LICENSE-2.0
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-/*
- * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
- * @Description:
- * @Date: 2021-11
- * @LastEditors:
- * @LastEditTime:
- */
+
 package cmd
 
 import (
@@ -37,10 +33,17 @@ import (
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
-var isDebug bool = false
-
-var instanceI18nMain = i18n.GetInstance().Main
+var (
+	serverEventID    string = "servereventid"
+	serverUserName   string = "serverusername"
+	serverToken      string = "servertoken"
+	serverUserGuid   string = "serverownerguid"
+	serverHost       string = "serverhost"
+	serverMode       string = "mode"
+	instanceI18nMain        = i18n.GetInstance().Main
+	isDebug          bool   = false
+	cfgFile          string
+)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -48,28 +51,28 @@ var rootCmd = &cobra.Command{
 	Short: instanceI18nMain.Info_help_short,
 	Long:  instanceI18nMain.Info_help_long, // logo only show in init
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		fflags := cmd.Flags()
 
-		// appInsight 是否开启收集
+		// appInsight 是否开启收集smartide
 		mode, _ := cmd.Flags().GetString("mode")
 		if common.Contains([]string{"pipeline", "server"}, strings.ToLower(mode)) {
-			isInsightDisabled, _ := cmd.Flags().GetString("isInsightDisabled")
-			if isInsightDisabled == "" {
-				common.SmartIDELog.Error("--isInsightDisabled [true|false] 在 --mode server|pipeline 时必须设置")
+			server_isInsightEnabled, _ := cmd.Flags().GetString("isInsightEnabled")
+			if server_isInsightEnabled == "" {
+				common.SmartIDELog.Error("--isInsightEnabled [true|false] 在 --mode server|pipeline 时必须设置")
 			} else {
-				isInsightDisabled = strings.ToLower(isInsightDisabled)
-				if isInsightDisabled == "false" || isInsightDisabled == "no" || isInsightDisabled == "n" || isInsightDisabled == "0" {
-					config.GlobalSmartIdeConfig.IsInsightEnabled = config.IsInsightEnabledEnum_Enabled
-				} else {
+				server_isInsightEnabled = strings.ToLower(server_isInsightEnabled)
+				if server_isInsightEnabled == "false" || server_isInsightEnabled == "no" || server_isInsightEnabled == "n" || server_isInsightEnabled == "0" {
 					config.GlobalSmartIdeConfig.IsInsightEnabled = config.IsInsightEnabledEnum_Disabled
+				} else {
+					config.GlobalSmartIdeConfig.IsInsightEnabled = config.IsInsightEnabledEnum_Enabled
 				}
 				config.GlobalSmartIdeConfig.SaveConfigYaml()
 			}
 		} else {
-			isInsightDisabled, _ := cmd.Flags().GetString("isInsightDisabled")
-			if isInsightDisabled != "" {
-				common.SmartIDELog.Importance("isInsightDisabled 参数仅在 mode = server|pipeline 下生效")
+			server_isInsightEnabled, _ := cmd.Flags().GetString("isInsightEnabled")
+			if server_isInsightEnabled != "" && cmd.Flags().Changed("isInsightEnabled") {
+				common.SmartIDELog.Importance("isInsightEnabled 参数仅在 mode = server|pipeline 下生效")
 			}
-
 			if config.GlobalSmartIdeConfig.IsInsightEnabled == config.IsInsightEnabledEnum_None {
 				var isInsightEnabled string
 				fmt.Print("SmartIDE会收集部分运行信息用于改进产品，您可以通过 https://smartide.cn/zh/docs/eula 了解我们的信息收集策略或者直接通过开源的源码查看更多细节。请确认是否允许发送（y/n）？")
@@ -85,27 +88,45 @@ var rootCmd = &cobra.Command{
 		}
 
 		// appInsight
-		if cmd.Use == "start" || cmd.Use == "new" {
-		} else {
-			if config.GlobalSmartIdeConfig.IsInsightEnabled == config.IsInsightEnabledEnum_Enabled {
-				//ai记录
-				var trackEvent string
-				for _, val := range args {
-					trackEvent = trackEvent + " " + val
-				}
-				appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, "no", "no")
-			} else {
-				common.SmartIDELog.Debug("Application Insights disabled")
-			}
-
-		}
-
+		// if cmd.Use == "start" || cmd.Use == "new" {
+		// } else {
+		// 	if config.GlobalSmartIdeConfig.IsInsightEnabled == config.IsInsightEnabledEnum_Enabled {
+		// 		//ai记录
+		// 		var trackEvent string
+		// 		for _, val := range args {
+		// 			trackEvent = trackEvent + " " + val
+		// 		}
+		// 		appinsight.SetTrack(cmd.Use, Version.TagName, trackEvent, "no", "no")
+		// 	} else {
+		// 		common.SmartIDELog.Debug("Application Insights disabled")
+		// 	}
+		// }
+		appinsight.Global.Mode, _ = fflags.GetString(serverMode)
+		appinsight.Global.Version = Version.TagName
+		appinsight.Global.Serverhost, _ = fflags.GetString(serverHost)
+		appinsight.Global.Cloud_RoleName = "cli-" + appinsight.Global.Mode
+		appinsight.Global.ServerUserName, _ = fflags.GetString(serverUserName)
+		appinsight.Global.ServerUserGuid, _ = fflags.GetString(serverUserGuid)
+		appinsight.Global.ServerWorkSpaceId, _ = fflags.GetString("serverworkspaceid")
 		// 初始化 log
 		logLevel := ""
 		if isDebug {
 			logLevel = "debug"
 		}
 		common.SmartIDELog.InitLogger(logLevel)
+		common.SmartIDELog.TekEventId, _ = fflags.GetString(serverEventID)
+		common.ServerUserName, _ = fflags.GetString(serverUserName)
+		common.ServerHost, _ = fflags.GetString(serverHost)
+		common.ServerToken, _ = fflags.GetString(serverToken)
+		common.ServerUserGuid, _ = fflags.GetString(serverUserGuid)
+		common.Mode, _ = fflags.GetString(serverMode)
+
+		// 加密
+		servertoken, _ := fflags.GetString("servertoken")
+		if servertoken != "" {
+			common.SmartIDELog.AddEntryptionKeyWithReservePart(servertoken)
+		}
+
 	},
 }
 
@@ -136,13 +157,15 @@ func init() {
 	rootCmd.Flags().BoolP("help", "h", false, i18n.GetInstance().Help.Info_help_short)
 	rootCmd.PersistentFlags().BoolVarP(&isDebug, "debug", "d", false, i18n.GetInstance().Main.Info_help_flag_debug)
 	rootCmd.PersistentFlags().StringP("mode", "m", string(model.RuntimeModeEnum_Client), i18n.GetInstance().Main.Info_help_flag_mode)
-	rootCmd.PersistentFlags().StringP("isInsightDisabled", "", "", "在mode = server|pipeline 模式下是否禁用“收集部分运行信息用于改进产品”")
+	rootCmd.PersistentFlags().StringP("isInsightEnabled", "", "true", "在mode = server|pipeline 模式下是否启用“收集部分运行信息用于改进产品”")
 
 	rootCmd.PersistentFlags().StringP("serverworkspaceid", "", "", i18n.GetInstance().Main.Info_help_flag_server_workspace_id)
 	rootCmd.PersistentFlags().StringP("servertoken", "", "", i18n.GetInstance().Main.Info_help_flag_server_token)
 	rootCmd.PersistentFlags().StringP("serverusername", "", "", i18n.GetInstance().Main.Info_help_flag_server_username)
 	rootCmd.PersistentFlags().StringP("serveruserguid", "", "", i18n.GetInstance().Main.Info_help_flag_server_userguid)
 	rootCmd.PersistentFlags().StringP("serverhost", "", "", i18n.GetInstance().Main.Info_help_flag_server_host)
+	rootCmd.PersistentFlags().StringP("servereventid", "", "", "trigger event id")
+	rootCmd.PersistentFlags().StringP("serverownerguid", "", "", "serverownerguid")
 
 	// disable completion command
 	rootCmd.CompletionOptions.DisableDefaultCmd = true

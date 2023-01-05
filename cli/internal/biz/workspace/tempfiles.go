@@ -1,15 +1,32 @@
+/*
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package workspace
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
-
 	"github.com/leansoftX/smartide-cli/internal/model"
+
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"gopkg.in/yaml.v2"
 )
@@ -20,7 +37,7 @@ var i18nInstance = i18n.GetInstance()
 func (workspace WorkspaceInfo) GetTempDockerComposeFilePath() string {
 	dockerComposeFileName := fmt.Sprintf("docker-compose-%s.yaml", workspace.GetProjectDirctoryName()) // docker-compose 文件的名称
 	//yamlFileDirPath := common.PathJoin(workspace.WorkingDirectoryPath, model.CONST_TempDirPath)        //
-	yamlFilePath := filepath.Join(workspace.WorkingDirectoryPath, model.CONST_TempDirPath, dockerComposeFileName)
+	yamlFilePath := filepath.Join(workspace.WorkingDirectoryPath, model.CONST_GlobalTempDirPath, dockerComposeFileName)
 
 	return yamlFilePath
 }
@@ -42,7 +59,7 @@ func (workspace WorkspaceInfo) SaveTempFiles() (err error) { // dockerComposeFil
 		os.MkdirAll(tempDirPath, os.ModePerm)
 		common.SmartIDELog.InfoF(i18nInstance.Common.Info_temp_create_directory, tempDirPath)
 	} else { // 清空文件夹
-		dir, err := ioutil.ReadDir(tempDirPath)
+		dir, err := os.ReadDir(tempDirPath)
 		common.SmartIDELog.Error(err)
 		for _, d := range dir {
 			os.RemoveAll(common.PathJoin([]string{tempDirPath, d.Name()}...))
@@ -58,7 +75,7 @@ func (workspace WorkspaceInfo) SaveTempFiles() (err error) { // dockerComposeFil
 	if sYaml == "" {
 		common.SmartIDELog.Error("docker-compose 为空")
 	}
-	err = ioutil.WriteFile(tempDockerComposeFilePath, []byte(sYaml), 0)
+	err = os.WriteFile(tempDockerComposeFilePath, []byte(sYaml), 0)
 	if err != nil {
 		common.SmartIDELog.Fatal(err)
 	}
@@ -72,7 +89,7 @@ func (workspace WorkspaceInfo) SaveTempFiles() (err error) { // dockerComposeFil
 	if sConfig == "" {
 		common.SmartIDELog.Error("配置文件 为空")
 	}
-	err = ioutil.WriteFile(tempConfigFilePath, []byte(sConfig), 0)
+	err = os.WriteFile(tempConfigFilePath, []byte(sConfig), 0)
 	if err != nil {
 		common.SmartIDELog.Fatal(err)
 	}
@@ -86,12 +103,12 @@ func (workspace WorkspaceInfo) SaveTempFilesForRemote(sshRemote common.SSHRemote
 	// 检查临时文件 是否写入到	.gitignore
 	tempDirName := ""        // 临时文件夹所在目录
 	tempParentDirPath := "." // 保存临时文件夹的上级目录
-	index := strings.LastIndex(model.CONST_TempDirPath, "/")
+	index := strings.LastIndex(model.CONST_GlobalTempDirPath, "/")
 	if index >= 0 {
-		tempDirName = model.CONST_TempDirPath[index+1:]
-		tempParentDirPath = model.CONST_TempDirPath[:index]
+		tempDirName = model.CONST_GlobalTempDirPath[index+1:]
+		tempParentDirPath = model.CONST_GlobalTempDirPath[:index]
 	} else {
-		tempDirName = model.CONST_TempDirPath
+		tempDirName = model.CONST_GlobalTempDirPath
 	}
 
 	// 临时文件夹
@@ -124,7 +141,7 @@ func (workspace WorkspaceInfo) SaveTempFilesForRemote(sshRemote common.SSHRemote
 	}
 
 	// 创建 或者 清空文件夹中的内容
-	remoteTempDirPath := common.FilePahtJoin4Linux(workspace.WorkingDirectoryPath, model.CONST_TempDirPath)
+	remoteTempDirPath := common.FilePahtJoin4Linux(workspace.WorkingDirectoryPath, model.CONST_GlobalTempDirPath)
 	if strings.Index(remoteTempDirPath, "~") == 0 {
 		remoteTempDirPath = strings.Replace(remoteTempDirPath, "~", pwd, -1)
 	}
@@ -173,8 +190,8 @@ func getTempConfigFilePath(localWorkingDir string, projectName string) string {
 		workingDir = localWorkingDir
 	}
 
-	dockerComposeFileName := fmt.Sprintf("config-%s.yaml", projectName)   // docker-compose 文件的名称
-	yamlFileDirPath := filepath.Join(workingDir, model.CONST_TempDirPath) //
+	dockerComposeFileName := fmt.Sprintf("config-%s.yaml", projectName)         // docker-compose 文件的名称
+	yamlFileDirPath := filepath.Join(workingDir, model.CONST_GlobalTempDirPath) //
 	yamlFilePath := filepath.Join(yamlFileDirPath, dockerComposeFileName)
 
 	return yamlFilePath
@@ -189,12 +206,12 @@ func checkLocalGitignoreContainTmpDir(workingDir string) {
 
 	// 临时文件夹的名称，以及临时文件夹的上级目录
 	var tempDirName, tempParentDir string
-	index := strings.LastIndex(model.CONST_TempDirPath, "/")
+	index := strings.LastIndex(model.CONST_GlobalTempDirPath, "/")
 	if index >= 0 {
-		tempDirName = model.CONST_TempDirPath[index+1:]
-		tempParentDir = model.CONST_TempDirPath[:index]
+		tempDirName = model.CONST_GlobalTempDirPath[index+1:]
+		tempParentDir = model.CONST_GlobalTempDirPath[:index]
 	} else {
-		tempDirName = model.CONST_TempDirPath
+		tempDirName = model.CONST_GlobalTempDirPath
 	}
 
 	// ignore
@@ -206,13 +223,13 @@ func checkLocalGitignoreContainTmpDir(workingDir string) {
 			os.Create(dirPath)
 		}
 
-		err := ioutil.WriteFile(gitignorePath, []byte("/"+tempDirName+"/"), 0666)
+		err := os.WriteFile(gitignorePath, []byte("/"+tempDirName+"/"), 0666)
 		common.CheckError(err)
 	} else {
-		bytes, _ := ioutil.ReadFile(gitignorePath)
+		bytes, _ := os.ReadFile(gitignorePath)
 		content := string(bytes)
 		if !strings.Contains(content, "/"+tempDirName+"/") { // 不包含时，要附加
-			err := ioutil.WriteFile(gitignorePath, []byte(content+"\n"+"/"+tempDirName+"/"), 0666)
+			err := os.WriteFile(gitignorePath, []byte(content+"\n"+"/"+tempDirName+"/"), 0666)
 			common.CheckError(err)
 		}
 	}

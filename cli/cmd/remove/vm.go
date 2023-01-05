@@ -1,9 +1,20 @@
 /*
- * @Date: 2022-06-07 14:02:14
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-11 09:28:41
- * @FilePath: /smartide-cli/cmd/remove/vm.go
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 package remove
 
@@ -22,7 +33,8 @@ func RemoveRemote(workspaceInfo workspace.WorkspaceInfo,
 	cmd *cobra.Command) error {
 	// ssh 连接
 	common.SmartIDELog.Info(i18nInstance.Remove.Info_sshremote_connection_creating)
-	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password)
+
+	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password, workspaceInfo.Remote.SSHKey)
 	if err != nil {
 		return err
 	}
@@ -49,7 +61,8 @@ func RemoveRemote(workspaceInfo workspace.WorkspaceInfo,
 	}
 
 	// 容器列表
-	containers, err := start.GetRemoteContainersWithServices(sshRemote, workspaceInfo.ConfigYaml.GetServiceNames()) // 只能获取到运行中的容器
+	containers, err := start.GetRemoteContainersWithServices(sshRemote,
+		workspaceInfo.WorkingDirectoryPath, workspaceInfo.ConfigYaml.GetServiceNames()) // 只能获取到运行中的容器
 	if err != nil {
 		return err
 	}

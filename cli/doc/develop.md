@@ -58,7 +58,7 @@ rm -rf ~/project
 ## 设置当前开发目录下的文件为环境变量
 macos
 ``` macos
-go build -o /usr/local/bin/smartide -ldflags="-X 'main.BuildTime=$(date "+%Y-%m-%d %H:%M:%S")' -w -s"
+go build -o /usr/local/bin/smartide -ldflags="-X 'main.BuildTime=$(date -u "+%Y-%m-%d %H:%M:%S")' -w -s"
 chmod +x /usr/local/bin/smartide
 
 ```
@@ -76,7 +76,7 @@ go build -o "C:\Program Files (x86)\SmartIDE\SmartIDE.exe" -ldflags="-X 'main.Bu
 
 linux 
 ```
-CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /usr/local/bin/smartide -ldflags="-X 'main.BuildTime=$(date "+%Y-%m-%d %H:%M:%S")' -w -s"
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /usr/local/bin/smartide -ldflags="-X 'main.BuildTime=$(date -u "+%Y-%m-%d %H:%M:%S")' -w -s"
 chmod +x /usr/local/bin/smartide
 ```
 

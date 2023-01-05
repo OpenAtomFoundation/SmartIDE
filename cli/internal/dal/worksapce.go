@@ -1,8 +1,20 @@
 /*
- * @Author: jason chen
- * @Date: 2021-11-08
- * @Description: sqlite data access layer
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 package dal
 
@@ -12,7 +24,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/leansoftX/smartide-cli/internal/apk/i18n"
@@ -40,6 +51,8 @@ type workspaceDo struct {
 	w_config_file              sql.NullString
 	w_git_clone_repo_url       sql.NullString
 	w_git_auth_type            string
+	w_git_username             sql.NullString
+	w_git_password             sql.NullString
 	w_branch                   string
 	r_id                       sql.NullInt32
 	k_id                       sql.NullInt32
@@ -54,7 +67,7 @@ type workspaceDo struct {
 	w_created time.Time
 }
 
-// 插入工作空间的数据
+// 插入 或者 更新 工作区的数据
 func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId int64, err error) {
 	//1. init
 	db := getDb()
@@ -62,29 +75,11 @@ func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId in
 
 	//2. 是否数据已经存在
 	isExit := false
-	remoteID := -1
-	remoteHost := ""
-	if (workspaceInfo.Remote != workspace.RemoteInfo{}) {
-		remoteID = workspaceInfo.Remote.ID
-		remoteHost = workspaceInfo.Remote.Addr
-	}
-
 	if workspaceInfo.ID != "" { //2.1. 用户录入workspaceid的情况
 		i, err := strconv.Atoi(workspaceInfo.ID)
 		common.CheckError(err)
 		affectId = int64(i)
 		isExit = true
-	} else { //2.2. 用户有可能会不输入workspaceid，继续使用原有的参数
-		originWorkspace, err := GetSingleWorkspaceByParams(workspaceInfo.Mode, workspaceInfo.WorkingDirectoryPath, workspaceInfo.GitCloneRepoUrl, remoteID, remoteHost)
-		common.CheckError(err)
-
-		if originWorkspace.IsNotNil() {
-			oid, err := strconv.Atoi(originWorkspace.ID)
-			common.CheckError(err)
-			affectId = int64(oid)
-			isExit = true
-
-		}
 	}
 
 	//3. insert or update
@@ -112,71 +107,72 @@ func InsertOrUpdateWorkspace(workspaceInfo workspace.WorkspaceInfo) (affectId in
 		tempComposeStr, _ = workspaceInfo.TempDockerCompose.ToYaml()
 	}
 	//4.2. 校验
-	if strings.TrimSpace(configStr) == "" {
-		return -1, errors.New("配置文件数据为空！")
-	}
-	if workspaceInfo.Mode == workspace.WorkingMode_K8s && strings.TrimSpace(linkComposeStr) == "" {
-		return -1, errors.New("链接K8S yaml文件为空！")
-	}
-	if strings.TrimSpace(tempComposeStr) == "" {
-		return -1, errors.New("生成临时文件为空！")
-	}
+	/* 	if strings.TrimSpace(configStr) == "" {
+	   		return -1, errors.New("配置文件数据为空！")
+	   	}
+	   	if workspaceInfo.Mode == workspace.WorkingMode_K8s && strings.TrimSpace(linkComposeStr) == "" {
+	   		return -1, errors.New("链接K8S yaml文件为空！")
+	   	}
+	   	if strings.TrimSpace(tempComposeStr) == "" {
+	   		return -1, errors.New("生成临时文件为空！")
+	   	} */
 
-	//5. insert or update
-	if !isExit { //5.1. insert
-		remoteId := sql.NullInt32{} // 可能是个空值
-		k8sId := sql.NullInt32{}    // 可能是个空值
-
-		if workspaceInfo.Mode != workspace.WorkingMode_K8s { // 插入到 remote 表中
-			if (workspaceInfo.Remote != workspace.RemoteInfo{}) {
-				tmpId, err := InsertOrUpdateRemote(workspaceInfo.Remote)
-				common.CheckError(err)
-				if tmpId > 0 {
-					remoteId = sql.NullInt32{
-						Int32: int32(tmpId),
-						Valid: true,
-					}
-				}
-			}
-		} else { // 插入到 k8s 表中 //TODO 表结构待定
-			tmpId, err := InsertOrUpdateK8sInfo(workspaceInfo.K8sInfo)
+	//5. insert or update  //TODO: 使用事务，确保成功
+	//5.1. 更新关联信息
+	remoteId := sql.NullInt32{}                          // 可能是个空值
+	k8sId := sql.NullInt32{}                             // 可能是个空值
+	if workspaceInfo.Mode != workspace.WorkingMode_K8s { // 插入到 remote 表中
+		if (workspaceInfo.Remote != workspace.RemoteInfo{}) {
+			tmpId, err := InsertOrUpdateRemote(workspaceInfo.Remote)
 			common.CheckError(err)
 			if tmpId > 0 {
-				k8sId = sql.NullInt32{
+				remoteId = sql.NullInt32{
 					Int32: int32(tmpId),
 					Valid: true,
 				}
 			}
 		}
+	} else { // 插入到 k8s 表中
+		tmpId, err := InsertOrUpdateK8sInfo(workspaceInfo.K8sInfo)
+		common.CheckError(err)
+		if tmpId > 0 {
+			k8sId = sql.NullInt32{
+				Int32: int32(tmpId),
+				Valid: true,
+			}
+		}
+	}
+	//5.2. 数据库表操作
+	if !isExit { //5.2.1. insert
 
 		// sql
 		stmt, err := db.Prepare(`INSERT INTO workspace(w_name, w_workingdir, w_docker_compose_file_path, w_config_file, r_id,k_id,
-												w_mode, w_git_clone_repo_url, w_git_auth_type, w_branch,
+												w_mode, w_git_clone_repo_url, w_git_auth_type, w_git_username, w_git_password, w_branch,
 												w_json, w_config_content, w_link_compose_content, w_temp_compose_content)  
-						VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+						VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 		if err != nil {
 			return -1, err
 		}
 
 		res, err := stmt.Exec(workspaceInfo.Name, workspaceInfo.WorkingDirectoryPath, workspaceInfo.TempYamlFileAbsolutePath, workspaceInfo.ConfigFileRelativePath, remoteId, k8sId,
-			workspaceInfo.Mode, workspaceInfo.GitCloneRepoUrl, workspaceInfo.GitRepoAuthType, workspaceInfo.Branch,
+			workspaceInfo.Mode, workspaceInfo.GitCloneRepoUrl, workspaceInfo.GitUserName, workspaceInfo.GitPassword, workspaceInfo.GitRepoAuthType, workspaceInfo.GitBranch,
 			string(jsonBytes), configStr, linkComposeStr, tempComposeStr)
 		if err != nil {
 			return -1, err
 		}
 		return res.LastInsertId()
-	} else { // update
+	} else { //5.2.2. update
 		// exec
 		stmt, err := db.Prepare(`update workspace 
 								set w_name=?, w_workingdir=?, w_docker_compose_file_path=?, w_config_file=?,
-									w_mode=?, w_git_clone_repo_url=?, w_git_auth_type=?, w_branch=?,
+									w_mode=?, w_git_clone_repo_url=?, w_git_auth_type=?, w_git_username=?, w_git_password=?, w_branch=?,
 									w_json=?, w_config_content=?, w_link_compose_content=?, w_temp_compose_content=?
 								where w_id=?`)
 		if err != nil {
 			return -1, err
 		}
 		_, err = stmt.Exec(workspaceInfo.Name, workspaceInfo.WorkingDirectoryPath, workspaceInfo.TempYamlFileAbsolutePath, workspaceInfo.ConfigFileRelativePath,
-			workspaceInfo.Mode, workspaceInfo.GitCloneRepoUrl, workspaceInfo.GitRepoAuthType, workspaceInfo.Branch,
+			workspaceInfo.Mode, workspaceInfo.GitCloneRepoUrl, workspaceInfo.GitUserName, workspaceInfo.GitPassword, workspaceInfo.GitRepoAuthType, workspaceInfo.GitBranch,
 			string(jsonBytes), configStr, linkComposeStr, tempComposeStr,
 			affectId)
 		if err != nil {
@@ -193,7 +189,7 @@ func GetWorkspaceList() (workspaces []workspace.WorkspaceInfo, err error) {
 	defer db.Close()
 
 	rows, err := db.Query(`select w_id, w_name, w_workingdir, w_docker_compose_file_path, w_mode, w_config_file,
-									w_git_clone_repo_url, w_git_auth_type, w_branch, r_id, w_is_del, 
+									w_git_clone_repo_url, w_git_auth_type, w_git_username, w_git_password, w_branch, r_id, k_id, w_is_del, 
 									w_json, w_config_content, w_link_compose_content, w_temp_compose_content, 
 									w_created 
 							from workspace 
@@ -202,7 +198,8 @@ func GetWorkspaceList() (workspaces []workspace.WorkspaceInfo, err error) {
 	for rows.Next() {
 		do := workspaceDo{}
 		switch errSql := rows.Scan(&do.w_id, &do.w_name, &do.w_workingdir, &do.w_docker_compose_file_path, &do.w_mode, &do.w_config_file,
-			&do.w_git_clone_repo_url, &do.w_git_auth_type, &do.w_branch, &do.r_id, &do.w_is_del,
+			&do.w_git_clone_repo_url, &do.w_git_auth_type, &do.w_git_username, &do.w_git_password, &do.w_branch,
+			&do.r_id, &do.k_id, &do.w_is_del,
 			&do.w_json, &do.w_config_content, &do.w_link_compose_content, &do.w_temp_compose_content,
 			&do.w_created); errSql {
 		/* case sql.ErrNoRows:
@@ -222,24 +219,22 @@ func GetWorkspaceList() (workspaces []workspace.WorkspaceInfo, err error) {
 	return workspaces, err
 }
 
-//
-func GetSingleWorkspaceByParams(workingMode workspace.WorkingModeEnum, workingDir string, gitCloneUrl string, remoteId int, remoteHost string) (workspaceInfo workspace.WorkspaceInfo, err error) {
+// 获取单个工作区的信息
+func GetSingleWorkspaceByParams(workingMode workspace.WorkingModeEnum,
+	workingDir string,
+	gitCloneUrl string, branch string, confingFilePath string,
+	remoteId int, remoteHost string, remoteUserName string) (workspaceInfo workspace.WorkspaceInfo, err error) {
 	db := getDb()
 	defer db.Close()
 
 	// 查询参数
 	params := workspaceDo{}
 	params.w_mode = string(workingMode)
-	if workingDir != "" {
-		params.w_workingdir = sql.NullString{String: workingDir, Valid: true}
-	}
-	if gitCloneUrl != "" {
-		params.w_git_clone_repo_url = sql.NullString{String: gitCloneUrl, Valid: true}
-	}
+
 	if remoteId <= 0 {
-		remoteInfo, err := getRemote(remoteId, remoteHost)
+		remoteInfo, err := getRemote(remoteId, remoteHost, remoteUserName)
 		common.CheckError(err)
-		if remoteInfo.ID > 0 {
+		if remoteInfo != nil && remoteInfo.ID > 0 {
 			params.r_id = sql.NullInt32{Int32: int32(remoteInfo.ID), Valid: true}
 		}
 	} else {
@@ -248,35 +243,45 @@ func GetSingleWorkspaceByParams(workingMode workspace.WorkingModeEnum, workingDi
 
 	// sql
 	var row *sql.Row
+	whereStr := " and w_mode=? "
+	args := []interface{}{workingMode}
 	if workingMode == workspace.WorkingMode_Remote {
-		row = db.QueryRow(`select w_id, w_name, w_workingdir, w_docker_compose_file_path, w_mode, w_config_file,
-								w_git_clone_repo_url, w_git_auth_type, w_branch, r_id, w_is_del, 
-								w_json, w_config_content, w_link_compose_content, w_temp_compose_content, 
-								w_created 
-							from workspace 
-							where w_workingdir=? 
-							and w_mode=? 
-							and w_git_clone_repo_url=? 
-							and r_id = ?
-							and w_is_del = 0`,
-			params.w_workingdir, workingMode, params.w_git_clone_repo_url, params.r_id)
-	} else {
-		row = db.QueryRow(`select w_id, w_name, w_workingdir, w_docker_compose_file_path, w_mode, w_config_file,
-								w_git_clone_repo_url, w_git_auth_type, w_branch, r_id, w_is_del, 
-								w_json, w_config_content, w_link_compose_content, w_temp_compose_content, 
-								w_created 
-							from workspace 
-							where w_workingdir=? 
-							and w_mode=? 
-							and w_git_clone_repo_url=? 
-							and w_is_del = 0`,
-			params.w_workingdir, workingMode, params.w_git_clone_repo_url)
+		whereStr += " and r_id = ?"
+		args = append(args, params.r_id)
 	}
+	if workingDir != "" { // 远程主机模式时，工作目录是不确定的
+		params.w_workingdir = sql.NullString{String: workingDir, Valid: true}
+		whereStr += " and w_workingdir = ?"
+		args = append(args, params.w_workingdir)
+	}
+	if gitCloneUrl != "" {
+		params.w_git_clone_repo_url = sql.NullString{String: gitCloneUrl, Valid: true}
+		whereStr += " and w_git_clone_repo_url = ?"
+		args = append(args, params.w_git_clone_repo_url)
+	}
+	if branch != "" {
+		params.w_branch = branch
+		whereStr += " and w_branch = ?"
+		args = append(args, params.w_branch)
+	}
+	if confingFilePath != "" {
+		params.w_config_file = sql.NullString{String: confingFilePath, Valid: true}
+		whereStr += " and w_config_file = ?"
+		args = append(args, params.w_config_file)
+	}
+	row = db.QueryRow(`select w_id, w_name, w_workingdir, w_docker_compose_file_path, w_mode, w_config_file,
+								w_git_clone_repo_url, w_git_auth_type, w_git_username, w_git_password, w_branch, 
+								r_id, k_id, w_is_del, 
+								w_json, w_config_content, w_link_compose_content, w_temp_compose_content, 
+								w_created 
+							from workspace 
+							where w_is_del = 0 `+whereStr, args...)
 
 	// 赋值
 	do := workspaceDo{}
 	switch err := row.Scan(&do.w_id, &do.w_name, &do.w_workingdir, &do.w_docker_compose_file_path, &do.w_mode, &do.w_config_file,
-		&do.w_git_clone_repo_url, &do.w_git_auth_type, &do.w_branch, &do.r_id, &do.w_is_del,
+		&do.w_git_clone_repo_url, &do.w_git_auth_type, &do.w_git_username, &do.w_git_password, &do.w_branch,
+		&do.r_id, &do.k_id, &do.w_is_del,
 		&do.w_json, &do.w_config_content, &do.w_link_compose_content, &do.w_temp_compose_content,
 		&do.w_created); err {
 	case sql.ErrNoRows:
@@ -293,7 +298,7 @@ func GetSingleWorkspaceByParams(workingMode workspace.WorkingModeEnum, workingDi
 	return workspaceInfo, err
 }
 
-// 赋值
+// 把数据库对象进行转换
 func workspaceDataMap(workspaceInfo *workspace.WorkspaceInfo, do workspaceDo) error {
 
 	//1. 基本信息
@@ -324,7 +329,10 @@ func workspaceDataMap(workspaceInfo *workspace.WorkspaceInfo, do workspaceDo) er
 		//workspaceInfo.ConfigYaml = *configYaml
 
 	} else if do.w_mode == string(workspace.WorkingMode_K8s) {
-		originK8sYaml, _ := config.NewK8sConfigFromContent(do.w_config_content.String, do.w_link_compose_content.String)
+		originK8sYaml, err := config.NewK8sConfigFromContent(do.w_config_content.String, do.w_link_compose_content.String)
+		if err != nil {
+			return err
+		}
 		workspaceInfo.K8sInfo.OriginK8sYaml = *originK8sYaml
 
 	} else {
@@ -357,32 +365,50 @@ func workspaceDataMap(workspaceInfo *workspace.WorkspaceInfo, do workspaceDo) er
 	//5. 扩展属性
 	if do.w_json.String != "" {
 		err := json.Unmarshal([]byte(do.w_json.String), &workspaceInfo.Extend)
-		common.CheckError(err)
+		if err != nil {
+			return err
+		}
 	}
 
 	// git 验证方式
-	if do.w_git_auth_type == string(workspace.GitRepoAuthType_SSH) {
+	switch do.w_git_auth_type {
+	case string(workspace.GitRepoAuthType_SSH):
 		workspaceInfo.GitRepoAuthType = workspace.GitRepoAuthType_SSH
-	} else {
-		workspaceInfo.GitRepoAuthType = workspace.GitRepoAuthType_HTTPS
+	case string(workspace.GitRepoAuthType_Basic):
+		workspaceInfo.GitRepoAuthType = workspace.GitRepoAuthType_Basic
+	default:
+		workspaceInfo.GitRepoAuthType = workspace.GitRepoAuthType_Public
 	}
 
 	// git 相关
 	workspaceInfo.GitCloneRepoUrl = do.w_git_clone_repo_url.String
-	workspaceInfo.Branch = do.w_branch
+	workspaceInfo.GitBranch = do.w_branch
+	workspaceInfo.GitUserName = do.w_git_username.String
+	workspaceInfo.GitPassword = do.w_git_password.String
 
 	// 远程主机信息
-	rid := int(do.r_id.Int32)
-	if rid >= 0 {
-		workspaceInfo.Remote, _ = GetRemoteById(rid)
-	}
-	kid := int(do.k_id.Int32)
-	if int(kid) >= 0 {
-		temp, _ := GetK8sInfoById(kid)
-		if temp != nil {
-			workspaceInfo.K8sInfo.ID = temp.ID
-			workspaceInfo.K8sInfo.Context = temp.Context
-			workspaceInfo.K8sInfo.Namespace = temp.Namespace
+	if workspaceInfo.Mode == workspace.WorkingMode_Remote {
+		rid := int(do.r_id.Int32)
+		if rid > 0 {
+			remote, err := GetRemoteById(rid)
+			if err != nil {
+				return err
+			}
+			if remote == nil {
+				return fmt.Errorf("本地查不到不到 id（%v）的远程主机数据", rid)
+			}
+			workspaceInfo.Remote = *remote
+		}
+	} else if workspaceInfo.Mode == workspace.WorkingMode_K8s {
+		kid := int(do.k_id.Int32)
+		if int(kid) > 0 {
+			temp, _ := GetK8sInfoById(kid)
+			if temp != nil {
+				workspaceInfo.K8sInfo.ID = temp.ID
+				workspaceInfo.K8sInfo.Context = temp.Context
+				workspaceInfo.K8sInfo.Namespace = temp.Namespace
+				workspaceInfo.K8sInfo.KubeConfigFilePath = temp.KubeConfigFilePath
+			}
 		}
 	}
 
@@ -420,7 +446,11 @@ func GetSingleWorkspace(workspaceid int) (workspaceInfo workspace.WorkspaceInfo,
 	return workspaceInfo, err
 }
 
-//
+// @title    RemoveWorkspace
+// @description   删除工作区
+// @auth      jasonchen
+// @param     workspaceId        int         "工作区id"
+// @return           error
 func RemoveWorkspace(workspaceId int) error {
 	db := getDb()
 	defer db.Close()

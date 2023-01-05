@@ -1,10 +1,21 @@
 /*
- * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
- * @Description:
- * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-17 11:24:36
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package cmd
 
 import (
@@ -13,17 +24,18 @@ import (
 	"strconv"
 	"strings"
 
+	cmdCommon "github.com/leansoftX/smartide-cli/cmd/common"
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/dal"
 	"github.com/leansoftX/smartide-cli/pkg/common"
-	"github.com/leansoftX/smartide-cli/pkg/kubectl"
+	"github.com/leansoftX/smartide-cli/pkg/k8s"
 	"github.com/spf13/cobra"
 
 	//metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/leansoftX/smartide-cli/cmd/remove"
 	"github.com/leansoftX/smartide-cli/cmd/server"
-	"github.com/leansoftX/smartide-cli/cmd/start"
 )
 
 var removeCmdFlag struct {
@@ -70,7 +82,7 @@ var removeCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		mode, _ := cmd.Flags().GetString("mode")
-		workspaceIdStr := getWorkspaceIdFromFlagsOrArgs(cmd, args)
+		workspaceIdStr := cmdCommon.GetWorkspaceIdFromFlagsOrArgs(cmd, args)
 		if strings.ToLower(mode) == "server" || strings.Contains(workspaceIdStr, "SWS") {
 			serverModeInfo, _ := server.GetServerModeInfo(cmd)
 			if serverModeInfo.ServerHost != "" {
@@ -97,7 +109,8 @@ var removeCmd = &cobra.Command{
 
 		//1. 获取 workspace 信息
 		common.SmartIDELog.Info(i18nInstance.Main.Info_workspace_loading) // log
-		workspaceInfo, err := getWorkspaceFromCmd(cmd, args)
+		workspaceInfo, err := cmdCommon.GetWorkspaceFromCmd(cmd, args)
+		entryptionKey4Workspace(workspaceInfo) // 申明需要加密的文本
 		common.CheckError(err)
 		if workspaceInfo.IsNil() {
 			common.SmartIDELog.Error(i18nInstance.Main.Err_workspace_none)
@@ -147,17 +160,21 @@ var removeCmd = &cobra.Command{
 
 			} else { //4.1.2. 删除本地的工作区
 				//
+
 				if removeMode == RemoteMode_None || removeMode == RemoteMode_OnlyRemoveContainer {
 					if workspaceInfo.Mode == workspace.WorkingMode_Local {
+						appinsight.SetCliLocalTrack(appinsight.Cli_Local_Remove, args, workspaceInfo.ID, "")
 						err := remove.RemoveLocal(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsForce)
 						common.CheckError(err)
 
 					} else if workspaceInfo.Mode == workspace.WorkingMode_Remote {
+						appinsight.SetCliLocalTrack(appinsight.Cli_Host_Remove, args, workspaceInfo.ID, "")
 						err := remove.RemoveRemote(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsRemoveRemoteDirectory, removeCmdFlag.IsForce, cmd)
 						common.CheckError(err)
 
 					} else if workspaceInfo.Mode == workspace.WorkingMode_K8s {
-						k8sUtil, err := kubectl.NewK8sUtil(workspaceInfo.K8sInfo.KubeConfigFilePath,
+						appinsight.SetCliLocalTrack(appinsight.Cli_K8s_Remove, args, workspaceInfo.ID, "")
+						k8sUtil, err := k8s.NewK8sUtil(workspaceInfo.K8sInfo.KubeConfigFilePath,
 							workspaceInfo.K8sInfo.Context,
 							workspaceInfo.K8sInfo.Namespace)
 						common.CheckError(err)
@@ -184,16 +201,12 @@ var removeCmd = &cobra.Command{
 				err := remove.RemoveRemote(workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsRemoveRemoteDirectory, removeCmdFlag.IsForce, cmd)
 				checkErrorFeedback(err)
 			} else if workspaceInfo.Mode == workspace.WorkingMode_K8s {
-				k8sUtil, err := kubectl.NewK8sUtilWithContent(workspaceInfo.K8sInfo.KubeConfigContent,
+				k8sUtil, err := k8s.NewK8sUtilWithContent(workspaceInfo.K8sInfo.KubeConfigContent,
 					workspaceInfo.K8sInfo.Context,
 					workspaceInfo.K8sInfo.Namespace)
 				checkErrorFeedback(err)
 
-				pod, _, _ := start.GetDevContainerPod(*k8sUtil, workspaceInfo.K8sInfo.TempK8sConfig)
-				if pod == nil {
-					checkErrorFeedback(errors.New("find pod error"))
-				}
-				err = remove.RemoveServerK8s(*k8sUtil, cmd, workspaceInfo, removeCmdFlag.IsRemoveAllComposeImages, removeCmdFlag.IsForce, pod.Name)
+				err = remove.RemoveK8s(*k8sUtil, workspaceInfo)
 				checkErrorFeedback(err)
 			} else {
 				common.SmartIDELog.Error(fmt.Errorf("当前 %v 模式不支持在server上运行", workspaceInfo.Mode))
@@ -212,6 +225,7 @@ var removeCmd = &cobra.Command{
 
 		// log
 		common.SmartIDELog.Info(i18nInstance.Remove.Info_end)
+		common.WG.Wait()
 	},
 }
 

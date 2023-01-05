@@ -1,0 +1,57 @@
+###########################################################################
+# SmartIDE - Dev Containers
+# Copyright (C) 2023 leansoftX.com
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+###########################################################################
+
+ARG BUILD_PYTHON_VERSION=3.10.8
+
+FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-python-v2-vmlc:${BUILD_PYTHON_VERSION}
+
+USER root
+
+RUN mkdir -p /usr/share/man/man1
+# RUN apt-get update && \
+#     mkdir -p /usr/share/man/man1 && \
+#     apt-get -y install --no-install-recommends net-tools && \
+#     apt-get clean && \
+#     apt-get autoremove -y && \
+#     rm -rf /tmp/* /var/lib/apt/lists/* /var/tmp/*
+
+
+WORKDIR /home
+#复制IDE文件
+COPY openvscode-images-vmlc opvscode
+COPY openvscode-images-vmlc/bin/remote-cli/openvscode-server opvscode/bin/remote-cli/code
+
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    EDITOR=code \
+    VISUAL=code \
+    GIT_EDITOR="code --wait" \
+    OPENVSCODE_SERVER_ROOT=/home/opvscode
+
+RUN  ln -sf /home/smartide/.nvm/versions/node/v$NODE_VERSION/bin/node /home/opvscode
+
+WORKDIR opvscode
+RUN find ./  -name "*.js" | xargs perl -pi -e 's|https://open-vsx.org|https://marketplace.smartide.cn|g' 
+RUN find ./  -name "*.json" | xargs perl -pi -e 's|https://open-vsx.org|https://marketplace.smartide.cn|g'
+
+COPY openvscode.service /lib/systemd/system/
+COPY startup-openvscode.sh /idesh/startup-openvscode.sh
+
+RUN chmod +x /idesh/startup-openvscode.sh &&               \
+    ln -sf /lib/systemd/system/openvscode.service          \
+        /etc/systemd/system/multi-user.target.wants/openvscode.service

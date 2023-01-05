@@ -1,13 +1,20 @@
 /*
- * @Author: kenan
- * @Date: 2022-02-10 18:11:42
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-07-20 22:00:05
- * @FilePath: /cli/pkg/common/http.go
- * @Description:
- *
- * Copyright (c) 2022 by kenanlu@leansoftx.com, All Rights Reserved.
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 package common
 
@@ -18,12 +25,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -37,30 +44,37 @@ const (
 
 type HttpClient struct {
 	RetryMax         uint
+	Sleep            time.Duration
 	TimeOut          time.Duration
 	ResponseBodyType ResponseBodyTypeEnum
 }
 
-func CreateHttpClient(retryMax uint, timeOut time.Duration, responseBodyType ResponseBodyTypeEnum) HttpClient {
+func CreateHttpClient(retryMax uint,
+	timeOut time.Duration, sleep time.Duration,
+	responseBodyType ResponseBodyTypeEnum) HttpClient {
 	return HttpClient{
 		RetryMax:         retryMax,
 		TimeOut:          timeOut,
+		Sleep:            sleep,
 		ResponseBodyType: responseBodyType,
 	}
 }
 
-func (target HttpClient) Put(reqUrl string, reqParams map[string]interface{}, headers map[string]string) (string, error) {
+func CreateHttpClientDisableRetry() HttpClient {
+	return CreateHttpClient(0, defaultTimeout, 0, "application/json")
+}
 
+func CreateHttpClientEnableRetry() HttpClient {
+	return CreateHttpClient(3, defaultTimeout, time.Second*3, "application/json")
+}
+
+func (target HttpClient) Get(reqUrl string,
+	reqParams map[string]string, headers map[string]string) (string, error) {
 	result := ""
 	var err error = nil
 
-	if target.TimeOut > 0 {
-		timeout = target.TimeOut
-	}
-
-	var retryCount uint = 0
-	for {
-		result, err = put(reqUrl, reqParams, headers)
+	Retry(target.RetryMax, target.Sleep, func() error {
+		result, err = target.get(reqUrl, reqParams, headers)
 		if err == nil {
 			if result == "" {
 				err = errors.New("response body is empty")
@@ -68,29 +82,20 @@ func (target HttpClient) Put(reqUrl string, reqParams map[string]interface{}, he
 				err = errors.New("response body is not json")
 			}
 		}
-		if err != nil && target.RetryMax > retryCount {
-			SmartIDELog.Warning(err.Error())
-			retryCount++
-		} else {
-			break
-		}
-	}
+		return err
+	})
 
 	return result, err
 }
 
-func (target HttpClient) PostJson(reqUrl string, reqParams map[string]interface{}, headers map[string]string) (string, error) {
+func (target HttpClient) Put(reqUrl string,
+	reqParams map[string]interface{}, headers map[string]string) (string, error) {
 
 	result := ""
 	var err error = nil
 
-	if target.TimeOut > 0 {
-		timeout = target.TimeOut
-	}
-
-	var retryCount uint = 0
-	for {
-		result, err = post(reqUrl, reqParams, "application/json", nil, headers)
+	Retry(target.RetryMax, target.Sleep, func() error {
+		result, err = target.put(reqUrl, reqParams, headers)
 		if err == nil {
 			if result == "" {
 				err = errors.New("response body is empty")
@@ -98,13 +103,47 @@ func (target HttpClient) PostJson(reqUrl string, reqParams map[string]interface{
 				err = errors.New("response body is not json")
 			}
 		}
-		if err != nil && target.RetryMax > retryCount {
-			SmartIDELog.Warning(err.Error())
-			retryCount++
-		} else {
-			break
-		}
+		return err
+	})
+
+	return result, err
+}
+
+func (target HttpClient) PostJson(reqUrl string,
+	reqParams map[string]interface{}, headers map[string]string) (string, error) {
+	return postRetry(target, reqUrl, reqParams, "application/json", nil, headers)
+}
+
+func (target HttpClient) PostForm(reqUrl string,
+	reqParams map[string]interface{}, headers map[string]string) (string, error) {
+	return postRetry(target, reqUrl, reqParams, "application/x-www-form-urlencoded", nil, headers)
+}
+
+func (target HttpClient) PostFile(reqUrl string,
+	reqParams map[string]interface{}, files []UploadFile, headers map[string]string) (string, error) {
+	return postRetry(target, reqUrl, reqParams, "multipart/form-data", files, headers)
+}
+
+func postRetry(target HttpClient, reqUrl string,
+	reqParams map[string]interface{}, contentType string, files []UploadFile, headers map[string]string) (string, error) {
+	result := ""
+	var err error = nil
+
+	if target.Sleep > 0 {
+		defaultTimeout = target.Sleep
 	}
+
+	Retry(target.RetryMax, target.Sleep, func() error {
+		result, err = target.post(reqUrl, reqParams, contentType, files, headers)
+		if err == nil {
+			if result == "" {
+				err = errors.New("response body is empty")
+			} else if !IsJSON(result) && contentType == "application/json" {
+				err = errors.New("response body is not json")
+			}
+		}
+		return err
+	})
 
 	return result, err
 }
@@ -116,15 +155,15 @@ type UploadFile struct {
 	Filepath string
 }
 
-var timeout time.Duration = 10 * time.Second
+var defaultTimeout time.Duration = 10 * time.Second
 
-func SetTimeOut(timeDuration time.Duration) {
+/* func SetTimeOut(timeDuration time.Duration) {
 	if timeDuration != 0 {
-		timeout = timeDuration
+		defaultTimeout = timeDuration
 	}
-}
+} */
 
-func Get(reqUrl string, reqParams map[string]string, headers map[string]string) (string, error) {
+func (target HttpClient) get(reqUrl string, reqParams map[string]string, headers map[string]string) (string, error) {
 	urlParams := url.Values{}
 	Url, _ := url.Parse(reqUrl)
 	for key, val := range reqParams {
@@ -132,60 +171,94 @@ func Get(reqUrl string, reqParams map[string]string, headers map[string]string) 
 	}
 
 	// client
-	httpClient := getClient(reqUrl)
+	httpClient := getClient(reqUrl, target.TimeOut)
 
 	//如果参数中有中文参数,这个方法会进行URLEncode
 	Url.RawQuery = urlParams.Encode()
 	// 得到完整的url，http://xx?query
 	urlPath := Url.String()
 
-	httpRequest, _ := http.NewRequest("GET", urlPath, nil)
+	httpRequest, err := http.NewRequest("GET", urlPath, nil)
+	if err != nil {
+		return "", err
+	}
 	// 添加请求头
 	for k, v := range headers {
 		httpRequest.Header.Add(k, v)
 	}
 
-	// debug
-	SmartIDELog.Debug(formatRequest(httpRequest, nil))
-
 	// 发送请求
-	resp, err := httpClient.Do(httpRequest)
+	SmartIDELog.Debug(formatRequest(httpRequest, nil))
+	httpResponse, err := httpClient.Do(httpRequest)
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		return "", errors.New(resp.Status)
+	responseBody, err := parsingResponse(httpResponse)
+	if err != nil {
+		return "", err
+	}
+	defer httpResponse.Body.Close()
+	if httpResponse.StatusCode != 200 {
+		return "", errors.New(httpResponse.Status)
 	}
 
-	response, _ := ioutil.ReadAll(resp.Body)
-	SmartIDELog.Debug("response: " + string(response))
-	return string(response), nil
+	if len(string(responseBody)) == 0 {
+		return "", errors.New("reponse body is empty")
+	}
+	return string(responseBody), nil
 }
 
-func PostForm(reqUrl string, reqParams map[string]interface{}, headers map[string]string) (string, error) {
-	return post(reqUrl, reqParams, "application/x-www-form-urlencoded", nil, headers)
-}
-
-func PostJson(reqUrl string, reqParams map[string]interface{}, headers map[string]string) (string, error) {
-	return post(reqUrl, reqParams, "application/json", nil, headers)
-}
-
-func PostFile(reqUrl string, reqParams map[string]interface{}, files []UploadFile, headers map[string]string) (string, error) {
-	return post(reqUrl, reqParams, "multipart/form-data", files, headers)
-}
-
-func Put(reqUrl string, reqParams map[string]interface{}, headers map[string]string) (string, error) {
-	return put(reqUrl, reqParams, headers)
-
-}
-
-func put(reqUrl string, reqParams map[string]interface{}, headers map[string]string) (string, error) {
-	requestBody, realContentType := getReader(reqParams, "application/json", nil)
-	httpRequest, _ := http.NewRequest("PUT", reqUrl, requestBody)
+func (target HttpClient) put(reqUrl string, reqParams map[string]interface{}, headers map[string]string) (string, error) {
+	jsonBytes, err := json.Marshal(reqParams)
+	if err != nil {
+		return "", err
+	}
+	httpRequest, err := http.NewRequest("PUT", reqUrl, bytes.NewBuffer(jsonBytes))
+	if err != nil {
+		return "", err
+	}
 
 	// client
-	httpClient := getClient(reqUrl)
+	httpClient := getClient(reqUrl, target.TimeOut)
+
+	// 添加请求头
+	headers["Content-Type"] = "application/json" // 后续可根据需要增加其他的类型
+	for k, v := range headers {
+		httpRequest.Header.Add(k, v)
+	}
+
+	// 发送请求
+	SmartIDELog.Debug(formatRequest(httpRequest, reqParams))
+	httpResponse, err := httpClient.Do(httpRequest)
+	if err != nil {
+		return "", err
+	}
+	responseBody, err := parsingResponse(httpResponse)
+	if err != nil {
+		return "", err
+	}
+	defer httpResponse.Body.Close()
+	if httpResponse.StatusCode != 200 {
+		return "", errors.New(httpResponse.Status)
+	}
+	if len(string(responseBody)) == 0 {
+		return "", errors.New("reponse body is empty")
+	}
+	return string(responseBody), err
+
+}
+
+func (target HttpClient) post(reqUrl string,
+	reqParams map[string]interface{}, contentType string, files []UploadFile, headers map[string]string) (
+	string, error) {
+	requestBody, realContentType := getReader(reqParams, contentType, files)
+	httpRequest, err := http.NewRequest("POST", reqUrl, requestBody)
+	if err != nil {
+		return "", err
+	}
+
+	// client
+	httpClient := getClient(reqUrl, target.TimeOut)
 
 	// 添加请求头
 	httpRequest.Header.Add("Content-Type", realContentType)
@@ -193,26 +266,29 @@ func put(reqUrl string, reqParams map[string]interface{}, headers map[string]str
 		httpRequest.Header.Add(k, v)
 	}
 
-	// debug
-	SmartIDELog.Debug(formatRequest(httpRequest, reqParams))
-
 	// 发送请求
-	resp, err := httpClient.Do(httpRequest)
+	SmartIDELog.Debug(formatRequest(httpRequest, reqParams))
+	httpResponse, err := httpClient.Do(httpRequest)
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		return "", errors.New(resp.Status)
+	responseBody, err := parsingResponse(httpResponse)
+	if err != nil {
+		return "", err
 	}
-	response, err := ioutil.ReadAll(resp.Body)
-	SmartIDELog.Debug("response: " + string(response))
-	return string(response), err
+	defer httpResponse.Body.Close()
+	if httpResponse.StatusCode != 200 {
+		return "", errors.New(httpResponse.Status)
+	}
+	//responseBody, err := io.ReadAll(httpResponse.Body)
+	if len(string(responseBody)) == 0 {
+		return "", errors.New("reponse body is empty")
+	}
+	return string(responseBody), err
 
 }
 
-//
-func getClient(url string) *http.Client {
+func getClient(url string, timeout time.Duration) *http.Client {
 	_httpClient := &http.Client{
 		Timeout: timeout, // 请求超时时间
 	}
@@ -223,36 +299,7 @@ func getClient(url string) *http.Client {
 		_httpClient.Transport = tr
 	}
 	return _httpClient
-}
 
-func post(reqUrl string, reqParams map[string]interface{}, contentType string, files []UploadFile, headers map[string]string) (string, error) {
-	requestBody, realContentType := getReader(reqParams, contentType, files)
-	httpRequest, _ := http.NewRequest("POST", reqUrl, requestBody)
-
-	// client
-	httpClient := getClient(reqUrl)
-
-	// 添加请求头
-	httpRequest.Header.Add("Content-Type", realContentType)
-	for k, v := range headers {
-		httpRequest.Header.Add(k, v)
-	}
-
-	// debug
-	SmartIDELog.Debug(formatRequest(httpRequest, reqParams))
-
-	// 发送请求
-	resp, err := httpClient.Do(httpRequest)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		return "", errors.New(resp.Status)
-	}
-	response, err := ioutil.ReadAll(resp.Body)
-	SmartIDELog.Debug("response: " + string(response))
-	return string(response), err
 }
 
 func getReader(reqParams map[string]interface{}, contentType string, files []UploadFile) (io.Reader, string) {
@@ -302,32 +349,81 @@ func getReader(reqParams map[string]interface{}, contentType string, files []Upl
 // formatRequest generates ascii representation of a request
 func formatRequest(r *http.Request, reqParams map[string]interface{}) string {
 	// Create return string
-	var request []string
+	var messages []string
 	// Add the request string
 	url := fmt.Sprintf("%v %v %v", r.Method, r.URL, r.Proto)
-	request = append(request, url)
+	messages = append(messages, url)
 	// Add the host
-	request = append(request, fmt.Sprintf("Host: %v", r.Host))
+	messages = append(messages, fmt.Sprintf("Host: %v", r.Host))
 	// Loop through headers
 	for name, headers := range r.Header {
 		name = strings.ToLower(name)
 		for _, h := range headers {
-			request = append(request, fmt.Sprintf("%v: %v", name, h))
+			messages = append(messages, fmt.Sprintf("%v: %v", name, h))
 		}
 	}
 
 	// If this is a POST, add post data
 	if r.Method == "POST" {
 		r.ParseForm()
-		request = append(request, "\n")
-		request = append(request, r.Form.Encode())
+		messages = append(messages, "\n")
+		messages = append(messages, r.Form.Encode())
 	}
 
 	if reqParams != nil {
 		j, _ := json.Marshal(reqParams)
-		request = append(request, string(j))
+		messages = append(messages, string(j))
 	}
 
 	// Return the request as a string
-	return "request: " + strings.Join(request, "\n")
+	return "REQUEST \n\t" + strings.Join(messages, "\n\t")
+}
+
+// response format
+func parsingResponse(resp *http.Response) (string, error) {
+	if resp == nil {
+		return "", errors.New("response is nil")
+	}
+
+	responseBody := []byte{}
+	if resp.Body != nil {
+		responseBody, _ = io.ReadAll(resp.Body)
+		if len(responseBody) == 0 {
+			return "", nil
+		}
+	}
+
+	result := string(responseBody)
+
+	// 压缩json数据，减少打印的信息
+	simpleResult := result
+	regex := regexp.MustCompile(`:".*?[^\\]"`)
+	simpleResult = regex.ReplaceAllStringFunc(simpleResult, func(old string) string {
+		if len(old) > 26 {
+			return old[:23] + "...\""
+		}
+		return old
+	})
+
+	printRespStr := fmt.Sprintf("RESPONSE \n\tcode: %v \n\thead: %v \n\tbody: %s",
+		resp.StatusCode, resp.Header, simpleResult)
+	SmartIDELog.Debug(printRespStr)
+
+	return result, nil
+}
+
+func AddUsernamePassword4ActualGitRpoUrl(actualGitRepoUrl string, gitUsername, gitPassword string) (string, error) {
+	if gitUsername == "" || gitPassword == "" {
+		return actualGitRepoUrl, errors.New("username or password is nil")
+	}
+	uri, _ := url.Parse(actualGitRepoUrl)
+	if uri.Scheme == "git" {
+		return actualGitRepoUrl, errors.New("不支持git协议")
+	}
+
+	// 带用户名密码的形式
+	uri.User = url.UserPassword(gitUsername, gitPassword)
+	actualGitRepoUrl = uri.String()
+
+	return actualGitRepoUrl, nil
 }

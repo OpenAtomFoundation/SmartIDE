@@ -1,13 +1,21 @@
 /*
- * @Author: kenan
- * @Date: 2022-02-16 17:44:45
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-17 15:32:53
- * @FilePath: /cli/cmd/start/vm_sws_clientEnv.go
- * @Description:
- *
- * Copyright (c) 2022 by kenanlu@leansoftx.com, All Rights Reserved.
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package start
 
 import (
@@ -18,49 +26,46 @@ import (
 	"strings"
 
 	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/model"
+	"github.com/leansoftX/smartide-cli/internal/model/response"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/tunnel"
 )
 
 // 远程服务器执行 start 命令
-func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo, yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) error {
+func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo,
+	yamlExecuteFun func(yamlConfig config.SmartIdeConfig, workspaceInfo workspace.WorkspaceInfo, cmdtype, userguid, workspaceid string)) (
+	workspace.WorkspaceInfo, error) {
 	currentAuth, err := workspace.GetCurrentUser()
 	if err != nil {
-		return err
+		return workspaceInfo, err
 	}
+
 	if currentAuth != (model.Auth{}) && currentAuth.Token != "" && currentAuth.Token != nil {
 		wsURL := fmt.Sprint(strings.ReplaceAll(strings.ReplaceAll(currentAuth.LoginUrl, "https", "ws"), "http", "ws"), "/ws/smartide/ws")
 		common.WebsocketStart(wsURL)
-
-		if pid, err := workspace.GetParentId(workspaceInfo.ServerWorkSpace.NO, workspace.ActionEnum_Workspace_Connect, currentAuth.Token.(string), currentAuth.LoginUrl); err == nil && pid > 0 {
+		if pid, err := workspace.CreateWsLog(workspaceInfo.ServerWorkSpace.NO, currentAuth.Token.(string), currentAuth.LoginUrl, "客户端启动工作区", "客户端启动工作区", common.SmartIDELog.TekEventId); err == nil {
 			common.SmartIDELog.Ws_id = workspaceInfo.ServerWorkSpace.NO
 			common.SmartIDELog.ParentId = pid
-		} else {
-			if err := workspace.CreateWsLog(workspaceInfo.ServerWorkSpace.NO, currentAuth.Token.(string), currentAuth.LoginUrl, "客户端启动工作区", "客户端启动工作区"); err == nil {
-				if pid, err := workspace.GetParentId(workspaceInfo.ServerWorkSpace.NO, workspace.ActionEnum_Workspace_Connect, currentAuth.Token.(string), currentAuth.LoginUrl); err == nil && pid > 0 {
-					common.SmartIDELog.Ws_id = workspaceInfo.ServerWorkSpace.NO
-					common.SmartIDELog.ParentId = pid
-				}
-			}
 		}
-
 	}
-
+	yamlExecuteFun(workspaceInfo.ConfigYaml, workspaceInfo, appinsight.Cli_Host_Start, "", workspaceInfo.ID)
 	//
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_starting)
 	// 检查工作区的状态
-	if workspaceInfo.ServerWorkSpace.Status != model.WorkspaceStatusEnum_Start {
-		if workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Pending || workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Init {
-			return errors.New("当前工作区正在启动中，请等待！")
+	if workspaceInfo.ServerWorkSpace.Status != response.WorkspaceStatusEnum_Start {
+		if workspaceInfo.ServerWorkSpace.Status == response.WorkspaceStatusEnum_Pending ||
+			workspaceInfo.ServerWorkSpace.Status == response.WorkspaceStatusEnum_Init {
+			return workspaceInfo, errors.New("当前工作区正在启动中，请等待！")
 
-		} else if workspaceInfo.ServerWorkSpace.Status == model.WorkspaceStatusEnum_Stop {
-			return errors.New("当前工作区已停止！")
+		} else if workspaceInfo.ServerWorkSpace.Status == response.WorkspaceStatusEnum_Stop {
+			return workspaceInfo, errors.New("当前工作区已停止！")
 
 		} else {
-			return errors.New("当前工作区运行异常！")
+			return workspaceInfo, errors.New("当前工作区运行异常！")
 
 		}
 	}
@@ -69,11 +74,12 @@ func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo, y
 	msg := fmt.Sprintf(" %v@%v:%v ...", workspaceInfo.Remote.UserName, workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort)
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_connect_remote + msg)
 	if workspaceInfo.Remote.IsNil() {
-		return errors.New("关联 远程主机 信息为空！")
+		return workspaceInfo, errors.New("关联 远程主机 信息为空！")
 	}
-	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password)
+
+	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password, workspaceInfo.Remote.SSHKey)
 	if err != nil {
-		return err
+		return workspaceInfo, err
 	}
 
 	//6. 当前主机绑定到远程端口
@@ -115,7 +121,7 @@ func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo, y
 
 		// 打印信息
 		msg := fmt.Sprintf("localhost:%v -> %v:%v -> container:%v",
-			unusedClientPortStr, workspaceInfo.Remote.Addr, pmi.OriginHostPort, pmi.ContainerPort)
+			unusedClientPortStr, workspaceInfo.Remote.Addr, pmi.CurrentHostPort, pmi.ContainerPort)
 		common.SmartIDELog.Info(msg)
 
 		port.IsConnected = true
@@ -170,5 +176,5 @@ func ExecuteServerVmStartByClientEnvCmd(workspaceInfo workspace.WorkspaceInfo, y
 		common.SmartIDELog.Info("本地端口绑定信息 更新完成！")
 	}()
 
-	return nil
+	return workspaceInfo, nil
 }

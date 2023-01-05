@@ -1,37 +1,45 @@
 /*
- * @Date: 2022-04-20 10:46:56
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-05-15 23:08:52
- * @FilePath: /smartide-cli/cmd/new/newLocal.go
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package new
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
-	"text/tabwriter"
 
+	cmdCommon "github.com/leansoftX/smartide-cli/cmd/common"
 	"github.com/leansoftX/smartide-cli/cmd/start"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
+	golbalModel "github.com/leansoftX/smartide-cli/internal/model"
+
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/spf13/cobra"
 )
 
-// 模板文件夹的名称
-const TMEPLATE_DIR_NAME = "templates"
-
 func LocalNew(cmd *cobra.Command, args []string, workspaceInfo workspace.WorkspaceInfo,
-	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) {
+	yamlExecuteFun func(yamlConfig config.SmartIdeConfig, workspaceInfo workspace.WorkspaceInfo, cmdtype, userguid, workspaceid string)) {
 
 	// 环境监测
 	err := common.CheckLocalGitEnv() //检测git环境
@@ -40,7 +48,7 @@ func LocalNew(cmd *cobra.Command, args []string, workspaceInfo workspace.Workspa
 	common.CheckError(err)
 
 	// 获取command中的配置
-	selectedTemplateType, err := getTemplateSetting(cmd, args)
+	selectedTemplateType, err := cmdCommon.GetTemplateSetting(cmd, args)
 	common.CheckError(err)
 	if selectedTemplateType == nil { // 未指定模板类型的时候，提示用户后退出
 		return // 退出
@@ -69,7 +77,7 @@ func LocalNew(cmd *cobra.Command, args []string, workspaceInfo workspace.Workspa
 		}
 	}
 
-	// 复制template 下到当前文件夹
+	// 复制template 到当前文件夹
 	copyTemplateToCurrentDir(selectedTemplateType.TypeName, selectedTemplateType.SubType)
 
 	// 执行start命令
@@ -93,105 +101,12 @@ func LocalNew(cmd *cobra.Command, args []string, workspaceInfo workspace.Workspa
 
 }
 
-// 从command的参数中获取模板设置信息
-func getTemplateSetting(cmd *cobra.Command, args []string) (*TemplateTypeBo, error) {
-	common.SmartIDELog.Info(i18nInstance.New.Info_loading_templates)
-
-	// git clone
-	err := templatesClone() //
-	if err != nil {
-		return nil, err
-	}
-
-	templateTypes, err := loadTemplatesJson() // 解析json文件
-	if err != nil {
-		return nil, err
-	}
-
-	if len(args) == 0 {
-		// print
-		fmt.Println(i18nInstance.New.Info_help_info)
-		printTemplates(templateTypes) // 打印支持的模版列表
-		fmt.Println(i18nInstance.New.Info_help_info_operation)
-		fmt.Println(cmd.Flags().FlagUsages())
-		return nil, nil
-	}
-
-	//2.
-	selectedTemplateTypeName := ""
-	if len(args) > 0 {
-		selectedTemplateTypeName = args[0]
-	}
-	selectedTemplateSubTypeName, err := cmd.Flags().GetString("type")
-	if err != nil {
-		return nil, err
-	}
-	selectedTemplateTypeName = strings.TrimSpace(selectedTemplateTypeName)
-	selectedTemplateSubTypeName = strings.TrimSpace(selectedTemplateSubTypeName)
-
-	//3. 遍历进行查找
-	var selectedTemplate *TemplateTypeBo
-	for _, currentTemplateType := range templateTypes {
-		if currentTemplateType.TypeName == selectedTemplateTypeName {
-
-			isSelected := false
-			if selectedTemplateSubTypeName == "_default" {
-				isSelected = true
-
-			} else {
-				for _, currentSubTemplateType := range currentTemplateType.SubTypes {
-					if currentSubTemplateType.Name == selectedTemplateSubTypeName {
-						isSelected = true
-						break
-					}
-
-				}
-			}
-
-			if isSelected {
-				tmp := TemplateTypeBo{
-					TypeName: selectedTemplateTypeName,
-					SubType:  selectedTemplateSubTypeName,
-					Commands: currentTemplateType.Commands,
-				}
-				selectedTemplate = &tmp
-
-				break
-			}
-
-		}
-	}
-	if selectedTemplate == nil {
-		return nil, errors.New(i18nInstance.New.Info_type_no_exist)
-	}
-	return selectedTemplate, nil
-}
-
-// 打印 service 列表
-func printTemplates(newType []NewTypeBO) {
-	w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
-	fmt.Fprintln(w, i18nInstance.New.Info_templates_list_header)
-	for i := 0; i < len(newType); i++ {
-		line := fmt.Sprintf("%v\t%v", newType[i].TypeName, "_default")
-		fmt.Fprintln(w, line)
-		for j := 0; j < len(newType[i].SubTypes); j++ {
-			subTypeName := newType[i].SubTypes[j]
-			if subTypeName != (SubType{}) && subTypeName.Name != "" {
-				line := fmt.Sprintf("%v\t%v", newType[i].TypeName, subTypeName.Name)
-				fmt.Fprintln(w, line)
-			}
-		}
-	}
-	w.Flush()
-	fmt.Println("")
-}
-
-//复制templates
+// 复制templates
 func copyTemplateToCurrentDir(modelType, newProjectType string) {
 	if newProjectType == "" {
 		newProjectType = "_default"
 	}
-	templatePath := common.PathJoin(config.SmartIdeHome, TMEPLATE_DIR_NAME, modelType, newProjectType)
+	templatePath := common.PathJoin(config.SmartIdeHome, golbalModel.TMEPLATE_DIR_NAME, modelType, newProjectType)
 	templatesFolderIsExist := common.IsExist(templatePath)
 	if !templatesFolderIsExist {
 		common.SmartIDELog.Error(i18nInstance.New.Info_type_no_exist)
@@ -202,10 +117,10 @@ func copyTemplateToCurrentDir(modelType, newProjectType string) {
 	common.CheckError(copyerr)
 }
 
-//判断文件夹是坦为空
-//空为true
+// 判断文件夹是坦为空
+// 空为true
 func folderEmpty(dirPth string) (bool, error) {
-	fis, err := ioutil.ReadDir(dirPth)
+	fis, err := os.ReadDir(dirPth)
 	if err != nil {
 		return false, err
 	}
@@ -221,62 +136,6 @@ func folderEmpty(dirPth string) (bool, error) {
 	}
 
 	return isEmpty, nil
-}
-
-// clone模版repo
-func templatesClone() error {
-	templatePath := common.PathJoin(config.SmartIdeHome, TMEPLATE_DIR_NAME)
-	templateGitPath := common.PathJoin(templatePath, ".git")
-	templatesGitIsExist := common.IsExist(templateGitPath)
-
-	// 通过判断.git目录存在，执行git pull，保持最新
-	if templatesGitIsExist {
-		err := common.EXEC.Realtime(`
-git checkout -- * 
-git pull
-		`, templatePath)
-		if err != nil {
-			return err
-		}
-
-	} else {
-		err := os.RemoveAll(templatePath)
-		if err != nil {
-			return err
-		}
-
-		command := fmt.Sprintf("git clone %v %v", config.GlobalSmartIdeConfig.TemplateRepo, templatePath)
-		err = common.EXEC.Realtime(command, "")
-		if err != nil {
-			return err
-		}
-
-	}
-
-	return nil
-}
-
-//强制获取templates
-func forceTemplatesPull(gitFolder string) (errArry []string) {
-	gitCmd := *exec.Command("git", "fetch", "--all")
-	gitCmd.Dir = gitFolder
-	gitErr := gitCmd.Run()
-	if gitErr != nil {
-		errArry = append(errArry, "git fetch --all")
-	}
-	gitCmd = *exec.Command("git", "reset", "--hard", "origin/master")
-	gitCmd.Dir = gitFolder
-	gitErr = gitCmd.Run()
-	if gitErr != nil {
-		errArry = append(errArry, "git reset --hard origin/master")
-	}
-	gitCmd = *exec.Command("git", "pull")
-	gitCmd.Dir = gitFolder
-	gitErr = gitCmd.Run()
-	if gitErr != nil {
-		errArry = append(errArry, "git pull")
-	}
-	return errArry
 }
 
 /**
@@ -318,7 +177,7 @@ func copyDir(srcPath string, destPath string) error {
 	return err
 }
 
-//生成目录并拷贝文件
+// 生成目录并拷贝文件
 func copyFile(src, dest string) (w int64, err error) {
 	srcFile, err := os.Open(src)
 	if err != nil {
@@ -350,17 +209,4 @@ func copyFile(src, dest string) (w int64, err error) {
 	}
 	defer dstFile.Close()
 	return io.Copy(dstFile, srcFile)
-}
-
-//加载templates索引json
-func loadTemplatesJson() (templateTypes []NewTypeBO, err error) {
-	// new type转换为结构体
-	templatesPath := common.PathJoin(config.SmartIdeHome, TMEPLATE_DIR_NAME, "templates.json")
-	templatesByte, err := os.ReadFile(templatesPath)
-	if err != nil {
-		return templateTypes, errors.New(i18nInstance.New.Err_read_templates + templatesPath + err.Error())
-	}
-
-	err = json.Unmarshal(templatesByte, &templateTypes)
-	return templateTypes, err
 }

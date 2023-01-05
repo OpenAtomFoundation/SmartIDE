@@ -1,8 +1,20 @@
 /*
- * @Author: jason chen
- * @Date: 2021-11-08
- * @Description: sqlite data access layer
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 package workspace
 
@@ -15,7 +27,9 @@ import (
 	"time"
 
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
+	templateModel "github.com/leansoftX/smartide-cli/internal/biz/template/model"
 	"github.com/leansoftX/smartide-cli/internal/model"
+	"github.com/leansoftX/smartide-cli/internal/model/response"
 	"github.com/leansoftX/smartide-cli/pkg/common"
 	"github.com/leansoftX/smartide-cli/pkg/docker/compose"
 	"gopkg.in/src-d/go-git.v4"
@@ -60,9 +74,14 @@ const (
 type GitRepoAuthType string
 
 const (
-	GitRepoAuthType_SSH   GitRepoAuthType = "ssh"
-	GitRepoAuthType_HTTPS GitRepoAuthType = "https"
-	GitRepoAuthType_HTTP  GitRepoAuthType = "http"
+	// ssh
+	GitRepoAuthType_SSH GitRepoAuthType = "ssh"
+	// 用户名密码
+	GitRepoAuthType_Basic GitRepoAuthType = "basic"
+	// 公共的，没有读写限制
+	GitRepoAuthType_Public GitRepoAuthType = "public"
+	/* GitRepoAuthType_HTTPS GitRepoAuthType = "https"
+	GitRepoAuthType_HTTP  GitRepoAuthType = "http" */
 )
 
 type WorkspaceType string
@@ -79,7 +98,8 @@ type Addon struct {
 }
 
 type WorkspaceInfo struct {
-	ID   string
+	ID string
+	// 文件夹名称，project
 	Name string
 	// addon
 	Addon Addon
@@ -95,29 +115,35 @@ type WorkspaceInfo struct {
 	CliRunningEnv CliRunningEvnEnum
 	// 缓存环境
 	CacheEnv CacheEnvEnum
-	// host信息
-	Remote RemoteInfo
-	// git 库的克隆地址
-	GitCloneRepoUrl string
+
 	// WebIDE中文件所在根目录名称 （git库名称 或者 当前目录名）
 	projectDirctoryName string
+
+	// git 库的克隆地址
+	GitCloneRepoUrl string
 	// git 库的认证方式
 	GitRepoAuthType GitRepoAuthType
-
+	GitUserName     string
+	GitPassword     string
 	// 指定的分支
-	Branch string
+	GitBranch string
+
+	// GitRepo *GitRepoInfo // 合并到一个对象中
+
+	// 模板信息
+	SelectedTemplate *templateModel.SelectedTemplateTypeBo
 
 	// 配置文件
 	ConfigYaml config.SmartIdeConfig
 
-	//
+	// host信息
+	Remote RemoteInfo
+
+	// k8s
 	K8sInfo K8sInfo
 
 	// 临时的docker-compose文件
 	TempDockerCompose compose.DockerComposeYml
-
-	// 链接的docker-compose文件
-	//LinkDockerCompose compose.DockerComposeYml
 
 	// 扩展信息
 	Extend WorkspaceExtend
@@ -126,54 +152,72 @@ type WorkspaceInfo struct {
 	CreatedTime time.Time
 
 	// 关联的服务端workspace
-	ServerWorkSpace *model.ServerWorkspace
+	ServerWorkSpace *response.ServerWorkspaceResponse
+
+	ResourceID int
 }
 
-// 获取工作区状态值对应的label
+type GitRepoInfo struct {
+	// git 库的克隆地址
+	GitCloneRepoUrl string
+	// git 库的认证方式
+	GitRepoAuthType GitRepoAuthType
+	GitUserName     string
+	GitPassword     string
+	// 指定的分支
+	GitBranch string
+}
+
+/*
+	// 获取工作区状态值对应的label
+
 var _workspaceStatusMap map[int]string
 
 func getWorkspaceStatusDescFromServer(workspaceStatus model.WorkspaceStatusEnum) (string, error) {
 
-	if len(_workspaceStatusMap) == 0 { // 如果缓存中没有，就从服务器去取
-		auth, err := GetCurrentUser()
-		if err != nil {
-			return "", err
-		}
+		if len(_workspaceStatusMap) == 0 { // 如果缓存中没有，就从服务器去取
+			auth, err := GetCurrentUser()
+			if err != nil {
+				return "", err
+			}
 
-		url, _ := common.UrlJoin(auth.LoginUrl, "/api/sysDictionary/findSysDictionary")
-		headers := map[string]string{
-			"Content-Type": "application/json",
-		}
-		if auth.Token != nil {
-			headers["x-token"] = auth.Token.(string)
-		}
-		response, err := common.Get(url.String(), map[string]string{"type": "smartide_workspace_status"}, headers)
-		if err != nil {
-			return "", err
-		}
+			url, _ := common.UrlJoin(auth.LoginUrl, "/api/sysDictionary/findSysDictionary")
+			headers := map[string]string{
+				"Content-Type": "application/json",
+			}
+			if auth.Token != nil {
+				headers["x-token"] = auth.Token.(string)
+			}
+			httpClient := common.CreateHttpClientEnableRetry()
+			response, err := httpClient.Get(url.String(),
+				map[string]string{"type": "smartide_workspace_status"}, headers) //
+			//	response, err := common.Get(url.String(), map[string]string{"type": "smartide_workspace_status"}, headers)
+			if err != nil {
+				return "", err
+			}
 
-		workspaceStatusDictionaryResponse := &model.WorkspaceStatusDictionaryResponse{}
-		err = json.Unmarshal([]byte(response), workspaceStatusDictionaryResponse)
-		if err != nil {
-			return "", err
-		}
+			workspaceStatusDictionaryResponse := &model.WorkspaceStatusDictionaryResponse{}
+			err = json.Unmarshal([]byte(response), workspaceStatusDictionaryResponse)
+			if err != nil {
+				return "", err
+			}
 
-		for _, item := range workspaceStatusDictionaryResponse.Data.ResysDictionary.SysDictionaryDetails {
-			if item.Value == int(workspaceStatus) {
-				return item.Label, nil
+			for _, item := range workspaceStatusDictionaryResponse.Data.ResysDictionary.SysDictionaryDetails {
+				if item.Value == int(workspaceStatus) {
+					return item.Label, nil
+				}
 			}
 		}
+
+		if _, ok := _workspaceStatusMap[int(workspaceStatus)]; ok {
+			return _workspaceStatusMap[int(workspaceStatus)], nil
+		}
+
+		return "", nil
 	}
+*/
 
-	if _, ok := _workspaceStatusMap[int(workspaceStatus)]; ok {
-		return _workspaceStatusMap[int(workspaceStatus)], nil
-	}
-
-	return "", nil
-}
-
-//
-func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (WorkspaceInfo, error) {
+func CreateWorkspaceInfoFromServer(serverWorkSpace response.ServerWorkspaceResponse) (WorkspaceInfo, error) {
 	projectName := serverWorkSpace.Name
 	if projectName == "" {
 		projectName = getRepoName(serverWorkSpace.GitRepoUrl)
@@ -185,16 +229,17 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 		Name:                   serverWorkSpace.Name, //+ fmt.Sprintf(" (%v)", label),
 		ConfigFileRelativePath: serverWorkSpace.ConfigFilePath,
 		GitCloneRepoUrl:        serverWorkSpace.GitRepoUrl,
-		Branch:                 serverWorkSpace.Branch,
+		GitBranch:              serverWorkSpace.Branch,
 		Mode:                   WorkingMode_Remote,
 		CacheEnv:               CacheEnvEnum_Server,
 		CreatedTime:            serverWorkSpace.CreatedAt,
 		WorkingDirectoryPath:   common.PathJoin("~", model.CONST_REMOTE_REPO_ROOT, projectName),
+		ResourceID:             serverWorkSpace.ResourceID,
 	}
 
 	// 关联的资源信息
 	switch serverWorkSpace.Resource.Type {
-	case model.ReourceTypeEnum_Remote:
+	case response.ReourceTypeEnum_Remote:
 		workspaceInfo.Mode = WorkingMode_Remote
 		workspaceInfo.Remote = RemoteInfo{
 			ID:       int(serverWorkSpace.Resource.ID),
@@ -202,9 +247,10 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 			UserName: serverWorkSpace.Resource.UserName,
 			Password: serverWorkSpace.Resource.Password,
 			SSHPort:  serverWorkSpace.Resource.Port,
+			SSHKey:   serverWorkSpace.Resource.SSHKey,
 		}
 		workspaceInfo.TempYamlFileAbsolutePath = workspaceInfo.GetTempDockerComposeFilePath()
-	case model.ReourceTypeEnum_K8S:
+	case response.ReourceTypeEnum_K8S:
 		workspaceInfo.Mode = WorkingMode_K8s
 		workspaceInfo.K8sInfo = K8sInfo{
 			KubeConfigContent: serverWorkSpace.Resource.KubeConfigContent,
@@ -221,9 +267,9 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 	}
 
 	switch serverWorkSpace.Resource.AuthenticationType {
-	case model.AuthenticationTypeEnum_Password:
+	case response.AuthenticationTypeEnum_Password:
 		workspaceInfo.Remote.AuthType = RemoteAuthType_Password
-	case model.AuthenticationTypeEnum_SSH:
+	case response.AuthenticationTypeEnum_SSH:
 		workspaceInfo.Remote.AuthType = RemoteAuthType_SSH
 		/* 	case model.AuthenticationTypeEnum_KubeConfig:
 		workspaceInfo.Remote.AuthType = RemoteAuthType_Password */
@@ -236,6 +282,12 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 
 	workspaceInfo.ServerWorkSpace = &serverWorkSpace
 
+	if serverWorkSpace.PortConfigsStr != "" {
+		err := json.Unmarshal([]byte(serverWorkSpace.PortConfigsStr), &serverWorkSpace.PortConfigs)
+		if err != nil {
+			return WorkspaceInfo{}, err
+		}
+	}
 	if serverWorkSpace.Extend != "" {
 		err := json.Unmarshal([]byte(serverWorkSpace.Extend), &workspaceInfo.Extend)
 		if err != nil {
@@ -252,33 +304,41 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 
 	// 配置文件
 	if workspaceInfo.Mode == WorkingMode_Remote {
-		if serverWorkSpace.LinkDockerCompose != "" {
-			err := yaml.Unmarshal([]byte(serverWorkSpace.LinkDockerCompose), &workspaceInfo.ConfigYaml.Workspace.LinkCompose)
+		if serverWorkSpace.LinkFileContent != "" {
+			err := yaml.Unmarshal([]byte(serverWorkSpace.LinkFileContent), &workspaceInfo.ConfigYaml.Workspace.LinkCompose)
 			if err != nil {
 				return WorkspaceInfo{}, err
 			}
 		}
-		if serverWorkSpace.TempDockerComposeContent != "" {
-			err := yaml.Unmarshal([]byte(serverWorkSpace.TempDockerComposeContent), &workspaceInfo.TempDockerCompose)
+		if serverWorkSpace.TempDeploymentFileContent != "" {
+			err := yaml.Unmarshal([]byte(serverWorkSpace.TempDeploymentFileContent), &workspaceInfo.TempDockerCompose)
 			if err != nil {
 				return WorkspaceInfo{}, err
 			}
 		}
 	} else if workspaceInfo.Mode == WorkingMode_K8s {
-		if serverWorkSpace.LinkDockerCompose != "" {
-			originK8sYaml, err := config.NewK8sConfigFromContent(serverWorkSpace.ConfigFileContent, serverWorkSpace.LinkDockerCompose)
+		if serverWorkSpace.LinkFileContent != "" {
+			originK8sYaml, err := config.NewK8sConfigFromContent(serverWorkSpace.ConfigFileContent, serverWorkSpace.LinkFileContent)
 			if err != nil {
 				return WorkspaceInfo{}, err
 			}
 			workspaceInfo.K8sInfo.OriginK8sYaml = *originK8sYaml
 		}
-		if serverWorkSpace.TempDockerComposeContent != "" {
-			tempK8sYaml, err := config.NewK8sConfigFromContent(serverWorkSpace.ConfigFileContent, serverWorkSpace.TempDockerComposeContent)
+		if serverWorkSpace.TempDeploymentFileContent != "" {
+			tempK8sYaml, err := config.NewK8sConfigFromContent(serverWorkSpace.ConfigFileContent, serverWorkSpace.TempDeploymentFileContent)
 			if err != nil {
 				return WorkspaceInfo{}, err
 			}
 			workspaceInfo.K8sInfo.TempK8sConfig = *tempK8sYaml
-			workspaceInfo.K8sInfo.Namespace = (*tempK8sYaml).Workspace.Services[0].Namespace
+			// workspaceInfo.K8sInfo.Namespace = (*tempK8sYaml).Workspace.Services[0].Namespace
+
+			if serverWorkSpace.KubeNamespace != "" {
+				workspaceInfo.K8sInfo.Namespace = serverWorkSpace.KubeNamespace
+			} else if len((*tempK8sYaml).Workspace.Services) > 0 {
+				workspaceInfo.K8sInfo.Namespace = (*tempK8sYaml).Workspace.Services[0].Namespace
+			} else {
+				return WorkspaceInfo{}, errors.New("namespace is nil!")
+			}
 		}
 	} else {
 		return WorkspaceInfo{}, errors.New("所选模式不支持！")
@@ -293,7 +353,8 @@ func CreateWorkspaceInfoFromServer(serverWorkSpace model.ServerWorkspace) (Works
 func (w WorkspaceInfo) IsNil() bool {
 
 	return w.ID == "" || w.Name == "" ||
-		w.WorkingDirectoryPath == "" || w.ConfigFileRelativePath == "" ||
+		w.WorkingDirectoryPath == "" ||
+		w.ConfigFileRelativePath == "" ||
 		w.Mode == "" || w.CliRunningEnv == "" || w.CacheEnv == "" // || w.ProjectName == "" len(w.Extend.Ports) == 0 ||
 }
 
@@ -304,9 +365,6 @@ func (w WorkspaceInfo) IsNotNil() bool {
 
 // 验证
 func (w WorkspaceInfo) Valid() error {
-	/* if w.GetProjectDirctoryName() == "" {
-		return errors.New("[Workspace] 项目名不能为空")
-	} */
 
 	if w.Mode == "" {
 		return errors.New(i18nInstance.Main.Err_workspace_mode_none)
@@ -334,7 +392,6 @@ func (w WorkspaceInfo) Valid() error {
 	return nil
 }
 
-//
 func (w WorkspaceInfo) GetProjectDirctoryName() string {
 	if w.projectDirctoryName == "" {
 		if w.Mode == WorkingMode_Remote { // 远程模式
@@ -399,7 +456,6 @@ func getRepoName(repoUrl string) string {
 	return strings.Replace(repoUrl[index+1:], ".git", "", -1)
 }
 
-//
 func getLocalGitRepoUrl() (gitRemmoteUrl, pathName string) {
 	// current directory
 	pwd, err := os.Getwd()
@@ -422,7 +478,7 @@ func getLocalGitRepoUrl() (gitRemmoteUrl, pathName string) {
 }
 
 // 改变配置文件
-func (w *WorkspaceInfo) ChangeConfig(currentConfigContent, linkDockerComposeContent string) (hasChanged bool) {
+func (w *WorkspaceInfo) IsChangeConfig(currentConfigContent, linkDockerComposeContent string) (hasChanged bool) {
 	// 参数检查
 	if currentConfigContent == "" {
 		msg := fmt.Sprintf(i18nInstance.Common.Warn_param_is_null, "configContent")
@@ -469,12 +525,10 @@ func (instance *WorkspaceExtend) ToJson() string {
 	return string(d)
 }
 
-//
 func (instance *WorkspaceExtend) IsNotNil() bool {
 	return !instance.IsNil()
 }
 
-//
 func (instance *WorkspaceExtend) IsNil() bool {
 	return instance == nil || len(instance.Ports) <= 0
 }
@@ -521,7 +575,6 @@ func (portMaps ExtendPorts) IsExit(portMapInfo *config.PortMapInfo) bool {
 	return isContain
 }
 
-//
 func (portMaps ExtendPorts) AppendOrUpdate(portMapInfo *config.PortMapInfo) ExtendPorts {
 	if portMapInfo == nil {
 		panic("obj is nil")
@@ -569,6 +622,7 @@ type RemoteInfo struct {
 	AuthType    RemoteAuthType
 	Password    string
 	SSHPort     int
+	SSHKey      string
 	CreatedTime time.Time
 }
 
@@ -585,7 +639,7 @@ type K8sInfo struct {
 	DeploymentName string
 	PVCName        string
 
-	IngressAuthType      model.KubeIngressAuthenticationTypeEnum
+	IngressAuthType      response.KubeIngressAuthenticationTypeEnum
 	IngressLoginUserName string
 	IngressLoginPassword string
 
@@ -605,12 +659,18 @@ type K8sInfo struct {
 	TempK8sConfig config.SmartIdeK8SConfig
 }
 
-//
 func (r RemoteInfo) IsNil() bool {
 	return r.ID <= 0 || r.Addr == "" || r.UserName == "" || r.AuthType == ""
 }
 
-//
 func (w RemoteInfo) IsNotNil() bool {
+	return !w.IsNil()
+}
+
+func (r K8sInfo) IsNil() bool {
+	return r.Context == ""
+}
+
+func (w K8sInfo) IsNotNil() bool {
 	return !w.IsNil()
 }

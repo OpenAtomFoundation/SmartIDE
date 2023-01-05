@@ -1,10 +1,21 @@
 /*
- * @Author: jason chen (jasonchen@leansoftx.com, http://smallidea.cnblogs.com)
- * @Description:
- * @Date: 2021-11
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-18 11:06:52
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package config
 
 import (
@@ -32,7 +43,6 @@ import (
 	} `yaml:"orchestrator"`
 } */
 
-//
 type OrchestratorTypeEnum string
 
 const (
@@ -230,14 +240,14 @@ func (p PortMapInfo) GetSSHPortAtLocalHost() int {
 	return p.ClientPort
 }
 
-//
 type PortMapTypeEnum string
 
 const (
-	PortMapInfo_Full        PortMapTypeEnum = "full"
-	PortMapInfo_OnlyLabel   PortMapTypeEnum = "label"
-	PortMapInfo_OnlyCompose PortMapTypeEnum = "compose"
-	PortMapInfo_K8S_Service PortMapTypeEnum = "k8s_service"
+	PortMapInfo_Full         PortMapTypeEnum = "full"
+	PortMapInfo_OnlyLabel    PortMapTypeEnum = "label"
+	PortMapInfo_ServerConfig PortMapTypeEnum = "server_config"
+	PortMapInfo_OnlyCompose  PortMapTypeEnum = "compose"
+	PortMapInfo_K8S_Service  PortMapTypeEnum = "k8s_service"
 )
 
 func (customBool CustomBool) Value() bool {
@@ -256,7 +266,6 @@ func (customBool CustomBool) Value() bool {
 	return tmp == "true" || tmp == "1"
 }
 
-//
 func NewPortMap(
 	mapType PortMapTypeEnum, orginLocalPort int, currentLocalPort int, localPortDesc string, containerPort int, serviceName string) *PortMapInfo {
 	result := &PortMapInfo{
@@ -283,7 +292,7 @@ func (w SmartIdeConfig) GetWorkingDirectoryPath() string {
 
 }
 
-//返回容器内IDE端口，web ide的默认端口：3000，JetBrains IDE的默认端口：8887
+// 返回容器内IDE端口，web ide的默认端口：3000，JetBrains IDE的默认端口：8887
 func (w SmartIdeConfig) GetContainerWebIDEPort() (port *int) {
 	switch w.Workspace.DevContainer.IdeType {
 	case IdeTypeEnum_VsCode:
@@ -302,7 +311,6 @@ func (w SmartIdeConfig) GetContainerWebIDEPort() (port *int) {
 	return port
 }
 
-//
 func (originK8sConfig SmartIdeK8SConfig) GetProjectDirctory() string {
 	containerGitCloneDir := "/home/project"
 	for containerName, item := range originK8sConfig.Workspace.Containers { // git clone 的目录是否设置

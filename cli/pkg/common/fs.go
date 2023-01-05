@@ -1,10 +1,20 @@
 /*
- * @Author: kenan
- * @Date: 2021-12-29 14:26:42
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-04 09:47:31
- * @Description: file content
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 package common
 
@@ -93,6 +103,15 @@ func (fs *fileOperation) CreateOrOverWrite(filePath string, content string) erro
 // content: 写入的内容
 func (fs *fileOperation) AppendToFile(filePath string, content string) error {
 	return writeToFile(filePath, content, false)
+}
+
+// 指定路径是否存在
+func (fs *fileOperation) IsExist(filePath string) bool {
+	_, err := os.Stat(filePath)
+	if err != nil {
+		return false
+	}
+	return true
 }
 
 func writeToFile(filePath string, content string, isOverWrite bool) (err error) {

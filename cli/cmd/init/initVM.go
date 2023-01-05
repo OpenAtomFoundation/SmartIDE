@@ -1,10 +1,20 @@
 /*
- * @Author: Bo Dai (daibo@leansoftx.com)
- * @Description:
- * @Date: 2022-07
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-08-17 15:31:23
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 package init
 
@@ -16,6 +26,7 @@ import (
 	"strings"
 
 	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/model"
@@ -25,6 +36,8 @@ import (
 
 func VmInit(cmd *cobra.Command, args []string, workspaceInfo workspace.WorkspaceInfo,
 	yamlExecuteFun func(yamlConfig config.SmartIdeConfig)) {
+
+	appinsight.SetCliTrack(appinsight.Cli_Host_Init, args)
 
 	mode, _ := cmd.Flags().GetString("mode")
 	isModeServer := strings.ToLower(mode) == "server"
@@ -58,7 +71,7 @@ func VmInit(cmd *cobra.Command, args []string, workspaceInfo workspace.Workspace
 	//0. 连接到远程主机
 	msg := fmt.Sprintf(" %v@%v:%v ...", workspaceInfo.Remote.UserName, workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort)
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_connect_remote + msg)
-	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password)
+	sshRemote, err := common.NewSSHRemote(workspaceInfo.Remote.Addr, workspaceInfo.Remote.SSHPort, workspaceInfo.Remote.UserName, workspaceInfo.Remote.Password, workspaceInfo.Remote.SSHKey)
 	common.CheckErrorFunc(err, serverFeedback)
 
 	//1. 检查远程主机是否有docker、docker-compose、git
@@ -85,7 +98,7 @@ func VmInit(cmd *cobra.Command, args []string, workspaceInfo workspace.Workspace
 		selectedTemplateSettings.SubType = "_default"
 	}
 	projectDir := common.FilePahtJoin4Linux("~", model.CONST_REMOTE_REPO_ROOT, workspaceDirName)
-	err = GitCloneTemplateRepo4Remote(sshRemote, projectDir, config.GlobalSmartIdeConfig.TemplateRepo,
+	err = GitCloneTemplateRepo4Remote(sshRemote, projectDir, config.GlobalSmartIdeConfig.TemplateActualRepoUrl,
 		selectedTemplateSettings.TypeName, selectedTemplateSettings.SubType)
 	common.CheckErrorFunc(err, serverFeedback)
 

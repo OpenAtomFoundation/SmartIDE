@@ -4,23 +4,56 @@ orchestrator:
   version: 3
 workspace:
   dev-container:
-    service-name: smartide-dev
-    
-    ports: # 申明端口
+    service-name: smartide-vmlc-vscode-go-dev
+
+    ports:
       tools-webide-vscode: 6800
       tools-ssh: 6822
-      apps-hugo-website: 1313
-    
-    ide-type: vscode  #vscode/theia
+    ide-type: vscode
+
     volumes: 
       git-config: true
       ssh-key: true
-    command:
+    command:      
       - cd /home/project
-      - git submodule update --init --recursive
-      - cd docs
-      - npm install
-      - hugo server --bind 0.0.0.0 --disableFastRender --forceSyncStatic --buildDrafts --buildFuture 
+      - go env -w GOPROXY=https://goproxy.cn,direct
+      - cd cli      
+      - go111MODULE=on go install github.com/uudashr/gopkgs/v2/cmd/gopkgs@latest
+      - go111MODULE=on go install github.com/ramya-rao-a/go-outline@latest
+      - go111MODULE=on go install github.com/cweill/gotests/gotests@latest
+      - go111MODULE=on go install github.com/fatih/gomodifytags@latest
+      - go111MODULE=on go install github.com/josharian/impl@latest
+      - go111MODULE=on go install github.com/haya14busa/goplay/cmd/goplay@latest
+      - go111MODULE=on go install github.com/go-delve/delve/cmd/dlv@latest
+      - go111MODULE=on go install honnef.co/go/tools/cmd/staticcheck@latest
+      - go111MODULE=on go install golang.org/x/tools/gopls@latest
+      - go mod tidy
+      - code --install-extension golang.go
+      # run in terminal: go run build or go run main.go
 
-  kube-deploy-files: "k8s-deployment-vmlc.yaml" 
-  docker-compose-file: "docker-compose-vmlc.yaml"
+  kube-deploy-files: "vscode-vmlc-k8s-deployment.yaml" 
+  docker-compose-file: "vscode-vmlc-docker-compose.yaml"
+
+# default .ide.yaml for cli project
+# add json file to: cli/.vscode/launch.json before use vscode debug
+#   {
+#     // Use IntelliSense to learn about possible attributes.
+#     // Hover to view descriptions of existing attributes.
+#     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+#     "version": "0.2.0",
+#     "configurations": [
+#         {
+#             "name": "List",
+#             "type": "go",
+#             "request": "launch",
+#             "trace": "verbose",
+#             "program": "${workspaceFolder}/cli",
+#             "args": [
+#                 "list",
+#                 "-d"
+#             ],
+#             "console": "integratedTerminal",
+#             "mode": "debug",
+#         },
+#     ]
+# }
