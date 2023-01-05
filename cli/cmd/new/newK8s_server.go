@@ -1,21 +1,20 @@
 /*
- * @Date: 2022-10-27 11:21:54
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-07 23:32:40
- * @FilePath: /cli/cmd/new/newK8s_server.go
- */
-/*
- * @Date: 2022-10-27 09:35:51
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-10-27 11:21:23
- * @FilePath: /cli/cmd/new/newK8s.go
- */
-/*
- * @Date: 2022-04-20 10:46:40
- * @LastEditors: kenan
- * @LastEditTime: 2022-10-20 10:10:08
- * @FilePath: /cli/cmd/new/newVm.go
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 package new
 
@@ -33,7 +32,7 @@ func K8sNew_Server(cmd *cobra.Command, args []string,
 	k8sUtil *k8s.KubernetesUtil,
 	workspaceInfo workspace.WorkspaceInfo,
 	//selectedTemplate templateModel.SelectedTemplateTypeBo,
-	yamlExecuteFun func(yamlConfig config.SmartIdeK8SConfig,workspaceInfo workspace.WorkspaceInfo, cmdtype, userguid, workspaceid string)) {
+	yamlExecuteFun func(yamlConfig config.SmartIdeK8SConfig, workspaceInfo workspace.WorkspaceInfo, cmdtype, userguid, workspaceid string)) {
 
 	//0. 错误反馈
 	serverFeedback := preRun(cmd, workspaceInfo, workspace.ActionEnum_Workspace_Start, k8sUtil)

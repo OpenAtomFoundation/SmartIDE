@@ -1,9 +1,20 @@
 /*
- * @Date: 2022-06-07 09:26:55
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-11-03 14:40:20
- * @FilePath: /cli/cmd/start/k8s_sws_clientEnv.go
- */
+SmartIDE - Dev Containers
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 package start
 
@@ -11,8 +22,9 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
+
 	smartideServer "github.com/leansoftX/smartide-cli/cmd/server"
+	"github.com/leansoftX/smartide-cli/internal/apk/appinsight"
 	"github.com/leansoftX/smartide-cli/internal/biz/config"
 	"github.com/leansoftX/smartide-cli/internal/biz/workspace"
 	"github.com/leansoftX/smartide-cli/internal/model/response"
@@ -22,7 +34,7 @@ import (
 
 // 在本地start 远程服务器上的k8s工作区
 func ExecuteK8s_ServerWS_LocalEnv(workspaceInfo workspace.WorkspaceInfo,
-	yamlExecuteFun func(yamlConfig config.SmartIdeK8SConfig,  workspaceInfo workspace.WorkspaceInfo, cmdtype, userguid, workspaceid string)) (workspace.WorkspaceInfo, error) {
+	yamlExecuteFun func(yamlConfig config.SmartIdeK8SConfig, workspaceInfo workspace.WorkspaceInfo, cmdtype, userguid, workspaceid string)) (workspace.WorkspaceInfo, error) {
 
 	//0. 验证
 	common.SmartIDELog.Info(i18nInstance.VmStart.Info_starting)

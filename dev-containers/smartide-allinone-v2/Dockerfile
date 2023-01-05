@@ -1,8 +1,20 @@
-#################################################
-# SmartIDE Developer Container Image
-# Licensed under GPL v3.0
-# Copyright (C) leansoftX.com
-#################################################
+###########################################################################
+# SmartIDE - Dev Containers
+# Copyright (C) 2023 leansoftX.com
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+###########################################################################
 
 FROM registry.cn-hangzhou.aliyuncs.com/smartide/smartide-python-v2:latest
 
@@ -31,7 +43,7 @@ RUN apt-get update && \
     apt-get autoremove -y && \
     rm -rf /tmp/* /var/lib/apt/lists/* /var/tmp/*
 
-RUN wget https://dlcdn.apache.org/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.tar.gz \
+RUN wget https://archive.apache.org/dist/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.tar.gz \
     && tar -xvzf apache-maven-3.8.6-bin.tar.gz \
     && cp -r apache-maven-3.8.6 /opt/maven \
     && rm -rf apache-maven-3.8.6-bin.tar.gz apache-maven-3.8.6 
