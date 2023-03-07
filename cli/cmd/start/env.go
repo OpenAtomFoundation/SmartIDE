@@ -138,9 +138,7 @@ func convertOriginContainer(containers []types.Container,
 				Ports:         ports,
 			}
 			dockerComposeContainers = append(dockerComposeContainers, dockerComposeContainer)
-			break
 		}
-
 	}
 
 	return dockerComposeContainers
