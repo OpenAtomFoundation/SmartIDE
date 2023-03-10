@@ -7,6 +7,11 @@ resources:
     type: git
     ref: refs/heads/main
 
+trigger:
+  branches:
+    include:
+      - main
+
 stages:
   - stage: Sync2GitHub
     condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
