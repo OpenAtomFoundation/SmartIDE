@@ -1,3 +1,21 @@
+/*
+SmartIDE - CLI
+Copyright (C) 2023 leansoftX.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License (GPL) as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package i18n
 
 import (
@@ -14,7 +32,6 @@ import (
 	_ "github.com/leansoftX/i18n/parser_json"
 )
 
-//
 type I18nSource struct {
 	Config struct {
 		Info_help_short         string `json:"info_help_short"`
@@ -423,10 +440,10 @@ var f embed.FS
 
 // get internationalization source
 // 获取当前系统的语言，动态加载对应的json文件并解析成结构体，方便在代码中调用
-// 1. 新增，首先在 “lib/i18n/language” 的对应节点下新增，并同步在 “lib/i18n/language/translate.go” 中的 “I18nSource” 增加相应的属性；
-// 2. 在代码中使用
-//    var instanceI18nStart = i18n.GetInstance().Start
-//    fmt.println(instanceI18nStart.Info_help_short)
+//  1. 新增，首先在 “lib/i18n/language” 的对应节点下新增，并同步在 “lib/i18n/language/translate.go” 中的 “I18nSource” 增加相应的属性；
+//  2. 在代码中使用
+//     var instanceI18nStart = i18n.GetInstance().Start
+//     fmt.println(instanceI18nStart.Info_help_short)
 func GetInstance() *I18nSource {
 	if instance == nil {
 		// locale

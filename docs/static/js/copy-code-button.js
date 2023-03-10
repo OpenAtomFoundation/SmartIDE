@@ -1,3 +1,8 @@
+/* 
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2023 SmartIDE Server & leansoftx.com
+*/
+
 /* global clipboard */
 /* eslint-disable no-console */
 

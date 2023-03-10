@@ -1,14 +1,21 @@
 #!/bin/bash
-###
- # @Author: kenan
- # @Date: 2022-05-24 14:37:27
- # @LastEditors: kenan
- # @LastEditTime: 2022-05-24 15:12:57
- # @FilePath: /smartide/dev-containers/smartide-golang-v2-jetbrains-goland/gosu_entrypoint_jetbrain.sh
- # @Description: 
- # 
- # Copyright (c) 2022 by kenanlu@leansoftx.com, All Rights Reserved. 
-### 
+###########################################################################
+# SmartIDE - Dev Containers
+# Copyright (C) 2023 leansoftX.com
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+###########################################################################
 
 USER_UID=${LOCAL_USER_UID:-1000}
 USER_GID=${LOCAL_USER_GID:-1000}
