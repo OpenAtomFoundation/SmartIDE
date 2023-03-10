@@ -1,3 +1,8 @@
+/*
+SPDX-License-Identifier: The MIT License (MIT)
+Ref: https://github.com/kevinburke/ssh_config/blob/master/LICENSE
+*/
+
 // Package ssh_config provides tools for manipulating SSH config files.
 //
 // Importantly, this parser attempts to preserve comments in a given file, so

@@ -1,6 +1,6 @@
 #!/bin/bash
-# Author: SmartIDE
-# Github: https://github.com/SmartIDE/SmartIDE
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (C) 2023 SmartIDE Server & leansoftx.com
 
 #######color code########
 RED="31m"      

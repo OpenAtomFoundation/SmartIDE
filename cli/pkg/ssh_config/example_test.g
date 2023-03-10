@@ -1,9 +1,8 @@
 /*
- * @Date: 2022-06-15 16:40:55
- * @LastEditors: Jason Chen
- * @LastEditTime: 2022-06-17 14:26:47
- * @FilePath: /smartide-cli/pkg/ssh_config/example_test.go
- */
+SPDX-License-Identifier: The MIT License (MIT)
+Ref: https://github.com/kevinburke/ssh_config/blob/master/LICENSE
+*/
+
 package ssh_config_test
 
 import (

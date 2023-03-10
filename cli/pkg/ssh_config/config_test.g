@@ -1,3 +1,8 @@
+/*
+SPDX-License-Identifier: The MIT License (MIT)
+Ref: https://github.com/kevinburke/ssh_config/blob/master/LICENSE
+*/
+
 package ssh_config
 
 import (

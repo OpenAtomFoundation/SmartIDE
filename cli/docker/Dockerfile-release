@@ -1,5 +1,5 @@
 ###########################################################################
-# SmartIDE - Dev Containers
+# SmartIDE - CLI
 # Copyright (C) 2023 leansoftX.com
 
 # This program is free software: you can redistribute it and/or modify
